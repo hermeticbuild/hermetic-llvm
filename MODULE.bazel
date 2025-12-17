@@ -108,6 +108,9 @@ use_repo(musl, "musl_libc")
 mingw = use_extension("//runtimes/mingw/extension:mingw.bzl", "mingw")
 use_repo(mingw, "mingw")
 
+wasi = use_extension("//runtimes/wasi/extension:wasi.bzl", "wasi")
+use_repo(wasi, "wasi_libc")
+
 # The Microsoft payloads remain lazily fetched: the EULA gate is evaluated
 # only when an MSVC-ABI target requests @msvc_runtime.
 msvc_runtime = use_extension(
