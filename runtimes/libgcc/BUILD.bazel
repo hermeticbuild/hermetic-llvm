@@ -1,0 +1,63 @@
+#load run_binary
+load("@bazel_lib//lib:run_binary.bzl", "run_binary")
+load("//toolchain/args:llvm_target_triple.bzl", "LLVM_TARGET_TRIPLE")
+load("//toolchain/runtimes:cc_runtime_static_library.bzl", "cc_runtime_stage0_static_library")
+load("//toolchain/runtimes:cc_runtime_shared_library.bzl", "cc_runtime_stage0_shared_library")
+
+run_binary(
+    name = "gcc_s.version_script",
+    srcs = [
+        "gcc_s.ver.in",
+    ],
+    outs = ["gcc_s.ver"],
+    tool = "//tools:clang",
+    args = [
+        "-E",
+        "-x",
+        "c",
+        "$(location gcc_s.ver.in)",
+        "-target",
+    ] + LLVM_TARGET_TRIPLE + [
+        "-o",
+        "$(location gcc_s.ver)",
+    ],
+    target_compatible_with = [
+        "@platforms//os:linux",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+cc_runtime_stage0_static_library(
+    name = "gcc_eh",
+    deps = [
+        "@libunwind//:libunwind",
+    ],
+    target_compatible_with = [
+        "@platforms//os:linux",
+    ],
+)
+
+cc_runtime_stage0_shared_library(
+    name = "gcc_s",
+    deps = [
+        "@libunwind//:libunwind",
+        "@compiler-rt//:builtins",
+    ],
+    user_link_flags = [
+        "-Wl,--version-script=$(location :gcc_s.version_script)",
+    ],
+    additional_linker_inputs = [":gcc_s.version_script"],
+    target_compatible_with = [
+        "@platforms//os:linux",
+    ],
+)
+
+cc_runtime_stage0_shared_library(
+    name = "gcc",
+    deps = [
+        "@compiler-rt//:builtins",
+    ],
+    target_compatible_with = [
+        "@platforms//os:linux",
+    ],
+)
