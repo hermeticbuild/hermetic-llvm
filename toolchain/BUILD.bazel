@@ -247,6 +247,16 @@ cc_args_list(
     }),
 )
 
+cc_args_list(
+    name = "unwindlib",
+    args = select({
+        "@platforms//os:macos": [],
+        "//conditions:default": [
+            "//toolchain/args:unwindlib",
+        ],
+    }),
+)
+
 # This makes the clang driver use compiler-rt compliant filenames
 # and paths when resolving compiler runtime libraries from the resource-dir.
 cc_args_list(
@@ -356,10 +366,7 @@ cc_args_list(
         # Common default link flags.
         "//toolchain/args:fuse_ld",
         "//toolchain/args:lto_plugin_target_flags",
-    ] + [
-        ":cxxstdlib_library_search_paths",
-        ":libunwind_library_search_paths",
-        ":rtlib",
+        "//toolchain/args:rtlib",
         ":stdlib",
         ":unwindlib",
         ":resource_dir",

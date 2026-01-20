@@ -854,6 +854,91 @@ cc_args(
 )
 
 cc_args(
+    name = "gcc_install_dir",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    args = [
+        # Should be --gcc-install-dir= but we'd need to white list that in golang/go.
+        # see https://github.com/golang/go/pull/76858
+        "-L{libgcc_library_search_path}",
+    ],
+    format = {
+        "libgcc_library_search_path": "//runtimes/libgcc:libgcc_library_search_directory",
+    },
+    data = [
+        "//runtimes/libgcc:libgcc_library_search_directory",
+    ],
+)
+
+cc_args(
+    name = "unwindlib_libgcc",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    args = [
+        "--unwindlib=libgcc",
+    ],
+)
+
+cc_args(
+    name = "unwindlib_libunwind",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    args = [
+        "--unwindlib=libunwind",
+        "-L{libunwind_library_search_path}",
+    ],
+    data = [
+        "//runtimes/libunwind:libunwind_library_search_directory",
+    ],
+    format = {
+        "libunwind_library_search_path": "//runtimes/libunwind:libunwind_library_search_directory",
+    },
+)
+
+cc_args_list(
+    name = "unwindlib",
+    args = select({
+        "//platforms/config:gnu": [
+            ":gcc_install_dir",
+            ":unwindlib_libgcc",
+        ],
+        "//conditions:default": [
+            ":unwindlib_libunwind",
+        ],
+    }),
+)
+
+cc_args(
+    name = "stdlib",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    args = [
+        "-stdlib=libc++",
+        "-L{libcxx_library_search_path}",
+    ],
+    data = [
+        "//runtimes/libcxx:libcxx_library_search_directory",
+    ],
+    format = {
+        "libcxx_library_search_path": "//runtimes/libcxx:libcxx_library_search_directory",
+    },
+)
+
+cc_args(
+    name = "rtlib_libgcc",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    args = [
+        "-rtlib=libgcc",
+    ],
+)
+
+cc_args(
     name = "rtlib_compiler_rt",
     actions = [
         "@rules_cc//cc/toolchains/actions:link_actions",
@@ -863,30 +948,18 @@ cc_args(
     ],
 )
 
-cc_args(
-    # We provide the libc++ and libunwind ourselves through static_runtime_libs
-    # and dynamic_runtime_libs.
-    name = "stdlib",
-    actions = [
-        "@rules_cc//cc/toolchains/actions:link_actions",
-    ],
-    args = [
-        # will prevent clang to choose which libc++ to link against
-        "-nostdlib++",
-    ],
-)
-
-cc_args(
-    name = "unwindlib_none",
-    actions = [
-        "@rules_cc//cc/toolchains/actions:link_actions",
-    ],
+# This makes the clang driver use compiler-rt compliant filenames
+# and paths when resolving compiler runtime libraries from the resource-dir.
+cc_args_list(
+    name = "rtlib",
     args = select({
-        # The clang driver forces -ISystem and doesn't claim the arg, which
-        # would result in a warning when targeting macOS.
-        "@platforms//os:macos": [],
-        # Will prevent clang from choosing which libunwind to link against.
-        "//conditions:default": ["--unwindlib=none"],
+        "//platforms/config:gnu": [
+            ":gcc_install_dir",
+            ":rtlib_libgcc",
+        ],
+        "//conditions:default": [
+            ":rtlib_compiler_rt",
+        ],
     }),
 )
 

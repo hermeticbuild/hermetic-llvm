@@ -158,6 +158,7 @@ cc_library(
         "src/**/*.h",
         "src/**/*.def",
     ]),
+    visibility = ["@llvm-project//libcxx:__subpackages__"],
 )
 
 cc_runtime_stage0_static_library(

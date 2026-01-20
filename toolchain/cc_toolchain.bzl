@@ -50,12 +50,10 @@ def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
         name = name + "_enabled_features",
         all_of = select({
             "@platforms//os:linux": [
-                "@llvm//toolchain/features:static_link_cpp_runtimes",
                 "@llvm//toolchain/features/runtime_library_search_directories:feature",
             ],
             "@platforms//os:macos": [],
             "@platforms//os:windows": [
-                "@llvm//toolchain/features:static_link_cpp_runtimes",
                 "@llvm//toolchain/features/runtime_library_search_directories:feature",
                 "@llvm//toolchain/features:def_file",
                 "@llvm//toolchain/features:targets_windows",
@@ -122,17 +120,5 @@ def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
         }),
         tool_map = tool_map,
         module_map = module_map,
-        static_runtime_lib = select({
-            "@llvm//toolchain:runtimes_none": "@llvm//runtimes:none",
-            "@llvm//toolchain:runtimes_stage1": "@llvm//runtimes:none",
-            "@llvm//toolchain:runtimes_stage1_hosted": "@llvm//runtimes:none",
-            "//conditions:default": "@llvm//runtimes:static_runtime_lib",
-        }),
-        dynamic_runtime_lib = select({
-            "@llvm//toolchain:runtimes_none": "@llvm//runtimes:none",
-            "@llvm//toolchain:runtimes_stage1": "@llvm//runtimes:none",
-            "@llvm//toolchain:runtimes_stage1_hosted": "@llvm//runtimes:none",
-            "//conditions:default": "@llvm//runtimes:dynamic_runtime_lib",
-        }),
         compiler = "clang",
     )

@@ -1,44 +1,78 @@
+load("@bazel_lib//lib:copy_file.bzl", "copy_file")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
-load("//runtimes:defs.bzl", "stub_library")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
 
-alias(
+copy_file(
     name = "libcxx.static",
-    actual = "@llvm-project//libcxx:libcxx.static",
+    src = "@llvm-project//libcxx:libcxx.static",
+    out = "libc++.a",
     visibility = ["//visibility:public"],
 )
 
-alias(
+copy_file(
     name = "libcxx.shared",
-    actual = "@llvm-project//libcxx:libcxx.shared",
+    src = "@llvm-project//libcxx:libcxx.shared",
+    out = "libc++.so.1",
     visibility = ["//visibility:public"],
 )
 
-alias(
+copy_file(
     name = "libcxxabi.static",
-    actual = "@llvm-project//libcxxabi:libcxxabi.static",
+    src = "@llvm-project//libcxxabi:libcxxabi.static",
+    out = "libc++abi.a",
     visibility = ["//visibility:public"],
 )
 
-alias(
+copy_file(
     name = "libcxxabi.shared",
-    actual = "@llvm-project//libcxxabi:libcxxabi.shared",
+    src = "@llvm-project//libcxxabi:libcxxabi.shared",
+    out = "libc++abi.so.1",
     visibility = ["//visibility:public"],
 )
 
-stub_library(
-    name = "c++",
+copy_file(
+    name = "libcxxabi.shared.symlink",
+    src = "@llvm-project//libcxxabi:libcxxabi.shared",
+    out = "libc++abi.so",
+    allow_symlink = True,
+    visibility = ["//visibility:public"],
 )
 
-stub_library(
-    name = "c++abi",
+write_file(
+    name = "libcxx.version_script",
+    out = "libc++.so",
+    content = [
+        "INPUT(",
+        "libc++.so.1 libc++abi.so.1",
+    ] + select({
+        "//platforms/config:gnu": [
+            # will be available under that name //runtimes/libgcc:libgcc_library_search_directory
+            "libgcc_s.so.1",
+        ],
+        "//conditions:default": [
+            # will be available under that name //runtimes/libunwind:libunwind_library_search_directory
+            "libunwind.so.1",
+        ],
+    }) + [
+        ")",
+    ],
+    visibility = ["//visibility:public"],
 )
 
 copy_to_directory(
     name = "libcxx_library_search_directory",
     srcs = [
-        ":c++",
-        ":c++abi",
-    ],
+        "libcxx.static",
+        "libcxxabi.static",
+    ] + select({
+        "@platforms//os:windows": [],
+        "//conditions:default": [
+            "libcxx.version_script",
+            "libcxx.shared",
+            "libcxxabi.shared",
+            "libcxxabi.shared.symlink",
+        ],
+    }),
     visibility = ["//visibility:public"],
 )
 

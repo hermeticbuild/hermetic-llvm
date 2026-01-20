@@ -1,42 +1,38 @@
+load("@bazel_lib//lib:copy_file.bzl", "copy_file")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
-load("//runtimes:defs.bzl", "stub_library")
 
-alias(
+copy_file(
     name = "libunwind.static",
-    actual = "@llvm-project//libunwind:libunwind.static",
+    src = "@llvm-project//libunwind:libunwind.static",
+    out = "libunwind.a",
     visibility = ["//visibility:public"],
 )
 
-alias(
+copy_file(
     name = "libunwind.shared",
-    actual = "@llvm-project//libunwind:libunwind.shared",
+    src = "@llvm-project//libunwind:libunwind.shared",
+    out = "libunwind.so",
     visibility = ["//visibility:public"],
 )
 
-stub_library(
-    name = "unwind",
+copy_file(
+    name = "libunwind.shared.symlink",
+    src = "@llvm-project//libunwind:libunwind.shared",
+    out = "libunwind.so.1",
+    allow_symlink = True,
     visibility = ["//visibility:public"],
-)
-
-stub_library(
-    name = "gcc_s",
-    visibility = ["//visibility:public"],
-)
-
-config_setting(
-    name = "stub_libgcc_s",
-    flag_values = {
-        "//config:experimental_stub_libgcc_s": "True",
-    },
 )
 
 copy_to_directory(
     name = "libunwind_library_search_directory",
     srcs = [
-        ":unwind",
+        "libunwind.static",
     ] + select({
-        ":stub_libgcc_s": [":gcc_s"],
-        "//conditions:default": [],
+        "@platforms//os:windows": [],
+        "//conditions:default": [
+            "libunwind.shared",
+            "libunwind.shared.symlink",
+        ],
     }),
     visibility = ["//visibility:public"],
 )

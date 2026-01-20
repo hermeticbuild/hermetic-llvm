@@ -58,18 +58,6 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
-filegroup(
-    name = "static_runtime_lib",
-    srcs = ["//runtimes/cxxstdlib:static_runtime_lib"],
-    visibility = ["//visibility:public"],
-)
-
-filegroup(
-    name = "dynamic_runtime_lib",
-    srcs = ["//runtimes/cxxstdlib:dynamic_runtime_lib"],
-    visibility = ["//visibility:public"],
-)
-
 cc_library(
     name = "empty",
     srcs = ["empty.c"],

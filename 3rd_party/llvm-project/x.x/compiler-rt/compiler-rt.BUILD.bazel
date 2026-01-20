@@ -651,6 +651,7 @@ cc_library(
         ],
         "//conditions:default": [],
     }),
+    visibility = ["//visibility:public"],
 )
 
 cc_runtime_stage0_static_library(

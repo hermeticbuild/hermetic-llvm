@@ -31,7 +31,7 @@ run_binary(
 cc_runtime_stage0_static_library(
     name = "gcc_eh",
     deps = [
-        "@libunwind//:libunwind",
+        "@llvm-project//libunwind:libunwind",
     ],
     target_compatible_with = [
         "@platforms//os:linux",
@@ -41,8 +41,8 @@ cc_runtime_stage0_static_library(
 cc_runtime_stage0_shared_library(
     name = "gcc_s",
     deps = [
-        "@libunwind//:libunwind",
-        "@compiler-rt//:builtins",
+        "@llvm-project//libunwind:libunwind",
+        "@llvm-project//compiler-rt:builtins",
     ],
     user_link_flags = [
         "-Wl,--version-script=$(location :gcc_s.version_script)",
@@ -55,10 +55,10 @@ cc_runtime_stage0_shared_library(
     ],
 )
 
-cc_runtime_stage0_shared_library(
+cc_runtime_stage0_static_library(
     name = "gcc",
     deps = [
-        "@compiler-rt//:builtins",
+        "@llvm-project//compiler-rt:builtins",
     ],
     target_compatible_with = [
         "@platforms//os:linux",
@@ -78,6 +78,13 @@ copy_file(
 )
 
 copy_file(
+    name = "gcc_s.shared.symlink",
+    src = ":gcc_s",
+    out = "libgcc_s.so.1",
+    allow_symlink = True,
+)
+
+copy_file(
     name = "gcc_eh.static",
     src = ":gcc_eh",
     out = "libgcc_eh.a",
@@ -89,6 +96,7 @@ copy_to_directory(
         ":gcc.static",
         ":gcc_eh.static",
         ":gcc_s.shared",
+        ":gcc_s.shared.symlink",
     ],
     visibility = ["//visibility:public"],
 )

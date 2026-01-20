@@ -178,6 +178,16 @@ cc_args_list(
     }),
 )
 
+cc_args_list(
+    name = "gcc_install_dir",
+    args = select({
+        "//toolchain:runtimes_stage1": [
+            "//toolchain/args:gcc_install_dir",
+        ],
+        "//toolchain:runtimes_none": [],
+    }),
+)
+
 #TODO(cerisier): Need a level of indirection to handle OS differences between stages.
 cc_args_list(
     name = "default_libs",
