@@ -83,8 +83,12 @@ copy_to_directory(
     srcs = [
         ":gcc.static",
         ":gcc_eh.static",
-        ":gcc_s.shared",
-        ":gcc_s.shared.symlink",
-    ],
+    ] + select({
+        "@platforms//os:windows": [],
+        "//conditions:default": [
+            ":gcc_s.shared",
+            ":gcc_s.shared.symlink",
+        ],
+    }),
     visibility = ["//visibility:public"],
 )
