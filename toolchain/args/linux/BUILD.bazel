@@ -165,3 +165,19 @@ alias(
     }),
     target_compatible_with = ["@platforms//os:linux"],
 )
+
+alias(
+    name = "rtlib",
+    actual = select({
+        "//platforms/config:gnu": "//toolchain/args:rtlib_libgcc",
+        "//platforms/config:musl": "//toolchain/args:rtlib_compiler_rt",
+    }),
+)
+
+alias(
+    name = "unwindlib",
+    actual = select({
+        "//platforms/config:gnu": "//toolchain/args:unwindlib_libgcc",
+        "//platforms/config:musl": "//toolchain/args:unwindlib_libunwind",
+    }),
+)
