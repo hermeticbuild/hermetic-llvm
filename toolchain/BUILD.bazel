@@ -23,6 +23,25 @@ string_setting(
     ],
 )
 
+# Selects the Windows CRT flavor to link against.
+constraint_setting(
+    name = "windows_crt",
+    default_constraint_value = ":windows_crt_ucrt",
+    visibility = ["//visibility:public"],
+)
+
+constraint_value(
+    name = "windows_crt_ucrt",
+    constraint_setting = ":windows_crt",
+    visibility = ["//visibility:public"],
+)
+
+constraint_value(
+    name = "windows_crt_msvcrt",
+    constraint_setting = ":windows_crt",
+    visibility = ["//visibility:public"],
+)
+
 # Controls whether targets are built with bootstrapped toolchain or prebuilt toolchain.
 string_flag(
     name = "source",

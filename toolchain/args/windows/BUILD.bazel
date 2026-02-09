@@ -46,12 +46,18 @@ cc_args(
         "-L{mingw_import_library_search_path}",
         "-L{mingw_crt_library_search_path}",
 
-        # Clang will respect the user's chosen crt variant.
-        # It defaults on -lmsvcrt if it doesn't find any -l<crt> option
-        # For now, we force on ucrt.
-        # TODO(cerisier): make this either a constraint or a build setting
-        "-lucrt",
-    ],
+        # Clang will respect the user's chosen CRT variant.
+    ] + select({
+        "//toolchain:windows_crt_msvcrt": [
+            # msvcrt.dll plus compatibility objects provided by mingw-w64.
+            "-lmsvcrt_common",
+            "-lmsvcrt_extra",
+            "-lmsvcrt",
+        ],
+        "//toolchain:windows_crt_ucrt": [
+            "-lucrt",
+        ],
+    }),
     data = [
         "//runtimes/mingw:mingw_crt_library_search_directory",
         "//runtimes/mingw:mingw_import_libraries_directory",

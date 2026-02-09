@@ -16,6 +16,8 @@ def _generate_def_impl(ctx):
 
     args = ctx.actions.args()
     args.add_all(["-E", "-P", "-xc"])
+    if ctx.attr.target_triple:
+        args.add("-target", ctx.attr.target_triple)
     args.add("-D{}=1".format(ctx.attr.arch_macro))
 
     include_dirs = [
@@ -58,6 +60,7 @@ _generate_def = rule(
             allow_files = True,
         ),
         "arch_macro": attr.string(mandatory = True),
+        "target_triple": attr.string(),
         "tool": attr.label(
             executable = True,
             allow_files = True,
@@ -95,6 +98,10 @@ def _collect_definitions(directory):
             arch_macro = select({
                 "@platforms//cpu:x86_64": "__x86_64__",
                 "@platforms//cpu:aarch64": "__aarch64__",
+            }),
+            target_triple = select({
+                "@platforms//cpu:x86_64": "x86_64-w64-windows-gnu",
+                "@platforms//cpu:aarch64": "aarch64-w64-windows-gnu",
             }),
             out = out,
         )

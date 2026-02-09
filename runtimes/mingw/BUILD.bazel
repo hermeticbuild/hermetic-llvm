@@ -187,6 +187,57 @@ run_binary(
 )
 
 cc_runtime_stage0_library(
+    name = "msvcrt_common_lib",
+    srcs = select({
+        "@platforms//cpu:x86_64": ["@mingw//:msvcrt_common_x86_64_srcs"],
+        "@platforms//cpu:aarch64": ["@mingw//:msvcrt_common_aarch64_srcs"],
+    }),
+    hdrs = select({
+        "@platforms//cpu:x86_64": ["@mingw//:mingwex_crt_x86_64_textual_hdrs"],
+        "@platforms//cpu:aarch64": ["@mingw//:mingwex_crt_aarch64_textual_hdrs"],
+    }) + ["@mingw//:msvcrt_textual_hdrs"],
+    copts = MINGW_CRT_COMMON_COPTS + [
+        "-D__LIBMSVCRT__",
+    ],
+    implementation_deps = [
+        "@mingw//:mingw_crt_headers",
+        "@mingw//:mingw_headers",
+    ],
+)
+
+cc_runtime_stage0_static_library(
+    name = "msvcrt_common",
+    visibility = ["//visibility:public"],
+    deps = [":msvcrt_common_lib"],
+)
+
+cc_runtime_stage0_library(
+    name = "msvcrt_extra_lib",
+    srcs = select({
+        "@platforms//cpu:x86_64": ["@mingw//:msvcrt_extra_x86_64_srcs"],
+        "@platforms//cpu:aarch64": ["@mingw//:msvcrt_extra_aarch64_srcs"],
+    }),
+    hdrs = select({
+        "@platforms//cpu:x86_64": ["@mingw//:mingwex_crt_x86_64_textual_hdrs"],
+        "@platforms//cpu:aarch64": ["@mingw//:mingwex_crt_aarch64_textual_hdrs"],
+    }) + ["@mingw//:msvcrt_textual_hdrs"],
+    copts = MINGW_CRT_COMMON_COPTS + [
+        "-D__LIBMSVCRT__",
+        "-D__LIBMSVCRT_OS__",
+    ],
+    implementation_deps = [
+        "@mingw//:mingw_crt_headers",
+        "@mingw//:mingw_headers",
+    ],
+)
+
+cc_runtime_stage0_static_library(
+    name = "msvcrt_extra",
+    visibility = ["//visibility:public"],
+    deps = [":msvcrt_extra_lib"],
+)
+
+cc_runtime_stage0_library(
     name = "moldname_crt_lib",
     srcs = ["@mingw//:moldname_crt_srcs"],
     copts = MINGW_CRT_COMMON_COPTS,
@@ -344,16 +395,25 @@ copy_to_directory(
         ":moldname",
         ":pthread",
         ":stdc++",
-        ":ucrt",
-        ":ucrtbase",
-        ":ucrtbased",
         ":uuid",
         ":winpthread",
-    ],
+    ] + select({
+        "//toolchain:windows_crt_msvcrt": [
+            ":msvcrt_common",
+            ":msvcrt_extra",
+        ],
+        "//toolchain:windows_crt_ucrt": [
+            ":ucrt",
+            ":ucrtbase",
+            ":ucrtbased",
+        ],
+    }),
     replace_prefixes = {
         "mingw32_": "",
         "mingwex_": "",
         "moldname_": "",
+        "msvcrt_common_": "",
+        "msvcrt_extra_": "",
         "uuid_": "",
     },
     root_paths = [

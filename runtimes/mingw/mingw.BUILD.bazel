@@ -15,6 +15,11 @@ load(
     "MINGWEX_TEXTUAL_SRCS",
     "MINGWEX_X86_HDRS",
     "MINGWEX_X86_SRCS",
+    "MSVCRT_COMMON_AARCH64_SRCS",
+    "MSVCRT_COMMON_X86_64_SRCS",
+    "MSVCRT_EXTRA_AARCH64_SRCS",
+    "MSVCRT_EXTRA_X86_64_SRCS",
+    "MSVCRT_HDRS",
     "UCRT_BASE_SRCS",
     "UCRT_BASE_X86_64_ADDITIONAL_SRCS",
     "UUID_SRCS",
@@ -80,6 +85,31 @@ filegroup(
 filegroup(
     name = "mingwex_crt_aarch64_srcs",
     srcs = ["mingw-w64-crt/%s" % path for path in MINGWEX_SRCS + MINGWEX_ARM64_SRCS],
+)
+
+filegroup(
+    name = "msvcrt_common_x86_64_srcs",
+    srcs = ["mingw-w64-crt/%s" % path for path in MSVCRT_COMMON_X86_64_SRCS],
+)
+
+filegroup(
+    name = "msvcrt_common_aarch64_srcs",
+    srcs = ["mingw-w64-crt/%s" % path for path in MSVCRT_COMMON_AARCH64_SRCS],
+)
+
+filegroup(
+    name = "msvcrt_extra_x86_64_srcs",
+    srcs = ["mingw-w64-crt/%s" % path for path in MSVCRT_EXTRA_X86_64_SRCS],
+)
+
+filegroup(
+    name = "msvcrt_extra_aarch64_srcs",
+    srcs = ["mingw-w64-crt/%s" % path for path in MSVCRT_EXTRA_AARCH64_SRCS],
+)
+
+filegroup(
+    name = "msvcrt_textual_hdrs",
+    srcs = ["mingw-w64-crt/%s" % path for path in MSVCRT_HDRS],
 )
 
 filegroup(
