@@ -1,0 +1,13 @@
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "rules_cc", version = "0.2.16")
+bazel_dep(name = "rules_platform", version = "0.1.0")
+bazel_dep(name = "rules_shell", version = "0.6.1")
+bazel_dep(name = "toolchains_llvm_bootstrapped", version = "")
+local_path_override(
+    module_name = "toolchains_llvm_bootstrapped",
+    path = "../../",
+)
+
+register_toolchains(
+    "@toolchains_llvm_bootstrapped//toolchain:all",
+)
