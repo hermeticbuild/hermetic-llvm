@@ -27,6 +27,9 @@ def _tool_repo(exec_os, exec_cpu):
     cpu_part = "amd64" if exec_cpu == "x86_64" else "arm64"
     return "@llvm-toolchain-minimal-%s-%s-%s//" % (LLVM_VERSION, os_part, cpu_part)
 
+def llvm_binary_for_platform(exec_os, exec_cpu, binary):
+    return _tool_repo(exec_os, exec_cpu) + ":bin/" + binary
+
 def platform_module_map(exec_os, exec_cpu):
     return _tool_repo(exec_os, exec_cpu) + ":module_map"
 
