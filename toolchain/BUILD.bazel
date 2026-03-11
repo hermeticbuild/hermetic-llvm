@@ -426,6 +426,15 @@ bzl_library(
 )
 
 bzl_library(
+    name = "llvm_toolchain_minimal",
+    srcs = ["llvm_toolchain_minimal.bzl"],
+    deps = [
+        ":selects",
+        "@bazel_tools//tools/build_defs/repo:http.bzl",
+    ],
+)
+
+bzl_library(
     name = "selects",
     srcs = ["selects.bzl"],
 )
