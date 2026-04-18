@@ -2551,6 +2551,111 @@ cc_library(
         "lib/fuzzer",
     ],
     linkstatic = True,
+)
+
+### compiler-rt/lib/profile/CMakeLists.txt.
+###
+
+PROFILE_SOURCES = [
+    "GCDAProfiling.c",
+    "InstrProfiling.c",
+    "InstrProfilingBuffer.c",
+    "InstrProfilingFile.c",
+    "InstrProfilingMerge.c",
+    "InstrProfilingMergeFile.c",
+    "InstrProfilingInternal.c",
+    "InstrProfilingNameVar.c",
+    "InstrProfilingRuntime.cpp",
+    "InstrProfilingUtil.c",
+    "InstrProfilingValue.c",
+    "InstrProfilingVersionVar.c",
+    "InstrProfilingWriter.c",
+]
+
+filegroup(
+    name = "profile_sources",
+    srcs = ["lib/profile/" + f for f in PROFILE_SOURCES] + select({
+        "@platforms//os:macos": ["lib/profile/InstrProfilingPlatformDarwin.c"],
+        "@platforms//os:linux": ["lib/profile/InstrProfilingPlatformLinux.c"],
+        "@platforms//os:windows": [
+            "lib/profile/InstrProfilingPlatformWindows.c",
+            "lib/profile/WindowsMMap.c",
+        ],
+        "//conditions:default": ["lib/profile/InstrProfilingPlatformOther.c"],
+    }),
+)
+
+PROFILE_HEADERS = [
+    "InstrProfiling.h",
+    "InstrProfilingInternal.h",
+    "InstrProfilingPort.h",
+    "InstrProfilingUtil.h",
+]
+
+filegroup(
+    name = "profile_headers_sources",
+    srcs = ["lib/profile/" + f for f in PROFILE_HEADERS] + select({
+        "@platforms//os:windows": ["lib/profile/WindowsMMap.h"],
+        "//conditions:default": [],
+    }),
+)
+
+filegroup(
+    name = "profile_interface_headers",
+    srcs = [
+        "include/profile/InstrProfData.inc",
+        "include/profile/MIBEntryDef.inc",
+        "include/profile/MemProfData.inc",
+        "include/profile/instr_prof_interface.h",
+    ],
+)
+
+cc_library(
+    name = "profile",
+    srcs = [":profile_sources"],
+    hdrs = [
+        ":profile_headers_sources",
+        ":profile_interface_headers",
+    ],
+    copts = SANITIZER_COMMON_CFLAGS + [
+        "-fvisibility=hidden",
+    ],
+    implementation_deps = [
+        ":sanitizers_interface_headers",
+    ] + select({
+        "@platforms//os:macos": [],
+        "@platforms//os:linux": [
+            "@kernel_headers",
+        ],
+        "@platforms//os:windows": [],
+        "@platforms//os:none": [],
+    }) + select({
+        "@llvm//platforms/config:musl": [
+            "@musl_libc//:musl_libc_headers",
+        ],
+        "@llvm//platforms/config:gnu": [
+            "@glibc//:gnu_libc_headers",
+        ],
+        "@platforms//os:macos": [],
+        "@platforms//os:windows": [
+            "@mingw//:mingw_headers",
+        ],
+        "@platforms//os:none": [],
+    }),
+    includes = [
+        "include",
+        "lib/profile",
+    ],
+    linkstatic = True,
+    local_defines = [
+        "COMPILER_RT_HAS_ATOMICS=1",
+    ] + select({
+        "@platforms//os:windows": [],
+        "//conditions:default": [
+            "COMPILER_RT_HAS_UNAME=1",
+            "COMPILER_RT_HAS_FCNTL_LCK=1",
+        ],
+    }),
     alwayslink = True,
 )
 
@@ -2576,6 +2681,10 @@ cc_runtime_stage0_static_library(
     visibility = ["//visibility:public"],
     deps = [
         ":fuzzer_interceptors",
+    name = "clang_rt.profile.static",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":profile",
     ],
 )
 
