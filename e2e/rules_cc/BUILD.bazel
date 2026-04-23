@@ -583,7 +583,6 @@ profile_cc_binary(
     name = "profile_main",
     srcs = ["profile_main.cc"],
     target_compatible_with = select({
-        "@platforms//os:macos": [],
         "@platforms//os:linux": [],
         "@platforms//os:windows": [],
         "//conditions:default": ["@platforms//:incompatible"],
@@ -667,7 +666,6 @@ py_test(
     main = "profile_output_test.py",
     tags = ["no-remote"],
     target_compatible_with = select({
-        "@platforms//os:macos": [],
         "@platforms//os:linux": [],
         "@platforms//os:windows": [],
         "//conditions:default": ["@platforms//:incompatible"],
