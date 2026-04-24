@@ -145,6 +145,12 @@ profile_cc_binary, _profile_cc_binary_internal = with_cfg(cc_binary).set(
 ).set(
     Label("@llvm//config:host_profile"),
     True,
+).set(
+    Label("@llvm//config:safestack"),
+    True,
+).set(
+    Label("@llvm//config:host_safestack"),
+    True,
 ).build()
 
 opt_binary, _opt_binary_internal = with_cfg(cc_binary).set(
