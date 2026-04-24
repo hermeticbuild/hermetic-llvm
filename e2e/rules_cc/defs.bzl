@@ -147,10 +147,16 @@ profile_cc_binary, _profile_cc_binary_internal = with_cfg(cc_binary).set(
     True,
 ).set(
     Label("@llvm//config:safestack"),
-    True,
+    select({
+        "@platforms//os:linux": True,
+        "//conditions:default": False,
+    }),
 ).set(
     Label("@llvm//config:host_safestack"),
-    True,
+    select({
+        "@platforms//os:linux": True,
+        "//conditions:default": False,
+    }),
 ).build()
 
 opt_binary, _opt_binary_internal = with_cfg(cc_binary).set(
