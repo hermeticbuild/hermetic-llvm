@@ -50,12 +50,6 @@ def rust_binary_cross_build_test_suite(name, platforms, **kwargs):
 
     for (platform, check) in platforms.items():
         for use_cc_common_link in [0, 1]:
-            # TODO(zbarsky): Fix these errors and enable.
-            # rules_rust expects allocator_library.lib, but rustc does not
-            # create that output for windows-gnullvm staticlib actions.
-            if "windows" in platform and use_cc_common_link:
-                continue
-
             rust_binary_test_suite(
                 name = "test_" + name + "_" + platform.split(":")[-1] + (
                     "_cc_common_link" if use_cc_common_link else ""

@@ -45,13 +45,7 @@ register_toolchains(
     dev_dependency = True,
 )
 
-bazel_dep(name = "rules_rs", version = "0.0.58")
-single_version_override(
-    module_name = "rules_rs",
-    patch_strip = 1,
-    patches = ["//:rules_rs_rust_objcopy.patch"],
-    version = "0.0.58",
-)
+bazel_dep(name = "rules_rs", version = "0.0.59")
 
 rules_rust = use_extension("@rules_rs//rs/experimental:rules_rust.bzl", "rules_rust")
 use_repo(rules_rust, "rules_rust")
