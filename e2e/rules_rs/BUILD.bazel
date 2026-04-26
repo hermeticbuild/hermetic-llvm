@@ -1,5 +1,5 @@
-load("//:rust_binary_cross_build_test_suite.bzl", "rust_binary_cross_build_test_suite")
 load("@rules_cc//cc:defs.bzl", "cc_library")
+load("//:rust_binary_cross_build_test_suite.bzl", "rust_binary_cross_build_test_suite")
 
 package(default_visibility = ["//visibility:public"])
 

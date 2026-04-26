@@ -2,7 +2,6 @@ module(
     name = "llvm",
     version = "0.0.0",
     bazel_compatibility = [">=8.5.0"],
-    compatibility_level = 0,
 )
 
 bazel_dep(name = "bazel_lib", version = "3.2.2")
