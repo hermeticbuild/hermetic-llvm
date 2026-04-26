@@ -6,7 +6,7 @@ index 748340ace..7e722a9d4 100644
      # Rust rules
      ("", "third_party/bazel_rules/rules_rust/rust/private"),
      ("rules_rust", "rust/private"),
-+    ("rules_rs++rules_rust+rules_rust", "rust/private"),
++    ("rules_rs", "rust/private"),
      # Python rules
      ("", "third_party/bazel_rules/rules_python"),
      # Various

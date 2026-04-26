@@ -42,18 +42,17 @@ def rust_binary_test_suite(name, check, platform = None, **kwargs):
         ],
     )
 
-def rust_binary_cross_build_test_suite(name, platforms, experimental_use_cc_common_link = None, **kwargs):
+def rust_binary_cross_build_test_suite(name, platforms, **kwargs):
     rust_binary(
         name = name,
         **kwargs
     )
 
-    cc_common_link_values = [0, 1] if experimental_use_cc_common_link == None else [experimental_use_cc_common_link]
-
     for (platform, check) in platforms.items():
-        for use_cc_common_link in cc_common_link_values:
-            # TODO(zbarsky): Fix these errors and enable
-            # `ld.lld: error: undefined symbol: __rust_dealloc/__rust_realloc`
+        for use_cc_common_link in [0, 1]:
+            # TODO(zbarsky): Fix these errors and enable.
+            # rules_rust expects allocator_library.lib, but rustc does not
+            # create that output for windows-gnullvm staticlib actions.
             if "windows" in platform and use_cc_common_link:
                 continue
 

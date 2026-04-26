@@ -1,4 +1,5 @@
 load("//:rust_binary_cross_build_test_suite.bzl", "rust_binary_cross_build_test_suite")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -35,7 +36,13 @@ rust_binary_cross_build_test_suite(
         "@rules_rs//rs/experimental/platforms:x86_64-pc-windows-gnullvm": "x86-64",
     },
     deps = [
+        ":linkstamp_dep",
         "@crates//:lz4-sys",
         "@crates//:mimalloc",
     ],
+)
+
+cc_library(
+    name = "linkstamp_dep",
+    linkstamp = "src/linkstamp.cc",
 )
