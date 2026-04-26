@@ -108,9 +108,9 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:objcpp_compile",
     ],
     args = [
-        "-isystem",
+        "-stdlib++-isystem",
         "{libcxx_headers_include_search_path}",
-        "-isystem",
+        "-stdlib++-isystem",
         "{libcxxabi_headers_include_search_path}",
     ],
     data = [
