@@ -1,0 +1,12 @@
+diff --git a/cc/common/cc_helper_internal.bzl b/cc/common/cc_helper_internal.bzl
+index 748340ace..7e722a9d4 100644
+--- a/cc/common/cc_helper_internal.bzl
++++ b/cc/common/cc_helper_internal.bzl
+@@ -163,6 +163,7 @@ PRIVATE_STARLARKIFICATION_ALLOWLIST = [
+     # Rust rules
+     ("", "third_party/bazel_rules/rules_rust/rust/private"),
+     ("rules_rust", "rust/private"),
++    ("rules_rs++rules_rust+rules_rust", "rust/private"),
+     # Python rules
+     ("", "third_party/bazel_rules/rules_python"),
+     # Various

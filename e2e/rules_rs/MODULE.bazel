@@ -14,7 +14,14 @@ bazel_dep(name = "bazel_lib", version = "3.0.0")
 ###############################################################################
 bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "rules_shell", version = "0.6.1")
-bazel_dep(name = "rules_cc", version = "0.2.8")
+bazel_dep(name = "rules_cc", version = "0.2.18")
+single_version_override(
+    module_name = "rules_cc",
+    patch_strip = 1,
+    patches = ["//:rules_cc_rules_rs_allowlist.patch"],
+    version = "0.2.18",
+)
+
 bazel_dep(name = "libmagic", version = "5.46.bcr.4")
 single_version_override(
     module_name = "libmagic",
@@ -45,6 +52,9 @@ single_version_override(
     patches = ["//:rules_rs_disable_strip.patch"],
     version = "0.0.44",
 )
+
+rules_rust = use_extension("@rules_rs//rs/experimental:rules_rust.bzl", "rules_rust")
+use_repo(rules_rust, "rules_rust")
 
 toolchains = use_extension("@rules_rs//rs/experimental/toolchains:module_extension.bzl", "toolchains")
 toolchains.toolchain(
