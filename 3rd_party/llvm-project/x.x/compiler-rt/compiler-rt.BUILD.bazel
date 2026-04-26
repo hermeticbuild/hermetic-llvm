@@ -2717,3 +2717,140 @@ cc_runtime_stage0_shared_library(
         ":asan_dynamic",
     ],
 )
+
+###
+### compiler-rt/lib/fuzzer/CMakeLists.txt.
+###
+
+FUZZER_SOURCES = [
+    "FuzzerCrossOver.cpp",
+    "FuzzerDataFlowTrace.cpp",
+    "FuzzerDriver.cpp",
+    "FuzzerExtFunctionsDlsym.cpp",
+    "FuzzerExtFunctionsWeak.cpp",
+    "FuzzerExtFunctionsWindows.cpp",
+    "FuzzerExtraCounters.cpp",
+    "FuzzerExtraCountersDarwin.cpp",
+    "FuzzerExtraCountersWindows.cpp",
+    "FuzzerFork.cpp",
+    "FuzzerIO.cpp",
+    "FuzzerIOPosix.cpp",
+    "FuzzerIOWindows.cpp",
+    "FuzzerLoop.cpp",
+    "FuzzerMerge.cpp",
+    "FuzzerMutate.cpp",
+    "FuzzerSHA1.cpp",
+    "FuzzerTracePC.cpp",
+    "FuzzerUtil.cpp",
+    "FuzzerUtilDarwin.cpp",
+    "FuzzerUtilFuchsia.cpp",
+    "FuzzerUtilLinux.cpp",
+    "FuzzerUtilPosix.cpp",
+    "FuzzerUtilWindows.cpp",
+]
+
+filegroup(
+    name = "fuzzer_sources",
+    srcs = ["lib/fuzzer/" + f for f in FUZZER_SOURCES],
+)
+
+FUZZER_MAIN_SOURCES = [
+    "FuzzerMain.cpp",
+]
+
+filegroup(
+    name = "fuzzer_main_sources",
+    srcs = ["lib/fuzzer/" + f for f in FUZZER_MAIN_SOURCES],
+)
+
+FUZZER_HEADERS = [
+    "FuzzerBuiltins.h",
+    "FuzzerBuiltinsMsvc.h",
+    "FuzzerCommand.h",
+    "FuzzerCorpus.h",
+    "FuzzerDataFlowTrace.h",
+    "FuzzerDefs.h",
+    "FuzzerDictionary.h",
+    "FuzzerExtFunctions.def",
+    "FuzzerExtFunctions.h",
+    "FuzzerFlags.def",
+    "FuzzerFork.h",
+    "FuzzerIO.h",
+    "FuzzerInterface.h",
+    "FuzzerInternal.h",
+    "FuzzerMerge.h",
+    "FuzzerMutate.h",
+    "FuzzerOptions.h",
+    "FuzzerPlatform.h",
+    "FuzzerRandom.h",
+    "FuzzerSHA1.h",
+    "FuzzerTracePC.h",
+    "FuzzerUtil.h",
+    "FuzzerValueBitMap.h",
+]
+
+filegroup(
+    name = "fuzzer_headers",
+    srcs = ["lib/fuzzer/" + f for f in FUZZER_HEADERS],
+)
+
+# Unlike sanitizer runtimes, libfuzzer is a C++ library that uses the standard
+# library (cassert, vector, string, etc.). Use a subset of the sanitizer flags
+# that omits -nostdinc++ so that the system or toolchain C++ headers are found.
+FUZZER_CFLAGS = select({
+    "@platforms//os:windows": [],
+    "//conditions:default": [
+        "-fPIC",
+    ],
+}) + [
+    "-fno-builtin",
+    "-fno-exceptions",
+    "-funwind-tables",
+    "-fno-stack-protector",
+    "-fvisibility=hidden",
+    "-fno-lto",
+    "-O3",
+    "-gline-tables-only",
+    "-fno-rtti",
+]
+
+cc_library(
+    name = "fuzzer_no_main",
+    copts = FUZZER_CFLAGS,
+    srcs = [
+        ":fuzzer_sources",
+        ":fuzzer_headers",
+    ],
+    textual_hdrs = [
+        "lib/fuzzer/FuzzerExtFunctions.def",
+        "lib/fuzzer/FuzzerFlags.def",
+    ],
+    includes = ["lib"],
+    deps = [
+        ":sanitizer_common",
+        ":sanitizer_common_libc",
+        ":sanitizer_common_symbolizer",
+    ],
+    implementation_deps = [
+        ":libcxx_headers",
+        ":sanitizer_impl_headers",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "fuzzer_main",
+    copts = FUZZER_CFLAGS,
+    srcs = [
+        ":fuzzer_main_sources",
+        ":fuzzer_headers",
+    ],
+    includes = ["lib"],
+    deps = [
+        ":fuzzer_no_main",
+    ],
+    implementation_deps = [
+        ":libcxx_headers",
+    ],
+    visibility = ["//visibility:public"],
+)

@@ -153,3 +153,15 @@ alias(
     actual = "@compiler-rt//:clang_rt.crtend.static",
     visibility = ["//visibility:public"],
 )
+
+alias(
+    name = "clang_rt.fuzzer",
+    actual = "@compiler-rt//:fuzzer_main",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "clang_rt.fuzzer_no_main",
+    actual = "@compiler-rt//:fuzzer_no_main",
+    visibility = ["//visibility:public"],
+)
