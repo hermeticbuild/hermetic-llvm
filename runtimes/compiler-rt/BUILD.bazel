@@ -17,6 +17,12 @@ alias(
 )
 
 alias(
+    name = "clang_rt.profile.static",
+    actual = "@compiler-rt//:clang_rt.profile.static",
+    visibility = ["//visibility:public"],
+)
+
+alias(
     name = "clang_rt.builtins.static",
     actual = "@compiler-rt//:clang_rt.builtins.static",
     visibility = ["//visibility:public"],

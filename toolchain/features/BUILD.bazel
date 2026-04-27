@@ -184,7 +184,13 @@ cc_args(
 cc_args(
     name = "llvm_coverage_map_format_link_args",
     actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
-    args = ["-fprofile-instr-generate"],
+    args = ["-fprofile-instr-generate"] + select({
+        "@platforms//os:windows": [
+            "-Wl,-u,__llvm_profile_runtime",
+            "-Wl,/include:__llvm_profile_runtime",
+        ],
+        "//conditions:default": [],
+    }),
 )
 
 cc_feature(

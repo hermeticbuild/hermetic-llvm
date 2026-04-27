@@ -298,6 +298,7 @@ cc_args_list(
         "//toolchain/args:lsan_flags",
         "//toolchain/args:xray_flags",
         "//toolchain/args:fuzzer_flags",
+        "//toolchain/args:profile_flags",
 
         # Common default link flags.
         "//toolchain/args:fuse_ld",

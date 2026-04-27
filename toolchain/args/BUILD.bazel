@@ -720,7 +720,7 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:compile_actions",
     ],
     args = [
-        "-fsanitize=fuzzer",
+        "-fprofile-instr-generate",
     ],
 )
 
@@ -734,6 +734,27 @@ cc_args(
     ],
 )
 
+cc_args(
+    name = "profile_compiler_flags",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:compile_actions",
+    ],
+    args = [
+        "-fprofile-instr-generate",
+    ],
+)
+
+cc_args(
+    name = "profile_linker_flags",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    args = [
+        "-fsanitize=fuzzer",
+    ],
+)
+
+
 cc_args_list(
     name = "fuzzer_flags",
     args = select({
@@ -744,9 +765,35 @@ cc_args_list(
         "//config:host_fuzzer_enabled": [
             ":fuzzer_compiler_flags",
             ":fuzzer_linker_flags",
+        "//conditions:default": [],
+    }) + select({
+        "@platforms//os:windows": [
+            "-Wl,-u,__llvm_profile_runtime",
+            "-Wl,/include:__llvm_profile_runtime",
         ],
         "//conditions:default": [],
     }),
+)
+
+cc_args_list(
+    name = "profile_flags",
+    args = select({
+        "//config:profile_enabled": [
+            ":profile_compiler_flags",
+            ":profile_linker_flags",
+        ],
+        "//config:host_profile_enabled": [
+            ":profile_compiler_flags",
+            ":profile_linker_flags",
+        ],
+        "//conditions:default": [],
+    }) + select({
+        "@platforms//os:windows": [
+            "-Wl,-u,__llvm_profile_runtime",
+            "-Wl,/include:__llvm_profile_runtime",
+        ],
+        "//conditions:default": [],
+    })
 )
 
 #######
