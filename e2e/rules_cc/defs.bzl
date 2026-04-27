@@ -125,3 +125,7 @@ fuzzer_asan_cc_binary, _fuzzer_asan_cc_binary_internal = with_cfg(cc_binary).set
     True,
 ).build()
 
+opt_binary, _opt_binary_internal = with_cfg(cc_binary).set(
+    "compilation_mode",
+    "opt",
+).build()
