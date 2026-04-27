@@ -1,10 +1,21 @@
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("//runtimes:defs.bzl", "stub_library")
+load("//toolchain/runtimes:filegroup.bzl", "stage0_filegroup")
+
+alias(
+    name = "libcxx",
+    actual = "@libcxx//:libcxx",
+)
 
 alias(
     name = "libcxx.static",
     actual = "@libcxx//:libcxx.static",
     visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "libcxxabi",
+    actual = "@libcxxabi//:libcxxabi",
 )
 
 alias(
@@ -22,6 +33,18 @@ alias(
 alias(
     name = "libcxxabi.shared",
     actual = "@libcxxabi//:libcxxabi.shared",
+    visibility = ["//visibility:public"],
+)
+
+stage0_filegroup(
+    name = "libcxx.stage0",
+    srcs = [":libcxx"],
+    visibility = ["//visibility:public"],
+)
+
+stage0_filegroup(
+    name = "libcxxabi.stage0",
+    srcs = [":libcxxabi"],
     visibility = ["//visibility:public"],
 )
 

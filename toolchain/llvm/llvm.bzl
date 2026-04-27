@@ -216,6 +216,8 @@ def declare_llvm_targets(*, suffix = ""):
         srcs = [
             ":builtin_resource_dir",
             "@macos_sdk//sysroot",
+            "@macos_sdk//sysroot:libcxx_headers_include_search_directory",
+            "@macos_sdk//sysroot:libcxxabi_headers_include_search_directory",
         ],
     )
 

@@ -1,0 +1,150 @@
+load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@bazel_lib//lib:run_binary.bzl", "run_binary")
+load("@llvm//:directory.bzl", "headers_directory")
+load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
+
+package(default_visibility = ["//visibility:public"])
+
+headers_directory(
+    name = "sysroot",
+    path = ".",
+)
+
+alias(
+    name = "libcxx_headers_include_search_directory",
+    actual = "@llvm//runtimes/libcxx:libcxx_headers_include_search_directory",
+)
+
+alias(
+    name = "libcxxabi_headers_include_search_directory",
+    actual = "@llvm//runtimes/libcxx:libcxxabi_headers_include_search_directory",
+)
+
+alias(
+    name = "libcxx_headers_include_search_paths",
+    actual = "@llvm//toolchain/args:libcxx_headers_include_search_paths",
+)
+
+alias(
+    name = "libcxx_library_search_paths",
+    actual = "@llvm//toolchain/args:libcxx_library_search_paths",
+)
+
+filegroup(
+    name = "static_runtime_lib",
+    srcs = [],
+)
+
+filegroup(
+    name = "dynamic_runtime_lib",
+    srcs = [],
+)
+
+run_binary(
+    name = "c",
+    outs = ["libc.a"],
+    args = [
+        "rc",
+        "$@",
+    ] + select({
+        "@platforms//os:macos": ["--format=darwin"],
+        "//conditions:default": ["--format=gnu"],
+    }),
+    tool = "@llvm//tools:llvm-ar",
+)
+
+run_binary(
+    name = "m",
+    outs = ["libm.a"],
+    args = [
+        "rc",
+        "$@",
+    ] + select({
+        "@platforms//os:macos": ["--format=darwin"],
+        "//conditions:default": ["--format=gnu"],
+    }),
+    tool = "@llvm//tools:llvm-ar",
+)
+
+copy_to_directory(
+    name = "darwin_stub_library_search_directory",
+    srcs = [
+        ":c",
+        ":m",
+    ],
+)
+
+cc_args(
+    name = "sysroot_flags",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:assembly_actions",
+        "@rules_cc//cc/toolchains/actions:c_compile",
+        "@rules_cc//cc/toolchains/actions:objc_compile",
+        "@rules_cc//cc/toolchains/actions:cpp_compile_actions",
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    allowlist_include_directories = [":sysroot"],
+    args = ["--sysroot={sysroot}"],
+    data = [":sysroot"],
+    format = {"sysroot": ":sysroot"},
+)
+
+cc_args(
+    name = "darwin_headers_include_search_paths",
+    actions = ["@rules_cc//cc/toolchains/actions:compile_actions"],
+    allowlist_include_directories = [":sysroot"],
+    args = [
+        "-Xclang",
+        "-internal-isystem",
+        "-Xclang",
+        "{sysroot}/include/any-darwin-any",
+    ],
+    data = [":sysroot"],
+    format = {"sysroot": ":sysroot"},
+)
+
+cc_args(
+    name = "darwin_library_search_paths",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    args = [
+        "-L{sysroot}/darwin/.",
+        "-L{darwin_stub_library_search_directory}",
+    ],
+    data = [
+        ":darwin_stub_library_search_directory",
+        ":sysroot",
+    ],
+    format = {
+        "darwin_stub_library_search_directory": ":darwin_stub_library_search_directory",
+        "sysroot": ":sysroot",
+    },
+)
+
+cc_args(
+    name = "libcxx_runtime_link_flags",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    args = [
+        "{libcxx}",
+        "{libcxxabi}",
+    ],
+    data = [
+        "@llvm//runtimes/libcxx:libcxx.stage0",
+        "@llvm//runtimes/libcxx:libcxxabi.stage0",
+    ],
+    format = {
+        "libcxx": "@llvm//runtimes/libcxx:libcxx.stage0",
+        "libcxxabi": "@llvm//runtimes/libcxx:libcxxabi.stage0",
+    },
+)
+
+cc_args(
+    name = "default_framework_flags",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    args = [],
+)
+
+cc_args(
+    name = "stdlib_flags",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    args = ["-nostdlib++"],
+)

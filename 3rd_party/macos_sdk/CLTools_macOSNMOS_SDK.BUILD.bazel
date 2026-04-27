@@ -1,7 +1,88 @@
 load("@llvm//:directory.bzl", "headers_directory")
+load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
+
+package(default_visibility = ["//visibility:public"])
 
 headers_directory(
     name = "sysroot",
     path = ".",
-    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "libcxx_headers_include_search_directory",
+    srcs = [],
+)
+
+filegroup(
+    name = "libcxxabi_headers_include_search_directory",
+    srcs = [],
+)
+
+filegroup(
+    name = "static_runtime_lib",
+    srcs = [],
+)
+
+filegroup(
+    name = "dynamic_runtime_lib",
+    srcs = [],
+)
+
+cc_args(
+    name = "libcxx_headers_include_search_paths",
+    actions = ["@rules_cc//cc/toolchains/actions:compile_actions"],
+    args = [],
+)
+
+cc_args(
+    name = "libcxx_library_search_paths",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    args = [],
+)
+
+cc_args(
+    name = "libcxx_runtime_link_flags",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    args = [],
+)
+
+cc_args(
+    name = "sysroot_flags",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:assembly_actions",
+        "@rules_cc//cc/toolchains/actions:c_compile",
+        "@rules_cc//cc/toolchains/actions:objc_compile",
+        "@rules_cc//cc/toolchains/actions:cpp_compile_actions",
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    allowlist_include_directories = [":sysroot"],
+    args = ["--sysroot={sysroot}"],
+    data = [":sysroot"],
+    format = {"sysroot": ":sysroot"},
+)
+
+cc_args(
+    name = "darwin_headers_include_search_paths",
+    actions = ["@rules_cc//cc/toolchains/actions:compile_actions"],
+    args = [],
+)
+
+cc_args(
+    name = "darwin_library_search_paths",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    args = [],
+)
+
+cc_args(
+    name = "default_framework_flags",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    args = [
+        "-Wl,-framework,Foundation",
+    ],
+)
+
+cc_args(
+    name = "stdlib_flags",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    args = [],
 )

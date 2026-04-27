@@ -347,6 +347,7 @@ cc_library(
     ]) + [
         "@libcxxabi//:textual_hdrs",
     ],
+    visibility = ["@llvm//runtimes/libcxx:__pkg__"],
 )
 
 cc_runtime_stage0_static_library(
