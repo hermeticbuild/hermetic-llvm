@@ -1,0 +1,26 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@rules_go//go:def.bzl", "go_binary")
+
+go_binary(
+    name = "hello_cgo",
+    srcs = ["hello.go"],
+    cgo = True,
+)
+
+build_test(
+    name = "hello_cgo_target_test",
+    targets = [":hello_cgo"],
+)
+
+# Build the cgo binary in the exec configuration
+genrule(
+    name = "hello_cgo_exec_run",
+    outs = ["hello_cgo_exec_run.out"],
+    cmd = "$(execpath :hello_cgo) > $@",
+    tools = [":hello_cgo"],
+)
+
+build_test(
+    name = "hello_cgo_exec_test",
+    targets = [":hello_cgo_exec_run"],
+)

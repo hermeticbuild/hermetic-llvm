@@ -172,6 +172,45 @@ jobs:
             $EXTRA_ARGS \
             //:main_default
 
+  tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm]
+        bazel_version: [8.x, last_rc]
+    runs-on: ${{ matrix.os }}
+    name: Test //tests/... with Bazel ${{ matrix.bazel_version }} on ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Mount bazel caches
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/bazel-repo
+          key: bazel-cache-tests-${{ matrix.os }}-${{ matrix.bazel_version }}-${{ hashFiles('**/BUILD.bazel', '**/*.bzl', 'MODULE.bazel') }}
+          restore-keys: |
+            bazel-cache-tests-${{ matrix.os }}-${{ matrix.bazel_version }}
+
+      - name: bazel test //tests/...
+        env:
+          USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
+          BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
+        shell: bash
+        run: |
+          REMOTE_HEADER_ARGS=()
+          if [[ -n "${BUILDBUDDY_API_KEY:-}" ]]; then
+            REMOTE_HEADER_ARGS=(--remote_header="x-buildbuddy-api-key=${BUILDBUDDY_API_KEY}")
+          fi
+
+          bazel \
+            --bazelrc=$GITHUB_WORKSPACE/.github/workflows/ci.bazelrc \
+            --bazelrc=.bazelrc \
+            test \
+            "${REMOTE_HEADER_ARGS[@]}" \
+            //tests/...
+
   docs:
     runs-on: macos-15-intel
     name: Verify public docs generation
