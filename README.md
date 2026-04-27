@@ -20,7 +20,7 @@
 Add this to your `MODULE.bazel`:
 
 ```starlark
-bazel_dep(name = "llvm", version = "0.6.0")
+bazel_dep(name = "llvm", version = "0.7.3")
 
 register_toolchains("@llvm//toolchain:all")
 ```
@@ -28,6 +28,8 @@ register_toolchains("@llvm//toolchain:all")
 See https://github.com/hermeticbuild/hermetic-llvm/releases/latest
 
 This registers all toolchains declared by this module for all supported targets.
+
+This module sets bazel_compatibility to 7.7+ so it can be imported for constraints, but it is highly recommended to use Bazel 8.5+ for full functionality.
 
 ## Description
 
