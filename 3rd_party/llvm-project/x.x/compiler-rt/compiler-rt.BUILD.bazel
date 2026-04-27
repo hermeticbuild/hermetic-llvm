@@ -2371,18 +2371,11 @@ cc_library(
         ":xray_headers",
         ":xray_sources",
     ],
-    hdrs = select({
-        "@llvm//toolchain:runtimes_none": [":xray_interface_headers"],
-        "//conditions:default": [],
-    }),
+    hdrs = [":xray_interface_headers"],
     copts = XRAY_CFLAGS,
-    implementation_deps = select({
-        "@llvm//toolchain:runtimes_none": [
-            ":libcxx_headers",
-            ":linux_libc_headers",
-        ],
-        "//conditions:default": [],
-    }) + [
+    implementation_deps = [
+        ":libcxx_headers",
+        ":linux_libc_headers",
         ":sanitizer_impl_headers",
     ],
     includes = [
@@ -2403,18 +2396,11 @@ cc_library(
         ":xray_basic_mode_sources",
         ":xray_headers",
     ],
-    hdrs = select({
-        "@llvm//toolchain:runtimes_none": [":xray_interface_headers"],
-        "//conditions:default": [],
-    }),
+    hdrs = [":xray_interface_headers"],
     copts = XRAY_CFLAGS,
-    implementation_deps = select({
-        "@llvm//toolchain:runtimes_none": [
-            ":libcxx_headers",
-            ":linux_libc_headers",
-        ],
-        "//conditions:default": [],
-    }) + [
+    implementation_deps = [
+        ":libcxx_headers",
+        ":linux_libc_headers",
         ":sanitizer_impl_headers",
     ],
     includes = [
