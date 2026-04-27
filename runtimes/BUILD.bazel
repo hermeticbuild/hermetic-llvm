@@ -174,10 +174,19 @@ copy_to_resource_directory(
     srcs = {
         "//runtimes/compiler-rt:clang_rt.builtins.static": "libclang_rt.builtins",
     } | select({
+        "//config:fuzzer_enabled": {
+            "//runtimes/compiler-rt:clang_rt.fuzzer.static": "libclang_rt.fuzzer",
+            "//runtimes/compiler-rt:clang_rt.fuzzer_no_main.static": "libclang_rt.fuzzer_no_main",
+            "//runtimes/compiler-rt:clang_rt.fuzzer_interceptors.static": "libclang_rt.fuzzer_interceptors",
+        },
+        "//conditions:default": {},
+    }) | select({
         "//config:ubsan_enabled": {
             "//runtimes/compiler-rt:clang_rt.ubsan_standalone.static": "libclang_rt.ubsan_standalone",
             "//runtimes/compiler-rt:clang_rt.ubsan_standalone_cxx.static": "libclang_rt.ubsan_standalone_cxx",
         },
+        "//conditions:default": {},
+    }) | select({
         "//config:cfi_enabled": {
             "//runtimes/compiler-rt:clang_rt.cfi.static": "libclang_rt.cfi",
             "//runtimes/compiler-rt:clang_rt.cfi_diag.static": "libclang_rt.cfi_diag",
@@ -185,36 +194,54 @@ copy_to_resource_directory(
             "//runtimes/compiler-rt:clang_rt.ubsan_standalone_cxx.static": "libclang_rt.ubsan_standalone_cxx",
             "//runtimes/compiler-rt:clang_rt.cfi_ignorelist": "share/cfi_ignorelist.txt",
         },
+        "//conditions:default": {},
+    }) | select({
         "//config:msan_enabled": {
             "//runtimes/compiler-rt:clang_rt.msan.static": "libclang_rt.msan",
             "//runtimes/compiler-rt:clang_rt.msan_cxx.static": "libclang_rt.msan_cxx",
         },
+        "//conditions:default": {},
+    }) | select({
         "//config:dfsan_enabled": {
             "//runtimes/compiler-rt:clang_rt.dfsan.static": "libclang_rt.dfsan",
             "//runtimes/compiler-rt:clang_rt.dfsan_abilist": "share/dfsan_abilist",
         },
+        "//conditions:default": {},
+    }) | select({
         "//config:nsan_enabled": {
             "//runtimes/compiler-rt:clang_rt.nsan.static": "libclang_rt.nsan",
         },
+        "//conditions:default": {},
+    }) | select({
         "//config:safestack_enabled": {
             "//runtimes/compiler-rt:clang_rt.safestack.static": "libclang_rt.safestack",
         },
+        "//conditions:default": {},
+    }) | select({
         "//config:rtsan_enabled": {
             "//runtimes/compiler-rt:clang_rt.rtsan.static": "libclang_rt.rtsan",
         },
+        "//conditions:default": {},
+    }) | select({
         "//config:tysan_enabled": {
             "//runtimes/compiler-rt:clang_rt.tysan.static": "libclang_rt.tysan",
         },
+        "//conditions:default": {},
+    }) | select({
         "//config:tsan_enabled": {
             "//runtimes/compiler-rt:clang_rt.tsan.static": "libclang_rt.tsan",
             "//runtimes/compiler-rt:clang_rt.tsan_cxx.static": "libclang_rt.tsan_cxx",
         },
+        "//conditions:default": {},
+    }) | select({
         "//config:asan_enabled": {
             "//runtimes/compiler-rt:clang_rt.asan_cxx.static": "libclang_rt.asan_cxx",
             "//runtimes/compiler-rt:clang_rt.asan_static.static": "libclang_rt.asan_static",
             "//runtimes/compiler-rt:clang_rt.asan.static": "libclang_rt.asan",
             "//runtimes/compiler-rt:clang_rt.asan.shared": "libclang_rt.asan",
         },
+        "//conditions:default": {},
+    }) | select({
         "//config:lsan_enabled": {
             "//runtimes/compiler-rt:clang_rt.lsan.static": "libclang_rt.lsan",
         },

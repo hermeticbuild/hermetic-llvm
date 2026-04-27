@@ -8,3 +8,4 @@ common:windows --host_platform=//:host_windows_gnullvm
 
 common --@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_macos=False
 common --@llvm//config:experimental_stub_libgcc_s=True
+common --@rules_rust//rust/settings:experimental_use_allocator_libraries_with_mangled_symbols

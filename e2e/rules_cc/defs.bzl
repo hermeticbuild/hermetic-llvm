@@ -97,7 +97,31 @@ xray_cc_binary, _xray_cc_binary_internal = with_cfg(cc_binary).set(
     True,
 ).build()
 
-opt_binary, _opt_binary_internal = with_cfg(cc_binary).set(
-    "compilation_mode",
-    "opt",
+fuzzer_cc_binary, _fuzzer_cc_binary_internal = with_cfg(cc_binary).set(
+    Label("@llvm//config:fuzzer"),
+    True,
+).set(
+    Label("@llvm//config:ubsan"),
+    True,
+).set(
+    Label("@llvm//config:host_fuzzer"),
+    True,
+).set(
+    Label("@llvm//config:host_ubsan"),
+    True,
 ).build()
+
+fuzzer_asan_cc_binary, _fuzzer_asan_cc_binary_internal = with_cfg(cc_binary).set(
+    Label("@llvm//config:fuzzer"),
+    True,
+).set(
+    Label("@llvm//config:host_fuzzer"),
+    True,
+).set(
+    Label("@llvm//config:asan"),
+    True,
+).set(
+    Label("@llvm//config:host_asan"),
+    True,
+).build()
+

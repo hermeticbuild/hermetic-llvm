@@ -79,10 +79,12 @@ bazel query 'kind(toolchain, @llvm//toolchain:all)'
 TODO: write about this
 
 ### Usage with Rust
-Rust builds commonly require a few flags:
+We highly recommend using [rules_rs](https://github.com/hermeticbuild/rules_rs) to seamlessly interop the Rust and CC toolchains. It is best to use the toolchains and platforms defined by that ruleset to configure everything properly.
+
+If you wish to setup things manually, you will likely require a few flags:
 - Rust passes `-lgcc_s` when linking, so you will want to set `--@llvm//config:experimental_stub_libgcc_s=True` flag to provide it.
 - Rust `cc-rs` crate does not properly account for `$AR` and `$ARFLAGS` env vars, so it does not work when `llvm-libtool-darwin` is used as the archiver. You will want to set `--@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_macos=False` to avoid failure in build scripts using `cc-rs`.
-- Rust forces `-no-pie` when linking musl targets, while we prefer `-static-pie`, which are incompatible. You can configure your platform with the `@llvm//constraints/pie:off` constraint_value to harmonize the link flags. Alternately, you can use the toolchains and platforms defined by [rules_rs](https://github.com/dzbarsky/rules_rs) to do this automatically. Currently you need the `zbarsky/toolchains` branch since the setup is experimental, but we are rapidly stabilizing it!
+- Rust forces `-no-pie` when linking musl targets, while we default to `-static-pie`, which are incompatible. You can configure your platform with the `@llvm//constraints/pie:off` constraint_value to harmonize the link flags.
 
 ## Supported platforms
 
@@ -267,15 +269,15 @@ https://github.com/dzbarsky/static-clang which provides stripped subsets of LLVM
 
 ## Thanks
 
-None of this would have been possible without the support of [zml.ai](https://zml.ai/) for whom this toolchain was initially created. They are building a **high performance inference suite** and this is by far the most impressive Bazel project I've worked on.
+None of this would have been possible without the support of [zml.ai](https://zml.ai/) for whom this toolchain was initially created. They are building a **high performance inference suite**.
 
 A particular thank you to [@steeve](https://github.com/steeve), the founder of [zml.ai](https://zml.ai) for planting the idea and providing guidance and support.
 
-Special mention for [@dzbarsky](https://github.com/dzbarsky), [@fmeum](https://github.com/fmeum), [@keith](https://github.com/keith), [@armandomontanez](https://github.com/armandomontanez) and the whole [bazelbuild/rules_cc](https://github.com/bazelbuild/rules_cc) team at Google for being supportive and reactive.
+Special mention for [@dzbarsky](https://github.com/dzbarsky), [@fmeum](https://github.com/fmeum), [@keith](https://github.com/keith), [@armandomontanez](https://github.com/armandomontanez) and others for their contributions, as well as [@trybka](https://github.com/trybka/) and the rest of the [bazelbuild/rules_cc](https://github.com/bazelbuild/rules_cc) team at Google for being supportive and reactive.
 
 ## In memory of
 
-This project is dedicated to the memory of my beloved cat "Koutchi" aka "Garçon" who was everything to me.
-To my little star dust <3
+This project is dedicated to the memory of Corentin's beloved cat "Koutchi" aka "Garçon" who was everything to him.
+To his little star dust <3
 
 ![IMG_1840 2](https://github.com/user-attachments/assets/333760d2-d2e1-4e69-9a20-6c3ead575b5e)

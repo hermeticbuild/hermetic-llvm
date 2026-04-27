@@ -9,5 +9,7 @@ bcr_test_module:
       name: Run test module
       bazel: ${{ bazel }}
       platform: ${{ platform }}
+      build_flags:
+        - "--experimental_remote_downloader="
       build_targets:
         - //:all

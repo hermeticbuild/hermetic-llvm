@@ -13,6 +13,8 @@ load(
     "asan_cc_binary",
     "cfi_cc_binary",
     "dfsan_cc_binary",
+    "fuzzer_asan_cc_binary",
+    "fuzzer_cc_binary",
     "lsan_cc_binary",
     "msan_cc_binary",
     "nsan_cc_binary",
@@ -24,6 +26,9 @@ load(
     "ubsan_cc_binary",
     "xray_cc_binary",
 )
+load(":bazel_version.bzl", "validate_static_library_compatible")
+
+_VALIDATE_STATIC_LIBRARY_COMPATIBLE = validate_static_library_compatible()
 
 cc_library(
     name = "objc_c_lib",
@@ -523,6 +528,7 @@ cc_library(
 cc_static_library(
     name = "duplicate_symbol_lib",
     tags = ["manual"],
+    target_compatible_with = _VALIDATE_STATIC_LIBRARY_COMPATIBLE,
     deps = [
         ":duplicate_symbol_a",
         ":duplicate_symbol_b",
@@ -540,6 +546,7 @@ cc_library(
 
 cc_static_library(
     name = "comm_symbol_static_lib",
+    target_compatible_with = _VALIDATE_STATIC_LIBRARY_COMPATIBLE,
     deps = [":comm_symbol_defs"],
 )
 
@@ -552,11 +559,90 @@ sh_test(
         "duplicate_symbol_a.cc",
         "duplicate_symbol_b.cc",
     ],
+    env_inherit = ["PATH"],
     tags = ["local"],
-    target_compatible_with = select({
+    target_compatible_with = _VALIDATE_STATIC_LIBRARY_COMPATIBLE + select({
         "@platforms//os:windows": ["@platforms//:incompatible"],
         "//conditions:default": [],
     }),
 )
 
 #######################################################
+
+fuzzer_cc_binary(
+    name = "fuzzer_main",
+    srcs = ["fuzzer_main.cc"],
+    target_compatible_with = select({
+        "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)
+
+exec_test(
+    name = "fuzzer_output_test",
+    srcs = ["fuzzer_output_test.sh"],
+    data = [":fuzzer_main"],
+    env = {
+        "BINARY": "$(rootpath :fuzzer_main)",
+    },
+    rule = sh_test,
+    tags = ["no-remote"],
+    target_compatible_with = select({
+        "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)
+
+fuzzer_asan_cc_binary(
+    name = "fuzzer_asan_main",
+    srcs = ["fuzzer_asan_main.cc"],
+    target_compatible_with = select({
+        "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)
+
+exec_test(
+    name = "fuzzer_asan_output_test",
+    srcs = ["fuzzer_sanitizer_output_test.sh"],
+    data = [":fuzzer_asan_main"],
+    env = {
+        "BINARY": "$(rootpath :fuzzer_asan_main)",
+        "EXPECTED_OUTPUT": "ERROR: AddressSanitizer: heap-use-after-free",
+        "EXPECT_NONZERO": "1",
+        "INPUT_TEXT": "ASAN",
+    },
+    rule = sh_test,
+    tags = ["no-remote"],
+    target_compatible_with = select({
+        "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)
+
+fuzzer_cc_binary(
+    name = "fuzzer_ubsan_main",
+    srcs = ["fuzzer_ubsan_main.cc"],
+    target_compatible_with = select({
+        "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)
+
+exec_test(
+    name = "fuzzer_ubsan_output_test",
+    srcs = ["fuzzer_sanitizer_output_test.sh"],
+    data = [":fuzzer_ubsan_main"],
+    env = {
+        "BINARY": "$(rootpath :fuzzer_ubsan_main)",
+        "EXPECTED_OUTPUT": "runtime error: signed integer overflow",
+        "EXPECT_NONZERO": "0",
+        "INPUT_TEXT": "UBSAN",
+    },
+    rule = sh_test,
+    tags = ["no-remote"],
+    target_compatible_with = select({
+        "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)

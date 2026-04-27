@@ -1,4 +1,22 @@
 alias(
+    name = "clang_rt.fuzzer.static",
+    actual = "@compiler-rt//:clang_rt.fuzzer.static",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "clang_rt.fuzzer_no_main.static",
+    actual = "@compiler-rt//:clang_rt.fuzzer_no_main.static",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "clang_rt.fuzzer_interceptors.static",
+    actual = "@compiler-rt//:clang_rt.fuzzer_interceptors.static",
+    visibility = ["//visibility:public"],
+)
+
+alias(
     name = "clang_rt.builtins.static",
     actual = "@compiler-rt//:clang_rt.builtins.static",
     visibility = ["//visibility:public"],

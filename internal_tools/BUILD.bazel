@@ -1,4 +1,3 @@
-load("@bazelrc-preset.bzl", "bazelrc_preset")
 load("@buildifier_prebuilt//:rules.bzl", "buildifier", "buildifier_test")
 
 buildifier(
@@ -24,9 +23,4 @@ buildifier_test(
         "no-remote-exec",
     ],
     workspace = "//:MODULE.bazel",
-)
-
-bazelrc_preset(
-    name = "preset",
-    doc_link_template = "https://registry.build/flag/bazel?filter={flag}",
 )

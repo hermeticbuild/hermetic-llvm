@@ -714,6 +714,41 @@ cc_args_list(
     }),
 )
 
+cc_args(
+    name = "fuzzer_compiler_flags",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:compile_actions",
+    ],
+    args = [
+        "-fsanitize=fuzzer",
+    ],
+)
+
+cc_args(
+    name = "fuzzer_linker_flags",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    args = [
+        "-fsanitize=fuzzer",
+    ],
+)
+
+cc_args_list(
+    name = "fuzzer_flags",
+    args = select({
+        "//config:fuzzer_enabled": [
+            ":fuzzer_compiler_flags",
+            ":fuzzer_linker_flags",
+        ],
+        "//config:host_fuzzer_enabled": [
+            ":fuzzer_compiler_flags",
+            ":fuzzer_linker_flags",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
 #######
 
 cc_args(

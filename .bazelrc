@@ -1,7 +1,23 @@
-########################
-# Import bazelrc presets
-try-import %workspace%/internal_tools/preset.bazelrc
-try-import %workspace%/../../internal_tools/preset.bazelrc
+common --enable_platform_specific_config
+common --experimental_fetch_all_coverage_outputs
+common --heap_dump_on_oom
+common --incompatible_default_to_explicit_init_py
+common --incompatible_enforce_starlark_utf8=error
+common --incompatible_modify_execution_info_additive
+common --incompatible_strict_action_env
+common --module_mirrors="https://bcr.cloudflaremirrors.com"
+common --nobuild_runfile_links
+common --noexperimental_check_external_repository_files
+common --nosandbox_default_allow_network
+common --repo_env="JAVA_HOME=../bazel_tools/jdk"
+common --reuse_sandbox_directories
+common --show_result=20
+common --test_output=errors
+
+common:ci --announce_rc
+common:ci --color=yes
+common:ci --show_timestamps
+test:ci --test_summary=terse
 
 # Don’t want to push a rules author to update their deps if not needed.
 # https://bazel.build/reference/command-line-reference#flag--check_direct_dependencies
@@ -44,8 +60,8 @@ common:rust    --@llvm//config:experimental_stub_libgcc_s=True
 
 common --bes_results_url=https://app.buildbuddy.io/invocation/
 common --bes_backend=grpcs://remote.buildbuddy.io
-# TODO(zbarsky): bzip2 downloads don't work properly...
 common --experimental_remote_downloader=grpcs://remote.buildbuddy.io
+common --grpc_keepalive_time=30s
 common --remote_cache=grpcs://remote.buildbuddy.io
 common --remote_cache_compression
 common --remote_download_toplevel
@@ -57,6 +73,9 @@ common --grpc_keepalive_time=30s
 common:remote --remote_executor=grpcs://remote.buildbuddy.io
 common:remote --jobs=800
 common:remote --extra_execution_platforms=@llvm//:rbe_platform
+
+common --per_file_copt=external/.*llvm-project.*@-Wno-thread-safety-analysis
+common --host_per_file_copt=external/.*llvm-project.*@-Wno-thread-safety-analysis
 
 # Load any settings specific to the current user.
 # .bazelrc.user should appear in .gitignore so that settings are not shared with team members

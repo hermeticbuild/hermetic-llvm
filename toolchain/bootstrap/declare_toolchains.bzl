@@ -1,20 +1,22 @@
+load("@bazel_features//:features.bzl", "bazel_features")
 load("@llvm_config//:version.bzl", "LLVM_VERSION_MAJOR")
+load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 load("@rules_cc//cc/toolchains:tool.bzl", "cc_tool")
 load("@rules_cc//cc/toolchains:tool_map.bzl", "cc_tool_map")
 load("//platforms:common.bzl", "SUPPORTED_TARGETS")
 load("//toolchain:cc_toolchain.bzl", "cc_toolchain")
 load(":bootstrap_binary.bzl", "bootstrap_binary", "bootstrap_directory")
 
+def _validate_static_library_tool(prefix):
+    if not bazel_features.cc.supports_starlarkified_toolchains:
+        return {}
+
+    return {
+        "@rules_cc//cc/toolchains/actions:validate_static_library": prefix + "/static-library-validator",
+    }
+
 def declare_tool_map(exec_os, exec_cpu):
     prefix = exec_os + "_" + exec_cpu
-
-    native.platform(
-        name = prefix + "_platform",
-        constraint_values = [
-            "@platforms//cpu:{}".format(exec_cpu),
-            "@platforms//os:{}".format(exec_os),
-        ],
-    )
 
     COMMON_TOOLS = {
         "@rules_cc//cc/toolchains/actions:assembly_actions": prefix + "/clang",
@@ -26,8 +28,7 @@ def declare_tool_map(exec_os, exec_cpu):
         "@rules_cc//cc/toolchains/actions:link_actions": prefix + "/lld",
         "@rules_cc//cc/toolchains/actions:objcopy_embed_data": prefix + "/llvm-objcopy",
         "@rules_cc//cc/toolchains/actions:strip": prefix + "/llvm-strip",
-        "@rules_cc//cc/toolchains/actions:validate_static_library": prefix + "/static-library-validator",
-    }
+    } | _validate_static_library_tool(prefix)
 
     cc_tool_map(
         name = prefix + "/default_tools",
@@ -45,15 +46,12 @@ def declare_tool_map(exec_os, exec_cpu):
 
     bootstrap_binary(
         name = prefix + "/bin/clang",
-        platform = prefix + "_platform",
         actual = "@llvm-project//llvm:llvm.stripped",
     )
 
     bootstrap_directory(
         name = prefix + "/clang_builtin_headers_include_directory",
         srcs = "@llvm-project//clang:builtin_headers_files",
-        # TODO(zbarsky): Probably shouldn't force platform here.
-        platform = prefix + "_platform",
         destination = prefix + "/lib/clang/{}/include".format(LLVM_VERSION_MAJOR),
         strip_prefix = "clang/lib/Headers",
     )
@@ -69,7 +67,6 @@ def declare_tool_map(exec_os, exec_cpu):
 
     bootstrap_binary(
         name = prefix + "/bin/clang++",
-        platform = prefix + "_platform",
         actual = "@llvm-project//llvm:llvm.stripped",
         # Copy instead of symlink so clang's InstalledDir matches the packaged tree.
         # This is crucial for properly locating the various linkers, since we don't use `-ld-path`.
@@ -87,8 +84,23 @@ def declare_tool_map(exec_os, exec_cpu):
 
     bootstrap_binary(
         name = prefix + "/bin/header-parser",
-        platform = prefix + "_platform",
         actual = "@llvm//tools/internal:header-parser",
+    )
+
+    cc_args(
+        name = prefix + "/header-parser-args",
+        actions = [
+            "@rules_cc//cc/toolchains/actions:cpp_header_parsing",
+        ],
+        data = [
+            prefix + "/bin/clang++",
+        ],
+        env = {
+            "LLVM_CLANGXX": "{clangxx}",
+        },
+        format = {
+            "clangxx": prefix + "/bin/clang++",
+        },
     )
 
     cc_tool(
@@ -102,20 +114,36 @@ def declare_tool_map(exec_os, exec_cpu):
 
     bootstrap_binary(
         name = prefix + "/bin/static-library-validator",
-        platform = prefix + "_platform",
         actual = "@llvm//tools/internal:static-library-validator",
     )
 
     bootstrap_binary(
         name = prefix + "/bin/llvm-nm",
-        platform = prefix + "_platform",
         actual = "@llvm-project//llvm:llvm.stripped",
     )
 
     bootstrap_binary(
         name = prefix + "/bin/c++filt",
-        platform = prefix + "_platform",
         actual = "@llvm-project//llvm:llvm.stripped",
+    )
+
+    cc_args(
+        name = prefix + "/static-library-validator-args",
+        actions = [
+            "@rules_cc//cc/toolchains/actions:validate_static_library",
+        ],
+        data = [
+            prefix + "/bin/c++filt",
+            prefix + "/bin/llvm-nm",
+        ],
+        env = {
+            "LLVM_CXXFILT": "{cxxfilt}",
+            "LLVM_NM": "{llvm_nm}",
+        },
+        format = {
+            "cxxfilt": prefix + "/bin/c++filt",
+            "llvm_nm": prefix + "/bin/llvm-nm",
+        },
     )
 
     cc_tool(
@@ -129,25 +157,21 @@ def declare_tool_map(exec_os, exec_cpu):
 
     bootstrap_binary(
         name = prefix + "/bin/ld.lld",
-        platform = prefix + "_platform",
         actual = "@llvm-project//llvm:llvm.stripped",
     )
 
     bootstrap_binary(
         name = prefix + "/bin/ld64.lld",
-        platform = prefix + "_platform",
         actual = "@llvm-project//llvm:llvm.stripped",
     )
 
     bootstrap_binary(
         name = prefix + "/bin/lld",
-        platform = prefix + "_platform",
         actual = "@llvm-project//llvm:llvm.stripped",
     )
 
     bootstrap_binary(
         name = prefix + "/bin/wasm-ld",
-        platform = prefix + "_platform",
         actual = "@llvm-project//llvm:llvm.stripped",
     )
 
@@ -164,7 +188,6 @@ def declare_tool_map(exec_os, exec_cpu):
 
     bootstrap_binary(
         name = prefix + "/bin/llvm-ar",
-        platform = prefix + "_platform",
         actual = "@llvm-project//llvm:llvm.stripped",
     )
 
@@ -175,7 +198,6 @@ def declare_tool_map(exec_os, exec_cpu):
 
     bootstrap_binary(
         name = prefix + "/bin/llvm-libtool-darwin",
-        platform = prefix + "_platform",
         actual = "@llvm-project//llvm:llvm.stripped",
     )
 
@@ -186,7 +208,6 @@ def declare_tool_map(exec_os, exec_cpu):
 
     bootstrap_binary(
         name = prefix + "/bin/llvm-dwp",
-        platform = prefix + "_platform",
         actual = "@llvm-project//llvm:llvm.stripped",
     )
 
@@ -197,7 +218,6 @@ def declare_tool_map(exec_os, exec_cpu):
 
     bootstrap_binary(
         name = prefix + "/bin/llvm-objcopy",
-        platform = prefix + "_platform",
         actual = "@llvm-project//llvm:llvm.stripped",
     )
 
@@ -208,13 +228,22 @@ def declare_tool_map(exec_os, exec_cpu):
 
     bootstrap_binary(
         name = prefix + "/bin/llvm-strip",
-        platform = prefix + "_platform",
         actual = "@llvm-project//llvm:llvm.stripped",
     )
 
     cc_tool(
         name = prefix + "/llvm-strip",
         src = prefix + "/bin/llvm-strip",
+        # TODO: Remove this once rules_cc includes validate_static_library in
+        # all_files, or cc_static_library uses the validate action's files
+        # directly. This hangs validator files off strip because strip is an
+        # exec-configured tool already included in rules_cc 0.2.18's legacy
+        # file groups.
+        data = [
+            prefix + "/bin/static-library-validator",
+            prefix + "/bin/c++filt",
+            prefix + "/bin/llvm-nm",
+        ],
     )
 
 def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
@@ -248,6 +277,10 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
                 "@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_macos_setting": ":{}_{}/tools_with_libtool".format(exec_os, exec_cpu),
                 "//conditions:default": ":{}_{}/default_tools".format(exec_os, exec_cpu),
             }),
+            extra_args = [
+                ":{}_{}/header-parser-args".format(exec_os, exec_cpu),
+                ":{}_{}/static-library-validator-args".format(exec_os, exec_cpu),
+            ],
         )
 
         for (target_os, target_cpu) in targets:

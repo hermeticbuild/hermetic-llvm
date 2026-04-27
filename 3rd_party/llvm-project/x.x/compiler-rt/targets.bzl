@@ -15,6 +15,7 @@ def atomic_helper_cc_library(name, pat, size, model):
         name = unique_filename,
         src = "lib/builtins/aarch64/lse.S",
         out = "{}.S".format(unique_filename),
+        allow_symlink = True,
     )
 
     cc_library(

@@ -121,7 +121,7 @@ jobs:
           bazel \
             --bazelrc=$GITHUB_WORKSPACE/.github/workflows/ci.bazelrc \
             --bazelrc=.bazelrc \
-            --experimental_remote_repo_contents_cache \
+            --noexperimental_remote_repo_contents_cache \
             test \
             --repository_cache= \
             --repo_contents_cache= \

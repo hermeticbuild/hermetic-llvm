@@ -1,0 +1,60 @@
+diff --git a/rs/experimental/toolchains/declare_rustc_toolchains.bzl b/rs/experimental/toolchains/declare_rustc_toolchains.bzl
+--- a/rs/experimental/toolchains/declare_rustc_toolchains.bzl
++++ b/rs/experimental/toolchains/declare_rustc_toolchains.bzl
+@@ -61,7 +61,8 @@ def declare_rustc_toolchains(
+             cargo_clippy = "{}cargo_clippy_bin".format(clippy_repo_label),
+             llvm_cov = "@llvm//tools:llvm-cov",
+             llvm_profdata = "@llvm//tools:llvm-profdata",
+-            rustc_lib = "{}rustc_lib".format(rustc_repo_label),
++            rust_objcopy = "{}rust-objcopy".format(rustc_repo_label),
++            rustc_lib = "{}rustc_lib_with_objcopy".format(rustc_repo_label),
+             allocator_library = None,
+             global_allocator_library = None,
+             binary_ext = select({
+diff --git a/rs/private/rustc_repository.bzl b/rs/private/rustc_repository.bzl
+--- a/rs/private/rustc_repository.bzl
++++ b/rs/private/rustc_repository.bzl
+@@ -7,12 +7,42 @@ load(
+ )
+ load(":rust_repository_utils.bzl", "RUST_REPOSITORY_COMMON_ATTR", "download_and_extract")
+ 
++def _symlink_rust_objcopy_shared_libraries(rctx, exec_triple):
++    rust_objcopy = rctx.path("lib/rustlib/{}/bin/rust-objcopy".format(exec_triple.str))
++    if not rust_objcopy.exists:
++        rust_objcopy = rctx.path("lib/rustlib/{}/bin/rust-objcopy.exe".format(exec_triple.str))
++    if not rust_objcopy.exists:
++        return
++
++    top_level_lib = rctx.path("lib")
++    rustlib_lib = "lib/rustlib/{}/lib".format(exec_triple.str)
++    rctx.file("{}/.generated".format(rustlib_lib), "")
++
++    for entry in top_level_lib.readdir():
++        # Rust's rust-objcopy has RUNPATH=$ORIGIN/../lib, so mirror its
++        # bundled runtime library into the location the binary expects.
++        if entry.basename.startswith("libLLVM"):
++            rctx.symlink(entry, "{}/{}".format(rustlib_lib, entry.basename))
++
++_RUSTC_LIB_WITH_OBJCOPY = """\
++filegroup(
++    name = "rustc_lib_with_objcopy",
++    srcs = [
++        ":rustc_lib",
++        ":rust-objcopy",
++    ],
++    visibility = ["//visibility:public"],
++)
++"""
++
+ def _rustc_repository_impl(rctx):
+     exec_triple = triple(rctx.attr.triple)
+     download_and_extract(rctx, "rustc", "rustc", exec_triple)
++    _symlink_rust_objcopy_shared_libraries(rctx, exec_triple)
+-    build_content = [BUILD_for_compiler(exec_triple)]
++    build_content = [BUILD_for_compiler(exec_triple, include_objcopy = True)]
+     if includes_rust_analyzer_proc_macro_srv(rctx.attr.version, rctx.attr.iso_date):
+         build_content.append(BUILD_for_rust_analyzer_proc_macro_srv(exec_triple))
++    build_content.append(_RUSTC_LIB_WITH_OBJCOPY)
+     rctx.file("BUILD.bazel", "\n".join(build_content))
+ 
+     return rctx.repo_metadata(reproducible = True)

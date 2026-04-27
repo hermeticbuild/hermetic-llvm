@@ -274,6 +274,16 @@ static bool Touch(const char *path) {
   return true;
 }
 
+static std::string RequiredEnv(const char *env_name) {
+  const char *from_env = getenv(env_name);
+  if (from_env && from_env[0] != '\0') {
+    return from_env;
+  }
+  fprintf(stderr, "static_library_validator: required env var %s is not set\n",
+          env_name);
+  exit(2);
+}
+
 int main(int argc, char **argv) {
   if (argc != 3) {
     fprintf(stderr,
@@ -281,18 +291,12 @@ int main(int argc, char **argv) {
     return 2;
   }
 
-  std::string self_path = argv[0] ? argv[0] : "";
-  std::string dir;
-  size_t slash = self_path.find_last_of('/');
-  if (slash == std::string::npos) {
-    fprintf(stderr,
-            "static_library_validator: expected argv[0] to include a "
-            "directory\n");
-    return 2;
-  }
-  dir = self_path.substr(0, slash);
-
-  std::vector<std::string> nm_args = {dir + "/llvm-nm", "-A", "-g", "-P"};
+  std::vector<std::string> nm_args = {
+      RequiredEnv("LLVM_NM"),
+      "-A",
+      "-g",
+      "-P",
+  };
   const char *darwin_target = getenv("DARWIN_TARGET");
   if (darwin_target && strcmp(darwin_target, "1") == 0) {
     nm_args.push_back("--no-weak");
@@ -334,7 +338,9 @@ int main(int argc, char **argv) {
   for (const auto &l : dup_lines) dup_block.append(l).push_back('\n');
 
   std::string demangled;
-  std::vector<std::string> filt_args = {dir + "/c++filt"};
+  std::vector<std::string> filt_args = {
+      RequiredEnv("LLVM_CXXFILT"),
+  };
   if (!ExecWithPipes(filt_args, dup_block, &demangled)) return 2;
 
   fprintf(stderr, "Duplicate symbols found in %s:\n", argv[1]);

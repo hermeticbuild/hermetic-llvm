@@ -1,5 +1,6 @@
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
-load("@rules_cc//cc/private/rules_impl:cc_shared_library.bzl", "GraphNodeInfo", "graph_structure_aspect")  # buildifier: disable=bzl-visibility
+load("@rules_cc//cc/private:graph_node_info.bzl", "GraphNodeInfo")  # buildifier: disable=bzl-visibility
+load("@rules_cc//cc/private/rules_impl:cc_shared_library.bzl", "graph_structure_aspect")  # buildifier: disable=bzl-visibility
 
 def _reset_sanitizers_impl(_settings, _attr):
     return {

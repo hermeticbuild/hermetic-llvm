@@ -2446,6 +2446,158 @@ cc_runtime_stage0_static_library(
 )
 
 ###
+### compiler-rt/lib/fuzzer/CMakeLists.txt.
+###
+
+LIBFUZZER_SOURCES = [
+    "FuzzerCrossOver.cpp",
+    "FuzzerDataFlowTrace.cpp",
+    "FuzzerDriver.cpp",
+    "FuzzerExtFunctionsDlsym.cpp",
+    "FuzzerExtFunctionsWeak.cpp",
+    "FuzzerExtFunctionsWindows.cpp",
+    "FuzzerExtraCounters.cpp",
+    "FuzzerExtraCountersDarwin.cpp",
+    "FuzzerExtraCountersWindows.cpp",
+    "FuzzerFork.cpp",
+    "FuzzerIO.cpp",
+    "FuzzerIOPosix.cpp",
+    "FuzzerIOWindows.cpp",
+    "FuzzerLoop.cpp",
+    "FuzzerMerge.cpp",
+    "FuzzerMutate.cpp",
+    "FuzzerSHA1.cpp",
+    "FuzzerTracePC.cpp",
+    "FuzzerUtil.cpp",
+    "FuzzerUtilDarwin.cpp",
+    "FuzzerUtilFuchsia.cpp",
+    "FuzzerUtilLinux.cpp",
+    "FuzzerUtilPosix.cpp",
+    "FuzzerUtilWindows.cpp",
+]
+
+filegroup(
+    name = "fuzzer_sources",
+    srcs = ["lib/fuzzer/" + f for f in LIBFUZZER_SOURCES],
+)
+
+LIBFUZZER_HEADERS = [
+    "FuzzerBuiltins.h",
+    "FuzzerBuiltinsMsvc.h",
+    "FuzzerCommand.h",
+    "FuzzerCorpus.h",
+    "FuzzerDataFlowTrace.h",
+    "FuzzerDefs.h",
+    "FuzzerDictionary.h",
+    "FuzzerExtFunctions.def",
+    "FuzzerExtFunctions.h",
+    "FuzzerFlags.def",
+    "FuzzerFork.h",
+    "FuzzerInterface.h",
+    "FuzzerInternal.h",
+    "FuzzerIO.h",
+    "FuzzerMerge.h",
+    "FuzzerMutate.h",
+    "FuzzerOptions.h",
+    "FuzzerPlatform.h",
+    "FuzzerRandom.h",
+    "FuzzerSHA1.h",
+    "FuzzerTracePC.h",
+    "FuzzerUtil.h",
+    "FuzzerValueBitMap.h",
+]
+
+filegroup(
+    name = "fuzzer_headers",
+    srcs = ["lib/fuzzer/" + f for f in LIBFUZZER_HEADERS],
+)
+
+FUZZER_CFLAGS = SANITIZER_COMMON_CFLAGS + [
+    "-fno-omit-frame-pointer",
+] + select({
+    "@platforms//os:windows": [
+        "-D_HAS_EXCEPTIONS=0",
+    ],
+    "//conditions:default": [],
+})
+
+cc_library(
+    name = "fuzzer",
+    srcs = [":fuzzer_sources"],
+    hdrs = [":fuzzer_headers"],
+    copts = FUZZER_CFLAGS,
+    implementation_deps = [
+        ":libcxx_headers",
+        ":sanitizers_interface_headers",
+    ],
+    includes = [
+        "include",
+        "lib/fuzzer",
+    ],
+    linkstatic = True,
+    alwayslink = True,
+)
+
+cc_library(
+    name = "fuzzer_main",
+    srcs = ["lib/fuzzer/FuzzerMain.cpp"],
+    hdrs = [":fuzzer_headers"],
+    copts = FUZZER_CFLAGS,
+    implementation_deps = [
+        ":libcxx_headers",
+        ":sanitizers_interface_headers",
+    ],
+    includes = [
+        "include",
+        "lib/fuzzer",
+    ],
+    linkstatic = True,
+    alwayslink = True,
+)
+
+cc_library(
+    name = "fuzzer_interceptors",
+    srcs = ["lib/fuzzer/FuzzerInterceptors.cpp"],
+    hdrs = [":fuzzer_headers"],
+    copts = FUZZER_CFLAGS,
+    implementation_deps = [
+        ":libcxx_headers",
+        ":sanitizers_interface_headers",
+    ],
+    includes = [
+        "include",
+        "lib/fuzzer",
+    ],
+    linkstatic = True,
+    alwayslink = True,
+)
+
+cc_runtime_stage0_static_library(
+    name = "clang_rt.fuzzer.static",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":fuzzer",
+        ":fuzzer_main",
+    ],
+)
+
+cc_runtime_stage0_static_library(
+    name = "clang_rt.fuzzer_no_main.static",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":fuzzer",
+    ],
+)
+
+cc_runtime_stage0_static_library(
+    name = "clang_rt.fuzzer_interceptors.static",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":fuzzer_interceptors",
+    ],
+)
+
+###
 ### compiler-rt/lib/asan/CMakeLists.txt.
 ###
 

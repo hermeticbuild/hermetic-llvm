@@ -118,6 +118,7 @@ copy_file(
     name = "__assertion_handler",
     src = "vendor/llvm/default_assertion_handler.in",
     out = "include/__assertion_handler",
+    allow_symlink = True,
 )
 
 copy_to_directory(

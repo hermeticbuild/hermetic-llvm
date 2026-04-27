@@ -32,6 +32,7 @@ cc_args(
             #TODO: should be on a config that match ld64 specifically
             "-Wl,-dead_strip",
         ],
+        "@platforms//os:windows": [],
         "//conditions:default": [
             #TODO: should be somehow done only if the choosen linker supports it
             "-Wl,--gc-sections",
@@ -50,6 +51,7 @@ cc_args(
         "//config:lsan_enabled": [],
         "@platforms//cpu:wasm32": [],
         "@platforms//cpu:wasm64": [],
+        "@platforms//os:windows": [],
         "//conditions:default": ["-Wl,--icf=safe"],
     }),
 )
@@ -233,9 +235,10 @@ cc_feature_set(
         ":dbg_stub",
         ":static_link_cpp_runtimes",
         ":parse_headers",
-        ":coverage_stub",
-        ":llvm_coverage_map_format",
-        ":gcc_coverage_map_format",
+        # TODO: Re-enable once coverage is supported
+        # ":coverage_stub",
+        # ":llvm_coverage_map_format",
+        # ":gcc_coverage_map_format",
         ":fully_static_link",
     ],
     visibility = ["//visibility:public"],
