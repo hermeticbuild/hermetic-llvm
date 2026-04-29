@@ -20,10 +20,10 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Mount bazel caches
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |
             ~/.cache/bazel-repo
@@ -38,14 +38,14 @@ jobs:
         run: bash .github/workflows/llvm-prebuilt.sh
 
       - name: Upload workflow artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: llvm-toolchain-minimal-${{ steps.build_and_package.outputs.version }}
           path: release/*
 
       - name: Attest release artifacts
         id: attest
-        uses: actions/attest@v4
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4
         with:
           subject-path: |
             release/*.tar.zst
@@ -58,7 +58,7 @@ jobs:
             "release/llvm-toolchain-minimal-${{ steps.build_and_package.outputs.version }}.attestation.jsonl"
 
       - name: Upload attestation bundle artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: llvm-toolchain-minimal-${{ steps.build_and_package.outputs.version }}.attestation
           path: release/llvm-toolchain-minimal-${{ steps.build_and_package.outputs.version }}.attestation.jsonl
@@ -66,7 +66,7 @@ jobs:
 
       - name: Publish release
         # TODO(cerisier): Revert me to @v2 once they fixed make_latest broken behavior starting at v2.5.0.
-        uses: softprops/action-gh-release@v2.4.2
+        uses: softprops/action-gh-release@5be0e66d93ac7ed76da52eca8bb058f665c3a5fe # v2.4.2
         with:
           tag_name: ${{ github.ref_name }}
           target_commitish: ${{ github.sha }}
