@@ -32,11 +32,16 @@ config_setting(
 
 copy_to_directory(
     name = "libunwind_library_search_directory",
-    srcs = [
-        ":unwind",
-    ] + select({
+    srcs = select({
+        "@platforms//os:linux": [":libunwind.static"],
+        "//conditions:default": [":unwind"],
+    }) + select({
         ":stub_libgcc_s": [":gcc_s"],
         "//conditions:default": [],
     }),
+    include_external_repositories = ["*libunwind"],
+    replace_prefixes = {
+        "libunwind.static_/liblibunwind.static.a": "libunwind.a",
+    },
     visibility = ["//visibility:public"],
 )
