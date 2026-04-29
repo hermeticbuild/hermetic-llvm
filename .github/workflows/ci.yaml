@@ -84,8 +84,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Add windows-11-arm when bazel supports it better.
-        os: [windows-latest]
+        os: [windows-latest, windows-11-arm]
         bazel_version: [latest]
         folder:
           - "e2e/rules_cc"
