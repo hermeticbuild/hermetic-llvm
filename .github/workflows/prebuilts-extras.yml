@@ -7,7 +7,10 @@ on:
   workflow_dispatch:
 
 permissions:
+  attestations: write
   contents: write
+  artifact-metadata: write
+  id-token: write
 
 concurrency:
   group: prebuilts-extras-${{ github.ref }}
@@ -40,6 +43,27 @@ jobs:
           name: toolchain-extra-prebuilts-${{ steps.build_and_package.outputs.version }}
           path: release/*
 
+      - name: Attest release artifacts
+        id: attest
+        uses: actions/attest@v4
+        with:
+          subject-path: |
+            release/*.tar.zst
+            release/SHA256.txt
+
+      - name: Normalize attestation bundle filename
+        run: |
+          mv \
+            "${{ steps.attest.outputs.bundle-path }}" \
+            "release/toolchain-extra-prebuilts-${{ steps.build_and_package.outputs.version }}.attestation.jsonl"
+
+      - name: Upload attestation bundle artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: toolchain-extra-prebuilts-${{ steps.build_and_package.outputs.version }}.attestation
+          path: release/toolchain-extra-prebuilts-${{ steps.build_and_package.outputs.version }}.attestation.jsonl
+          if-no-files-found: error
+
       - name: Publish release
         # TODO(cerisier): Revert me to @v2 once they fixed make_latest broken behavior starting at v2.5.0.
         uses: softprops/action-gh-release@v2.4.2
@@ -50,6 +74,7 @@ jobs:
           files: |
             release/*.tar.zst
             release/SHA256.txt
+            release/*.attestation.jsonl
           overwrite_files: false
           draft: false
           prerelease: false
