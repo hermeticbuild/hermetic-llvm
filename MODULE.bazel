@@ -113,14 +113,6 @@ mingw = use_extension("//runtimes/mingw/extension:mingw.bzl", "mingw")
 use_repo(mingw, "mingw")
 
 osx = use_extension("//extensions:osx.bzl", "osx")
-osx.from_archive(
-    sha256 = "edc7ce9b8f09e0c7a39aaa714f941b4c2597f333ec1ffe59a14d67eb36cdb7e7",
-    strip_prefix = "Payload/Library/Developer/CommandLineTools/SDKs/MacOSX26.4.sdk",
-    type = "pkg",
-    urls = [
-        "https://swcdn.apple.com/content/downloads/60/13/122-35686-A_30JUXWIJFR/ck0gzuw5qccefzm3ptlwou3pu6a55d0o02/CLTools_macOSNMOS_SDK.pkg",
-    ],
-)
 use_repo(osx, "macos_sdk")
 
 glibc = use_extension("//runtimes/glibc/extension:glibc.bzl", "glibc")

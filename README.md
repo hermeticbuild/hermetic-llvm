@@ -141,8 +141,11 @@ MSVCRT-based MinGW and native MSVC targets are not yet supported.
 
 Cross-compiling to macOS from any host is supported.
 
-By default, the official macOS SDK is downloaded from Apple CDN and used hermetically.
-We use a cross-platform reimplementation of `pkgutil` to unpack SDK packages, which works on all hosts.
+By default, Zig's macOS sysroot is used. If macOS SDK frameworks or
+additional SDK libraries are requested, the toolchain falls back to
+downloading the official macOS SDK from Apple CDN. We use a
+cross-platform reimplementation of `pkgutil` to unpack SDK packages,
+which works on all hosts.
 
 ### RISC-V
 

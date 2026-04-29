@@ -132,13 +132,34 @@ cc_args_list(
 cc_args_list(
     name = "libcxx_library_search_paths",
     args = select({
-        # libc++ is provided by the macOS SDK.
-        "@platforms//os:macos": [],
+        "@platforms//os:macos": [
+            "@macos_sdk//sysroot:libcxx_library_search_paths",
+        ],
         "@platforms//os:linux": [
             "//toolchain/args:libcxx_library_search_paths",
         ],
         "@platforms//os:windows": [
             "//toolchain/args:libcxx_library_search_paths",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+cc_args_list(
+    name = "libcxx_headers_include_search_paths",
+    args = select({
+        "@platforms//os:macos": [
+            "@macos_sdk//sysroot:libcxx_headers_include_search_paths",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+cc_args_list(
+    name = "libcxx_runtime_link_flags",
+    args = select({
+        "@platforms//os:macos": [
+            "@macos_sdk//sysroot:libcxx_runtime_link_flags",
         ],
         "//conditions:default": [],
     }),
@@ -166,7 +187,9 @@ cc_args_list(
     name = "sysroot_flags",
     args = select({
         "@platforms//os:macos": [
-            "//toolchain/args/macos:macos_sdk_sysroot",
+            "@macos_sdk//sysroot:sysroot_flags",
+            "@macos_sdk//sysroot:darwin_headers_include_search_paths",
+            "@macos_sdk//sysroot:darwin_library_search_paths",
         ],
         "//conditions:default": [
             "//toolchain/args:empty_sysroot_flags",
@@ -187,7 +210,9 @@ cc_args_list(
 cc_args_list(
     name = "stdlib",
     args = select({
-        "@platforms//os:macos": [],
+        "@platforms//os:macos": [
+            "@macos_sdk//sysroot:stdlib_flags",
+        ],
         "//conditions:default": [
             "//toolchain/args:stdlib",
         ],
@@ -216,7 +241,7 @@ cc_args_list(
     name = "macos_toolchain_args",
     args = [
         "//toolchain/args/macos:macos_minimum_os_flags",
-        "//toolchain/args/macos:macos_default_framework_flags",
+        "@macos_sdk//sysroot:default_framework_flags",
     ],
 )
 
@@ -278,6 +303,7 @@ cc_args_list(
         "//toolchain/args:no_absolute_paths_for_builtins",
         "//toolchain/args:deterministic_compile_flags",
         "//toolchain/args:module_map",
+        ":libcxx_headers_include_search_paths",
         ":sysroot_flags",
         ":hermetic_compile_flags",
 
@@ -303,6 +329,7 @@ cc_args_list(
         "//toolchain/args:fuse_ld",
         "//toolchain/args:lto_plugin_target_flags",
         ":libcxx_library_search_paths",
+        ":libcxx_runtime_link_flags",
         ":libunwind_library_search_paths",
         ":rtlib",
         ":stdlib",

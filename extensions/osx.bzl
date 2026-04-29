@@ -12,6 +12,43 @@ _DEFAULT_FRAMEWORKS = [
     "SystemConfiguration",
 ]
 
+_DEFAULT_ZIG_LIBC_ARCHIVE = struct(
+    sha256 = "553334a7d6453baaa3cdaace52c1cd1044f415c35355569bc8a7408cf295a1bc",
+    strip_prefix = "zig/lib/libc",
+    type = "tar.gz",
+    urls = [
+        "https://codeberg.org/ziglang/zig/archive/5cc281e7232b9f1bc5f4d732e4a37fb5df02f780.tar.gz",
+    ],
+)
+
+_DEFAULT_APPLE_SDK_ARCHIVE = struct(
+    sha256 = "edc7ce9b8f09e0c7a39aaa714f941b4c2597f333ec1ffe59a14d67eb36cdb7e7",
+    strip_prefix = "Payload/Library/Developer/CommandLineTools/SDKs/MacOSX26.4.sdk",
+    type = "pkg",
+    urls = [
+        "https://swcdn.apple.com/content/downloads/60/13/122-35686-A_30JUXWIJFR/ck0gzuw5qccefzm3ptlwou3pu6a55d0o02/CLTools_macOSNMOS_SDK.pkg",
+    ],
+)
+
+def _declare_zig_libc_sdk(from_archive):
+    http_bsdtar_archive(
+        name = "macos_sdk",
+        add_prefix = "sysroot",
+        files = {
+            "sysroot/BUILD.bazel": "//3rd_party/macos_sdk:ZigLibc.BUILD.bazel",
+        },
+        includes = [
+            "darwin",
+            "darwin/*",
+            "include/any-darwin-any",
+            "include/any-darwin-any/*",
+        ],
+        sha256 = from_archive.sha256,
+        strip_prefix = from_archive.strip_prefix,
+        type = from_archive.type,
+        urls = from_archive.urls,
+    )
+
 def _get_from_archive(mctx):
     module_selected_archive = None
 
@@ -28,27 +65,9 @@ def _get_from_archive(mctx):
 
         module_selected_archive = module_archives[0]
 
-    if module_selected_archive != None:
-        return module_selected_archive
+    return module_selected_archive
 
-    fail("Missing osx.from_archive(...): set osx.from_archive(urls = [...], sha256 = ..., strip_prefix = ..., type = ...) in your MODULE.bazel")
-
-def _osx_extension_impl(mctx):
-    frameworks = []
-    experimental_include_all_sdk_libs = False
-    from_archive = _get_from_archive(mctx)
-
-    for module in mctx.modules:
-        for frameworks_tag in module.tags.frameworks:
-            frameworks.extend(frameworks_tag.names)
-        if len(module.tags.experimental_include_all_sdk_libs) > 0:
-            experimental_include_all_sdk_libs = True
-
-    experimental_include_all_sdk_libs = mctx.getenv("BAZEL_MACOS_EXPERIMENTAL_INCLUDE_ALL_SDK_LIBS") == "1"
-    frameworks_env = mctx.getenv("BAZEL_MACOS_FRAMEWORKS")
-    if frameworks_env:
-        frameworks = [f.strip() for f in frameworks_env.split(",") if f.strip()]
-
+def _declare_apple_sdk(from_archive, frameworks, experimental_include_all_sdk_libs):
     if not frameworks:
         frameworks = _DEFAULT_FRAMEWORKS
 
@@ -172,6 +191,32 @@ def _osx_extension_impl(mctx):
             type = from_archive.type,
             **archive_kwargs
         )
+
+def _osx_extension_impl(mctx):
+    frameworks = []
+    experimental_include_all_sdk_libs = False
+    from_archive = _get_from_archive(mctx)
+
+    for module in mctx.modules:
+        for frameworks_tag in module.tags.frameworks:
+            frameworks.extend(frameworks_tag.names)
+        if len(module.tags.experimental_include_all_sdk_libs) > 0:
+            experimental_include_all_sdk_libs = True
+
+    experimental_include_all_sdk_libs = experimental_include_all_sdk_libs or mctx.getenv("BAZEL_MACOS_EXPERIMENTAL_INCLUDE_ALL_SDK_LIBS") == "1"
+    frameworks_env = mctx.getenv("BAZEL_MACOS_FRAMEWORKS")
+    if frameworks_env:
+        frameworks = [f.strip() for f in frameworks_env.split(",") if f.strip()]
+
+    use_apple_sdk = from_archive or frameworks or experimental_include_all_sdk_libs
+    if use_apple_sdk:
+        _declare_apple_sdk(
+            from_archive = from_archive or _DEFAULT_APPLE_SDK_ARCHIVE,
+            frameworks = frameworks,
+            experimental_include_all_sdk_libs = experimental_include_all_sdk_libs,
+        )
+    else:
+        _declare_zig_libc_sdk(_DEFAULT_ZIG_LIBC_ARCHIVE)
 
     metadata_kwargs = {}
     if bazel_features.external_deps.extension_metadata_has_reproducible:

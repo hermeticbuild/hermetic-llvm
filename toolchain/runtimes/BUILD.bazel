@@ -163,6 +163,16 @@ bzl_library(
     ],
 )
 
+bzl_library(
+    name = "filegroup",
+    srcs = ["filegroup.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@llvm//toolchain/runtimes:with_cfg_runtimes_common",
+        "@with_cfg.bzl//:with_cfg",
+    ],
+)
+
 # TODO: Depends on private API that isn't visible
 # bzl_library(
 #     name = "cc_unsanitized_library",

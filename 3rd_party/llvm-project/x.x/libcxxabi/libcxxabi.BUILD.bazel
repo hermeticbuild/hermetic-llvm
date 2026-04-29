@@ -154,6 +154,7 @@ cc_library(
         "src/**/*.h",
         "src/**/*.def",
     ]),
+    visibility = ["@llvm//runtimes/libcxx:__pkg__"],
 )
 
 cc_runtime_stage0_static_library(
