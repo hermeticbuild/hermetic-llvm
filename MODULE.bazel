@@ -97,11 +97,14 @@ llvm = use_extension("//extensions:llvm.bzl", "llvm")
 llvm.configure(
     targets = [
         "AArch64",
-        "RISCV",
-        "X86",
-        "WebAssembly",
+        "AMDGPU",
+        "ARM",
+        "BPF",
         "NVPTX",
         "RISCV",
+        "SystemZ",
+        "WebAssembly",
+        "X86",
     ],
 )
 use_repo(llvm, "llvm-project")
