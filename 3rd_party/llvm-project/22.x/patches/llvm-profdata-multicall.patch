@@ -1575,11 +1575,8 @@ diff --git a/utils/bazel/llvm-project-overlay/llvm/driver.bzl b/utils/bazel/llvm
 index e38c681370ed1..331e3f7e0db1f 100644
 --- a/utils/bazel/llvm-project-overlay/llvm/driver.bzl
 +++ b/utils/bazel/llvm-project-overlay/llvm/driver.bzl
-@@ -28,6 +28,7 @@ _TOOLS = {
-     "llvm-nm": "//llvm:llvm-nm-lib",
+@@ -29,3 +29,4 @@ _TOOLS = {
      "llvm-objcopy": "//llvm:llvm-objcopy-lib",
      "llvm-objdump": "//llvm:llvm-objdump-lib",
 +    "llvm-profdata": "//llvm:llvm-profdata-lib",
      "llvm-rc": "//llvm:llvm-rc-lib",
-     "llvm-readobj": "//llvm:llvm-readobj-lib",
-     "llvm-size": "//llvm:llvm-size-lib",
