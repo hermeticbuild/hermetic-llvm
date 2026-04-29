@@ -31,6 +31,7 @@ load("@llvm//toolchain/runtimes:cc_runtime_library.bzl", "cc_runtime_stage0_libr
 package(default_visibility = ["//visibility:public"])
 
 exports_files([
+    "mingw-w64-crt/crt/CRT_fp8.c",
     "mingw-w64-crt/crt/crtbegin.c",
     "mingw-w64-crt/crt/crtdll.c",
     "mingw-w64-crt/crt/crtexe.c",

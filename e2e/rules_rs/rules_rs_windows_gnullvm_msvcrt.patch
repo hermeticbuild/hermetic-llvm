@@ -1,0 +1,12 @@
+diff --git a/rs/experimental/platforms/triples.bzl b/rs/experimental/platforms/triples.bzl
+--- a/rs/experimental/platforms/triples.bzl
++++ b/rs/experimental/platforms/triples.bzl
+@@ -20,6 +20,8 @@ def triple_to_constraint_set(target_triple):
+         else:
+             constraints.append("@llvm//constraints/libc:gnu.2.28")
+     elif t.system == "windows":
+         constraints.append(_WINDOWS_ABI_CONSTRAINTS[t.abi])
++        if t.abi == "gnullvm":
++            constraints.append("@llvm//toolchain:windows_crt_msvcrt")
+ 
+     return constraints

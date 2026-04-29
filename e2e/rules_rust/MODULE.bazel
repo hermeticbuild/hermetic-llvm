@@ -92,5 +92,17 @@ crate.spec(
     package = "serde_derive",
     version = "1.0.228",
 )
-crate.from_specs()
+crate.from_specs(
+    supported_platform_triples = [
+        "aarch64-apple-darwin",
+        "aarch64-pc-windows-msvc",
+        "aarch64-unknown-linux-gnu",
+        "riscv64gc-unknown-linux-gnu",
+        "wasm32-unknown-unknown",
+        "wasm32-wasip1",
+        "x86_64-pc-windows-msvc",
+        "x86_64-unknown-linux-gnu",
+        "x86_64-unknown-nixos-gnu",
+    ],
+)
 use_repo(crate, "crates")

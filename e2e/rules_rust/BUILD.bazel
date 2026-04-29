@@ -7,6 +7,22 @@ filegroup(
     srcs = ["@crates//:serde_derive"],
 )
 
+platform(
+    name = "windows_aarch64",
+    constraint_values = [
+        "@llvm//toolchain:windows_crt_msvcrt",
+    ],
+    parents = ["@llvm//platforms:windows_aarch64"],
+)
+
+platform(
+    name = "windows_x86_64",
+    constraint_values = [
+        "@llvm//toolchain:windows_crt_msvcrt",
+    ],
+    parents = ["@llvm//platforms:windows_x86_64"],
+)
+
 rust_binary_cross_build_test_suite(
     name = "hello_world",
     srcs = ["src/main.rs"],
@@ -14,8 +30,8 @@ rust_binary_cross_build_test_suite(
         "@llvm//platforms:linux_x86_64": "x86-64",
         "@llvm//platforms:linux_aarch64": "aarch64",
         "@llvm//platforms:linux_riscv64": "riscv64",
-        "@llvm//platforms:windows_x86_64": "x86-64",
-        "@llvm//platforms:windows_aarch64": "aarch64",
+        ":windows_x86_64": "x86-64",
+        ":windows_aarch64": "aarch64",
         # "@llvm//platforms:macos_x86_64": "x86-64",
         # "@llvm//platforms:macos_aarch64": "aarch64",
     },

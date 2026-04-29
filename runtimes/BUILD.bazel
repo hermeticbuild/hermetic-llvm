@@ -140,6 +140,7 @@ copy_to_directory(
 copy_to_directory(
     name = "crt_objects_directory_windows",
     srcs = [
+        "//runtimes/mingw:CRT_fp8.o",
         "//runtimes/mingw:crt2.o",
         "//runtimes/mingw:crt2u.o",
         "//runtimes/mingw:crtbegin.o",

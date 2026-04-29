@@ -448,6 +448,17 @@ MINGW_CRT_OBJECT_COPTS = MINGW_CRT_COMMON_COPTS + [
 ]
 
 crt_object(
+    name = "mingw_crt_fp8",
+    srcs = ["@mingw//:mingw-w64-crt/crt/CRT_fp8.c"],
+    out = "CRT_fp8.o",
+    copts = MINGW_CRT_OBJECT_COPTS,
+    implementation_deps = [
+        "@mingw//:mingw_headers",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+crt_object(
     name = "mingw_crtbegin",
     srcs = ["@mingw//:mingw-w64-crt/crt/crtbegin.c"],
     out = "crtbegin.o",

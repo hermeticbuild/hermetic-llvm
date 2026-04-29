@@ -6,7 +6,6 @@ MINGW32_TEXTUAL_HDRS = [
 ]
 
 MINGW32_SRCS = [
-    "crt/CRT_fp8.c",
     "crt/dll_argv.c",
     "crt/gccmain.c",
     "crt/natstart.c",
