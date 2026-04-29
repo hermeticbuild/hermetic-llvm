@@ -5,7 +5,7 @@ load("@bazel_skylib//rules:common_settings.bzl", "string_setting")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//toolchain/args:llvm_target_triple.bzl", "LLVM_TARGET_TRIPLE")
 load("//toolchain/runtimes:cc_stage0_object.bzl", "cc_stage0_object")
-load(":copy_to_resource_directory.bzl", "compose_resource_directory_srcs", "copy_to_resource_directory")
+load(":copy_to_resource_directory.bzl", "copy_to_resource_directory")
 
 exports_files(["module_map.BUILD.bazel"])
 

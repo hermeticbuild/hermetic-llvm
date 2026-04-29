@@ -20,31 +20,6 @@ TRIPLE_SELECT_DICT = {
     "@llvm//platforms/config:none_wasm64": "wasm64-unknown-unknown",
 }
 
-def compose_resource_directory_srcs(always, optional = None):
-    """Builds a resource-directory src mapping with optional config-gated entries.
-
-    Args:
-        always: A dict mapping labels to output basenames that are always included.
-        optional: An optional dict mapping config-setting labels to dicts of
-            label -> output basename entries. Each optional dict is merged into
-            the result when its condition matches, or skipped otherwise.
-
-    Returns:
-        A label_keyed_string_dict-compatible value for copy_to_resource_directory.
-    """
-    srcs = dict(always)
-
-    if optional == None:
-        optional = {}
-
-    for condition, entries in optional.items():
-        srcs = srcs | select({
-            condition: entries,
-            "//conditions:default": {},
-        })
-
-    return srcs
-
 def _copy_to_resource_directory_rule_impl(ctx):
     # Private staging folder inside the output-dir layout before we rewrite prefixes.
     staging_prefix = "_%s_staging" % ctx.label.name

@@ -2681,6 +2681,10 @@ cc_runtime_stage0_static_library(
     visibility = ["//visibility:public"],
     deps = [
         ":fuzzer_interceptors",
+    ],
+)
+
+cc_runtime_stage0_static_library(
     name = "clang_rt.profile.static",
     visibility = ["//visibility:public"],
     deps = [
