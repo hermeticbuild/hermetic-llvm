@@ -32,10 +32,8 @@ _LLVM_TOOLS = [
     "sancov",
 ]
 
-def _bootstrap_transition_impl(_settings, attr):
-    return {
-        "//command_line_option:platforms": str(attr.platform),
-
+def _bootstrap_transition_impl(settings, attr):
+    transition_settings = {
         # we don't want to pass sanitizers up the compiler toolchain for now
         "//config:ubsan": False,
         "//config:cfi": False,
@@ -68,9 +66,18 @@ def _bootstrap_transition_impl(_settings, attr):
         "@llvm-project//llvm:driver-tools": _LLVM_TOOLS,
     }
 
+    if attr.platform:
+        transition_settings["//command_line_option:platforms"] = str(attr.platform)
+    else:
+        transition_settings["//command_line_option:platforms"] = settings["//command_line_option:platforms"]
+
+    return transition_settings
+
 bootstrap_transition = transition(
     implementation = _bootstrap_transition_impl,
-    inputs = [],
+    inputs = [
+        "//command_line_option:platforms",
+    ],
     outputs = [
         "//command_line_option:platforms",
         "//config:ubsan",
@@ -133,93 +140,8 @@ bootstrap_binary = rule(
             mandatory = True,
         ),
         "platform": attr.label(
-            mandatory = True,
-        ),
-        "symlink": attr.bool(
-            default = True,
-            doc = "If set to False, will copy the tool instead of symlinking",
-        ),
-    },
-    toolchains = COPY_FILE_TOOLCHAINS,
-)
-
-# TODO(zbarsky): This should replace bootstrap_binary once rules_cc is fixed.
-def _exec_bootstrap_transition_impl(_settings, _attr):
-    return {
-        "//config:ubsan": False,
-        "//config:cfi": False,
-        "//config:msan": False,
-        "//config:dfsan": False,
-        "//config:nsan": False,
-        "//config:safestack": False,
-        "//config:rtsan": False,
-        "//config:tysan": False,
-        "//config:tsan": False,
-        "//config:asan": False,
-        "//config:lsan": False,
-        "//config:host_ubsan": False,
-        "//config:host_cfi": False,
-        "//config:host_msan": False,
-        "//config:host_dfsan": False,
-        "//config:host_nsan": False,
-        "//config:host_safestack": False,
-        "//config:host_rtsan": False,
-        "//config:host_tysan": False,
-        "//config:host_tsan": False,
-        "//config:host_asan": False,
-        "//config:host_lsan": False,
-
-        # we are compiling final programs, so we want all runtimes.
-        "//toolchain:runtime_stage": "complete",
-
-        # We want to build those binaries using the prebuilt compiler toolchain
-        "//toolchain:source": "prebuilt",
-
-        # Enable the same set of tools we provide with prebuilts.
-        "@llvm-project//llvm:driver-tools": _LLVM_TOOLS,
-    }
-
-exec_bootstrap_transition = transition(
-    implementation = _exec_bootstrap_transition_impl,
-    inputs = [],
-    outputs = [
-        "//config:ubsan",
-        "//config:cfi",
-        "//config:msan",
-        "//config:dfsan",
-        "//config:nsan",
-        "//config:safestack",
-        "//config:rtsan",
-        "//config:tysan",
-        "//config:tsan",
-        "//config:asan",
-        "//config:lsan",
-        "//config:host_ubsan",
-        "//config:host_cfi",
-        "//config:host_msan",
-        "//config:host_dfsan",
-        "//config:host_nsan",
-        "//config:host_safestack",
-        "//config:host_rtsan",
-        "//config:host_tysan",
-        "//config:host_tsan",
-        "//config:host_asan",
-        "//config:host_lsan",
-        "//toolchain:runtime_stage",
-        "//toolchain:source",
-        "@llvm-project//llvm:driver-tools",
-    ],
-)
-
-# TODO(zbarsky): This should replace bootstrap_binary once rules_cc is fixed.
-exec_bootstrap_binary = rule(
-    implementation = _bootstrap_binary_impl,
-    executable = True,
-    attrs = {
-        "actual": attr.label(
-            cfg = exec_bootstrap_transition,
-            allow_single_file = True,
-            mandatory = True,
+            default = None,
+            doc = "If set, build the actual binary for this platform instead of the incoming target platform.",
         ),
         "symlink": attr.bool(
             default = True,
@@ -254,7 +176,8 @@ bootstrap_directory = rule(
             mandatory = True,
         ),
         "platform": attr.label(
-            mandatory = True,
+            default = None,
+            doc = "If set, collect sources under this platform instead of the incoming target platform.",
         ),
         "strip_prefix": attr.string(mandatory = True),
         "destination": attr.string(mandatory = True),
