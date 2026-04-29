@@ -55,15 +55,15 @@ LLVM_TOOLCHAIN_MINIMAL_SHA256 = {
 ]
 
 TOOLCHAIN_EXTRAS_SHA256 = {
-    "darwin-amd64": "e16e942aa8e3018cbc0a098154b0b6b7925c73151e23e0c607836909f2aa3761",
-    "darwin-arm64": "519984b3204f84dbb9009c364ba6ce1c96477d08f2074fb76f02f1ff7a11bfd5",
-    "linux-amd64-musl": "2f61bffaec6fee9d55061a1968ca04041e1a1b4f963ae09ca8bcbec98c35e84e",
-    "linux-arm64-musl": "4c5a6279ed64f897f8dad031cd701738ce1eb920370d8b09c38b4d9aee4f3163",
-    "windows-amd64-gnu": "9b78332945903245b854ff50335be762b5d047e054dc7a7a0bf0e2a33c6bc32f",
-    "windows-arm64-gnu": "4483741aad28154d7799d64b74593fd152d00eedaec48c56356d1843eed4d3f3",
+    "darwin-amd64": "7f982146b033650295a568e2db2795753d6610919c4d0e90bc4baf53dfb88d04",
+    "darwin-arm64": "4244309df7e1cb3c602597dc30b2cf25064960b877e8087dfaaa2c3f57580588",
+    "linux-amd64-musl": "418a27a0ab8ecf46e2e00bd4381efc0bcb54c28312261c4f36114842e5ecb20e",
+    "linux-arm64-musl": "5f6bcc5a806902de3e6564675bb9a75cdcbc6167af05e0c888b9930b8890b2e1",
+    "windows-amd64-gnu": "a4d8f7893d3d373a928fe4d7be3fb113d3c73101f967718973518acb2a43544e",
+    "windows-arm64-gnu": "4a3835588fe46a5d48424d57e8a1c2743215143100bb4fe10b918374787b3505",
 }
 
-TOOLCHAIN_EXTRAS_VERSION = "20260425"
+TOOLCHAIN_EXTRAS_VERSION = "20260429"
 
 [
     http_archive(
