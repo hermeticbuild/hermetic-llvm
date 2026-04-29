@@ -18,6 +18,14 @@ def _validate_static_library_tool(prefix):
 def declare_tool_map(exec_os, exec_cpu):
     prefix = exec_os + "_" + exec_cpu
 
+    native.platform(
+        name = prefix + "_platform",
+        constraint_values = [
+            "@platforms//cpu:{}".format(exec_cpu),
+            "@platforms//os:{}".format(exec_os),
+        ],
+    )
+
     COMMON_TOOLS = {
         "@rules_cc//cc/toolchains/actions:assembly_actions": prefix + "/clang",
         "@rules_cc//cc/toolchains/actions:c_compile": prefix + "/clang",
@@ -46,12 +54,15 @@ def declare_tool_map(exec_os, exec_cpu):
 
     bootstrap_binary(
         name = prefix + "/bin/clang",
+        platform = prefix + "_platform",
         actual = "@llvm-project//llvm:llvm.stripped",
     )
 
     bootstrap_directory(
         name = prefix + "/clang_builtin_headers_include_directory",
         srcs = "@llvm-project//clang:builtin_headers_files",
+        # TODO(zbarsky): Probably shouldn't force platform here.
+        platform = prefix + "_platform",
         destination = prefix + "/lib/clang/{}/include".format(LLVM_VERSION_MAJOR),
         strip_prefix = "clang/lib/Headers",
     )
@@ -67,6 +78,7 @@ def declare_tool_map(exec_os, exec_cpu):
 
     bootstrap_binary(
         name = prefix + "/bin/clang++",
+        platform = prefix + "_platform",
         actual = "@llvm-project//llvm:llvm.stripped",
         # Copy instead of symlink so clang's InstalledDir matches the packaged tree.
         # This is crucial for properly locating the various linkers, since we don't use `-ld-path`.
@@ -84,6 +96,7 @@ def declare_tool_map(exec_os, exec_cpu):
 
     bootstrap_binary(
         name = prefix + "/bin/header-parser",
+        platform = prefix + "_platform",
         actual = "@llvm//tools/internal:header-parser",
     )
 
@@ -114,16 +127,19 @@ def declare_tool_map(exec_os, exec_cpu):
 
     bootstrap_binary(
         name = prefix + "/bin/static-library-validator",
+        platform = prefix + "_platform",
         actual = "@llvm//tools/internal:static-library-validator",
     )
 
     bootstrap_binary(
         name = prefix + "/bin/llvm-nm",
+        platform = prefix + "_platform",
         actual = "@llvm-project//llvm:llvm.stripped",
     )
 
     bootstrap_binary(
         name = prefix + "/bin/c++filt",
+        platform = prefix + "_platform",
         actual = "@llvm-project//llvm:llvm.stripped",
     )
 
@@ -157,21 +173,25 @@ def declare_tool_map(exec_os, exec_cpu):
 
     bootstrap_binary(
         name = prefix + "/bin/ld.lld",
+        platform = prefix + "_platform",
         actual = "@llvm-project//llvm:llvm.stripped",
     )
 
     bootstrap_binary(
         name = prefix + "/bin/ld64.lld",
+        platform = prefix + "_platform",
         actual = "@llvm-project//llvm:llvm.stripped",
     )
 
     bootstrap_binary(
         name = prefix + "/bin/lld",
+        platform = prefix + "_platform",
         actual = "@llvm-project//llvm:llvm.stripped",
     )
 
     bootstrap_binary(
         name = prefix + "/bin/wasm-ld",
+        platform = prefix + "_platform",
         actual = "@llvm-project//llvm:llvm.stripped",
     )
 
@@ -188,6 +208,7 @@ def declare_tool_map(exec_os, exec_cpu):
 
     bootstrap_binary(
         name = prefix + "/bin/llvm-ar",
+        platform = prefix + "_platform",
         actual = "@llvm-project//llvm:llvm.stripped",
     )
 
@@ -198,6 +219,7 @@ def declare_tool_map(exec_os, exec_cpu):
 
     bootstrap_binary(
         name = prefix + "/bin/llvm-libtool-darwin",
+        platform = prefix + "_platform",
         actual = "@llvm-project//llvm:llvm.stripped",
     )
 
@@ -208,6 +230,7 @@ def declare_tool_map(exec_os, exec_cpu):
 
     bootstrap_binary(
         name = prefix + "/bin/llvm-dwp",
+        platform = prefix + "_platform",
         actual = "@llvm-project//llvm:llvm.stripped",
     )
 
@@ -218,6 +241,7 @@ def declare_tool_map(exec_os, exec_cpu):
 
     bootstrap_binary(
         name = prefix + "/bin/llvm-objcopy",
+        platform = prefix + "_platform",
         actual = "@llvm-project//llvm:llvm.stripped",
     )
 
@@ -228,6 +252,7 @@ def declare_tool_map(exec_os, exec_cpu):
 
     bootstrap_binary(
         name = prefix + "/bin/llvm-strip",
+        platform = prefix + "_platform",
         actual = "@llvm-project//llvm:llvm.stripped",
     )
 
