@@ -13,6 +13,8 @@ def arch_to_kernel_arch(arch):
         return "arm64"
     elif arch == "riscv64":
         return "riscv"
+    elif arch == "s390x":
+        return "s390"
     elif arch == "armv7":
         return "arm"
     else:

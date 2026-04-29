@@ -25,7 +25,7 @@ _SUPPORTED_ARCHS = [
     # "openrisc",
     # "powerpc",
     "riscv",
-    # "s390",
+    "s390",
     # "sh",
     # "sparc",
     "x86",

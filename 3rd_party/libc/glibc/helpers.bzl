@@ -14,13 +14,21 @@ def glibc_includes(cpu):
         "sysdeps/unix/sysv/linux/riscv/rv64",
     ] if cpu == "riscv64" else []
 
+    # s390x uses s390/s390-64 subdirectories in glibc's sysdeps hierarchy.
+    s390x_variant = [
+        "sysdeps/unix/sysv/linux/s390/s390-64",
+        "sysdeps/s390/s390-64",
+    ] if cpu == "s390x" else []
+
     if cpu == "riscv64":
         cpu = "riscv"
+    elif cpu == "s390x":
+        cpu = "s390"
 
     return [
         "include",
         "sysdeps/unix/sysv/linux/{}".format(cpu),
-    ] + x86_64_variant + x86_parent + riscv64_variant + [
+    ] + x86_64_variant + x86_parent + riscv64_variant + s390x_variant + [
         "sysdeps/{}/nptl".format(cpu),
         "sysdeps/unix/sysv/linux/generic",
         "sysdeps/unix/sysv/linux/include",

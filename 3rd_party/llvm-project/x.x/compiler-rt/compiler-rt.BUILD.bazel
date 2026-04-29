@@ -320,6 +320,14 @@ filter_builtin_sources(
     ],
 )
 
+filter_builtin_sources(
+    name = "builtins_s390x_sources",
+    srcs = [
+        ":builtins_generic_srcs",
+        ":builtins_generic_tf_sources",
+    ],
+)
+
 builtins_aarch64_atomic_deps = [
     atomic_helper_cc_library(
         name = "builtins_atomic_helper_{}_{}_{}".format(pat, size, model),
@@ -364,6 +372,7 @@ cc_library(
             "@platforms//cpu:x86_64": [":builtins_x86_64_sources"],
             "@platforms//cpu:aarch64": [":builtins_aarch64_sources"],
             "@platforms//cpu:riscv64": [":builtins_riscv64_sources"],
+            "@platforms//cpu:s390x": [":builtins_s390x_sources"],
             "@platforms//cpu:wasm32": [":builtins_wasm32_sources"],
             "@platforms//cpu:wasm64": [":builtins_wasm64_sources"],
         },

@@ -82,6 +82,7 @@ cc_runtime_stage0_library(
         "@platforms//cpu:x86_64": glibc_includes("x86_64"),
         "@platforms//cpu:aarch64": glibc_includes("aarch64"),
         "@platforms//cpu:riscv64": glibc_includes("riscv64"),
+        "@platforms//cpu:s390x": glibc_includes("s390x"),
     }),
     local_defines = [
         "_LIBC_REENTRANT",
@@ -99,6 +100,7 @@ cc_runtime_stage0_library(
             "@platforms//cpu:x86_64": ["sysdeps/x86_64/start.S"],
             "@platforms//cpu:aarch64": ["sysdeps/aarch64/start.S"],
             "@platforms//cpu:riscv64": ["sysdeps/riscv/start.S"],
+            "@platforms//cpu:s390x": ["sysdeps/s390/s390-64/start.S"],
         },
         no_match_error = "Unsupported platform",
     ),
@@ -132,6 +134,7 @@ cc_runtime_stage0_library(
         "@platforms//cpu:x86_64": glibc_includes("x86_64"),
         "@platforms//cpu:aarch64": glibc_includes("aarch64"),
         "@platforms//cpu:riscv64": glibc_includes("riscv64"),
+        "@platforms//cpu:s390x": glibc_includes("s390x"),
     }),
     local_defines = [
         "_LIBC_REENTRANT",
@@ -287,6 +290,7 @@ cc_runtime_stage0_library(
         "@platforms//cpu:x86_64": glibc_includes("x86_64"),
         "@platforms//cpu:aarch64": glibc_includes("aarch64"),
         "@platforms//cpu:riscv64": glibc_includes("riscv64"),
+        "@platforms//cpu:s390x": glibc_includes("s390x"),
     }),
     local_defines = [
         "NO_INITFINI",
