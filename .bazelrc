@@ -52,7 +52,7 @@ common:prebuilt  --copt=-fomit-frame-pointer
 common:prebuilt  --dynamic_mode=off
 common:prebuilt  --extra_toolchains=//toolchain:all
 # See https://github.com/llvm/llvm-project/blob/497a6d672263343f58eae5a5e697484f4899fbdc/utils/bazel/llvm-project-overlay/llvm/driver.bzl#L11
-common:prebuilt --@llvm-project//llvm:driver-tools=clang-scan-deps,clang,dsymutil,lld,llvm-ar,llvm-cgdata,llvm-cov,llvm-cxxfilt,llvm-debuginfod-find,llvm-dwp,llvm-gsymutil,llvm-ifs,llvm-libtool-darwin,llvm-link,llvm-lipo,llvm-ml,llvm-mt,llvm-nm,llvm-objcopy,llvm-objdump,llvm-profdata,llvm-rc,llvm-readobj,llvm-size,llvm-symbolizer,sancov
+common:prebuilt --@llvm-project//llvm:driver-tools=clang-scan-deps,clang,dsymutil,lld,llvm-ar,llvm-cgdata,llvm-cov,llvm-cxxfilt,llvm-debuginfod-find,llvm-dwp,llvm-gsymutil,llvm-ifs,llvm-libtool-darwin,llvm-link,llvm-lipo,llvm-ml,llvm-mt,llvm-nm,llvm-objcopy,llvm-objdump,llvm-profdata,llvm-rc,llvm-readobj,llvm-readtapi,llvm-size,llvm-symbolizer,sancov
 
 common:rust    --@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_macos=False
 common:rust    --@rules_rust//rust/settings:experimental_use_sh_toolchain_for_bootstrap_process_wrapper

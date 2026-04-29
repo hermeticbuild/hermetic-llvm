@@ -38,6 +38,7 @@ TOOLCHAIN_BINARIES = [
     "llvm-rc",
     "llvm-readelf",
     "llvm-readobj",
+    "llvm-readtapi",
     "llvm-size",
     "llvm-strip",
     "llvm-symbolizer",

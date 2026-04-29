@@ -26,6 +26,7 @@ _LLVM_TOOLS = [
     "llvm-profdata",
     "llvm-rc",
     "llvm-readobj",
+    "llvm-readtapi",
     "llvm-size",
     "llvm-symbolizer",
     "sancov",
