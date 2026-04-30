@@ -48,13 +48,13 @@ cc_args(
 
         # Clang will respect the user's chosen CRT variant.
     ] + select({
-        "//toolchain:windows_crt_msvcrt": [
+        "//constraints/windows/crt:msvcrt": [
             # msvcrt.dll plus compatibility objects provided by mingw-w64.
             "-lmsvcrt_common",
             "-lmsvcrt_extra",
             "-lmsvcrt",
         ],
-        "//toolchain:windows_crt_ucrt": [
+        "//constraints/windows/crt:ucrt": [
             "-lucrt",
         ],
     }),

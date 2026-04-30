@@ -398,11 +398,11 @@ copy_to_directory(
         ":uuid",
         ":winpthread",
     ] + select({
-        "//toolchain:windows_crt_msvcrt": [
+        "//constraints/windows/crt:msvcrt": [
             ":msvcrt_common",
             ":msvcrt_extra",
         ],
-        "//toolchain:windows_crt_ucrt": [
+        "//constraints/windows/crt:ucrt": [
             ":ucrt",
             ":ucrtbase",
             ":ucrtbased",

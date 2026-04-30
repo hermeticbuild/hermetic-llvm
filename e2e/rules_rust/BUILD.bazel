@@ -10,7 +10,7 @@ filegroup(
 platform(
     name = "windows_aarch64",
     constraint_values = [
-        "@llvm//toolchain:windows_crt_msvcrt",
+        "@llvm//constraints/windows/crt:msvcrt",
     ],
     parents = ["@llvm//platforms:windows_aarch64"],
 )
@@ -18,7 +18,7 @@ platform(
 platform(
     name = "windows_x86_64",
     constraint_values = [
-        "@llvm//toolchain:windows_crt_msvcrt",
+        "@llvm//constraints/windows/crt:msvcrt",
     ],
     parents = ["@llvm//platforms:windows_x86_64"],
 )

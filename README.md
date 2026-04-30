@@ -135,7 +135,7 @@ This ensures your program runs on systems with that glibc version or newer witho
 ### Windows
 
 Windows is currently supported via MinGW-w64. UCRT is used by default; MSVCRT
-can be selected by adding the `@llvm//toolchain:windows_crt_msvcrt` constraint
+can be selected by adding the `@llvm//constraints/windows/crt:msvcrt` constraint
 to the target platform. Native MSVC targets are not yet supported.
 
 ### macOS notes
