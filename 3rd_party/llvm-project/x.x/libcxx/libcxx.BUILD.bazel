@@ -152,10 +152,13 @@ cc_library(
 
 filegroup(
     name = "textual_hdrs",
-    srcs = glob([
-        "src/**/*.h",
-        "src/**/*.ipp",
-    ]),
+    srcs = glob(
+        [
+            "src/**/*.h",
+            "src/**/*.ipp",
+        ],
+        allow_empty = True,
+    ),
     visibility = ["//visibility:public"],
 )
 
@@ -341,10 +344,13 @@ cc_library(
         "LIBCXX_BUILDING_LIBCXXABI",
         "_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER",
     ],
-    textual_hdrs = glob([
-        "src/**/*.h",
-        "src/**/*.ipp",
-    ]) + [
+    textual_hdrs = glob(
+        [
+            "src/**/*.h",
+            "src/**/*.ipp",
+        ],
+        allow_empty = True,
+    ) + [
         "@libcxxabi//:textual_hdrs",
     ],
 )

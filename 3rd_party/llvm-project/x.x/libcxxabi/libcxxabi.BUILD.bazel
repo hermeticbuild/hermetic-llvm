@@ -27,18 +27,24 @@ copy_to_directory(
 
 filegroup(
     name = "textual_hdrs",
-    srcs = glob([
-        "src/**/*.h",
-        "src/**/*.def",
-    ]),
+    srcs = glob(
+        [
+            "src/**/*.h",
+            "src/**/*.def",
+        ],
+        allow_empty = True,
+    ),
     visibility = ["//visibility:public"],
 )
 
 cc_library(
     name = "headers",
-    hdrs = glob([
-        "include/**",
-    ]),
+    hdrs = glob(
+        [
+            "include/**",
+        ],
+        allow_empty = True,
+    ),
     includes = [
         "include",
         "src",
@@ -87,9 +93,12 @@ cc_library(
         # LIBCXXABI_ENABLE_THREADS
         "src/cxa_thread_atexit.cpp",
     ],
-    hdrs = glob([
-        "include/**",
-    ]),
+    hdrs = glob(
+        [
+            "include/**",
+        ],
+        allow_empty = True,
+    ),
     copts = [
         "-std=c++23",
         "-fstrict-aliasing",
@@ -150,10 +159,13 @@ cc_library(
     ],
     textual_hdrs = [
         "@libcxx//:textual_hdrs",
-    ] + glob([
-        "src/**/*.h",
-        "src/**/*.def",
-    ]),
+    ] + glob(
+        [
+            "src/**/*.h",
+            "src/**/*.def",
+        ],
+        allow_empty = True,
+    ),
 )
 
 cc_runtime_stage0_static_library(
