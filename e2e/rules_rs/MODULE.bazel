@@ -45,18 +45,12 @@ register_toolchains(
     dev_dependency = True,
 )
 
-bazel_dep(name = "rules_rs", version = "0.0.59")
-single_version_override(
-    module_name = "rules_rs",
-    patch_strip = 1,
-    patches = ["//:rules_rs_windows_gnullvm_msvcrt.patch"],
-    version = "0.0.59",
-)
+bazel_dep(name = "rules_rs", version = "0.0.68")
 
-rules_rust = use_extension("@rules_rs//rs/experimental:rules_rust.bzl", "rules_rust")
+rules_rust = use_extension("@rules_rs//rs:rules_rust.bzl", "rules_rust")
 use_repo(rules_rust, "rules_rust")
 
-toolchains = use_extension("@rules_rs//rs/experimental/toolchains:module_extension.bzl", "toolchains")
+toolchains = use_extension("@rules_rs//rs/toolchains:module_extension.bzl", "toolchains")
 toolchains.toolchain(
     edition = "2021",
     version = "1.92.0",
