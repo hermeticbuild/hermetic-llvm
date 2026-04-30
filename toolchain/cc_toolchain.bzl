@@ -8,15 +8,36 @@ def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
             "@rules_cc//cc/toolchains/args/layering_check:layering_check",
             "@rules_cc//cc/toolchains/args/layering_check:use_module_maps",
             "@llvm//toolchain/features:static_link_cpp_runtimes",
-            "@llvm//toolchain/features/runtime_library_search_directories:feature",
             "@llvm//toolchain/features:archive_param_file",
-            "@llvm//toolchain/features:prefer_pic_for_opt_binaries",
             "@llvm//toolchain/features:parse_headers",
         ] + select({
+            "@llvm//constraints/windows/abi:gnu": [
+                "@llvm//toolchain/features/runtime_library_search_directories:feature",
+            ],
+            "@llvm//constraints/windows/abi:gnullvm": [
+                "@llvm//toolchain/features/runtime_library_search_directories:feature",
+            ],
+            "@llvm//constraints/windows/abi:msvc": [
+                "@llvm//toolchain/features:targets_windows",
+                "@llvm//toolchain/features:supports_interface_shared_libraries",
+                "@llvm//toolchain/features:has_configured_linker_path",
+                "@llvm//toolchain/features:msvc_implib_flags",
+                "@llvm//toolchain/features:compiler_param_file",
+                "@llvm//toolchain/features:copy_dynamic_libraries_to_binary",
+                "@llvm//toolchain/features:parse_showincludes",
+                "@llvm//toolchain/features:windows_quoting_for_param_files",
+            ],
+            "@llvm//constraints/windows/abi:unconstrained": [
+                "@llvm//toolchain/features/runtime_library_search_directories:feature",
+            ],
+        }) + select({
             "@platforms//os:linux": [
                 "@rules_cc//cc/toolchains/args/thin_lto:feature",
             ],
-            "//conditions:default": [],
+            "@platforms//os:windows": [],
+            "//conditions:default": [
+                "@llvm//toolchain/features:prefer_pic_for_opt_binaries",
+            ],
         }) + [
             # Those features are enabled internally by --compilation_mode flags family.
             # We add them to the list of known_features but not in the list of enabled_features.
@@ -29,12 +50,16 @@ def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
 
     cc_feature_set(
         name = name + "_runtimes_only_known_features",
-        all_of = [
+        all_of = select({
+            "@platforms//os:windows": [],
+            "//conditions:default": [
+                "@llvm//toolchain/features:prefer_pic_for_opt_binaries",
+            ],
+        }) + [
             # TODO(zbarsky): Do we want layering check for runtime libs?
             #"@rules_cc//cc/toolchains/args/layering_check:layering_check",
             #"@rules_cc//cc/toolchains/args/layering_check:use_module_maps",
             "@llvm//toolchain/features:archive_param_file",
-            "@llvm//toolchain/features:prefer_pic_for_opt_binaries",
             # Always last (contains user_compile_flags and user_link_flags who should apply last).
             "@llvm//toolchain/features/legacy:experimental_replace_legacy_action_config_features",
         ],
@@ -50,11 +75,9 @@ def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
             "@platforms//os:macos": [],
             "@platforms//os:windows": [
                 "@llvm//toolchain/features:static_link_cpp_runtimes",
-                "@llvm//toolchain/features/runtime_library_search_directories:feature",
             ],
             "@platforms//os:none": [],
         }) + [
-            "@llvm//toolchain/features:prefer_pic_for_opt_binaries",
             "@rules_cc//cc/toolchains/args/layering_check:module_maps",
             # These are "enabled" but they only _actually_ get enabled when the underlying compilation mode is set.
             # This lets us properly order them before user_compile_flags and user_link_flags below.
@@ -65,13 +88,39 @@ def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
             "@llvm//toolchain/features/legacy:all_legacy_builtin_features",
             # Always last (contains user_compile_flags and user_link_flags who should apply last).
             "@llvm//toolchain/features/legacy:experimental_replace_legacy_action_config_features",
-        ],
+        ] + select({
+            "@llvm//constraints/windows/abi:gnu": [
+                "@llvm//toolchain/features/runtime_library_search_directories:feature",
+            ],
+            "@llvm//constraints/windows/abi:gnullvm": [
+                "@llvm//toolchain/features/runtime_library_search_directories:feature",
+            ],
+            "@llvm//constraints/windows/abi:msvc": [
+                "@llvm//toolchain/features:targets_windows",
+                "@llvm//toolchain/features:supports_interface_shared_libraries",
+                "@llvm//toolchain/features:has_configured_linker_path",
+                "@llvm//toolchain/features:msvc_implib_flags",
+                "@llvm//toolchain/features:compiler_param_file",
+                "@llvm//toolchain/features:parse_showincludes",
+                "@llvm//toolchain/features:windows_quoting_for_param_files",
+            ],
+            "@llvm//constraints/windows/abi:unconstrained": [],
+        }) + select({
+            "@platforms//os:windows": [],
+            "//conditions:default": [
+                "@llvm//toolchain/features:prefer_pic_for_opt_binaries",
+            ],
+        }),
     )
 
     cc_feature_set(
         name = name + "_runtimes_only_enabled_features",
-        all_of = [
-            "@llvm//toolchain/features:prefer_pic_for_opt_binaries",
+        all_of = select({
+            "@platforms//os:windows": [],
+            "//conditions:default": [
+                "@llvm//toolchain/features:prefer_pic_for_opt_binaries",
+            ],
+        }) + [
             "@llvm//toolchain/features:archive_param_file",
             # Always last (contains user_compile_flags and user_link_flags who should apply last).
             "@llvm//toolchain/features/legacy:experimental_replace_legacy_action_config_features",
@@ -96,6 +145,8 @@ def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
             ],
             "@platforms//os:windows": [
                 "@llvm//toolchain:windows_executable_pattern",
+                "@llvm//toolchain:windows_dynamic_library_pattern",
+                "@llvm//toolchain:windows_interface_library_pattern",
             ],
             "//conditions:default": [],
         }),
@@ -121,5 +172,10 @@ def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
             "@llvm//toolchain:runtimes_stage1": "@llvm//runtimes:none",
             "//conditions:default": "@llvm//runtimes:dynamic_runtime_lib",
         }),
-        compiler = "clang",
+        compiler = select({
+            "@llvm//constraints/windows/abi:gnu": "clang",
+            "@llvm//constraints/windows/abi:gnullvm": "clang",
+            "@llvm//constraints/windows/abi:msvc": "clang-cl",
+            "@llvm//constraints/windows/abi:unconstrained": "clang",
+        }),
     )

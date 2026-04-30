@@ -1,7 +1,7 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
-load("//toolchain/args:llvm_target_triple.bzl", "LLVM_TARGET_TRIPLE")
+load("//toolchain/args:llvm_target_triple.bzl", "LLVM_TARGET_FLAG", "LLVM_TARGET_TRIPLE")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -36,11 +36,16 @@ cc_args(
     name = "target_flags",
     actions = [
         "@rules_cc//cc/toolchains/actions:compile_actions",
+    ],
+    args = LLVM_TARGET_FLAG,
+)
+
+cc_args(
+    name = "llvm_target_for_platform_link",
+    actions = [
         "@rules_cc//cc/toolchains/actions:link_actions",
     ],
-    args = [
-        "-target",
-    ] + LLVM_TARGET_TRIPLE + select({
+    args = LLVM_TARGET_FLAG + select({
         # We hardcode these for now given the complexity of RISC-V extensions.
         # TODO(cerisier): Support ISA configuration.
         "@platforms//cpu:riscv64": [
@@ -85,8 +90,7 @@ cc_args(
         # is safe to disable them globally until the toolchain shipped by
         # Bazel sets this flag on `use_module_maps`.
         # https://github.com/llvm/llvm-project/commit/0556138624edf48621dd49a463dbe12e7101f17d
-        "-Xclang",
-        "-fno-cxx-modules",
+        "-Xclang=-fno-cxx-modules",
         "-Wno-module-import-in-extern-c",
         # This warning would mean we had an error configuring the toolchain or modulemap
         "-Werror=incomplete-umbrella",
@@ -814,11 +818,16 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:objc_compile",
         "@rules_cc//cc/toolchains/actions:objcpp_compile",
     ],
-    args = [
-        # We want to disable everything except builtin headers since they are
-        # provided as part of the compiler toolchain repository.
-        "-nostdlibinc",
-    ],
+    # We want to disable everything except builtin headers since they are
+    # provided as part of the compiler toolchain repository.
+    args = select({
+        "@llvm//constraints/windows/abi:msvc": [
+            "/clang:-nostdlibinc",
+        ],
+        "//conditions:default": [
+            "-nostdlibinc",
+        ],
+    }),
 )
 
 config_setting(
@@ -837,6 +846,7 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:link_actions",
     ],
     args = select({
+        "@llvm//constraints/windows/abi:msvc": [],  # no --sysroot equivalent in clang-cl, unsure how we should set `/winsysroot`
         ":empty_sysroot": [
             "--sysroot=/dev/null",
         ],

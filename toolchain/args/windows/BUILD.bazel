@@ -38,7 +38,7 @@ cc_args(
 )
 
 cc_args(
-    name = "default_libs",
+    name = "default_libs_gnu",
     actions = [
         "@rules_cc//cc/toolchains/actions:link_actions",
     ],
@@ -66,4 +66,77 @@ cc_args(
         "mingw_crt_library_search_path": "//runtimes/mingw:mingw_crt_library_search_directory",
         "mingw_import_library_search_path": "//runtimes/mingw:mingw_import_libraries_directory",
     },
+)
+
+cc_args(
+    name = "msvc_headers_include_search_paths",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:source_compile_actions",
+    ],
+    allowlist_include_directories = [
+        "@msvc_runtime//:msvc_include",
+        "@windows_sdk//:winsdk_ucrt_include",
+        "@windows_sdk//:winsdk_shared_include",
+        "@windows_sdk//:winsdk_um_include",
+        "@windows_sdk//:winsdk_winrt_include",
+    ],
+    args = [
+        # using `/imsvc` instead of `/clang:-I` here otherwise we're getting linking issues like:
+        # lld-link: error: undefined symbol: neon_sriiq8
+        # >>> referenced by libzstd-143054927.lib(zstd_lazy.o):(ZSTD_RowFindBestMatch_noDict_4_4)
+        # >>> referenced by libzstd-143054927.lib(zstd_lazy.o):(ZSTD_RowFindBestMatch_noDict_4_4)
+        # >>> referenced by libzstd-143054927.lib(zstd_lazy.o):(ZSTD_RowFindBestMatch_noDict_4_4)
+        # >>> referenced 285 more times
+        "/imsvc{msvc_include}",
+        "/imsvc{winsdk_ucrt_include}",
+        "/imsvc{winsdk_shared_include}",
+        "/imsvc{winsdk_um_include}",
+        "/imsvc{winsdk_winrt_include}",
+    ],
+    data = [
+        "@msvc_runtime//:msvc_include",
+        "@windows_sdk//:winsdk_shared_include",
+        "@windows_sdk//:winsdk_ucrt_include",
+        "@windows_sdk//:winsdk_um_include",
+        "@windows_sdk//:winsdk_winrt_include",
+    ],
+    format = {
+        "msvc_include": "@msvc_runtime//:msvc_include",
+        "winsdk_ucrt_include": "@windows_sdk//:winsdk_ucrt_include",
+        "winsdk_shared_include": "@windows_sdk//:winsdk_shared_include",
+        "winsdk_um_include": "@windows_sdk//:winsdk_um_include",
+        "winsdk_winrt_include": "@windows_sdk//:winsdk_winrt_include",
+    },
+)
+
+cc_args(
+    name = "default_libs_msvc",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    args = [
+        "/LIBPATH:{msvc_lib}",
+        "/LIBPATH:{winsdk_ucrt_lib}",
+        "/LIBPATH:{winsdk_um_lib}",
+    ],
+    data = [
+        "@msvc_runtime//:msvc_lib",
+        "@windows_sdk//:winsdk_ucrt_lib",
+        "@windows_sdk//:winsdk_um_lib",
+    ],
+    format = {
+        "msvc_lib": "@msvc_runtime//:msvc_lib",
+        "winsdk_ucrt_lib": "@windows_sdk//:winsdk_ucrt_lib",
+        "winsdk_um_lib": "@windows_sdk//:winsdk_um_lib",
+    },
+)
+
+alias(
+    name = "default_libs",
+    actual = select({
+        "@llvm//constraints/windows/abi:gnu": ":default_libs_gnu",
+        "@llvm//constraints/windows/abi:gnullvm": ":default_libs_gnu",
+        "@llvm//constraints/windows/abi:msvc": ":default_libs_msvc",
+        "@llvm//constraints/windows/abi:unconstrained": ":default_libs_gnu",
+    }),
 )

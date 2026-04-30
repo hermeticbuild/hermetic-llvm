@@ -65,10 +65,8 @@ def declare_llvm_targets(*, suffix = ""):
             # Use -isystem instead of -resource-dir to avoid conflicts with the
             # linking specific -resource-dir and rules_foreign_cc which does
             # 'CC CFLAGS LDFLAGS'. This has to be last in the search paths
-            "-Xclang",
-            "-internal-isystem",
-            "-Xclang",
-            "{resource_dir}/include",
+            "-Xclang=-internal-isystem",
+            "-Xclang={resource_dir}/include",
         ],
         data = [
             ":builtin_resource_dir",
@@ -146,6 +144,19 @@ def declare_llvm_targets(*, suffix = ""):
         visibility = ["//visibility:public"],
     )
 
+    cc_tool_map(
+        name = "tools_for_msvc",
+        tools = COMMON_TOOLS | {
+            "@rules_cc//cc/toolchains/actions:assembly_actions": ":clang-cl",
+            "@rules_cc//cc/toolchains/actions:c_compile": ":clang-cl",
+            "@rules_cc//cc/toolchains/actions:objc_compile": ":clang-cl",
+            "@llvm//toolchain:cpp_compile_actions_without_header_parsing": ":clang-cl",
+            "@rules_cc//cc/toolchains/actions:ar_actions": ":llvm-ar",
+            "@rules_cc//cc/toolchains/actions:link_actions": ":lld-link",
+        },
+        visibility = ["//visibility:public"],
+    )
+
     cc_tool(
         name = "clang",
         src = "bin/clang" + suffix,
@@ -167,6 +178,16 @@ def declare_llvm_targets(*, suffix = ""):
     )
 
     cc_tool(
+        name = "clang-cl",
+        src = "bin/clang-cl" + suffix,
+        data = [
+            ":builtin_resource_dir",
+        ],
+        capabilities = [],  # no pic support when targetting MSVC
+        allowlist_include_directories = [":builtin_resource_dir"],
+    )
+
+    cc_tool(
         name = "lld",
         src = "bin/clang++" + suffix,
         data = [
@@ -174,7 +195,13 @@ def declare_llvm_targets(*, suffix = ""):
             "bin/ld64.lld" + suffix,
             "bin/lld" + suffix,
             "bin/wasm-ld" + suffix,
+            "bin/lld-link" + suffix,
         ],
+    )
+
+    cc_tool(
+        name = "lld-link",
+        src = "bin/lld-link" + suffix,
     )
 
     cc_tool(
@@ -245,11 +272,28 @@ def declare_llvm_targets(*, suffix = ""):
             ":builtin_resource_dir",
             "@llvm//runtimes/libcxx:libcxx_headers_include_search_directory",
             "@llvm//runtimes/libcxx:libcxxabi_headers_include_search_directory",
-            "@mingw//:mingw_generated_headers_crt_directory",
-            "@mingw//:mingw_w64_headers_include_directory",
-            "@mingw//:mingw_w64_headers_crt_directory",
-            "@mingw//:mingw_w64_winpthreads_include_directory",
-        ],
+        ] + select({
+            "@llvm//constraints/windows/abi:gnu": [
+                "@mingw//:mingw_generated_headers_crt_directory",
+                "@mingw//:mingw_w64_headers_include_directory",
+                "@mingw//:mingw_w64_headers_crt_directory",
+                "@mingw//:mingw_w64_winpthreads_include_directory",
+            ],
+            "@llvm//constraints/windows/abi:gnullvm": [
+                "@mingw//:mingw_generated_headers_crt_directory",
+                "@mingw//:mingw_w64_headers_include_directory",
+                "@mingw//:mingw_w64_headers_crt_directory",
+                "@mingw//:mingw_w64_winpthreads_include_directory",
+            ],
+            "@llvm//constraints/windows/abi:msvc": [
+                "@msvc_runtime//:msvc_include",
+                "@windows_sdk//:winsdk_ucrt_include",
+                "@windows_sdk//:winsdk_shared_include",
+                "@windows_sdk//:winsdk_um_include",
+                "@windows_sdk//:winsdk_winrt_include",
+            ],
+            "@llvm//constraints/windows/abi:unconstrained": [],
+        }),
     )
 
     include_path(

@@ -53,6 +53,11 @@ cc_args(
         "@platforms//cpu:wasm64": [],
         "@platforms//os:windows": [],
         "//conditions:default": ["-Wl,--icf=safe"],
+    }) + select({
+        "@llvm//constraints/windows/abi:msvc": [
+            "/OPT:REF,ICF",
+        ],
+        "//conditions:default": [],
     }),
 )
 
@@ -140,6 +145,53 @@ cc_feature(
 cc_feature(
     name = "archive_param_file",
     feature_name = "archive_param_file",
+)
+
+cc_feature(
+    name = "compiler_param_file",
+    feature_name = "compiler_param_file",
+)
+
+cc_feature(
+    name = "windows_quoting_for_param_files",
+    feature_name = "windows_quoting_for_param_files",
+)
+
+cc_feature(
+    name = "copy_dynamic_libraries_to_binary",
+    feature_name = "copy_dynamic_libraries_to_binary",
+)
+
+cc_feature(
+    name = "targets_windows",
+    feature_name = "targets_windows",
+    implies = [":copy_dynamic_libraries_to_binary"],
+)
+
+cc_feature(
+    name = "supports_interface_shared_libraries",
+    feature_name = "supports_interface_shared_libraries",
+)
+
+cc_feature(
+    name = "has_configured_linker_path",
+    feature_name = "has_configured_linker_path",
+)
+
+cc_args(
+    name = "msvc_implib_flags_args",
+    actions = ["@rules_cc//cc/toolchains/actions:dynamic_library_link_actions"],
+    args = ["/IMPLIB:{interface_library_output_path}"],
+    format = {
+        "interface_library_output_path": "@rules_cc//cc/toolchains/variables:interface_library_output_path",
+    },
+    requires_not_none = "@rules_cc//cc/toolchains/variables:interface_library_output_path",
+)
+
+cc_feature(
+    name = "msvc_implib_flags",
+    args = [":msvc_implib_flags_args"],
+    feature_name = "msvc_implib_flags",
 )
 
 cc_feature(
