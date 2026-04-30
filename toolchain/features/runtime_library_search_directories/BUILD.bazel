@@ -28,7 +28,10 @@ cc_args_list(
 cc_args(
     name = "runtime_library_search_directories_args",
     actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
-    nested = [":search_dir_args"],
+    nested = select({
+        "@llvm//constraints/windows/abi:msvc": [],
+        "//conditions:default": [":search_dir_args"],
+    }),
     requires_not_none = "@rules_cc//cc/toolchains/variables:runtime_library_search_directories",
 )
 

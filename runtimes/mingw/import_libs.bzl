@@ -1,5 +1,30 @@
 load("@bazel_lib//lib:run_binary.bzl", "run_binary")
 
+def _non_pic_static_archive_impl(ctx):
+    archives = [
+        file
+        for file in ctx.files.src
+        if file.basename.endswith(".a") and not file.basename.endswith(".pic.a")
+    ]
+
+    if len(archives) != 1:
+        fail("Expected exactly one non-PIC archive in {}, got: {}".format(
+            ctx.attr.src.label,
+            [file.short_path for file in ctx.files.src],
+        ))
+
+    return DefaultInfo(files = depset(archives))
+
+non_pic_static_archive = rule(
+    implementation = _non_pic_static_archive_impl,
+    attrs = {
+        "src": attr.label(
+            allow_files = True,
+            mandatory = True,
+        ),
+    },
+)
+
 def _generate_def_impl(ctx):
     # The templates have `@N` decorations which are only relevant to i386
     # and cause "symbol not found" on 64-bit, so we convert them to comments.

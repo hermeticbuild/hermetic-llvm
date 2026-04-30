@@ -103,6 +103,7 @@ def _llvm_source_archive_excludes():
         "orc-rt",
         "libclc",
         "offload",
+        "libc/benchmarks",
         "libc/docs",
         "libc/utils/gn",
         "llvm/utils/mlgo-utils/*",

@@ -89,6 +89,30 @@ def declare_tool_map(exec_os, exec_cpu):
     )
 
     cc_tool_map(
+        name = prefix + "/tools_for_msvc",
+        tools = BASE_TOOLS | COMPLETE_ONLY_TOOLS | {
+            "@rules_cc//cc/toolchains/actions:assembly_actions": prefix + "/clang-cl",
+            "@rules_cc//cc/toolchains/actions:c_compile": prefix + "/clang-cl",
+            "@rules_cc//cc/toolchains/actions:objc_compile": prefix + "/clang-cl",
+            "@llvm//toolchain:cpp_compile_actions_without_header_parsing": prefix + "/clang-cl",
+            "@rules_cc//cc/toolchains/actions:ar_actions": prefix + "/llvm-ar",
+            "@rules_cc//cc/toolchains/actions:link_actions": prefix + "/lld-link",
+        },
+    )
+
+    cc_tool_map(
+        name = prefix + "/staged_tools_for_msvc",
+        tools = BASE_TOOLS | {
+            "@rules_cc//cc/toolchains/actions:assembly_actions": prefix + "/clang-cl",
+            "@rules_cc//cc/toolchains/actions:c_compile": prefix + "/clang-cl",
+            "@rules_cc//cc/toolchains/actions:objc_compile": prefix + "/clang-cl",
+            "@llvm//toolchain:cpp_compile_actions_without_header_parsing": prefix + "/clang-cl",
+            "@rules_cc//cc/toolchains/actions:ar_actions": prefix + "/llvm-ar",
+            "@rules_cc//cc/toolchains/actions:link_actions": prefix + "/lld-link",
+        },
+    )
+
+    cc_tool_map(
         name = prefix + "/staged_default_tools",
         tools = BASE_TOOLS | {
             "@rules_cc//cc/toolchains/actions:ar_actions": prefix + "/llvm-ar",
@@ -115,6 +139,14 @@ def declare_tool_map(exec_os, exec_cpu):
         actual = select({
             "@llvm//toolchain:runtimes_all": prefix + "/tools_with_libtool",
             "//conditions:default": prefix + "/staged_tools_with_libtool",
+        }),
+    )
+
+    native.alias(
+        name = prefix + "/tools_for_msvc_for_runtime",
+        actual = select({
+            "@llvm//toolchain:runtimes_all": prefix + "/tools_for_msvc",
+            "//conditions:default": prefix + "/staged_tools_for_msvc",
         }),
     )
 
@@ -146,6 +178,23 @@ def declare_tool_map(exec_os, exec_cpu):
             prefix + "/clang_builtin_headers_include_directory",
         ],
         capabilities = ["@rules_cc//cc/toolchains/capabilities:supports_pic"],
+    )
+
+    bootstrap_binary(
+        name = prefix + "/bin/clang-cl",
+        platform = prefix + "_platform",
+        actual = "@llvm-project//llvm:llvm.stripped",
+        # Copy instead of symlink so clang's InstalledDir matches the packaged tree.
+        symlink = False,
+    )
+
+    cc_tool(
+        name = prefix + "/clang-cl",
+        src = prefix + "/bin/clang-cl",
+        data = [
+            prefix + "/clang_builtin_headers_include_directory",
+        ],
+        capabilities = [],
     )
 
     cc_tool(
@@ -222,6 +271,12 @@ def declare_tool_map(exec_os, exec_cpu):
         actual = "@llvm-project//llvm:llvm.stripped",
     )
 
+    bootstrap_binary(
+        name = prefix + "/bin/lld-link",
+        platform = prefix + "_platform",
+        actual = "@llvm-project//llvm:llvm.stripped",
+    )
+
     cc_tool(
         name = prefix + "/lld",
         src = prefix + "/bin/clang++",
@@ -230,7 +285,13 @@ def declare_tool_map(exec_os, exec_cpu):
             prefix + "/bin/ld64.lld",
             prefix + "/bin/lld",
             prefix + "/bin/wasm-ld",
+            prefix + "/bin/lld-link",
         ],
+    )
+
+    cc_tool(
+        name = prefix + "/lld-link",
+        src = prefix + "/bin/lld-link",
     )
 
     cc_tool(
@@ -318,6 +379,8 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
                 "@llvm//toolchain:macos_complete_with_libtool": ":{}_{}/tools_with_dsym_and_libtool".format(exec_os, exec_cpu),
                 "@llvm//toolchain:macos_complete": ":{}_{}/tools_with_dsym".format(exec_os, exec_cpu),
                 "@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_apple_setting": ":{}_{}/tools_with_libtool_for_runtime".format(exec_os, exec_cpu),
+                "@llvm//platforms/config:windows_x86_64_msvc": ":{}_{}/tools_for_msvc_for_runtime".format(exec_os, exec_cpu),
+                "@llvm//platforms/config:windows_aarch64_msvc": ":{}_{}/tools_for_msvc_for_runtime".format(exec_os, exec_cpu),
                 "//conditions:default": ":{}_{}/default_tools_for_runtime".format(exec_os, exec_cpu),
             }),
         )

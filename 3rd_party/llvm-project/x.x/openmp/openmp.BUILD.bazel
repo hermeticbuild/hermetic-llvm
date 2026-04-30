@@ -206,11 +206,18 @@ cc_runtime_stage0_library(
             # https://github.com/hermeticbuild/hermetic-llvm/issues/146
             "@kernel_headers",
         ],
-        "@platforms//os:windows": [
-            "@mingw//:mingw_headers",
-        ],
+        "@platforms//os:windows": [],
         "@platforms//os:macos": [],
         "//conditions:default": [],
+    }) + select({
+        "@llvm//constraints/windows/abi:gnu": [
+            "@mingw//:mingw_headers",
+        ],
+        "@llvm//constraints/windows/abi:gnullvm": [
+            "@mingw//:mingw_headers",
+        ],
+        "@llvm//constraints/windows/abi:msvc": [],
+        "@llvm//constraints/windows/abi:unconstrained": [],
     }) + select({
         "@llvm//platforms/config:musl": [
             "@llvm-project//libcxx:headers",

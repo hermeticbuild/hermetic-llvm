@@ -7,6 +7,7 @@ cc_args_list(
     name = "hermetic_link_flags",
     args = select({
         "@platforms//os:macos": [],
+        "@llvm//constraints/windows/abi:msvc": [],
         "//conditions:default": [
             "//toolchain/runtimes/args:hermetic_link_flags",
         ],
@@ -50,9 +51,20 @@ cc_args_list(
 
 cc_args_list(
     name = "windows_hosted_c_toolchain_args",
-    args = [
-        "//toolchain/args/windows:mingw_headers_include_search_paths",
-    ],
+    args = select({
+        "@llvm//constraints/windows/abi:gnu": [
+            "//toolchain/args/windows:mingw_headers_include_search_paths",
+        ],
+        "@llvm//constraints/windows/abi:gnullvm": [
+            "//toolchain/args/windows:mingw_headers_include_search_paths",
+        ],
+        "@llvm//constraints/windows/abi:msvc": [
+            "//toolchain/args/windows:msvc_headers_include_search_paths",
+        ],
+        "@llvm//constraints/windows/abi:unconstrained": [
+            "//toolchain/args/windows:mingw_headers_include_search_paths",
+        ],
+    }),
     visibility = ["//toolchain:__subpackages__"],
 )
 
@@ -80,7 +92,9 @@ cc_args_list(
             "//toolchain:macos_toolchain_args",
         ],
         "@platforms//os:linux": [],
-        "@platforms//os:windows": [],
+        "@platforms//os:windows": [
+            "//toolchain:windows_toolchain_args",
+        ],
         "@platforms//os:none": [],
     }),
     visibility = ["//toolchain:__subpackages__"],
@@ -108,37 +122,30 @@ cc_args_list(
         "//toolchain/args:deterministic_compile_flags",
         "//toolchain/args:module_map",
         "//toolchain/runtimes/args:optimization_flags",
-        "//toolchain:sysroot_flags",
         "//toolchain:hermetic_compile_flags",
         ":hermetic_link_flags",
 
         # TODO(cerisier): Explode this into specific args instead
         ":staged_platform_specific_args",
 
-        # Optional sanitizers
-        "//toolchain/runtimes/args:ubsan_flags",
-        "//toolchain/runtimes/args:cfi_flags",
-        "//toolchain/runtimes/args:msan_flags",
-        "//toolchain/runtimes/args:dfsan_flags",
-        "//toolchain/runtimes/args:nsan_flags",
-        "//toolchain/runtimes/args:safestack_flags",
-        "//toolchain/runtimes/args:rtsan_flags",
-        "//toolchain/runtimes/args:tysan_flags",
-        "//toolchain/runtimes/args:tsan_flags",
-        "//toolchain/runtimes/args:asan_flags",
-        "//toolchain/runtimes/args:lsan_flags",
-        "//toolchain/runtimes/args:profile_flags",
+        "//toolchain/runtimes/args:sanitizer_flags",
 
         # Common default link flags.
-        "//toolchain/args:fuse_ld",
         "//toolchain/args:lto_plugin_target_flags",
-        ":rtlib",
-        ":resource_dir",
         ":default_link_flags",
         # Needs to stay out of resource_dir since clang does not always search for crtstuff for all targets.
         ":default_startfiles",
         ":default_libs",
-    ],
+    ] + select({
+        "@llvm//constraints/windows/abi:msvc": [],
+        "//conditions:default": [
+            "//toolchain:sysroot_flags",
+            "//toolchain/args:llvm_target_for_platform_link",
+            "//toolchain/args:fuse_ld",
+            ":rtlib",
+            ":resource_dir",
+        ],
+    }),
     visibility = ["//visibility:public"],
 )
 

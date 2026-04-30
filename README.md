@@ -128,6 +128,8 @@ If you wish to setup things manually, you will likely require a few flags:
 | **armv7-linux-musleabihf** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **aarch64-windows-gnu ²**| ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **x86_64-windows-gnu ²** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **aarch64-pc-windows-msvc ²**| ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **x86_64-pc-windows-msvc ²** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **bpfeb** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **bpfel** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **wasm32-unknown-unknown** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -221,9 +223,15 @@ constraint to the target platform.
 
 ### Windows
 
-Windows is currently supported via MinGW-w64. UCRT is used by default; MSVCRT
-can be selected by adding the `@llvm//constraints/windows/crt:msvcrt` constraint
-to the target platform. Native MSVC targets are not yet supported.
+Both MinGW-w64 and MSVC are supported.
+
+In MinGW-w64, UCRT is used by default; MSVCRT can be selected by adding the
+`@llvm//constraints/windows/crt:msvcrt` constraint to the target platform.
+
+For MSVC targets using the downloaded MSVC runtime exposed by `windows_support`, users are 
+required to accept the Visual Studio license by setting the environment variable 
+`BAZEL_MSVC_RUNTIME_VISUAL_STUDIO_EULA=1`.
+For example by specifying `--repo_env=BAZEL_MSVC_RUNTIME_VISUAL_STUDIO_EULA=1`.
 
 ### macOS notes
 

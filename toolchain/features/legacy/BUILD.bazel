@@ -8,9 +8,14 @@ cc_args(
     actions = [
         "@rules_cc//cc/toolchains/actions:cpp_compile_actions",
     ],
-    args = [
-        "-std=c++17",
-    ],
+    args = select({
+        "@llvm//constraints/windows/abi:msvc": [
+            "/std:c++17",
+        ],
+        "//conditions:default": [
+            "-std=c++17",
+        ],
+    }),
 )
 
 cc_args(
@@ -18,10 +23,7 @@ cc_args(
     actions = [
         "@rules_cc//cc/toolchains/actions:compile_actions",
     ],
-    args = select({
-        "@platforms//os:none": [],
-        "//conditions:default": ["-fstack-protector"],
-    }) + [
+    args = [
         # All warnings are enabled.
         "-Wall",
         # Enable a few more warnings that aren't part of -Wall.
@@ -34,9 +36,15 @@ cc_args(
         # Enable coloring even if there's no attached terminal. Bazel removes the
         # escape sequences if --nocolor is specified.
         "-fcolor-diagnostics",
-        # Keep stack frames for debugging, even in opt mode.
-        "-fno-omit-frame-pointer",
-    ],
+    ] + select({
+        "@llvm//constraints/windows/abi:msvc": [
+        ],
+        "//conditions:default": [
+            "-fstack-protector",
+            # Keep stack frames for debugging, even in opt mode.
+            "-fno-omit-frame-pointer",
+        ],
+    }),
 )
 
 cc_feature(
@@ -46,6 +54,396 @@ cc_feature(
         ":legacy_default_compile_flags",
     ],
     overrides = "@rules_cc//cc/toolchains/features/legacy:default_compile_flags",
+)
+
+# MSVC targets use clang-cl/lld-link and must not receive the GCC-only
+# `-static-libgcc` flag.
+cc_feature(
+    name = "static_libgcc",
+    overrides = "@rules_cc//cc/toolchains/features/legacy:static_libgcc",
+)
+
+cc_args(
+    name = "archiver_create_static_archive_llvm_ar_msvc",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:cpp_link_static_library",
+    ],
+    args = [
+        "rcsD",
+        "{output_execpath}",
+    ],
+    format = {"output_execpath": "@rules_cc//cc/toolchains/variables:output_execpath"},
+    requires_not_none = "@rules_cc//cc/toolchains/variables:output_execpath",
+)
+
+cc_args(
+    name = "archiver_libraries_to_link_llvm_ar_msvc",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:cpp_link_static_library",
+    ],
+    nested = [":archiver_libraries_to_link_expansion_llvm_ar_msvc"],
+    requires_not_none = "@rules_cc//cc/toolchains/variables:libraries_to_link",
+)
+
+cc_nested_args(
+    name = "archiver_libraries_to_link_expansion_llvm_ar_msvc",
+    iterate_over = "@rules_cc//cc/toolchains/variables:libraries_to_link",
+    nested = [
+        ":archiver_link_obj_file_llvm_ar_msvc",
+        ":archiver_link_object_file_group_llvm_ar_msvc",
+    ],
+)
+
+cc_nested_args(
+    name = "archiver_link_obj_file_llvm_ar_msvc",
+    args = ["{object_file}"],
+    format = {"object_file": "@rules_cc//cc/toolchains/variables:libraries_to_link.name"},
+    requires_equal = "@rules_cc//cc/toolchains/variables:libraries_to_link.type",
+    requires_equal_value = "object_file",
+)
+
+cc_nested_args(
+    name = "archiver_link_object_file_group_llvm_ar_msvc",
+    args = ["{object_files}"],
+    format = {"object_files": "@rules_cc//cc/toolchains/variables:libraries_to_link.object_files"},
+    iterate_over = "@rules_cc//cc/toolchains/variables:libraries_to_link.object_files",
+    requires_equal = "@rules_cc//cc/toolchains/variables:libraries_to_link.type",
+    requires_equal_value = "object_file_group",
+)
+
+cc_feature(
+    name = "archiver_flags_msvc",
+    args = [
+        ":archiver_create_static_archive_llvm_ar_msvc",
+        ":archiver_libraries_to_link_llvm_ar_msvc",
+    ],
+    overrides = "@rules_cc//cc/toolchains/features/legacy:archiver_flags",
+)
+
+cc_nested_args(
+    name = "libraries_to_link_expansion_msvc",
+    iterate_over = "@rules_cc//cc/toolchains/variables:libraries_to_link",
+    nested = [
+        ":msvc_optional_object_file_group",
+        ":msvc_optional_object_file",
+        ":msvc_optional_interface_library",
+        ":msvc_optional_static_library",
+        ":msvc_optional_dynamic_library",
+        ":msvc_optional_versioned_dynamic_library",
+    ],
+)
+
+cc_args(
+    name = "libraries_to_link_args_msvc",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    nested = [
+        ":thinlto_param_file_msvc",
+        ":libraries_to_link_values_msvc",
+    ],
+)
+
+cc_nested_args(
+    name = "thinlto_param_file_msvc",
+    args = ["@{param_file}"],
+    format = {"param_file": "@rules_cc//cc/toolchains/variables:thinlto_param_file"},
+    requires_not_none = "@rules_cc//cc/toolchains/variables:thinlto_param_file",
+)
+
+cc_nested_args(
+    name = "libraries_to_link_values_msvc",
+    nested = [":libraries_to_link_expansion_msvc"],
+    requires_not_none = "@rules_cc//cc/toolchains/variables:libraries_to_link",
+)
+
+cc_nested_args(
+    name = "msvc_optional_object_file_group",
+    args = ["{library}"],
+    format = {"library": "@rules_cc//cc/toolchains/variables:libraries_to_link.object_files"},
+    iterate_over = "@rules_cc//cc/toolchains/variables:libraries_to_link.object_files",
+    requires_equal = "@rules_cc//cc/toolchains/variables:libraries_to_link.type",
+    requires_equal_value = "object_file_group",
+)
+
+cc_nested_args(
+    name = "msvc_optional_object_file",
+    args = ["{library}"],
+    format = {"library": "@rules_cc//cc/toolchains/variables:libraries_to_link.name"},
+    requires_equal = "@rules_cc//cc/toolchains/variables:libraries_to_link.type",
+    requires_equal_value = "object_file",
+)
+
+cc_nested_args(
+    name = "msvc_optional_interface_library",
+    args = ["{library}"],
+    format = {"library": "@rules_cc//cc/toolchains/variables:libraries_to_link.name"},
+    requires_equal = "@rules_cc//cc/toolchains/variables:libraries_to_link.type",
+    requires_equal_value = "interface_library",
+)
+
+cc_nested_args(
+    name = "msvc_optional_static_library",
+    nested = [
+        ":msvc_static_library_whole_archive",
+        ":msvc_static_library_no_whole_archive",
+    ],
+    requires_equal = "@rules_cc//cc/toolchains/variables:libraries_to_link.type",
+    requires_equal_value = "static_library",
+)
+
+cc_nested_args(
+    name = "msvc_static_library_no_whole_archive",
+    args = ["{library}"],
+    format = {"library": "@rules_cc//cc/toolchains/variables:libraries_to_link.name"},
+    requires_false = "@rules_cc//cc/toolchains/variables:libraries_to_link.is_whole_archive",
+)
+
+cc_nested_args(
+    name = "msvc_static_library_whole_archive",
+    args = ["/WHOLEARCHIVE:{library}"],
+    format = {"library": "@rules_cc//cc/toolchains/variables:libraries_to_link.name"},
+    requires_true = "@rules_cc//cc/toolchains/variables:libraries_to_link.is_whole_archive",
+)
+
+cc_nested_args(
+    name = "msvc_optional_dynamic_library",
+    args = ["{library}"],
+    format = {"library": "@rules_cc//cc/toolchains/variables:libraries_to_link.name"},
+    requires_equal = "@rules_cc//cc/toolchains/variables:libraries_to_link.type",
+    requires_equal_value = "dynamic_library",
+)
+
+cc_nested_args(
+    name = "msvc_optional_versioned_dynamic_library",
+    args = ["{library}"],
+    format = {"library": "@rules_cc//cc/toolchains/variables:libraries_to_link.name"},
+    requires_equal = "@rules_cc//cc/toolchains/variables:libraries_to_link.type",
+    requires_equal_value = "versioned_dynamic_library",
+)
+
+cc_feature(
+    name = "libraries_to_link_msvc",
+    args = [":libraries_to_link_args_msvc"],
+    overrides = "@rules_cc//cc/toolchains/features/legacy:libraries_to_link",
+)
+
+cc_args(
+    name = "preprocessor_defines_args_msvc",
+    actions = ["@rules_cc//cc/toolchains/actions:source_compile_actions"],
+    args = ["/D{preprocessor_defines}"],
+    format = {"preprocessor_defines": "@rules_cc//cc/toolchains/variables:preprocessor_defines"},
+    iterate_over = "@rules_cc//cc/toolchains/variables:preprocessor_defines",
+)
+
+cc_feature(
+    name = "preprocessor_defines_msvc",
+    args = [":preprocessor_defines_args_msvc"],
+    overrides = "@rules_cc//cc/toolchains/features/legacy:preprocessor_defines",
+)
+
+cc_args(
+    name = "include_quote_paths_args_msvc",
+    actions = ["@rules_cc//cc/toolchains/actions:source_compile_actions"],
+    args = ["/I{quote_include_paths}"],
+    format = {"quote_include_paths": "@rules_cc//cc/toolchains/variables:quote_include_paths"},
+    iterate_over = "@rules_cc//cc/toolchains/variables:quote_include_paths",
+)
+
+cc_args(
+    name = "include_paths_args_msvc",
+    actions = ["@rules_cc//cc/toolchains/actions:source_compile_actions"],
+    args = ["/I{include_paths}"],
+    format = {"include_paths": "@rules_cc//cc/toolchains/variables:include_paths"},
+    iterate_over = "@rules_cc//cc/toolchains/variables:include_paths",
+)
+
+cc_args(
+    name = "system_include_paths_args_msvc",
+    actions = ["@rules_cc//cc/toolchains/actions:source_compile_actions"],
+    args = ["/I{system_include_paths}"],
+    format = {"system_include_paths": "@rules_cc//cc/toolchains/variables:system_include_paths"},
+    iterate_over = "@rules_cc//cc/toolchains/variables:system_include_paths",
+)
+
+cc_feature(
+    name = "include_paths_msvc",
+    args = [
+        ":include_quote_paths_args_msvc",
+        ":include_paths_args_msvc",
+        ":system_include_paths_args_msvc",
+    ],
+    overrides = "@rules_cc//cc/toolchains/features/legacy:include_paths",
+)
+
+cc_args(
+    name = "includes_args_msvc",
+    actions = ["@rules_cc//cc/toolchains/actions:source_compile_actions"],
+    args = ["/FI{includes}"],
+    format = {"includes": "@rules_cc//cc/toolchains/variables:includes"},
+    iterate_over = "@rules_cc//cc/toolchains/variables:includes",
+    requires_not_none = "@rules_cc//cc/toolchains/variables:includes",
+)
+
+cc_feature(
+    name = "includes_msvc",
+    args = [":includes_args_msvc"],
+    overrides = "@rules_cc//cc/toolchains/features/legacy:includes",
+)
+
+cc_feature_set(
+    name = "include_flags_msvc",
+    all_of = [
+        ":includes_msvc",
+        ":include_paths_msvc",
+    ],
+)
+
+cc_args(
+    name = "compiler_input_flags_args_msvc",
+    actions = ["@rules_cc//cc/toolchains/actions:compile_actions"],
+    args = [
+        "/c",
+        "{source_file}",
+    ],
+    format = {"source_file": "@rules_cc//cc/toolchains/variables:source_file"},
+    requires_not_none = "@rules_cc//cc/toolchains/variables:source_file",
+)
+
+cc_feature(
+    name = "compiler_input_flags_msvc",
+    args = [":compiler_input_flags_args_msvc"],
+    overrides = "@rules_cc//cc/toolchains/features/legacy:compiler_input_flags",
+)
+
+cc_args(
+    name = "output_assembly_flags_msvc",
+    actions = ["@rules_cc//cc/toolchains/actions:compile_actions"],
+    args = ["/Fa{output_file}"],
+    format = {"output_file": "@rules_cc//cc/toolchains/variables:output_assembly_file"},
+    requires_not_none = "@rules_cc//cc/toolchains/variables:output_assembly_file",
+)
+
+cc_args(
+    name = "output_preprocess_flags_msvc",
+    actions = ["@rules_cc//cc/toolchains/actions:compile_actions"],
+    args = [
+        "/P",
+        "/Fi{output_file}",
+    ],
+    format = {"output_file": "@rules_cc//cc/toolchains/variables:output_preprocess_file"},
+    requires_not_none = "@rules_cc//cc/toolchains/variables:output_preprocess_file",
+)
+
+cc_args(
+    name = "output_object_flags_msvc",
+    actions = ["@rules_cc//cc/toolchains/actions:compile_actions"],
+    args = ["/Fo{output_file}"],
+    format = {"output_file": "@rules_cc//cc/toolchains/variables:output_file"},
+    requires_not_none = "@rules_cc//cc/toolchains/variables:output_file",
+)
+
+cc_feature(
+    name = "compiler_output_flags_msvc",
+    args = [
+        ":output_assembly_flags_msvc",
+        ":output_preprocess_flags_msvc",
+        ":output_object_flags_msvc",
+    ],
+    overrides = "@rules_cc//cc/toolchains/features/legacy:compiler_output_flags",
+)
+
+cc_feature(
+    name = "dependency_file_msvc",
+    overrides = "@rules_cc//cc/toolchains/features/legacy:dependency_file",
+)
+
+cc_args(
+    name = "output_link_flags_args_msvc",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    args = ["/OUT:{output_execpath}"],
+    format = {"output_execpath": "@rules_cc//cc/toolchains/variables:output_execpath"},
+    requires_not_none = "@rules_cc//cc/toolchains/variables:output_execpath",
+)
+
+cc_feature(
+    name = "output_execpath_flags_msvc",
+    args = [":output_link_flags_args_msvc"],
+    overrides = "@rules_cc//cc/toolchains/features/legacy:output_execpath_flags",
+)
+
+cc_args(
+    name = "legacy_link_flags_args_msvc",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    args = ["{legacy_link_flags}"],
+    format = {"legacy_link_flags": "@rules_cc//cc/toolchains/variables:legacy_link_flags"},
+    iterate_over = "@rules_cc//cc/toolchains/variables:legacy_link_flags",
+    requires_not_none = "@rules_cc//cc/toolchains/variables:legacy_link_flags",
+)
+
+cc_feature(
+    name = "legacy_link_flags_msvc",
+    args = [":legacy_link_flags_args_msvc"],
+    overrides = "@rules_cc//cc/toolchains/features/legacy:legacy_link_flags",
+)
+
+cc_args(
+    name = "user_link_flags_args_msvc",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    args = ["{user_link_flags}"],
+    format = {"user_link_flags": "@rules_cc//cc/toolchains/variables:user_link_flags"},
+    iterate_over = "@rules_cc//cc/toolchains/variables:user_link_flags",
+    requires_not_none = "@rules_cc//cc/toolchains/variables:user_link_flags",
+)
+
+cc_feature(
+    name = "user_link_flags_msvc",
+    args = [":user_link_flags_args_msvc"],
+    overrides = "@rules_cc//cc/toolchains/features/legacy:user_link_flags",
+)
+
+cc_feature_set(
+    name = "link_flags_msvc",
+    all_of = [
+        ":legacy_link_flags_msvc",
+        ":user_link_flags_msvc",
+        ":output_execpath_flags_msvc",
+    ],
+)
+
+cc_args(
+    name = "library_search_directories_args_msvc",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    args = ["/LIBPATH:{library_search_directories}"],
+    format = {"library_search_directories": "@rules_cc//cc/toolchains/variables:library_search_directories"},
+    iterate_over = "@rules_cc//cc/toolchains/variables:library_search_directories",
+    requires_not_none = "@rules_cc//cc/toolchains/variables:library_search_directories",
+)
+
+cc_feature(
+    name = "library_search_directories_msvc",
+    args = [":library_search_directories_args_msvc"],
+    overrides = "@rules_cc//cc/toolchains/features/legacy:library_search_directories",
+)
+
+cc_args(
+    name = "shared_flag_args_msvc",
+    actions = ["@rules_cc//cc/toolchains/actions:dynamic_library_link_actions"],
+    args = ["/DLL"],
+)
+
+cc_feature(
+    name = "shared_flag_msvc",
+    args = [":shared_flag_args_msvc"],
+    overrides = "@rules_cc//cc/toolchains/features/legacy:shared_flag",
+)
+
+cc_feature(
+    name = "random_seed_msvc",
+    overrides = "@rules_cc//cc/toolchains/features/legacy:random_seed",
+)
+
+cc_feature(
+    name = "strip_debug_symbols_msvc",
+    overrides = "@rules_cc//cc/toolchains/features/legacy:strip_debug_symbols",
 )
 
 cc_feature(
@@ -102,8 +500,17 @@ cc_feature_set(
     name = "all_legacy_builtin_features",
     all_of = [
         ":default_compile_flags",
-        ":supports_start_end_lib",
-    ],
+    ] + select({
+        "@llvm//constraints/windows/abi:msvc": [
+            ":static_libgcc",
+        ],
+        "//conditions:default": [],
+    }) + select({
+        "@platforms//os:windows": [],
+        "//conditions:default": [
+            ":supports_start_end_lib",
+        ],
+    }),
     visibility = ["//visibility:public"],
 )
 
@@ -113,18 +520,28 @@ cc_feature_set(
     name = "experimental_replace_legacy_action_config_features",
     all_of = [
         ":no_legacy_features",
-        "@rules_cc//cc/toolchains/args/archiver_flags:feature",
-        "@rules_cc//cc/toolchains/args/pic_flags:feature",
-        # TODO: Restore this after a rules_cc release includes the Windows
-        # /start-lib and /end-lib arguments.
-        # "@rules_cc//cc/toolchains/args/libraries_to_link:feature",
-        "@llvm//toolchain/features/libraries_to_link:feature",
         "@rules_cc//cc/toolchains/args/linker_param_file:feature",
-        "@rules_cc//cc/toolchains/args/preprocessor_defines:feature",
-        "@rules_cc//cc/toolchains/args/random_seed:feature",
-        "@rules_cc//cc/toolchains/args/runtime_library_search_directories:feature",
-        "@rules_cc//cc/toolchains/args/shared_flag:feature",
-        ":strip_debug_symbols",
+    ] + select({
+        "@llvm//constraints/windows/abi:msvc": [
+            ":libraries_to_link_msvc",
+        ],
+        "//conditions:default": [
+            "@rules_cc//cc/toolchains/args/libraries_to_link:feature",
+        ],
+    }) + select({
+        "@llvm//constraints/windows/abi:msvc": [
+            ":preprocessor_defines_msvc",
+            ":random_seed_msvc",
+            ":shared_flag_msvc",
+            ":strip_debug_symbols_msvc",
+        ],
+        "//conditions:default": [
+            "@rules_cc//cc/toolchains/args/preprocessor_defines:feature",
+            "@rules_cc//cc/toolchains/args/random_seed:feature",
+            "@rules_cc//cc/toolchains/args/shared_flag:feature",
+            ":strip_debug_symbols",
+        ],
+    }) + [
         "@rules_cc//cc/toolchains/args/strip_flags:feature",
         "@rules_cc//cc/toolchains/args/objc_arc_flags:feature",
         # Inlined below as it isn't visible and also has an issue upstream.
@@ -132,21 +549,66 @@ cc_feature_set(
         # Intentionally omitted since we link runtime libraries ourselves and
         # including this flag just raises a warning.
         # "@rules_cc//cc/toolchains/args/static_libgcc:feature",
-        "@rules_cc//cc/toolchains/args/include_flags:feature",
+    ] + select({
+        "@llvm//constraints/windows/abi:msvc": [
+            ":include_flags_msvc",
+        ],
+        "//conditions:default": [
+            "@rules_cc//cc/toolchains/args/include_flags:feature",
+        ],
+    }) + [
         "@rules_cc//cc/toolchains/args/fission_flags:feature",
-        "@rules_cc//cc/toolchains/args/link_flags:feature",
+    ] + select({
+        "@llvm//constraints/windows/abi:msvc": [
+            ":link_flags_msvc",
+        ],
+        "//conditions:default": [
+            "@rules_cc//cc/toolchains/args/link_flags:feature",
+        ],
+    }) + [
         "@rules_cc//cc/toolchains/args/linkstamp_flags:feature",
-        "@rules_cc//cc/toolchains/args/library_search_directories:feature",
-        "@rules_cc//cc/toolchains/args/dependency_file:feature",
+    ] + select({
+        "@llvm//constraints/windows/abi:msvc": [
+            ":library_search_directories_msvc",
+            ":dependency_file_msvc",
+        ],
+        "//conditions:default": [
+            "@rules_cc//cc/toolchains/args/library_search_directories:feature",
+            "@rules_cc//cc/toolchains/args/dependency_file:feature",
+        ],
+    }) + [
 
         # aka user_compile_flags_feature.
         # NOTE: This should come last as it must be able to override other features but before compiler inputs.
         "@rules_cc//cc/toolchains/args/compile_flags:feature",
-
-        # NOTE: This should come after user compile flags since some flags need to be added before the input file (e.g., -x lang)
-        "@rules_cc//cc/toolchains/args/compiler_input_flags:feature",
-        "@rules_cc//cc/toolchains/args/compiler_output_flags:feature",
-    ],
+    ] + select({
+        "@llvm//constraints/windows/abi:msvc": [
+            # ml.exe requires output flags before input flags; clang-cl accepts this too.
+            ":compiler_output_flags_msvc",
+            ":compiler_input_flags_msvc",
+        ],
+        "//conditions:default": [
+            "@rules_cc//cc/toolchains/args/compiler_input_flags:feature",
+            "@rules_cc//cc/toolchains/args/compiler_output_flags:feature",
+        ],
+    }) + select({
+        "@llvm//constraints/windows/abi:msvc": [
+            ":archiver_flags_msvc",
+        ],
+        "//conditions:default": [
+            "@rules_cc//cc/toolchains/args/archiver_flags:feature",
+        ],
+    }) + select({
+        "@llvm//constraints/windows/abi:msvc": [],
+        "//conditions:default": [
+            "@rules_cc//cc/toolchains/args/runtime_library_search_directories:feature",
+        ],
+    }) + select({
+        "@platforms//os:windows": [],
+        "//conditions:default": [
+            "@rules_cc//cc/toolchains/args/pic_flags:feature",
+        ],
+    }),
     visibility = ["//visibility:public"],
 )
 

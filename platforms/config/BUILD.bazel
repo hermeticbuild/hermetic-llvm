@@ -9,6 +9,7 @@ bzl_library(
     visibility = ["//visibility:public"],
     deps = [
         "//constraints/libc:libc_versions",
+        "//constraints/windows/abi:abis",
         "//platforms:common",
         "@bazel_skylib//lib:selects",
     ],

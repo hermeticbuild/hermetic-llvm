@@ -44,5 +44,7 @@ def platform_cc_tool_map(exec_os, exec_cpu):
         "@llvm//toolchain:macos_complete_with_libtool": Label(tool_repo + ":tools_with_dsym_and_libtool"),
         "@llvm//toolchain:macos_complete": Label(tool_repo + ":tools_with_dsym"),
         "@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_apple_setting": Label(tool_repo + ":tools_with_libtool_for_runtime"),
+                "@llvm//platforms/config:windows_x86_64_msvc": Label(tool_repo + ":tools_for_msvc_for_runtime"),
+                "@llvm//platforms/config:windows_aarch64_msvc": Label(tool_repo + ":tools_for_msvc_for_runtime"),
         "//conditions:default": Label(tool_repo + ":default_tools_for_runtime"),
     })

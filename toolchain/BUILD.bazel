@@ -150,10 +150,17 @@ cc_args_list(
         "@platforms//os:linux": [
             "//toolchain/args:crt_search_directory",
         ],
-        "@platforms//os:windows": [
+        "@platforms//os:windows": [],
+        "@platforms//os:none": [],
+    }) + select({
+        "@llvm//constraints/windows/abi:gnu": [
             "//toolchain/args:crt_search_directory",
         ],
-        "@platforms//os:none": [],
+        "@llvm//constraints/windows/abi:gnullvm": [
+            "//toolchain/args:crt_search_directory",
+        ],
+        "@llvm//constraints/windows/abi:msvc": [],
+        "@llvm//constraints/windows/abi:unconstrained": [],
     }),
 )
 
@@ -307,10 +314,20 @@ cc_args_list(
 # TODO(zbarsky): This must match llvm/toolchains/llvm.bzl
 cc_args_list(
     name = "windows_toolchain_args",
-    args = [
-        "//toolchain/args:cxxstdlib_headers_include_search_paths",
-        "//toolchain/args/windows:mingw_headers_include_search_paths",
-    ],
+    args = select({
+        "@llvm//constraints/windows/abi:gnu": [
+            "//toolchain/args:cxxstdlib_headers_include_search_paths",
+            "//toolchain/args/windows:mingw_headers_include_search_paths",
+        ],
+        "@llvm//constraints/windows/abi:gnullvm": [
+            "//toolchain/args:cxxstdlib_headers_include_search_paths",
+            "//toolchain/args/windows:mingw_headers_include_search_paths",
+        ],
+        "@llvm//constraints/windows/abi:msvc": [
+            "//toolchain/args/windows:msvc_headers_include_search_paths",
+        ],
+        "@llvm//constraints/windows/abi:unconstrained": [],
+    }),
 )
 
 cc_args_list(
@@ -333,44 +350,58 @@ cc_args_list(
         "//toolchain/args:no_absolute_paths_for_builtins",
         "//toolchain/args:deterministic_compile_flags",
         "//toolchain/args:module_map",
-        ":sysroot_flags",
         ":hermetic_compile_flags",
 
         # TODO(cerisier): Explode this into specific args instead
         ":platform_specific_args",
 
-        # Optional sanitizers
-        "//toolchain/args:ubsan_flags",
-        "//toolchain/args:cfi_flags",
-        "//toolchain/args:msan_flags",
-        "//toolchain/args:dfsan_flags",
-        "//toolchain/args:nsan_flags",
-        "//toolchain/args:safestack_flags",
-        "//toolchain/args:rtsan_flags",
-        "//toolchain/args:tysan_flags",
-        "//toolchain/args:tsan_flags",
-        "//toolchain/args:asan_flags",
-        "//toolchain/args:lsan_flags",
-        "//toolchain/args:xray_flags",
-        "//toolchain/args:fuzzer_flags",
-        "//toolchain/args:profile_flags",
+        "//toolchain/args:sanitizer_flags",
 
         # Common default link flags.
-        "//toolchain/args:fuse_ld",
         "//toolchain/args:lto_plugin_target_flags",
-    ] + [
-        ":cxxstdlib_library_search_paths",
-        ":libunwind_library_search_paths",
-        ":rtlib",
-        ":stdlib",
-        ":unwindlib",
-        ":resource_dir",
         "//toolchain/args:validate_static_library_args",
         ":default_link_flags",
         # Needs to stay out of resource_dir since clang does not always search for crtstuff for all targets.
         ":default_startfiles",
         ":default_libs",
-    ],
+    ] + select({
+        "@llvm//constraints/windows/abi:msvc": [],
+        "//conditions:default": [
+            ":sysroot_flags",
+            "//toolchain/args:llvm_target_for_platform_link",
+            "//toolchain/args:fuse_ld",
+            ":cxxstdlib_library_search_paths",
+            ":libunwind_library_search_paths",
+            ":rtlib",
+            ":stdlib",
+            ":unwindlib",
+            ":resource_dir",
+        ],
+    }),
+    visibility = ["//visibility:public"],
+)
+
+cc_artifact_name_pattern(
+    name = "windows_msvc_object_file_pattern",
+    category = "@rules_cc//cc/toolchains/artifacts:object_file",
+    extension = ".obj",
+    prefix = "",
+    visibility = ["//visibility:public"],
+)
+
+cc_artifact_name_pattern(
+    name = "windows_msvc_static_library_pattern",
+    category = "@rules_cc//cc/toolchains/artifacts:static_library",
+    extension = ".lib",
+    prefix = "",
+    visibility = ["//visibility:public"],
+)
+
+cc_artifact_name_pattern(
+    name = "windows_msvc_alwayslink_static_library_pattern",
+    category = "@rules_cc//cc/toolchains/artifacts:alwayslink_static_library",
+    extension = ".lo.lib",
+    prefix = "",
     visibility = ["//visibility:public"],
 )
 
@@ -378,6 +409,22 @@ cc_artifact_name_pattern(
     name = "windows_executable_pattern",
     category = "@rules_cc//cc/toolchains/artifacts:executable",
     extension = ".exe",
+    prefix = "",
+    visibility = ["//visibility:public"],
+)
+
+cc_artifact_name_pattern(
+    name = "windows_dynamic_library_pattern",
+    category = "@rules_cc//cc/toolchains/artifacts:dynamic_library",
+    extension = ".dll",
+    prefix = "",
+    visibility = ["//visibility:public"],
+)
+
+cc_artifact_name_pattern(
+    name = "windows_interface_library_pattern",
+    category = "@rules_cc//cc/toolchains/artifacts:interface_library",
+    extension = ".if.lib",
     prefix = "",
     visibility = ["//visibility:public"],
 )
@@ -398,6 +445,8 @@ cc_action_type_set(
         "@rules_cc//cc/toolchains/actions:cpp_compile",
         "@rules_cc//cc/toolchains/actions:cpp_module_compile",
         "@rules_cc//cc/toolchains/actions:cpp_module_codegen",
+        "@rules_cc//cc/toolchains/actions:cpp20_module_compile",
+        "@rules_cc//cc/toolchains/actions:cpp20_module_codegen",
         "@rules_cc//cc/toolchains/actions:lto_backend",
         "@rules_cc//cc/toolchains/actions:clif_match",
         "@rules_cc//cc/toolchains/actions:objcpp_compile",

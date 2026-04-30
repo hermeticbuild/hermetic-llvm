@@ -1,6 +1,8 @@
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 load("@rules_cc//cc/toolchains:feature.bzl", "cc_feature")
+load("@rules_cc//cc/toolchains:feature_constraint.bzl", "cc_feature_constraint")
 load("@rules_cc//cc/toolchains:feature_set.bzl", "cc_feature_set")
+load("@rules_cc//cc/toolchains:mutually_exclusive_category.bzl", "cc_mutually_exclusive_category")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -61,7 +63,13 @@ cc_args(
     actions = [
         "@rules_cc//cc/toolchains/actions:link_actions",
     ],
-    args = ["{def_file_path}"],
+    args = select({
+        "@llvm//constraints/windows/abi:msvc": [
+            "/DEF:{def_file_path}",
+            "/ignore:4070",
+        ],
+        "//conditions:default": ["{def_file_path}"],
+    }),
     format = {
         "def_file_path": "@rules_cc//cc/toolchains/variables:def_file_path",
     },
@@ -115,6 +123,11 @@ cc_args(
         "@platforms//cpu:wasm64": [],
         "@platforms//os:windows": [],
         "//conditions:default": ["-Wl,--icf=safe"],
+    }) + select({
+        "@llvm//constraints/windows/abi:msvc": [
+            "/OPT:REF,ICF",
+        ],
+        "//conditions:default": [],
     }),
 )
 
@@ -123,30 +136,39 @@ cc_args(
     actions = [
         "@rules_cc//cc/toolchains/actions:compile_actions",
     ],
-    args = [
-        # No debug symbols.
-        # Maybe we should enable https://gcc.gnu.org/wiki/DebugFission for opt or
-        # even generally? However, that can't happen here, as it requires special
-        # handling in Bazel.
-        "-g0",
+    args = select({
+        "@llvm//constraints/windows/abi:msvc": [
+            "/O2",
+            "/DNDEBUG",
+            "/Gy",
+            "/Gw",
+            "/Zc:inline",
+        ],
+        "//conditions:default": [
+            # No debug symbols.
+            # Maybe we should enable https://gcc.gnu.org/wiki/DebugFission for opt or
+            # even generally? However, that can't happen here, as it requires special
+            # handling in Bazel.
+            "-g0",
 
-        # Conservative choice for -O
-        # -O3 can increase binary size and even slow down the resulting binaries.
-        # Profile first and / or use FDO if you need better performance than this.
-        "-O2",
+            # Conservative choice for -O
+            # -O3 can increase binary size and even slow down the resulting binaries.
+            # Profile first and / or use FDO if you need better performance than this.
+            "-O2",
 
-        # Security hardening on by default.
-        # Conservative choice; -D_FORTIFY_SOURCE=2 may be unsafe in some cases.
-        "-D_FORTIFY_SOURCE=1",
+            # Security hardening on by default.
+            # Conservative choice; -D_FORTIFY_SOURCE=2 may be unsafe in some cases.
+            "-D_FORTIFY_SOURCE=1",
 
-        # Disable assertions
-        "-DNDEBUG",
+            # Disable assertions
+            "-DNDEBUG",
 
-        # Removal of unused code and data at link time (can this increase binary
-        # size in some cases?).
-        "-ffunction-sections",
-        "-fdata-sections",
-    ],
+            # Removal of unused code and data at link time (can this increase binary
+            # size in some cases?).
+            "-ffunction-sections",
+            "-fdata-sections",
+        ],
+    }),
 )
 
 # Use a stub feature so we can properly control flag ordering.
@@ -157,6 +179,10 @@ cc_feature(
         ":opt_link_flags",
     ],
     feature_name = "_underlying_opt",
+    implies = select({
+        "@llvm//constraints/windows/abi:msvc": [":frame_pointer"],
+        "//conditions:default": [],
+    }),
     requires_any_of = [":opt_stub"],
 )
 
@@ -170,18 +196,25 @@ cc_args(
     actions = [
         "@rules_cc//cc/toolchains/actions:compile_actions",
     ],
-    args = [
-        # windows c runtime requires -D_DEBUG if using debug libraries
-        "-D_DEBUG",
+    args = select({
+        "@llvm//constraints/windows/abi:msvc": [
+            "/D_DEBUG",
+            "/Od",
+            "/Z7",
+        ],
+        "//conditions:default": [
+            # windows c runtime requires -D_DEBUG if using debug libraries
+            "-D_DEBUG",
 
-        # Clang has -Og for compatibility with GCC, but currently it is just equivalent
-        # to -O1. Besides potentially impairing debugging, -O1/-Og significantly
-        # increases compile times.
-        "-O0",
+            # Clang has -Og for compatibility with GCC, but currently it is just equivalent
+            # to -O1. Besides potentially impairing debugging, -O1/-Og significantly
+            # increases compile times.
+            "-O0",
 
-        # Debug symbols.
-        "-g",
-    ],
+            # Debug symbols.
+            "-g",
+        ],
+    }),
 )
 
 # Use a stub feature so we can properly control flag ordering.
@@ -191,6 +224,10 @@ cc_feature(
         ":dbg_compile_flags",
     ],
     feature_name = "_underlying_dbg",
+    implies = select({
+        "@llvm//constraints/windows/abi:msvc": [":generate_pdb_file"],
+        "//conditions:default": [],
+    }),
     requires_any_of = [":dbg_stub"],
 )
 
@@ -202,6 +239,377 @@ cc_feature(
 cc_feature(
     name = "archive_param_file",
     feature_name = "archive_param_file",
+)
+
+cc_feature(
+    name = "compiler_param_file",
+    feature_name = "compiler_param_file",
+)
+
+cc_feature(
+    name = "windows_quoting_for_param_files",
+    feature_name = "windows_quoting_for_param_files",
+)
+
+cc_feature(
+    name = "supports_interface_shared_libraries",
+    feature_name = "supports_interface_shared_libraries",
+)
+
+cc_feature(
+    name = "has_configured_linker_path",
+    feature_name = "has_configured_linker_path",
+)
+
+cc_args(
+    name = "nologo_args_msvc",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:assembly_actions",
+        "@rules_cc//cc/toolchains/actions:link_actions",
+        "@rules_cc//cc/toolchains/actions:source_compile_actions",
+    ],
+    args = ["/nologo"],
+)
+
+cc_feature(
+    name = "nologo",
+    args = [":nologo_args_msvc"],
+    feature_name = "nologo",
+)
+
+cc_args(
+    name = "determinism_compile_args_msvc",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:source_compile_actions",
+    ],
+    args = [
+        "/Brepro",
+        "-gno-codeview-command-line",
+    ],
+)
+
+cc_args(
+    name = "determinism_link_args_msvc",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    args = [
+        "/Brepro",
+        "/lldignoreenv",
+        "/INCREMENTAL:NO",
+        "/PDBALTPATH:%_PDB%",
+        "/pdbsourcepath:.",
+    ],
+)
+
+cc_feature(
+    name = "determinism",
+    args = [
+        ":determinism_compile_args_msvc",
+        ":determinism_link_args_msvc",
+    ],
+    feature_name = "determinism",
+)
+
+cc_args(
+    name = "default_c_std_args_msvc",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:c_compile_actions",
+    ],
+    args = ["/std:c17"],
+)
+
+cc_feature(
+    name = "default_c_std",
+    args = [":default_c_std_args_msvc"],
+    feature_name = "default_c_std",
+)
+
+cc_args(
+    name = "default_compile_flags_args_msvc",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:source_compile_actions",
+    ],
+    args = [
+        "-mno-incremental-linker-compatible",
+        "/DNOMINMAX",
+        "/D_CRT_SECURE_NO_DEPRECATE",
+        "/D_CRT_SECURE_NO_WARNINGS",
+        "/bigobj",
+        "/Zm500",
+        "/EHsc",
+        "/wd4351",
+        "/wd4291",
+        "/wd4250",
+        "/wd4996",
+    ],
+)
+
+cc_feature(
+    name = "default_compile_flags_msvc",
+    args = [":default_compile_flags_args_msvc"],
+    feature_name = "default_compile_flags_msvc",
+)
+
+cc_feature_constraint(
+    name = "static_link_msvcrt_release",
+    none_of = [":dbg_stub"],
+)
+
+cc_feature_constraint(
+    name = "static_link_msvcrt_dbg",
+    all_of = [":dbg_stub"],
+)
+
+cc_feature_constraint(
+    name = "dynamic_link_msvcrt_release",
+    none_of = [
+        ":dbg_stub",
+        ":static_link_msvcrt",
+    ],
+)
+
+cc_feature_constraint(
+    name = "dynamic_link_msvcrt_dbg",
+    all_of = [":dbg_stub"],
+    none_of = [":static_link_msvcrt"],
+)
+
+cc_args(
+    name = "static_link_msvcrt_compile_args",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:c_compile",
+        "@rules_cc//cc/toolchains/actions:cpp_compile",
+    ],
+    args = ["/MT"],
+    requires_any_of = [":static_link_msvcrt_release"],
+)
+
+cc_args(
+    name = "static_link_msvcrt_dbg_compile_args",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:c_compile",
+        "@rules_cc//cc/toolchains/actions:cpp_compile",
+    ],
+    args = ["/MTd"],
+    requires_any_of = [":static_link_msvcrt_dbg"],
+)
+
+cc_args(
+    name = "static_link_msvcrt_link_args",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    args = ["/DEFAULTLIB:libcmt.lib"],
+    requires_any_of = [":static_link_msvcrt_release"],
+)
+
+cc_args(
+    name = "static_link_msvcrt_dbg_link_args",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    args = ["/DEFAULTLIB:libcmtd.lib"],
+    requires_any_of = [":static_link_msvcrt_dbg"],
+)
+
+cc_feature(
+    name = "static_link_msvcrt",
+    args = [
+        ":static_link_msvcrt_compile_args",
+        ":static_link_msvcrt_dbg_compile_args",
+        ":static_link_msvcrt_link_args",
+        ":static_link_msvcrt_dbg_link_args",
+    ],
+    feature_name = "static_link_msvcrt",
+)
+
+cc_args(
+    name = "dynamic_link_msvcrt_compile_args",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:c_compile",
+        "@rules_cc//cc/toolchains/actions:cpp_compile",
+    ],
+    args = ["/MD"],
+    requires_any_of = [":dynamic_link_msvcrt_release"],
+)
+
+cc_args(
+    name = "dynamic_link_msvcrt_dbg_compile_args",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:c_compile",
+        "@rules_cc//cc/toolchains/actions:cpp_compile",
+    ],
+    args = ["/MDd"],
+    requires_any_of = [":dynamic_link_msvcrt_dbg"],
+)
+
+cc_args(
+    name = "dynamic_link_msvcrt_link_args",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    args = ["/DEFAULTLIB:msvcrt.lib"],
+    requires_any_of = [":dynamic_link_msvcrt_release"],
+)
+
+cc_args(
+    name = "dynamic_link_msvcrt_dbg_link_args",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    args = ["/DEFAULTLIB:msvcrtd.lib"],
+    requires_any_of = [":dynamic_link_msvcrt_dbg"],
+)
+
+cc_feature(
+    name = "dynamic_link_msvcrt",
+    args = [
+        ":dynamic_link_msvcrt_compile_args",
+        ":dynamic_link_msvcrt_dbg_compile_args",
+        ":dynamic_link_msvcrt_link_args",
+        ":dynamic_link_msvcrt_dbg_link_args",
+    ],
+    feature_name = "dynamic_link_msvcrt",
+)
+
+cc_args(
+    name = "msvc_implib_flags_args",
+    actions = ["@rules_cc//cc/toolchains/actions:dynamic_library_link_actions"],
+    args = ["/IMPLIB:{interface_library_output_path}"],
+    format = {
+        "interface_library_output_path": "@rules_cc//cc/toolchains/variables:interface_library_output_path",
+    },
+    requires_not_none = "@rules_cc//cc/toolchains/variables:interface_library_output_path",
+)
+
+cc_feature(
+    name = "msvc_implib_flags",
+    args = [":msvc_implib_flags_args"],
+    feature_name = "msvc_implib_flags",
+)
+
+cc_args(
+    name = "parse_showincludes_flags",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:preprocess_assemble",
+        "@rules_cc//cc/toolchains/actions:c_compile",
+        "@rules_cc//cc/toolchains/actions:linkstamp_compile",
+        "@rules_cc//cc/toolchains/actions:cpp_compile",
+        "@rules_cc//cc/toolchains/actions:cpp_module_compile",
+        "@rules_cc//cc/toolchains/actions:cpp_header_parsing",
+        "@rules_cc//cc/toolchains/actions:cpp_module_deps_scanning",
+        "@rules_cc//cc/toolchains/actions:cpp20_module_compile",
+    ],
+    args = ["/showIncludes"],
+    env = {"VSLANG": "1033"},
+)
+
+cc_feature(
+    name = "parse_showincludes",
+    args = [":parse_showincludes_flags"],
+    feature_name = "parse_showincludes",
+)
+
+cc_feature(
+    name = "supports_dynamic_linker",
+    feature_name = "supports_dynamic_linker",
+)
+
+cc_feature(
+    name = "no_dotd_file",
+    feature_name = "no_dotd_file",
+)
+
+cc_feature(
+    name = "shorten_virtual_includes",
+    feature_name = "shorten_virtual_includes",
+)
+
+cc_feature(
+    name = "skip_virtual_includes",
+    feature_name = "skip_virtual_includes",
+)
+
+cc_mutually_exclusive_category(
+    name = "subsystem_flag",
+)
+
+cc_args(
+    name = "linker_subsystem_flag_args_msvc",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    args = ["/SUBSYSTEM:CONSOLE"],
+)
+
+cc_feature(
+    name = "linker_subsystem_flag",
+    args = [":linker_subsystem_flag_args_msvc"],
+    feature_name = "linker_subsystem_flag",
+    mutually_exclusive = [":subsystem_flag"],
+)
+
+cc_args(
+    name = "windows_subsystem_flag_args_msvc",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    args = ["/SUBSYSTEM:WINDOWS"],
+)
+
+cc_feature(
+    name = "windows_subsystem_flag",
+    args = [":windows_subsystem_flag_args_msvc"],
+    feature_name = "windows_subsystem_flag",
+    mutually_exclusive = [":subsystem_flag"],
+)
+
+cc_args(
+    name = "frame_pointer_args_msvc",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:c_compile",
+        "@rules_cc//cc/toolchains/actions:cpp_compile",
+    ],
+    args = ["/Oy-"],
+)
+
+cc_feature(
+    name = "frame_pointer",
+    args = [":frame_pointer_args_msvc"],
+    feature_name = "frame_pointer",
+)
+
+cc_args(
+    name = "generate_linkmap_args_msvc",
+    actions = ["@rules_cc//cc/toolchains/actions:cpp_link_executable"],
+    args = ["/MAP:{output_execpath}.map"],
+    format = {
+        "output_execpath": "@rules_cc//cc/toolchains/variables:output_execpath",
+    },
+    requires_not_none = "@rules_cc//cc/toolchains/variables:output_execpath",
+)
+
+cc_feature(
+    name = "generate_linkmap",
+    args = [":generate_linkmap_args_msvc"],
+    feature_name = "generate_linkmap",
+)
+
+cc_args(
+    name = "treat_warnings_as_errors_args_msvc",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:link_actions",
+        "@rules_cc//cc/toolchains/actions:source_compile_actions",
+    ],
+    args = ["/WX"],
+)
+
+cc_feature(
+    name = "treat_warnings_as_errors",
+    args = [":treat_warnings_as_errors_args_msvc"],
+    feature_name = "treat_warnings_as_errors",
+)
+
+cc_feature(
+    name = "cpp_modules",
+    feature_name = "cpp_modules",
 )
 
 cc_feature(
@@ -256,7 +664,10 @@ cc_args(
 cc_args(
     name = "generate_pdb_file_link_args",
     actions = _FINAL_LINK_ACTIONS,
-    args = ["-Wl,--pdb="],
+    args = select({
+        "@llvm//constraints/windows/abi:msvc": ["/DEBUG"],
+        "//conditions:default": ["-Wl,--pdb="],
+    }),
 )
 
 cc_feature(
@@ -296,12 +707,23 @@ cc_args(
 cc_args(
     name = "llvm_coverage_map_format_link_args",
     actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
-    args = ["-fprofile-instr-generate"] + select({
-        "@platforms//os:windows": [
+    args = select({
+        "@llvm//constraints/windows/abi:gnu": [
+            "-fprofile-instr-generate",
             "-Wl,-u,__llvm_profile_runtime",
             "-Wl,/include:__llvm_profile_runtime",
         ],
-        "//conditions:default": [],
+        "@llvm//constraints/windows/abi:gnullvm": [
+            "-fprofile-instr-generate",
+            "-Wl,-u,__llvm_profile_runtime",
+            "-Wl,/include:__llvm_profile_runtime",
+        ],
+        "@llvm//constraints/windows/abi:msvc": [
+            "/include:__llvm_profile_runtime",
+        ],
+        "@llvm//constraints/windows/abi:unconstrained": [
+            "-fprofile-instr-generate",
+        ],
     }),
 )
 
@@ -348,8 +770,7 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:compile_actions",
     ],
     args = [
-        "-Xclang",
-        "-fmodule-map-file-home-is-cwd",
+        "-Xclang=-fmodule-map-file-home-is-cwd",
     ],
 )
 
@@ -378,6 +799,27 @@ cc_feature_set(
         # ":gcc_coverage_map_format",
         ":fully_static_link",
     ] + select({
+        "@llvm//constraints/windows/abi:msvc": [
+            ":cpp_modules",
+            ":default_c_std",
+            ":default_compile_flags_msvc",
+            ":determinism",
+            ":dynamic_link_msvcrt",
+            ":frame_pointer",
+            ":generate_linkmap",
+            ":generate_pdb_file",
+            ":linker_subsystem_flag",
+            ":windows_subsystem_flag",
+            ":nologo",
+            ":no_dotd_file",
+            ":shorten_virtual_includes",
+            ":skip_virtual_includes",
+            ":static_link_msvcrt",
+            ":supports_dynamic_linker",
+            ":treat_warnings_as_errors",
+        ],
+        "//conditions:default": [],
+    }) + select({
         "@platforms//os:windows": [
             ":copy_dynamic_libraries_to_binary",
             ":def_file",
