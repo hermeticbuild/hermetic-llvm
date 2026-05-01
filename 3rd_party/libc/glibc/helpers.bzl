@@ -27,8 +27,9 @@ def glibc_includes(cpu):
 
     return [
         "include",
+    ] + s390x_variant + [
         "sysdeps/unix/sysv/linux/{}".format(cpu),
-    ] + x86_64_variant + x86_parent + riscv64_variant + s390x_variant + [
+    ] + x86_64_variant + x86_parent + riscv64_variant + [
         "sysdeps/{}/nptl".format(cpu),
         "sysdeps/unix/sysv/linux/generic",
         "sysdeps/unix/sysv/linux/include",
