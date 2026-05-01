@@ -78,7 +78,32 @@ bazel query 'kind(toolchain, @llvm//toolchain:all)'
 ```
 
 ### Cgo compatibility
-TODO: write about this
+To make the vanilla Go compiler work with a fully hermetic toolchain, we had to send some patches upstream. Only versions of Go >= 1.27 are supported out of the box.
+
+To use this toolchain with earlier versions of Go, the compiler must be built from source with our patches. Luckily we have a patch to `rules_go` to allow doing that as part of your build graph.
+
+```
+rchive_override(
+    module_name = "rules_go",
+    integrity = "sha256-8ezQcDyHHp/+xa9NbUJO/3/kDEFFmJaV4pb1fd99m74=",
+    strip_prefix = "rules_go-62d798d48ae153e048a7f9c43ba68cfa1ea10924",
+    url = "https://github.com/bazel-contrib/rules_go/archive/62d798d48ae153e048a7f9c43ba68cfa1ea10924.tar.gz",
+)
+
+go_sdk = use_extension("@io_bazel_rules_go//go:extensions.bzl", "go_sdk")
+go_sdk.from_file(
+    name = "go_sdk",
+    experimental_build_compiler_from_source = True,
+    go_mod = "//:go.mod",
+    patch_strip = 1,
+    patches = [":go_compiler_flags.patch"],
+)
+use_repo(go_sdk, "go_sdk")
+```
+
+[Contents of the compiler path](https://raw.githubusercontent.com/hermeticbuild/hermetic-llvm/6420a65bdfe61eba18ceabe58f95162a6ea10a47/e2e/wasm/go_compiler_flags.patch)
+
+e2e/wasm has an example of a fully working Cgo setup.
 
 ### Usage with Rust
 We highly recommend using [rules_rs](https://github.com/hermeticbuild/rules_rs) to seamlessly interop the Rust and CC toolchains. It is best to use the toolchains and platforms defined by that ruleset to configure everything properly.
