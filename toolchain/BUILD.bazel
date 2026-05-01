@@ -23,6 +23,27 @@ string_setting(
     ],
 )
 
+alias(
+    name = "windows_crt",
+    actual = "//constraints/windows/crt:crt",
+    deprecation = "Use //constraints/windows/crt:crt instead.",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "windows_crt_ucrt",
+    actual = "//constraints/windows/crt:ucrt",
+    deprecation = "Use //constraints/windows/crt:ucrt instead.",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "windows_crt_msvcrt",
+    actual = "//constraints/windows/crt:msvcrt",
+    deprecation = "Use //constraints/windows/crt:msvcrt instead.",
+    visibility = ["//visibility:public"],
+)
+
 # Controls whether targets are built with bootstrapped toolchain or prebuilt toolchain.
 string_flag(
     name = "source",
