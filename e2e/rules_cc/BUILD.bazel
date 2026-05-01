@@ -19,6 +19,7 @@ load(
     "msan_cc_binary",
     "nsan_cc_binary",
     "opt_binary",
+    "profile_cc_binary",
     "rtsan_cc_binary",
     "safestack_cc_binary",
     "tsan_cc_binary",
@@ -578,6 +579,16 @@ fuzzer_cc_binary(
     }),
 )
 
+profile_cc_binary(
+    name = "profile_main",
+    srcs = ["profile_main.cc"],
+    target_compatible_with = select({
+        "@platforms//os:linux": [],
+        "@platforms//os:windows": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)
+
 exec_test(
     name = "fuzzer_output_test",
     srcs = ["fuzzer_output_test.sh"],
@@ -643,6 +654,23 @@ exec_test(
     tags = ["no-remote"],
     target_compatible_with = select({
         "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)
+
+sh_test(
+    name = "profile_output_test",
+    srcs = ["profile_output_test.sh"],
+    data = [":profile_main"],
+    env = {
+        "BINARY": "$(rootpath :profile_main)",
+    },
+    env_inherit = ["PATH"],
+    exec_compatible_with = HOST_CONSTRAINTS,
+    tags = ["no-remote"],
+    target_compatible_with = select({
+        "@platforms//os:linux": [],
+        "@platforms//os:windows": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
 )

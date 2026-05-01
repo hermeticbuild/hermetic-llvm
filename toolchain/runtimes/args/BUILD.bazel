@@ -188,6 +188,16 @@ cc_args_list(
     }),
 )
 
+cc_args_list(
+    name = "profile_flags",
+    args = select({
+        "//config:profile_enabled": [
+            "//toolchain/args:profile_compiler_flags",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
 # TODO(cerisier): this needs to differ per runtime (e.g libc++ still need crtbegin)
 cc_args(
     name = "hermetic_link_flags",
