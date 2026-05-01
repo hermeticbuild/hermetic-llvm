@@ -83,7 +83,7 @@ To make the vanilla Go compiler work with a fully hermetic toolchain, we had to 
 To use this toolchain with earlier versions of Go, the compiler must be built from source with our patches. Luckily we have a patch to `rules_go` to allow doing that as part of your build graph.
 
 ```
-rchive_override(
+archive_override(
     module_name = "rules_go",
     integrity = "sha256-8ezQcDyHHp/+xa9NbUJO/3/kDEFFmJaV4pb1fd99m74=",
     strip_prefix = "rules_go-62d798d48ae153e048a7f9c43ba68cfa1ea10924",
