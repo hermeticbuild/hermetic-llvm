@@ -54,7 +54,6 @@ def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
             ],
             "@platforms//os:none": [],
         }) + [
-            "@llvm//toolchain/features:prefer_pic_for_opt_binaries",
             "@rules_cc//cc/toolchains/args/layering_check:module_maps",
             # These are "enabled" but they only _actually_ get enabled when the underlying compilation mode is set.
             # This lets us properly order them before user_compile_flags and user_link_flags below.
@@ -71,7 +70,6 @@ def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
     cc_feature_set(
         name = name + "_runtimes_only_enabled_features",
         all_of = [
-            "@llvm//toolchain/features:prefer_pic_for_opt_binaries",
             "@llvm//toolchain/features:archive_param_file",
             # Always last (contains user_compile_flags and user_link_flags who should apply last).
             "@llvm//toolchain/features/legacy:experimental_replace_legacy_action_config_features",
