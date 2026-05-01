@@ -78,7 +78,7 @@ cc_feature_set(
     all_of = [
         ":no_legacy_features",
         "@rules_cc//cc/toolchains/args/archiver_flags:feature",
-        "@rules_cc//cc/toolchains/args/pic_flags:feature",
+        "@llvm//toolchain/features/pic_flags:feature",
         "@rules_cc//cc/toolchains/args/libraries_to_link:feature",
         "@rules_cc//cc/toolchains/args/linker_param_file:feature",
         "@rules_cc//cc/toolchains/args/preprocessor_defines:feature",

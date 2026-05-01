@@ -145,20 +145,6 @@ cc_args(
 )
 
 cc_args(
-    name = "static_link_executable",
-    actions = [
-        "@rules_cc//cc/toolchains/actions:cpp_link_executable",
-        "@rules_cc//cc/toolchains/actions:lto_index_for_executable",
-        "@rules_cc//cc/toolchains/actions:lto_index_for_dynamic_library",
-        "@rules_cc//cc/toolchains/actions:lto_index_for_nodeps_dynamic_library",
-    ],
-    args = select({
-        "//constraints/pie:on": ["-static-pie"],
-        "//constraints/pie:off": ["-static"],
-    }),
-)
-
-cc_args(
     name = "fuse_ld",
     actions = [
         "@rules_cc//cc/toolchains/actions:link_actions",
