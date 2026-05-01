@@ -1,0 +1,80 @@
+# Inlined copy of @rules_cc//cc/toolchains/args/pic_flags, extended to
+# negate clang 22's CLANG_DEFAULT_PIE_ON_LINUX default.
+load("@bazel_skylib//lib:selects.bzl", "selects")
+load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
+load("@rules_cc//cc/toolchains:feature.bzl", "cc_feature")
+load("@rules_cc//cc/toolchains:feature_set.bzl", "cc_feature_set")
+
+selects.config_setting_group(
+    name = "linux_no_musl",
+    match_all = [
+        "@platforms//os:linux",
+        "//platforms/config:gnu",
+    ],
+)
+
+cc_feature_set(
+    name = "feature",
+    all_of = [
+        ":force_pic_feature",
+        ":pic_feature",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+cc_feature(
+    name = "pic_feature",
+    args = [":pic_flags"],
+    overrides = "@rules_cc//cc/toolchains/features/legacy:pic",
+)
+
+cc_args(
+    name = "pic_flags",
+    actions = ["@rules_cc//cc/toolchains/actions:compile_actions"],
+    args = ["-fPIC"],
+    requires_not_none = "@rules_cc//cc/toolchains/variables:pic",
+)
+
+cc_feature(
+    name = "force_pic_feature",
+    args = [
+        ":force_pic_flags",
+        ":no_force_pic_flags",
+    ],
+    overrides = "@rules_cc//cc/toolchains/features/legacy:force_pic_flags",
+)
+
+cc_args(
+    name = "force_pic_flags",
+    actions = ["@rules_cc//cc/toolchains/actions:link_executable_actions"],
+    args = select({
+        "@platforms//os:linux": ["-pie"],
+        "//conditions:default": [],
+    }),
+    requires_not_none = "@rules_cc//cc/toolchains/variables:force_pic",
+)
+
+cc_args(
+    name = "no_force_pic_flags",
+    actions = ["@rules_cc//cc/toolchains/actions:link_executable_actions"],
+    args = select({
+        ":linux_no_musl": ["-no-pie"],
+        "//conditions:default": [],
+    }),
+    requires_none = "@rules_cc//cc/toolchains/variables:force_pic",
+)
+
+cc_args(
+    name = "static_link_executable",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:cpp_link_executable",
+        "@rules_cc//cc/toolchains/actions:lto_index_for_executable",
+        "@rules_cc//cc/toolchains/actions:lto_index_for_dynamic_library",
+        "@rules_cc//cc/toolchains/actions:lto_index_for_nodeps_dynamic_library",
+    ],
+    args = select({
+        "//constraints/pie:on": ["-static-pie"],
+        "//constraints/pie:off": ["-static"],
+    }),
+    visibility = ["//visibility:public"],
+)
