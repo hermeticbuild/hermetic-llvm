@@ -1,35 +1,38 @@
 # A good starting point for this is https://codeberg.org/ziglang/zig/src/branch/master/src/libs/glibc.zig add_include_dirs function
 def glibc_includes(cpu):
-    x86_64_variant = [
-        "sysdeps/unix/sysv/linux/x86_64/64".format(cpu),
-    ] if cpu == "x86_64" else []
+    os_abi_variant = []
+    abi_variant = []
+    arch_parent = []
 
-    # x86_64 inherits from x86 in glibc's sysdeps Implies hierarchy.
-    x86_parent = [
-        "sysdeps/unix/sysv/linux/x86",
-        "sysdeps/x86",
-    ] if cpu == "x86_64" else []
-
-    riscv64_variant = [
-        "sysdeps/unix/sysv/linux/riscv/rv64",
-    ] if cpu == "riscv64" else []
-
-    # s390x uses s390/s390-64 subdirectories in glibc's sysdeps hierarchy.
-    s390x_variant = [
-        "sysdeps/unix/sysv/linux/s390/s390-64",
-        "sysdeps/s390/s390-64",
-    ] if cpu == "s390x" else []
-
-    if cpu == "riscv64":
+    if cpu == "x86_64":
+        os_abi_variant = [
+            "sysdeps/unix/sysv/linux/x86_64/64",
+        ]
+        # x86_64 inherits from x86 in glibc's sysdeps Implies hierarchy.
+        arch_parent = [
+            "sysdeps/unix/sysv/linux/x86",
+            "sysdeps/x86",
+        ]
+    elif cpu == "riscv64":
+        os_abi_variant = [
+            "sysdeps/unix/sysv/linux/riscv/rv64",
+        ]
         cpu = "riscv"
     elif cpu == "s390x":
+        # s390x uses s390/s390-64 subdirectories in glibc's sysdeps hierarchy.
+        os_abi_variant = [
+            "sysdeps/unix/sysv/linux/s390/s390-64",
+        ]
+        abi_variant = [
+            "sysdeps/s390/s390-64",
+        ]
         cpu = "s390"
 
     return [
         "include",
-    ] + s390x_variant + [
+    ] + os_abi_variant + abi_variant + [
         "sysdeps/unix/sysv/linux/{}".format(cpu),
-    ] + x86_64_variant + x86_parent + riscv64_variant + [
+    ] + arch_parent + [
         "sysdeps/{}/nptl".format(cpu),
         "sysdeps/unix/sysv/linux/generic",
         "sysdeps/unix/sysv/linux/include",
