@@ -33,6 +33,8 @@ common --experimental_platform_in_output_dir
 
 common --incompatible_config_setting_private_default_visibility
 
+common --@rules_go//go/config:linkmode=pie
+
 common:cc --@rules_python//python/config_settings:bootstrap_impl=script
 
 common:bootstrap   --@llvm//toolchain:source=bootstrapped

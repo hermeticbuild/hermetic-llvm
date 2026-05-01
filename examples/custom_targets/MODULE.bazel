@@ -11,6 +11,8 @@ local_path_override(
 
 bazel_dep(name = "rules_cc", version = "0.2.16")
 
+bazel_dep(name = "rules_go", version = "0.60.0", dev_dependency = True)
+
 toolchain = use_extension("@llvm//extensions:toolchain.bzl", "toolchain")
 toolchain.exec(
     arch = "x86_64",

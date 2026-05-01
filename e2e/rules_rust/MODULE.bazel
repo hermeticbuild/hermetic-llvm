@@ -43,6 +43,7 @@ single_version_override(
     version = "5.46.bcr.4",
 )
 
+bazel_dep(name = "rules_go", version = "0.60.0", dev_dependency = True)
 bazel_dep(name = "llvm", version = "0.0.0", dev_dependency = True)
 local_path_override(
     module_name = "llvm",
