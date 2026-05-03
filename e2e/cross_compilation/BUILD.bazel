@@ -100,6 +100,7 @@ QEMU_MUSL_PLATFORMS = {
         name = "hello_" + platform,
         binary = ":hello",
         target_platform = target_platform,
+        tags = ["manual"],
     )
     for platform, target_platform in QEMU_MUSL_PLATFORMS.items()
 ]
@@ -113,6 +114,9 @@ QEMU_MUSL_PLATFORMS = {
             "BINARY": "$(rootpath :hello_{})".format(platform),
             "EXPECTED_OUTPUT": "Hello, World corentin!",
         },
+        exec_compatible_with = [
+            "@platforms//os:linux",
+        ],
     )
     for platform in QEMU_MUSL_PLATFORMS
 ]
