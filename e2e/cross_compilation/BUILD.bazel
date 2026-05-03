@@ -1,6 +1,5 @@
 load("@bazel_lib//lib:transitions.bzl", "platform_transition_binary")
 load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
-load("@llvm//:defs.bzl", "exec_test")
 load("@llvm//constraints/libc:libc_versions.bzl", "LIBCS")
 load("@platforms//host:constraints.bzl", "HOST_CONSTRAINTS")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
