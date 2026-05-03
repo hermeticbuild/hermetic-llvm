@@ -1,0 +1,56 @@
+diff --git a/lld/MachO/Driver.cpp b/lld/MachO/Driver.cpp
+index e9b95e52d8e..187486864f8 100644
+--- a/lld/MachO/Driver.cpp
++++ b/lld/MachO/Driver.cpp
+@@ -70,8 +70,8 @@ std::unique_ptr<Configuration> macho::config;
+ std::unique_ptr<DependencyTracker> macho::depTracker;
+ 
+ static HeaderFileType getOutputType(const InputArgList &args) {
+-  // TODO: -r, -dylinker, -preload...
+-  Arg *outputArg = args.getLastArg(OPT_bundle, OPT_dylib, OPT_execute);
++  // TODO: -dylinker, -preload...
++  Arg *outputArg = args.getLastArg(OPT_bundle, OPT_dylib, OPT_execute, OPT_r);
+   if (outputArg == nullptr)
+     return MH_EXECUTE;
+ 
+@@ -82,6 +82,8 @@ static HeaderFileType getOutputType(const InputArgList &args) {
+     return MH_DYLIB;
+   case OPT_execute:
+     return MH_EXECUTE;
++  case OPT_r:
++    return MH_OBJECT;
+   default:
+     llvm_unreachable("internal error");
+   }
+diff --git a/lld/MachO/Options.td b/lld/MachO/Options.td
+index 1bea590a136..87fd693a358 100644
+--- a/lld/MachO/Options.td
++++ b/lld/MachO/Options.td
+@@ -235,7 +235,6 @@ def bundle : Flag<["-"], "bundle">,
+     Group<grp_kind>;
+ def r : Flag<["-"], "r">,
+     HelpText<"Merge multiple object files into one, retaining relocations">,
+-    Flags<[HelpHidden]>,
+     Group<grp_kind>;
+ def dylinker : Flag<["-"], "dylinker">,
+     HelpText<"Produce a dylinker only used when building dyld">,
+diff --git a/lld/MachO/Writer.cpp b/lld/MachO/Writer.cpp
+index 7e1b0aab34d..992f4c7b3f6 100644
+--- a/lld/MachO/Writer.cpp
++++ b/lld/MachO/Writer.cpp
+@@ -851,6 +851,7 @@ void Writer::scanRelocations() {
+       in.header->addLoadCommand(make<LCSubClient>(client));
+     break;
+   case MH_BUNDLE:
++  case MH_OBJECT:
+     break;
+   default:
+     llvm_unreachable("unhandled output file type");
+@@ -1039,6 +1040,7 @@ void macho::createSyntheticSections() {
+     make<PageZeroSection>();
+     break;
+   case MH_DYLIB:
++  case MH_OBJECT:
+   case MH_BUNDLE:
+     break;
+   default:
