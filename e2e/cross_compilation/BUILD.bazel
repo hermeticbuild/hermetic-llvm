@@ -98,8 +98,8 @@ QEMU_MUSL_PLATFORMS = {
     qemu_binary(
         name = "hello_" + platform,
         binary = ":hello",
-        target_platform = target_platform,
         tags = ["manual"],
+        target_platform = target_platform,
     )
     for platform, target_platform in QEMU_MUSL_PLATFORMS.items()
 ]
