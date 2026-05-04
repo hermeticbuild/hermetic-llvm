@@ -1,3 +1,4 @@
+load("@kernel_headers//:linux_kernel_version_map.bzl", "LINUX_KERNEL_VERSION_MAP")
 load("//constraints/kernel/linux:linux_kernel_versions.bzl", "LINUX_KERNEL_VERSIONS")
 load("//constraints/libc:libc_versions.bzl", "LIBCS")
 load("//platforms:common.bzl", "LIBC_SUPPORTED_TARGETS")
@@ -13,11 +14,18 @@ def _version_alias_name(kernel_version, bazel_target):
 def _fallback_alias_name(bazel_target):
     return "libc_mapped_{}".format(bazel_target)
 
+def _linux_kernel_headers_version(kernel_version):
+    if kernel_version not in LINUX_KERNEL_VERSION_MAP:
+        fail("Missing Linux kernel version map entry for {}".format(kernel_version))
+
+    return LINUX_KERNEL_VERSION_MAP[kernel_version]
+
 def _make_select_kernel_headers_repository_target_for_linux_kernel(kernel_version, bazel_target):
     """Select the right kernel headers repository based on the target architecture."""
     selection = {}
+    full_kernel_version = _linux_kernel_headers_version(kernel_version)
     for (target_os, target_arch) in LIBC_SUPPORTED_TARGETS:
-        apparent_target = _kernel_headers_repository_target(target_arch, kernel_version, bazel_target)
+        apparent_target = _kernel_headers_repository_target(target_arch, full_kernel_version, bazel_target)
         selection["@llvm//platforms/config:{}_{}".format(target_os, target_arch)] = apparent_target
 
     return select(selection)
