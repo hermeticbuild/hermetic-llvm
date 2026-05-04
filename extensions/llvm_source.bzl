@@ -19,6 +19,7 @@ _DEFAULT_SOURCE_PATCHES = [
     "//3rd_party/llvm-project/x.x/patches:llvm-dsymutil-corefoundation.patch",
     "//3rd_party/llvm-project/x.x/patches:compiler-rt-symbolizer_skip_cxa_atexit.patch",
     "//3rd_party/llvm-project/x.x/patches:lit_test_stub.patch",
+    "//3rd_party/llvm-project/x.x/patches:lld-macho-r-output-kind.patch",
 ]
 
 _LLVM_21_SOURCE_PATCHES = _DEFAULT_SOURCE_PATCHES + [
