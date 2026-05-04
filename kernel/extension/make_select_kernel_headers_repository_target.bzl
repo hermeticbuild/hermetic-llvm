@@ -44,10 +44,10 @@ def _make_select_kernel_headers_repository_target_from_libc(bazel_target):
 def _make_select_kernel_headers_repository_target_from_linux_kernel(bazel_target):
     """Select explicit Linux kernel constraints, falling back to the libc-derived default."""
     selection = {
-        "@llvm//constraints/kernel/linux:{}".format(kernel_version): ":{}".format(_version_alias_name(kernel_version, bazel_target))
+        "@llvm//constraints/kernel/linux:{}".format(kernel_version): _version_alias_name(kernel_version, bazel_target)
         for kernel_version in LINUX_KERNEL_VERSIONS
     }
-    selection["@llvm//constraints/kernel/linux:unconstrained"] = ":{}".format(_fallback_alias_name(bazel_target))
+    selection["@llvm//constraints/kernel/linux:unconstrained"] = _fallback_alias_name(bazel_target)
 
     return select(selection)
 
