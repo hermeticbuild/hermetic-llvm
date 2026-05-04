@@ -116,6 +116,9 @@ QEMU_MUSL_PLATFORMS = {
         exec_compatible_with = [
             "@platforms//os:linux",
         ],
+        target_compatible_with = [
+            "@platforms//os:linux",
+        ],
     )
     for platform in QEMU_MUSL_PLATFORMS
 ]
