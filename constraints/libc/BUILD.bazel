@@ -1,5 +1,5 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
-load(":declare_libcs_constraints.bzl", "declare_libcs_constraints")
+load(":libc_versions.bzl", "LIBCS")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -14,13 +14,13 @@ constraint_value(
     constraint_setting = "variant",
 )
 
-declare_libcs_constraints()
-
-bzl_library(
-    name = "declare_libcs_constraints",
-    srcs = ["declare_libcs_constraints.bzl"],
-    deps = [":libc_versions"],
-)
+[
+    constraint_value(
+        name = libc,
+        constraint_setting = "variant",
+    )
+    for libc in LIBCS
+]
 
 bzl_library(
     name = "libc_versions",
