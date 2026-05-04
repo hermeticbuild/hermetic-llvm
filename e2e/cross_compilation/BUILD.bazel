@@ -5,6 +5,8 @@ load("@platforms//host:constraints.bzl", "HOST_CONSTRAINTS")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_qemu//qemu:qemu_binary.bzl", "qemu_binary")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 
 string_flag(
     name = "test_glibc_versions",
@@ -33,6 +35,11 @@ cc_binary(
     name = "main",
     srcs = ["test.cc"],
     deps = [":add"],
+)
+
+cc_binary(
+    name = "hello",
+    srcs = ["hello.c"],
 )
 
 cc_test(
@@ -66,7 +73,7 @@ platform_transition_binary(
     target_platform = ":ubuntu_20_04_amd64",
 )
 
-#TODO(cerisier): should the toolchain provide its own list ?
+# TODO(cerisier): should the toolchain provide its own list ?
 PLATFORMS = [
     "@llvm//platforms:linux_x86_64",
     "@llvm//platforms:linux_aarch64",
@@ -102,4 +109,38 @@ PLATFORMS = [
         target_platform = platform,
     )
     for platform in PLATFORMS
+]
+
+QEMU_MUSL_PLATFORMS = {
+    "linux_riscv64_musl": "@llvm//platforms:linux_riscv64_musl",
+    "linux_s390x_musl": "@llvm//platforms:linux_s390x_musl",
+}
+
+[
+    qemu_binary(
+        name = "hello_" + platform,
+        binary = ":hello",
+        tags = ["manual"],
+        target_platform = target_platform,
+    )
+    for platform, target_platform in QEMU_MUSL_PLATFORMS.items()
+]
+
+[
+    sh_test(
+        name = "hello_{}_qemu_test".format(platform),
+        srcs = ["test_hello_qemu.sh"],
+        data = [":hello_{}".format(platform)],
+        env = {
+            "BINARY": "$(rootpath :hello_{})".format(platform),
+            "EXPECTED_OUTPUT": "Hello, World corentin!",
+        },
+        exec_compatible_with = [
+            "@platforms//os:linux",
+        ],
+        target_compatible_with = [
+            "@platforms//os:linux",
+        ],
+    )
+    for platform in QEMU_MUSL_PLATFORMS
 ]
