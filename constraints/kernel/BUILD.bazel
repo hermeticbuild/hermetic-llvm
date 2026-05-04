@@ -1,0 +1,28 @@
+load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load(":declare_linux_uapi_constraints.bzl", "declare_linux_uapi_constraints")
+
+package(default_visibility = ["//visibility:public"])
+
+constraint_setting(
+    name = "version",
+    default_constraint_value = "linux_uapi_unconstrained",
+)
+
+constraint_value(
+    name = "linux_uapi_unconstrained",
+    constraint_setting = "version",
+)
+
+declare_linux_uapi_constraints()
+
+bzl_library(
+    name = "declare_linux_uapi_constraints",
+    srcs = ["declare_linux_uapi_constraints.bzl"],
+    deps = [":linux_uapi_versions"],
+)
+
+bzl_library(
+    name = "linux_uapi_versions",
+    srcs = ["linux_uapi_versions.bzl"],
+    visibility = ["//visibility:public"],
+)
