@@ -44,6 +44,28 @@ cc_test(
     tags = ["no-remote"],
 )
 
+platform(
+    name = "ubuntu_20_04_amd64",
+    constraint_values = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+        "@llvm//constraints/libc:gnu.2.31",
+        "@llvm//constraints/kernel/linux:5.4",
+    ],
+)
+
+cc_binary(
+    name = "linux_kernel_version_test",
+    srcs = ["linux_kernel_version_test.c"],
+    tags = ["manual"],
+)
+
+platform_transition_binary(
+    name = "linux_kernel_version_5_4_test",
+    binary = ":linux_kernel_version_test",
+    target_platform = ":ubuntu_20_04_amd64",
+)
+
 #TODO(cerisier): should the toolchain provide its own list ?
 PLATFORMS = [
     "@llvm//platforms:linux_x86_64",
