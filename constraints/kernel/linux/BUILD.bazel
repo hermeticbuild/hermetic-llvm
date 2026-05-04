@@ -1,0 +1,28 @@
+load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load(":declare_linux_kernel_constraints.bzl", "declare_linux_kernel_constraints")
+
+package(default_visibility = ["//visibility:public"])
+
+constraint_setting(
+    name = "version",
+    default_constraint_value = "unconstrained",
+)
+
+constraint_value(
+    name = "unconstrained",
+    constraint_setting = "version",
+)
+
+declare_linux_kernel_constraints()
+
+bzl_library(
+    name = "declare_linux_kernel_constraints",
+    srcs = ["declare_linux_kernel_constraints.bzl"],
+    deps = [":linux_kernel_versions"],
+)
+
+bzl_library(
+    name = "linux_kernel_versions",
+    srcs = ["linux_kernel_versions.bzl"],
+    visibility = ["//visibility:public"],
+)

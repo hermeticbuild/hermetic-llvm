@@ -24,7 +24,7 @@ bzl_library(
     deps = [
         ":kernel_helpers",
         ":libc_kernel_versions",
-        "//constraints/kernel:linux_uapi_versions",
+        "//constraints/kernel/linux:linux_kernel_versions",
         "//constraints/libc:libc_versions",
         "//platforms:common",
     ],

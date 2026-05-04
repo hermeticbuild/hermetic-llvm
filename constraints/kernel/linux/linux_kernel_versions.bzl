@@ -1,4 +1,4 @@
-LINUX_UAPI_VERSIONS = [
+LINUX_KERNEL_VERSIONS = [
     "6.16.12",
     "6.15.11",
     "6.14.11",

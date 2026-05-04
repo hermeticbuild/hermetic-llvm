@@ -1,4 +1,4 @@
-load("//constraints/kernel:linux_uapi_versions.bzl", "LINUX_UAPI_VERSIONS")
+load("//constraints/kernel/linux:linux_kernel_versions.bzl", "LINUX_KERNEL_VERSIONS")
 load("//constraints/libc:libc_versions.bzl", "LIBCS")
 load("//platforms:common.bzl", "LIBC_SUPPORTED_TARGETS")
 load(":kernel_helpers.bzl", "arch_to_kernel_arch")
@@ -8,12 +8,12 @@ def _kernel_headers_repository_target(target_arch, kernel_version, bazel_target)
     return "@linux_kernel_headers_{}.{}//:{}".format(arch_to_kernel_arch(target_arch), kernel_version, bazel_target)
 
 def _version_alias_name(kernel_version, bazel_target):
-    return "linux_uapi_{}_{}".format(kernel_version, bazel_target)
+    return "{}_{}".format(kernel_version, bazel_target)
 
 def _fallback_alias_name(bazel_target):
     return "libc_mapped_{}".format(bazel_target)
 
-def _make_select_kernel_headers_repository_target_for_linux_uapi(kernel_version, bazel_target):
+def _make_select_kernel_headers_repository_target_for_linux_kernel(kernel_version, bazel_target):
     """Select the right kernel headers repository based on the target architecture."""
     selection = {}
     for (target_os, target_arch) in LIBC_SUPPORTED_TARGETS:
@@ -33,18 +33,18 @@ def _make_select_kernel_headers_repository_target_from_libc(bazel_target):
 
     return select(selection)
 
-def _make_select_kernel_headers_repository_target_from_linux_uapi(bazel_target):
-    """Select explicit linux UAPI constraints, falling back to the libc-derived default."""
+def _make_select_kernel_headers_repository_target_from_linux_kernel(bazel_target):
+    """Select explicit Linux kernel constraints, falling back to the libc-derived default."""
     selection = {
-        "@llvm//constraints/kernel:linux_uapi_{}".format(kernel_version): ":{}".format(_version_alias_name(kernel_version, bazel_target))
-        for kernel_version in LINUX_UAPI_VERSIONS
+        "@llvm//constraints/kernel/linux:{}".format(kernel_version): ":{}".format(_version_alias_name(kernel_version, bazel_target))
+        for kernel_version in LINUX_KERNEL_VERSIONS
     }
-    selection["@llvm//constraints/kernel:linux_uapi_unconstrained"] = ":{}".format(_fallback_alias_name(bazel_target))
+    selection["@llvm//constraints/kernel/linux:unconstrained"] = ":{}".format(_fallback_alias_name(bazel_target))
 
     return select(selection)
 
 def declare_kernel_headers_repository_target(name, bazel_target = None, **kwargs):
-    """Declare a kernel headers alias that honors explicit linux UAPI constraints.
+    """Declare a kernel headers alias that honors explicit Linux kernel constraints.
 
     Args:
         name: The public alias name to declare.
@@ -59,14 +59,14 @@ def declare_kernel_headers_repository_target(name, bazel_target = None, **kwargs
         actual = _make_select_kernel_headers_repository_target_from_libc(bazel_target),
     )
 
-    for kernel_version in LINUX_UAPI_VERSIONS:
+    for kernel_version in LINUX_KERNEL_VERSIONS:
         native.alias(
             name = _version_alias_name(kernel_version, name),
-            actual = _make_select_kernel_headers_repository_target_for_linux_uapi(kernel_version, bazel_target),
+            actual = _make_select_kernel_headers_repository_target_for_linux_kernel(kernel_version, bazel_target),
         )
 
     native.alias(
         name = name,
-        actual = _make_select_kernel_headers_repository_target_from_linux_uapi(name),
+        actual = _make_select_kernel_headers_repository_target_from_linux_kernel(name),
         **kwargs
     )
