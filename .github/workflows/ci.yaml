@@ -122,6 +122,7 @@ jobs:
             --bazelrc=.bazelrc \
             --noexperimental_remote_repo_contents_cache \
             test \
+            --remote_executor= \
             --repository_cache= \
             --repo_contents_cache= \
             "${REMOTE_HEADER_ARGS[@]}" \
