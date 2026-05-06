@@ -9,7 +9,6 @@ DEFAULT_LLVM_VERSIONS_INDEX_FILE = "//:llvm_versions.json"
 _DEFAULT_SOURCE_PATCHES = [
     "//3rd_party/llvm-project/x.x/patches:llvm-extra.patch",
     "//3rd_party/llvm-project/x.x/patches:clang-prepend-arg-reexec.patch",
-    "//3rd_party/llvm-project/x.x/patches:llvm-sanitizers-ignorelists.patch",
     "//3rd_party/llvm-project/x.x/patches:no_frontend_builtin_headers.patch",
     "//3rd_party/llvm-project/x.x/patches:llvm-bzl-library.patch",
     "//3rd_party/llvm-project/x.x/patches:llvm-cov-multicall.patch",
@@ -19,6 +18,7 @@ _DEFAULT_SOURCE_PATCHES = [
     "//3rd_party/llvm-project/x.x/patches:llvm-dsymutil-corefoundation.patch",
     "//3rd_party/llvm-project/x.x/patches:compiler-rt-symbolizer_skip_cxa_atexit.patch",
     "//3rd_party/llvm-project/x.x/patches:lit_test_stub.patch",
+    "//3rd_party/llvm-project/x.x/patches:pfm-rules-cc-load.patch",
 ]
 
 _LLVM_21_SOURCE_PATCHES = _DEFAULT_SOURCE_PATCHES + [
@@ -50,6 +50,15 @@ _LLVM_PATCHES_BY_MAJOR = {
     22: _LLVM_22_SOURCE_PATCHES,
     # So that anyone can test with the next LLVM major easily.
     23: _LLVM_22_SOURCE_PATCHES,
+}
+
+_LLVM_PROJECT_OVERLAY_FILES = {
+    "utils/bazel/llvm-project-overlay/compiler-rt/BUILD.bazel": Label("//3rd_party/llvm-project/x.x/compiler-rt:compiler-rt.BUILD.bazel"),
+    "utils/bazel/llvm-project-overlay/libc/BUILD.bazel": Label("//3rd_party/llvm-project/x.x/libc:libc.BUILD.bazel"),
+    "utils/bazel/llvm-project-overlay/libcxx/BUILD.bazel": Label("//3rd_party/llvm-project/x.x/libcxx:libcxx.BUILD.bazel"),
+    "utils/bazel/llvm-project-overlay/libcxxabi/BUILD.bazel": Label("//3rd_party/llvm-project/x.x/libcxxabi:libcxxabi.BUILD.bazel"),
+    "utils/bazel/llvm-project-overlay/libunwind/BUILD.bazel": Label("//3rd_party/llvm-project/x.x/libunwind:libunwind.BUILD.bazel"),
+    "utils/bazel/llvm-project-overlay/openmp/BUILD.bazel": Label("//3rd_party/llvm-project/x.x/openmp:openmp.BUILD.bazel"),
 }
 
 _LLVM_SUPPORT_ARCHIVES = {
@@ -134,7 +143,9 @@ def _create_llvm_raw_repo(mctx, version_config):
                 fail("Only 1 LLVM override is allowed currently!")
             had_override = True
 
-            http_archive(name = "llvm-raw", **structs.to_dict(tag))
+            kwargs = structs.to_dict(tag)
+            kwargs["files"] = _llvm_project_overlay_files(tag.files)
+            http_bsdtar_archive(name = "llvm-raw", **kwargs)
 
     if not had_override:
         http_bsdtar_archive(
@@ -144,8 +155,6 @@ def _create_llvm_raw_repo(mctx, version_config):
             bsdtar_extra_args = _LLVM_SOURCE_BSDTAR_EXTRA_ARGS,
             **structs.to_dict(version_config.source_archive)
         )
-
-    return had_override
 
 def _parse_llvm_major(llvm_version):
     if not llvm_version:
@@ -165,9 +174,15 @@ def _source_archive_for_version(llvm_version, source_info, patches):
         strip_prefix = source_info.get("strip_prefix", "llvm-project-{}.src".format(llvm_version)),
         urls = [source_info["url"]],
         sha256 = source_info["sha256"],
+        files = _llvm_project_overlay_files(),
         patch_args = ["-p1"],
         patches = patches,
     )
+
+def _llvm_project_overlay_files(extra_files = {}):
+    files = dict(_LLVM_PROJECT_OVERLAY_FILES)
+    files.update(extra_files)
+    return files
 
 def _version_config_for(llvm_version, llvm_version_index):
     major = _parse_llvm_major(llvm_version)
@@ -195,24 +210,6 @@ def _create_support_archives():
             strip_prefix = params.strip_prefix,
             urls = params.urls,
         )
-
-def _llvm_subproject_repository_impl(rctx):
-    llvm_root = rctx.path(Label("@llvm-raw//:WORKSPACE")).dirname
-    src_dir = llvm_root.get_child(rctx.attr.dir)
-
-    for entry in src_dir.readdir():
-        rctx.symlink(entry, entry.basename)
-
-    rctx.file("BUILD.bazel", rctx.read(rctx.attr.build_file))
-    return rctx.repo_metadata(reproducible = True)
-
-_llvm_subproject_repository = repository_rule(
-    implementation = _llvm_subproject_repository_impl,
-    attrs = {
-        "build_file": attr.label(allow_single_file = True),
-        "dir": attr.string(mandatory = True),
-    },
-)
 
 def _llvm_config_repository_impl(rctx):
     version = rctx.attr.llvm_version
@@ -262,30 +259,6 @@ _llvm_config_repository = repository_rule(
     },
 )
 
-def _runtime_build_file(name, label_repo_prefix):
-    return "{repo}//3rd_party/llvm-project/{version}/{name}:{name}.BUILD.bazel".format(
-        repo = label_repo_prefix,
-        name = name,
-        version = "x.x",
-    )
-
-def _create_runtime_repositories(had_override):
-    build_label_repo_prefix = "@llvm" if had_override else ""
-
-    for repo_name, subproject in [
-        ("compiler-rt", "compiler-rt"),
-        ("libcxx", "libcxx"),
-        ("libcxxabi", "libcxxabi"),
-        ("libunwind", "libunwind"),
-        ("llvm-libc", "libc"),
-        ("openmp", "openmp"),
-    ]:
-        _llvm_subproject_repository(
-            name = repo_name,
-            build_file = _runtime_build_file(subproject, build_label_repo_prefix),
-            dir = subproject,
-        )
-
 def _get_llvm_version(mctx):
     module_selected_version = None
 
@@ -323,9 +296,8 @@ def _llvm_source_impl(mctx):
         llvm_version = llvm_version,
     )
 
-    had_override = _create_llvm_raw_repo(mctx, version_config)
+    _create_llvm_raw_repo(mctx, version_config)
     _create_support_archives()
-    _create_runtime_repositories(had_override)
 
     return mctx.extension_metadata(
         reproducible = True,

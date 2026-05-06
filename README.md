@@ -218,7 +218,7 @@ load("@llvm_config//:version.bzl", "LLVM_VERSION", "llvm_vars")
 
 # Additional LLVM targets
 
-This module exposes LLVM and runtime projects as first-class Bazel repos, so you can depend on them directly.
+This module exposes LLVM and runtime projects as first-class Bazel packages, so you can depend on them directly.
 
 ### Consume via `use_extension(...)`
 
@@ -231,7 +231,7 @@ llvm = use_extension("@llvm//extensions:llvm.bzl", "llvm")
 use_repo(llvm, "llvm-project")
 ```
 
-Then consume targets from `@llvm-project` and the runtime repos in BUILD files:
+Then consume LLVM and runtime targets from `@llvm-project` in BUILD files:
 
 ```starlark
 cc_binary(
@@ -248,11 +248,11 @@ cc_shared_library(
 cc_library(
     name = "runtime_bundle",
     deps = [
-        "@llvm//runtimes/compiler-rt:clang_rt.builtins.static",
-        "@llvm//runtimes/compiler-rt:clang_rt.asan.static",
-        "@llvm//runtimes/libcxx:libcxx.static",
-        "@llvm//runtimes/libcxxabi:libcxxabi.static",
-        "@llvm//runtimes/libunwind:libunwind.static",
+        "@llvm-project//compiler-rt:clang_rt.builtins.static",
+        "@llvm-project//compiler-rt:asan.static",
+        "@llvm-project//libcxx:libcxx.static",
+        "@llvm-project//libcxxabi:libcxxabi.static",
+        "@llvm-project//libunwind:libunwind.static",
     ],
 )
 ```

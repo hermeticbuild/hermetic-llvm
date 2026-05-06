@@ -213,12 +213,12 @@ cc_runtime_stage0_library(
         "//conditions:default": [],
     }) + select({
         "@llvm//platforms/config:musl": [
-            "@libcxx//:headers",
+            "@llvm-project//libcxx:headers",
             "@musl_libc//:musl_libc_headers",
         ],
         "@llvm//platforms/config:gnu": [
             # do not sort: libcxx headers must come before gnu_libc_headers
-            "@libcxx//:headers",
+            "@llvm-project//libcxx:headers",
             "@glibc//:gnu_libc_headers",
         ],
         "@platforms//os:macos": [],

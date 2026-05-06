@@ -20,7 +20,7 @@ copy_to_directory(
         ":libcxxabi_headers_files",
     ],
     root_paths = [
-        "include",
+        "libcxxabi/include",
     ],
     visibility = ["//visibility:public"],
 )
@@ -118,7 +118,7 @@ cc_library(
     }),
     implementation_deps = [
         # Order matter. Search path should have C++ headers before any lib C headers.
-        "@libcxx//:headers",
+        "@llvm-project//libcxx:headers",
     ] + select({
         "@platforms//os:macos": [],
         "@platforms//os:windows": [],
@@ -131,7 +131,7 @@ cc_library(
         # libcxx depends on a set of internal llvm-libc headers. (libc/shared)
         # See project hand-in-hand.
         # https://discourse.llvm.org/t/rfc-project-hand-in-hand-llvm-libc-libc-code-sharing/77701
-        "@llvm-libc//:libc_headers",
+        "@llvm-project//libc:libc_headers",
     ] + select({
         "@llvm//platforms/config:musl": [
             "@musl_libc//:musl_libc_headers",
@@ -149,7 +149,7 @@ cc_library(
         "src",
     ],
     textual_hdrs = [
-        "@libcxx//:textual_hdrs",
+        "@llvm-project//libcxx:textual_hdrs",
     ] + glob([
         "src/**/*.h",
         "src/**/*.def",

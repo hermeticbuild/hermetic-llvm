@@ -142,6 +142,6 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "@compiler-rt//:sanitizers_interface_headers",
+        "@llvm-project//compiler-rt:sanitizers_interface_headers",
     ],
 )

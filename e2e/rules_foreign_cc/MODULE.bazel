@@ -18,8 +18,11 @@ local_path_override(
     path = "../../",
 )
 
+llvm = use_extension("@llvm//extensions:llvm.bzl", "llvm")
+use_repo(llvm, "llvm-project")
+
 llvm_source = use_extension("@llvm//extensions:llvm_source.bzl", "llvm_source")
-use_repo(llvm_source, "compiler-rt", "libcxx", "libcxxabi", "libunwind", "llvm-libc", "llvm-raw", "llvm_config", "llvm_zlib", "llvm_zstd", "openmp")
+use_repo(llvm_source, "llvm-raw", "llvm_config", "llvm_zlib", "llvm_zstd")
 
 # Register toolchains through the scoped repo to ensure this codepath works.
 llvm_toolchains = use_extension("@llvm//extensions:toolchain.bzl", "toolchain")
@@ -34,9 +37,7 @@ http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "ht
 
 http_archive(
     name = "pfm",
-    # TODO: Switch back to this next llvm-raw bump
-    # build_file = "@llvm-raw//utils/bazel/third_party_build:pfm.BUILD",
-    build_file = "//:pfm.BUILD.bazel",
+    build_file = "@llvm-raw//utils/bazel/third_party_build:pfm.BUILD",
     sha256 = "b06071d7e528402a6504273ea700354ebfcf4b62ffe239cb6471fcdb04ae3f3d",
     strip_prefix = "libpfm4-4.13.0",
     url = "https://github.com/wcohen/libpfm4/archive/refs/tags/v4.13.0.tar.gz",

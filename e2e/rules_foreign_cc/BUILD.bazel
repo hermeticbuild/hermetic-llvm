@@ -3,7 +3,8 @@ load("@rules_cc//cc:cc_test.bzl", "cc_test")
 cc_test(
     name = "pfm_test",
     srcs = ["pfm_test.cc"],
+    target_compatible_with = ["@platforms//os:linux"],
     deps = [
-        "@pfm",
+        "@pfm//:pfm_external",
     ],
 )

@@ -3,13 +3,13 @@ load("//runtimes:defs.bzl", "stub_library")
 
 alias(
     name = "libunwind.static",
-    actual = "@libunwind//:libunwind.static",
+    actual = "@llvm-project//libunwind:libunwind.static",
     visibility = ["//visibility:public"],
 )
 
 alias(
     name = "libunwind.shared",
-    actual = "@libunwind//:libunwind.shared",
+    actual = "@llvm-project//libunwind:libunwind.shared",
     visibility = ["//visibility:public"],
 )
 

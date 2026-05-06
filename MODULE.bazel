@@ -91,7 +91,7 @@ use_repo(
 
 llvm_source = use_extension("//extensions:llvm_source.bzl", "llvm_source")
 llvm_source.version(llvm_version = LLVM_VERSION)
-use_repo(llvm_source, "compiler-rt", "libcxx", "libcxxabi", "libunwind", "llvm-libc", "llvm-raw", "llvm_config", "llvm_zlib", "llvm_zstd", "openmp")
+use_repo(llvm_source, "llvm-raw", "llvm_config", "llvm_zlib", "llvm_zstd")
 
 llvm = use_extension("//extensions:llvm.bzl", "llvm")
 llvm.configure(

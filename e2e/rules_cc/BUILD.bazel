@@ -464,7 +464,7 @@ cc_test(
         "@platforms//os:windows": ["@platforms//:incompatible"],
         "//conditions:default": [],
     }),
-    deps = ["@openmp//:libomp"],
+    deps = ["@llvm-project//openmp:libomp"],
 )
 
 cc_test(

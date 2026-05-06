@@ -12,6 +12,18 @@ load("@llvm//toolchain/runtimes:cc_unsanitized_library.bzl", "cc_unsanitized_lib
 load("@llvm-project//:vars.bzl", "LLVM_VERSION_MAJOR")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 
+filegroup(
+    name = "asan_ignorelist",
+    srcs = ["lib/asan/asan_ignorelist.txt"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "msan_ignorelist",
+    srcs = ["lib/msan/msan_ignorelist.txt"],
+    visibility = ["//visibility:public"],
+)
+
 ###
 ### compiler-rt/lib/builtins/CMakeLists.txt.
 ###
@@ -701,8 +713,8 @@ cc_library(
         "@platforms//os:macos": [],
         "@platforms//os:linux": [
             # do not sort: linux_libc_headers have to come after libcxx
-            "@libcxx//:headers",
-            "@libcxxabi//:headers",
+            "@llvm-project//libcxx:headers",
+            "@llvm-project//libcxxabi:headers",
             ":linux_libc_headers",
         ],
     }),

@@ -45,14 +45,14 @@ filegroup(
     name = "static_runtime_lib",
     srcs = select({
         "@platforms//os:linux": [
-            "@libcxx//:libcxx.static",
-            "@libcxxabi//:libcxxabi.static",
-            "@libunwind//:libunwind.static",
+            "@llvm-project//libcxx:libcxx.static",
+            "@llvm-project//libcxxabi:libcxxabi.static",
+            "@llvm-project//libunwind:libunwind.static",
         ],
         "@platforms//os:windows": [
-            "@libcxx//:libcxx.static",
-            "@libcxxabi//:libcxxabi.static",
-            "@libunwind//:libunwind.static",
+            "@llvm-project//libcxx:libcxx.static",
+            "@llvm-project//libcxxabi:libcxxabi.static",
+            "@llvm-project//libunwind:libunwind.static",
         ],
         "//conditions:default": [],
     }),
@@ -63,9 +63,9 @@ filegroup(
     name = "dynamic_runtime_lib",
     srcs = select({
         "@platforms//os:linux": [
-            "@libcxx//:libcxx.shared",
-            "@libcxxabi//:libcxxabi.shared",
-            "@libunwind//:libunwind.shared",
+            "@llvm-project//libcxx:libcxx.shared",
+            "@llvm-project//libcxxabi:libcxxabi.shared",
+            "@llvm-project//libunwind:libunwind.shared",
         ],
         # TODO(zbarsky): windows?
         "//conditions:default": [],
@@ -120,15 +120,16 @@ copy_to_directory(
     }) + [
         ":crti_object",
         ":crtn_object",
-        "@compiler-rt//:crtbeginS_object",
-        "@compiler-rt//:crtbeginT_object",
-        "@compiler-rt//:crtbegin_object",
-        "@compiler-rt//:crtendS_object",
-        "@compiler-rt//:crtend_object",
+        "@llvm-project//compiler-rt:crtbeginS_object",
+        "@llvm-project//compiler-rt:crtbeginT_object",
+        "@llvm-project//compiler-rt:crtbegin_object",
+        "@llvm-project//compiler-rt:crtendS_object",
+        "@llvm-project//compiler-rt:crtend_object",
     ],
     include_external_repositories = ["**"],
     root_paths = [
         ".",
+        "compiler-rt",
         "runtimes/musl",
     ],
     target_compatible_with = [

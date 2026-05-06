@@ -3,25 +3,25 @@ load("//runtimes:defs.bzl", "stub_library")
 
 alias(
     name = "libcxx.static",
-    actual = "@libcxx//:libcxx.static",
+    actual = "@llvm-project//libcxx:libcxx.static",
     visibility = ["//visibility:public"],
 )
 
 alias(
     name = "libcxx.shared",
-    actual = "@libcxx//:libcxx.shared",
+    actual = "@llvm-project//libcxx:libcxx.shared",
     visibility = ["//visibility:public"],
 )
 
 alias(
     name = "libcxxabi.static",
-    actual = "@libcxxabi//:libcxxabi.static",
+    actual = "@llvm-project//libcxxabi:libcxxabi.static",
     visibility = ["//visibility:public"],
 )
 
 alias(
     name = "libcxxabi.shared",
-    actual = "@libcxxabi//:libcxxabi.shared",
+    actual = "@llvm-project//libcxxabi:libcxxabi.shared",
     visibility = ["//visibility:public"],
 )
 
@@ -44,12 +44,12 @@ copy_to_directory(
 
 alias(
     name = "libcxx_headers_include_search_directory",
-    actual = "@libcxx//:libcxx_headers_include_search_directory",
+    actual = "@llvm-project//libcxx:libcxx_headers_include_search_directory",
     visibility = ["//visibility:public"],
 )
 
 alias(
     name = "libcxxabi_headers_include_search_directory",
-    actual = "@libcxxabi//:libcxxabi_headers_include_search_directory",
+    actual = "@llvm-project//libcxxabi:libcxxabi_headers_include_search_directory",
     visibility = ["//visibility:public"],
 )
