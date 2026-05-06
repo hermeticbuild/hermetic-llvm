@@ -64,7 +64,7 @@ _platform_tag = tag_class(
     attrs = {
         "os": attr.string(
             mandatory = True,
-            values = ["linux", "macos"],
+            values = ["linux", "macos", "windows"],
         ),
         "arch": attr.string(
             mandatory = True,
