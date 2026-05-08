@@ -1,5 +1,7 @@
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
-load("@llvm//:sh_script.bzl", "sh_script")
+load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("@llvm//3rd_party/libc/musl:musl_headers.bzl", "musl_alltypes_headers")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 
 MUSL_SUPPORTED_ARCHS = [
@@ -44,15 +46,14 @@ filegroup(
 
 ## INTERNAL HEADERS
 
-sh_script(
+write_file(
     name = "version_h",
-    srcs = ["VERSION"],
-    outs = ["obj/src/internal/version.h"],
-    args = [
-        "$(location VERSION)",
-        "$(location obj/src/internal/version.h)",
+    out = "obj/src/internal/version.h",
+    content = [
+        # Keep this in sync with the musl release fetched in runtimes/musl/extension/musl.bzl.
+        "#define VERSION \"1.2.6\"",
+        "",
     ],
-    cmd = """printf '#define VERSION \"%s\"\\n' "$(cat $1)" > $2""",
 )
 
 [
@@ -112,45 +113,44 @@ filegroup(
         name = "headers_arch_specific_{arch}".format(arch = arch),
         srcs = glob([
             "arch/{arch}/bits/*.h".format(arch = arch),
+            "arch/{arch}/bits/syscall.h.in".format(arch = arch),
         ]),
         visibility = ["//visibility:public"],
     )
     for arch in MUSL_SUPPORTED_ARCHS
 ]
 
-[
-    sh_script(
+ALLTYPES_HEADERS = {
+    arch: musl_alltypes_headers(
         name = "alltypes_h_{arch}".format(arch = arch),
-        srcs = [
-            "arch/{arch}/bits/alltypes.h.in".format(arch = arch),
-            "include/alltypes.h.in",
-            "tools/mkalltypes.sed",
+        arch = arch,
+        visibility = ["//visibility:public"],
+    )
+    for arch in MUSL_SUPPORTED_ARCHS
+}
+
+[
+    write_file(
+        name = "syscall_h_{arch}".format(arch = arch),
+        out = "obj/{arch}/include/bits/syscall.h".format(arch = arch),
+        content = [
+            "#include <bits/syscall.h.in>",
+            "#include <bits/syscall_aliases.h>",
+            "",
         ],
-        outs = ["obj/{arch}/include/bits/alltypes.h".format(arch = arch)],
-        args = [
-            "$(location tools/mkalltypes.sed)",
-            "$(location arch/{arch}/bits/alltypes.h.in)".format(arch = arch),
-            "$(location include/alltypes.h.in)",
-            "$(location obj/{arch}/include/bits/alltypes.h)".format(arch = arch),
-        ],
-        cmd = "sed -f $1 $2 $3 > $4",
         visibility = ["//visibility:public"],
     )
     for arch in MUSL_SUPPORTED_ARCHS
 ]
 
 [
-    sh_script(
-        name = "syscall_h_{arch}".format(arch = arch),
-        srcs = [
-            "arch/{arch}/bits/syscall.h.in".format(arch = arch),
-        ],
-        outs = ["obj/{arch}/include/bits/syscall.h".format(arch = arch)],
-        args = [
-            "$(location arch/{arch}/bits/syscall.h.in)".format(arch = arch),
-            "$(location obj/{arch}/include/bits/syscall.h)".format(arch = arch),
-        ],
-        cmd = "cat $1 > $2 && sed -n -e 's/__NR_/SYS_/p' $1 >> $2",
+    expand_template(
+        name = "syscall_aliases_h_{arch}".format(arch = arch),
+        out = "obj/{arch}/include/bits/syscall_aliases.h".format(arch = arch),
+        substitutions = {
+            "__NR_": "SYS_",
+        },
+        template = "arch/{arch}/bits/syscall.h.in".format(arch = arch),
         visibility = ["//visibility:public"],
     )
     for arch in MUSL_SUPPORTED_ARCHS
@@ -162,9 +162,9 @@ filegroup(
         srcs = [
             ":headers_generic",
             ":headers_arch_specific_{arch}".format(arch = arch),
-            ":alltypes_h_{arch}".format(arch = arch),
             ":syscall_h_{arch}".format(arch = arch),
-        ],
+            ":syscall_aliases_h_{arch}".format(arch = arch),
+        ] + ALLTYPES_HEADERS[arch],
         visibility = ["//visibility:public"],
     )
     for arch in MUSL_SUPPORTED_ARCHS
