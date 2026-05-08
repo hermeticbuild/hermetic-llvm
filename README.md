@@ -283,6 +283,7 @@ See https://github.com/hermeticbuild/hermetic-llvm/milestone/1
 - [rules_py](https://github.com/aspect-build/rules_py)
 - [rules_scala_native](https://github.com/Programming-Rivers/rules_scala_native)
 - [JetBrains](https://github.com/JetBrains/intellij-community)
+- [Nativelink](https://github.com/TraceMachina/nativelink)
 
 ## Prior art
 
