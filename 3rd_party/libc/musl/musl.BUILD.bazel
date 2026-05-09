@@ -11,6 +11,18 @@ MUSL_SUPPORTED_ARCHS = [
     "s390x",
 ]
 
+# Exposed for e2e tests that compare Starlark header generation against musl's sed scripts.
+exports_files(
+    [
+        "include/alltypes.h.in",
+        "tools/mkalltypes.sed",
+    ] + [
+        "arch/{arch}/bits/alltypes.h.in".format(arch = arch)
+        for arch in MUSL_SUPPORTED_ARCHS
+    ],
+    visibility = ["//visibility:public"],
+)
+
 filegroup(
     name = "compile_srcs",
     srcs = glob(

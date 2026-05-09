@@ -28,8 +28,11 @@ load(
     "xray_cc_binary",
 )
 load(":bazel_version.bzl", "validate_static_library_compatible")
+load(":musl_header_generation_tests.bzl", "musl_header_generation_tests")
 
 _VALIDATE_STATIC_LIBRARY_COMPATIBLE = validate_static_library_compatible()
+
+musl_header_generation_tests(name = "musl_header_generation_tests")
 
 cc_library(
     name = "objc_c_lib",

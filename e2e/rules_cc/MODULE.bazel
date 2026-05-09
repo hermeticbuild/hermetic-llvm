@@ -1,5 +1,6 @@
 bazel_dep(name = "bazel_lib", version = "3.0.0")
 bazel_dep(name = "bazel_features", version = "1.42.0")
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
 bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "rules_cc", version = "0.2.18")
 bazel_dep(name = "rules_shell", version = "0.6.1")
@@ -13,6 +14,9 @@ local_path_override(
 
 llvm = use_extension("@llvm//extensions:llvm.bzl", "llvm")
 use_repo(llvm, "llvm-project")
+
+musl = use_extension("@llvm//runtimes/musl/extension:musl.bzl", "musl")
+use_repo(musl, "musl_libc")
 
 # Register toolchains through the scoped repo to ensure this codepath works.
 llvm_toolchains = use_extension("@llvm//extensions:toolchain.bzl", "toolchain")
