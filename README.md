@@ -124,9 +124,11 @@ If you wish to setup things manually, you will likely require a few flags:
 | **aarch64-linux-gnu ¹**  | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **x86_64-linux-gnu ¹**   | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **riscv64-linux-gnu ¹**   | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **s390x-linux-gnu ¹**     | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **aarch64-linux-musl**   | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **x86_64-linux-musl**    | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **riscv64-linux-musl**    | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **s390x-linux-musl**      | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **aarch64-windows-gnu ²**| ✅ | ✅ | ✅ | ✅ | ✅ |
 | **x86_64-windows-gnu ²** | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **wasm32-unknown-unknown** | ✅ | ✅ | ✅ | ✅ | ✅ |
