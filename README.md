@@ -117,22 +117,22 @@ If you wish to setup things manually, you will likely require a few flags:
 
 ✅ Currently supports cross-compilation between all combinations of the following platforms:
 
-| To ↓ / From → | macOS aarch64 | Linux aarch64 | Linux x86_64 | Windows x86_64 | Windows aarch64 |
-|---------------|---------------|---------------|--------------|----------------|-----------------|
-| **aarch64-apple-darwin** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **x86_64-apple-darwin**  | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **aarch64-linux-gnu ¹**  | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **x86_64-linux-gnu ¹**   | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **riscv64-linux-gnu ¹**   | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **s390x-linux-gnu ¹**     | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **aarch64-linux-musl**   | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **x86_64-linux-musl**    | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **riscv64-linux-musl**    | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **s390x-linux-musl**      | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **aarch64-windows-gnu ²**| ✅ | ✅ | ✅ | ✅ | ✅ |
-| **x86_64-windows-gnu ²** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **wasm32-unknown-unknown** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **wasm64-unknown-unknown** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| To ↓ / From → | macOS aarch64 | macOS x86_64 | Linux aarch64 | Linux x86_64 | Windows x86_64 | Windows aarch64 |
+|---------------|---------------|--------------|---------------|--------------|----------------|-----------------|
+| **aarch64-apple-darwin** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **x86_64-apple-darwin**  | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **aarch64-linux-gnu ¹**  | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **x86_64-linux-gnu ¹**   | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **riscv64-linux-gnu ¹**   | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **s390x-linux-gnu ¹**     | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **aarch64-linux-musl**   | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **x86_64-linux-musl**    | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **riscv64-linux-musl**    | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **s390x-linux-musl**      | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **aarch64-windows-gnu ²**| ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **x86_64-windows-gnu ²** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **wasm32-unknown-unknown** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **wasm64-unknown-unknown** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ¹ See "GNU C Library" section for glibc version selection.
 
