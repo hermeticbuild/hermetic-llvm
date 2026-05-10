@@ -95,6 +95,7 @@ def _llvm_source_archive_excludes():
         "offload",
         "libc/docs",
         "libc/utils/gn",
+        "llvm/utils/mlgo-utils/*",
     ]
 
     test_docs_subprojects = [
