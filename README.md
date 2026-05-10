@@ -286,6 +286,7 @@ See https://github.com/hermeticbuild/hermetic-llvm/milestone/1
 - [rules_scala_native](https://github.com/Programming-Rivers/rules_scala_native)
 - [JetBrains](https://github.com/JetBrains/intellij-community)
 - [Nativelink](https://github.com/TraceMachina/nativelink)
+- [formatjs](https://github.com/formatjs/formatjs)
 
 ## Prior art
 
