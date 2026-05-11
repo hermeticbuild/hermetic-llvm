@@ -538,6 +538,7 @@ POLICY_DEFINES = [
     policy_define("_GLIBCXX_USE_C99"),
     policy_define("_GLIBCXX_USE_DUAL_ABI"),
     policy_define("_GLIBCXX_USE_CXX11_ABI"),
+    policy_define("_GLIBCXX_ATOMIC_WORD_BUILTINS"),
     policy_define("_GLIBCXX_FULLY_DYNAMIC_STRING", "0"),
     policy_define("_GLIBCXX_STDIO_EOF", "-1"),
     policy_define("_GLIBCXX_STDIO_SEEK_CUR", "1"),

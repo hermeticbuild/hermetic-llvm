@@ -1,6 +1,9 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 load("@bazel_lib//lib:copy_file.bzl", "copy_file")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load(":cc_rules.bzl", "libstdcxx_runtime_cc_binary")
 load(":config_probe.bzl", "libstdcxx_config_h")
 load(
     ":configure.bzl",
@@ -269,10 +272,57 @@ copy_to_directory(
     visibility = ["//visibility:public"],
 )
 
+cc_library(
+    name = "build_headers",
+    hdrs = [
+        ":build_headers_include_search_directory",
+        ":headers_include_search_directory",
+    ],
+    includes = [
+        "build_headers_include_search_directory",
+        "headers_include_search_directory",
+    ],
+    visibility = ["//visibility:public"],
+)
+
 alias(
     name = "abi_headers_include_search_directory",
     actual = ":generated_host_headers_include_search_directory",
     visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "libsupcxx.static",
+    actual = "@gcc//:libsupcxx.static",
+    visibility = ["//visibility:public"],
+)
+
+write_file(
+    name = "libsupcxx_link_smoke_src",
+    out = "libsupcxx_link_smoke.cc",
+    content = [
+        "#include <cxxabi.h>",
+        "#include <cstdlib>",
+        "",
+        "int main() {",
+        "  int status = -1;",
+        "  char* demangled = abi::__cxa_demangle(\"_Z3foov\", nullptr, nullptr, &status);",
+        "  bool ok = status == 0 && demangled != nullptr && demangled[0] == 'f';",
+        "  std::free(demangled);",
+        "  return ok ? 0 : 1;",
+        "}",
+    ],
+)
+
+libstdcxx_runtime_cc_binary(
+    name = "libsupcxx_link_smoke",
+    srcs = [":libsupcxx_link_smoke_src"],
+    additional_linker_inputs = [":libsupcxx.static"],
+    copts = ["-fno-exceptions"],
+    linkopts = ["$(location :libsupcxx.static)"],
+    deps = [
+        ":build_headers",
+    ],
 )
 
 libstdcxx_header_smoke(
@@ -284,6 +334,21 @@ libstdcxx_header_smoke(
 bzl_library(
     name = "config_checks",
     srcs = ["config_checks.bzl"],
+)
+
+bzl_library(
+    name = "cc_rules",
+    srcs = ["cc_rules.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@bazel_skylib//lib:paths",
+        "@rules_cc//cc:action_names_bzl",
+        "@rules_cc//cc:core_rules",
+        "@rules_cc//cc:find_cc_toolchain_bzl",
+        "@rules_cc//cc/common",
+        "@rules_cc//cc/common:cc_info_bzl",
+        "@with_cfg.bzl//:with_cfg",
+    ],
 )
 
 bzl_library(

@@ -113,6 +113,7 @@ cc_args(
         "-isystem",
         "{cxxstdlib_abi_headers_include_search_path}",
     ],
+    # Do not sort: keep the data order aligned with the argument order above.
     data = [
         "//runtimes/cxxstdlib:headers_include_search_directory",
         "//runtimes/cxxstdlib:abi_headers_include_search_directory",

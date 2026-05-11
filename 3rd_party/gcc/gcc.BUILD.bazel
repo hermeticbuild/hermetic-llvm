@@ -1,4 +1,14 @@
+load("@bazel_lib//lib:copy_file.bzl", "copy_file")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load(
+    "@llvm//runtimes/libstdcxx:cc_rules.bzl",
+    "libstdcxx_runtime_cc_library",
+    "libstdcxx_runtime_cc_static_library",
+    "libstdcxx_runtime_cc_static_library_no_validate",
+)
+load("@llvm//runtimes/libstdcxx:configure.bzl", "libstdcxx_atomicity_h")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -10,12 +20,23 @@ filegroup(
 exports_files([
     "gcc/BASE-VER",
     "gcc/DATESTAMP",
+    "libgcc/unwind-generic.h",
+    "libgcc/unwind-pe.h",
+    "include/ansidecl.h",
+    "include/demangle.h",
+    "include/dyn-string.h",
+    "include/getopt.h",
+    "include/libiberty.h",
+    "libiberty/cp-demangle.c",
+    "libiberty/cp-demangle.h",
     "libgcc/gthr-posix.h",
     "libgcc/gthr-single.h",
     "libgcc/gthr.h",
     "libstdc++-v3/config/allocator/new_allocator_base.h",
     "libstdc++-v3/config/cpu/aarch64/opt/bits/opt_random.h",
     "libstdc++-v3/config/cpu/aarch64/opt/ext/opt_random.h",
+    "libstdc++-v3/config/cpu/generic/atomicity_builtins/atomicity.h",
+    "libstdc++-v3/config/cpu/generic/atomicity_mutex/atomicity.h",
     "libstdc++-v3/config/cpu/generic/atomic_word.h",
     "libstdc++-v3/config/cpu/generic/cpu_defines.h",
     "libstdc++-v3/config/cpu/generic/cxxabi_tweaks.h",
@@ -236,6 +257,213 @@ filegroup(
         "libstdc++-v3/libsupc++/new",
         "libstdc++-v3/libsupc++/typeinfo",
     ],
+)
+
+filegroup(
+    name = "libsupcxx_sources",
+    srcs = [
+        "libstdc++-v3/libsupc++/array_type_info.cc",
+        "libstdc++-v3/libsupc++/atexit_arm.cc",
+        "libstdc++-v3/libsupc++/atexit_thread.cc",
+        "libstdc++-v3/libsupc++/bad_alloc.cc",
+        "libstdc++-v3/libsupc++/bad_array_length.cc",
+        "libstdc++-v3/libsupc++/bad_array_new.cc",
+        "libstdc++-v3/libsupc++/bad_cast.cc",
+        "libstdc++-v3/libsupc++/bad_typeid.cc",
+        "libstdc++-v3/libsupc++/class_type_info.cc",
+        "libstdc++-v3/libsupc++/del_op.cc",
+        "libstdc++-v3/libsupc++/del_opa.cc",
+        "libstdc++-v3/libsupc++/del_opant.cc",
+        "libstdc++-v3/libsupc++/del_opnt.cc",
+        "libstdc++-v3/libsupc++/del_ops.cc",
+        "libstdc++-v3/libsupc++/del_opsa.cc",
+        "libstdc++-v3/libsupc++/del_opv.cc",
+        "libstdc++-v3/libsupc++/del_opva.cc",
+        "libstdc++-v3/libsupc++/del_opvant.cc",
+        "libstdc++-v3/libsupc++/del_opvnt.cc",
+        "libstdc++-v3/libsupc++/del_opvs.cc",
+        "libstdc++-v3/libsupc++/del_opvsa.cc",
+        "libstdc++-v3/libsupc++/dyncast.cc",
+        "libstdc++-v3/libsupc++/eh_alloc.cc",
+        "libstdc++-v3/libsupc++/eh_arm.cc",
+        "libstdc++-v3/libsupc++/eh_aux_runtime.cc",
+        "libstdc++-v3/libsupc++/eh_call.cc",
+        "libstdc++-v3/libsupc++/eh_catch.cc",
+        "libstdc++-v3/libsupc++/eh_exception.cc",
+        "libstdc++-v3/libsupc++/eh_globals.cc",
+        "libstdc++-v3/libsupc++/eh_personality.cc",
+        "libstdc++-v3/libsupc++/eh_ptr.cc",
+        "libstdc++-v3/libsupc++/eh_term_handler.cc",
+        "libstdc++-v3/libsupc++/eh_terminate.cc",
+        "libstdc++-v3/libsupc++/eh_throw.cc",
+        "libstdc++-v3/libsupc++/eh_tm.cc",
+        "libstdc++-v3/libsupc++/eh_type.cc",
+        "libstdc++-v3/libsupc++/eh_unex_handler.cc",
+        "libstdc++-v3/libsupc++/enum_type_info.cc",
+        "libstdc++-v3/libsupc++/function_type_info.cc",
+        "libstdc++-v3/libsupc++/fundamental_type_info.cc",
+        "libstdc++-v3/libsupc++/guard.cc",
+        "libstdc++-v3/libsupc++/guard_error.cc",
+        "libstdc++-v3/libsupc++/hash_bytes.cc",
+        "libstdc++-v3/libsupc++/nested_exception.cc",
+        "libstdc++-v3/libsupc++/new_handler.cc",
+        "libstdc++-v3/libsupc++/new_op.cc",
+        "libstdc++-v3/libsupc++/new_opa.cc",
+        "libstdc++-v3/libsupc++/new_opant.cc",
+        "libstdc++-v3/libsupc++/new_opnt.cc",
+        "libstdc++-v3/libsupc++/new_opv.cc",
+        "libstdc++-v3/libsupc++/new_opva.cc",
+        "libstdc++-v3/libsupc++/new_opvant.cc",
+        "libstdc++-v3/libsupc++/new_opvnt.cc",
+        "libstdc++-v3/libsupc++/pbase_type_info.cc",
+        "libstdc++-v3/libsupc++/pmem_type_info.cc",
+        "libstdc++-v3/libsupc++/pointer_type_info.cc",
+        "libstdc++-v3/libsupc++/pure.cc",
+        "libstdc++-v3/libsupc++/si_class_type_info.cc",
+        "libstdc++-v3/libsupc++/tinfo2.cc",
+        "libstdc++-v3/libsupc++/vec.cc",
+        "libstdc++-v3/libsupc++/vmi_class_type_info.cc",
+        "libstdc++-v3/libsupc++/vterminate.cc",
+    ] + select({
+        "@platforms//os:windows": [":libsupcxx_tinfo_windows_cc"],
+        "//conditions:default": ["libstdc++-v3/libsupc++/tinfo.cc"],
+    }),
+)
+
+filegroup(
+    name = "libsupcxx_private_headers",
+    srcs = [
+        "libgcc/unwind-pe.h",
+        "libstdc++-v3/libsupc++/eh_atomics.h",
+        "libstdc++-v3/libsupc++/eh_term_handler.h",
+        "libstdc++-v3/libsupc++/tinfo.h",
+        "libstdc++-v3/libsupc++/unwind-cxx.h",
+    ],
+)
+
+filegroup(
+    name = "libiberty_demangle_headers",
+    srcs = [
+        "include/ansidecl.h",
+        "include/demangle.h",
+        "include/dyn-string.h",
+        "include/getopt.h",
+        "include/libiberty.h",
+        "libiberty/cp-demangle.h",
+    ],
+)
+
+LIBSTDCXX_BUILD_COPTS = [
+    "-nostdinc++",
+    "-fno-implicit-templates",
+]
+
+write_file(
+    name = "libiberty_config_h",
+    out = "libsupcxx_generated/config.h",
+    content = [
+        "#define HAVE_LIMITS_H 1",
+        "#define HAVE_STDLIB_H 1",
+        "#define HAVE_STRING_H 1",
+    ],
+)
+
+copy_file(
+    name = "libsupcxx_atomicity_cc",
+    src = libstdcxx_atomicity_h(),
+    out = "libsupcxx_generated/atomicity.cc",
+)
+
+copy_file(
+    name = "libsupcxx_unwind_h",
+    src = "libgcc/unwind-generic.h",
+    out = "libgcc/unwind.h",
+)
+
+expand_template(
+    name = "libsupcxx_tinfo_windows_cc",
+    out = "libsupcxx_generated/tinfo_windows.cc",
+    substitutions = {
+        """bool
+std::type_info::__equal (const std::type_info& arg) const _GLIBCXX_NOEXCEPT
+__attribute__((alias("_ZNKSt9type_infoeqERKS_")));""": """bool
+std::type_info::__equal (const std::type_info& arg) const _GLIBCXX_NOEXCEPT
+{
+  return operator== (arg);
+}""",
+    },
+    template = "libstdc++-v3/libsupc++/tinfo.cc",
+)
+
+libstdcxx_runtime_cc_library(
+    name = "libsupcxx_objects",
+    srcs = [":libsupcxx_sources"],
+    hdrs = [
+        ":libsupcxx_headers",
+        ":libsupcxx_private_headers",
+        ":libsupcxx_unwind_h",
+    ],
+    copts = LIBSTDCXX_BUILD_COPTS,
+    implementation_deps = ["@llvm//runtimes/libstdcxx:build_headers"],
+    includes = [
+        "libgcc",
+        "libstdc++-v3/libsupc++",
+    ],
+)
+
+libstdcxx_runtime_cc_library(
+    name = "libsupcxx_atomicity",
+    srcs = [":libsupcxx_atomicity_cc"],
+    copts = LIBSTDCXX_BUILD_COPTS + ["-fwrapv"],
+    implementation_deps = ["@llvm//runtimes/libstdcxx:build_headers"],
+)
+
+libstdcxx_runtime_cc_library(
+    name = "libsupcxx_demangle",
+    srcs = ["libiberty/cp-demangle.c"],
+    hdrs = [
+        ":libiberty_config_h",
+        ":libiberty_demangle_headers",
+    ],
+    copts = LIBSTDCXX_BUILD_COPTS + [
+        "-DHAVE_CONFIG_H",
+        "-DIN_GLIBCPP_V3",
+        "-Wno-error",
+    ],
+    implementation_deps = ["@llvm//runtimes/libstdcxx:build_headers"],
+    includes = [
+        "include",
+        "libiberty",
+        "libsupcxx_generated",
+    ],
+)
+
+libstdcxx_runtime_cc_library(
+    name = "libsupcxx",
+    deps = [
+        ":libsupcxx_atomicity",
+        ":libsupcxx_demangle",
+        ":libsupcxx_objects",
+    ],
+)
+
+libstdcxx_runtime_cc_static_library(
+    name = "libsupcxx.static.checked",
+    deps = [":libsupcxx"],
+)
+
+libstdcxx_runtime_cc_static_library_no_validate(
+    name = "libsupcxx.static.unchecked",
+    deps = [":libsupcxx"],
+)
+
+alias(
+    name = "libsupcxx.static",
+    actual = select({
+        "@platforms//os:windows": ":libsupcxx.static.unchecked",
+        "//conditions:default": ":libsupcxx.static.checked",
+    }),
+    visibility = ["//visibility:public"],
 )
 
 copy_to_directory(

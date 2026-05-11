@@ -3,7 +3,7 @@ _SUPPORTED_TARGETS = {
         "abi_baseline_pair": "x86_64-linux-gnu",
         "abi_tweaks_dir": "cpu/generic",
         "atomic_word_dir": "cpu/generic",
-        "atomicity_dir": "cpu/generic",
+        "atomicity_dir": "cpu/generic/atomicity_builtins",
         "cpu_defines_dir": "cpu/generic",
         "cpu_include_dir": "cpu/i486",
         "error_constants_dir": "os/generic",
@@ -16,7 +16,7 @@ _SUPPORTED_TARGETS = {
         "abi_baseline_pair": "aarch64-linux-gnu",
         "abi_tweaks_dir": "cpu/generic",
         "atomic_word_dir": "cpu/generic",
-        "atomicity_dir": "cpu/generic",
+        "atomicity_dir": "cpu/generic/atomicity_builtins",
         "cpu_defines_dir": "cpu/generic",
         "cpu_include_dir": "cpu/aarch64",
         "error_constants_dir": "os/generic",
@@ -29,7 +29,7 @@ _SUPPORTED_TARGETS = {
         "abi_baseline_pair": "riscv64-linux-gnu",
         "abi_tweaks_dir": "cpu/generic",
         "atomic_word_dir": "cpu/generic",
-        "atomicity_dir": "cpu/generic",
+        "atomicity_dir": "cpu/generic/atomicity_builtins",
         "cpu_defines_dir": "cpu/generic",
         "cpu_include_dir": "cpu/generic",
         "error_constants_dir": "os/generic",
@@ -42,7 +42,7 @@ _SUPPORTED_TARGETS = {
         "abi_baseline_pair": "s390x-linux-gnu",
         "abi_tweaks_dir": "cpu/generic",
         "atomic_word_dir": "cpu/generic",
-        "atomicity_dir": "cpu/generic",
+        "atomicity_dir": "cpu/generic/atomicity_builtins",
         "cpu_defines_dir": "cpu/generic",
         "cpu_include_dir": "cpu/generic",
         "error_constants_dir": "os/generic",
@@ -55,7 +55,7 @@ _SUPPORTED_TARGETS = {
         "abi_baseline_pair": "x86_64-linux-gnu",
         "abi_tweaks_dir": "cpu/generic",
         "atomic_word_dir": "cpu/generic",
-        "atomicity_dir": "cpu/generic",
+        "atomicity_dir": "cpu/generic/atomicity_builtins",
         "cpu_defines_dir": "cpu/generic",
         "cpu_include_dir": "cpu/i486",
         "error_constants_dir": "os/generic",
@@ -68,7 +68,7 @@ _SUPPORTED_TARGETS = {
         "abi_baseline_pair": "aarch64-linux-gnu",
         "abi_tweaks_dir": "cpu/generic",
         "atomic_word_dir": "cpu/generic",
-        "atomicity_dir": "cpu/generic",
+        "atomicity_dir": "cpu/generic/atomicity_builtins",
         "cpu_defines_dir": "cpu/generic",
         "cpu_include_dir": "cpu/aarch64",
         "error_constants_dir": "os/generic",
@@ -81,7 +81,7 @@ _SUPPORTED_TARGETS = {
         "abi_baseline_pair": "riscv64-linux-gnu",
         "abi_tweaks_dir": "cpu/generic",
         "atomic_word_dir": "cpu/generic",
-        "atomicity_dir": "cpu/generic",
+        "atomicity_dir": "cpu/generic/atomicity_builtins",
         "cpu_defines_dir": "cpu/generic",
         "cpu_include_dir": "cpu/generic",
         "error_constants_dir": "os/generic",
@@ -94,7 +94,7 @@ _SUPPORTED_TARGETS = {
         "abi_baseline_pair": "s390x-linux-gnu",
         "abi_tweaks_dir": "cpu/generic",
         "atomic_word_dir": "cpu/generic",
-        "atomicity_dir": "cpu/generic",
+        "atomicity_dir": "cpu/generic/atomicity_builtins",
         "cpu_defines_dir": "cpu/generic",
         "cpu_include_dir": "cpu/generic",
         "error_constants_dir": "os/generic",
@@ -107,7 +107,7 @@ _SUPPORTED_TARGETS = {
         "abi_baseline_pair": "x86_64-mingw32",
         "abi_tweaks_dir": "cpu/generic",
         "atomic_word_dir": "cpu/generic",
-        "atomicity_dir": "cpu/generic",
+        "atomicity_dir": "cpu/generic/atomicity_builtins",
         "cpu_defines_dir": "cpu/generic",
         "cpu_include_dir": "cpu/i486",
         "error_constants_dir": "os/mingw32-w64",
@@ -120,7 +120,7 @@ _SUPPORTED_TARGETS = {
         "abi_baseline_pair": "aarch64-mingw32",
         "abi_tweaks_dir": "cpu/generic",
         "atomic_word_dir": "cpu/generic",
-        "atomicity_dir": "cpu/generic",
+        "atomicity_dir": "cpu/generic/atomicity_builtins",
         "cpu_defines_dir": "cpu/generic",
         "cpu_include_dir": "cpu/aarch64",
         "error_constants_dir": "os/mingw32-w64",
@@ -152,7 +152,7 @@ def _field_value(values, field):
 
 def _select_field(field):
     return select({
-        config: _field_value(values, field)
+        Label(config): _field_value(values, field)
         for config, values in _SUPPORTED_TARGETS.items()
     }, no_match_error = _NO_MATCH_ERROR)
 
@@ -212,13 +212,13 @@ def libstdcxx_use_dual_abi():
 
 def _gcc_config_header_label(field, basename):
     return select({
-        config: "@gcc//:libstdc++-v3/config/{}/{}".format(values[field], basename)
+        Label(config): "@gcc//:libstdc++-v3/config/{}/{}".format(values[field], basename)
         for config, values in _SUPPORTED_TARGETS.items()
     }, no_match_error = _NO_MATCH_ERROR)
 
 def _gcc_libgcc_header_label(field):
     return select({
-        config: "@gcc//:libgcc/{}".format(values[field])
+        Label(config): "@gcc//:libgcc/{}".format(values[field])
         for config, values in _SUPPORTED_TARGETS.items()
     }, no_match_error = _NO_MATCH_ERROR)
 
@@ -233,6 +233,9 @@ def libstdcxx_os_defines_h():
 
 def libstdcxx_atomic_word_h():
     return _gcc_config_header_label("atomic_word_dir", "atomic_word.h")
+
+def libstdcxx_atomicity_h():
+    return _gcc_config_header_label("atomicity_dir", "atomicity.h")
 
 def libstdcxx_cxxabi_tweaks_h():
     return _gcc_config_header_label("abi_tweaks_dir", "cxxabi_tweaks.h")
