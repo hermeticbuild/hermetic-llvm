@@ -9,6 +9,7 @@ bzl_library(
     visibility = ["//visibility:public"],
     deps = [
         ":common",
+        "//constraints/cxxstdlib:cxxstdlib_versions",
         "//constraints/libc:libc_versions",
     ],
 )

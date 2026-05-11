@@ -1,4 +1,5 @@
 load("@bazel_skylib//lib:selects.bzl", "selects")
+load("//constraints/cxxstdlib:cxxstdlib_versions.bzl", "CXXSTDLIBS")
 load("//constraints/libc:libc_versions.bzl", "GLIBCS", "LIBCS")
 load("//platforms:common.bzl", "LIBC_SUPPORTED_TARGETS", "SUPPORTED_TARGETS")
 
@@ -26,6 +27,7 @@ def declare_config_settings():
         )
 
     declare_config_settings_libc_aware()
+    declare_config_settings_cxxstdlib_aware()
 
 def declare_config_settings_libc_aware():
     for (target_os, target_cpu) in LIBC_SUPPORTED_TARGETS:
@@ -69,3 +71,13 @@ def declare_config_settings_libc_aware():
         ],
         visibility = ["//visibility:public"],
     )
+
+def declare_config_settings_cxxstdlib_aware():
+    for cxxstdlib in CXXSTDLIBS:
+        native.config_setting(
+            name = cxxstdlib,
+            constraint_values = [
+                "//constraints/cxxstdlib:{}".format(cxxstdlib),
+            ],
+            visibility = ["//visibility:public"],
+        )

@@ -8,6 +8,7 @@ bzl_library(
     srcs = ["declare_config_settings.bzl"],
     visibility = ["//visibility:public"],
     deps = [
+        "//constraints/cxxstdlib:cxxstdlib_versions",
         "//constraints/libc:libc_versions",
         "//platforms:common",
         "@bazel_skylib//lib:selects",

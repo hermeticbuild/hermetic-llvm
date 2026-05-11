@@ -1,3 +1,4 @@
+load("//constraints/cxxstdlib:cxxstdlib_versions.bzl", "DEFAULT_CXXSTDLIB")
 load("//constraints/libc:libc_versions.bzl", "LIBCS", "default_libc")
 load("//platforms:common.bzl", "ARCH_ALIASES", "LIBC_SUPPORTED_TARGETS", "SUPPORTED_TARGETS")
 
@@ -7,6 +8,9 @@ def declare_platforms():
             "@platforms//cpu:{}".format(target_cpu),
             "@platforms//os:{}".format(target_os),
         ]
+
+        if target_os != "none":
+            constraints.append("//constraints/cxxstdlib:{}".format(DEFAULT_CXXSTDLIB))
 
         if target_os == "linux":
             # We add a default glibc constraint for linux platforms.
@@ -43,6 +47,7 @@ def declare_platforms_libc_aware():
                     "@platforms//cpu:{}".format(target_cpu),
                     "@platforms//os:{}".format(target_os),
                     "//constraints/libc:{}".format(libc),
+                    "//constraints/cxxstdlib:{}".format(DEFAULT_CXXSTDLIB),
                 ],
                 visibility = ["//visibility:public"],
             )
@@ -54,6 +59,7 @@ def declare_platforms_libc_aware():
                         "@platforms//cpu:{}".format(target_cpu),
                         "@platforms//os:{}".format(target_os),
                         "//constraints/libc:{}".format(libc),
+                        "//constraints/cxxstdlib:{}".format(DEFAULT_CXXSTDLIB),
                     ],
                     visibility = ["//visibility:public"],
                 )
