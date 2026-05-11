@@ -7,12 +7,20 @@ _from_path = tag_class(
 )
 
 def _gcc_impl(module_ctx):
-    path = None
+    root_path = None
+    dependency_path = None
     for mod in module_ctx.modules:
         for tag in mod.tags.from_path:
-            if path != None:
-                fail("Only one GCC source path override is allowed.")
-            path = tag.path
+            if mod.is_root:
+                if root_path != None:
+                    fail("Only one root GCC source path override is allowed.")
+                root_path = tag.path
+            else:
+                if dependency_path != None and dependency_path != tag.path:
+                    fail("Only one dependency GCC source path override is allowed.")
+                dependency_path = tag.path
+
+    path = root_path or dependency_path
 
     if path == None:
         module_file = str(module_ctx.path(Label("//:MODULE.bazel")))

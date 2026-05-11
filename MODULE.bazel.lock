@@ -278,7 +278,7 @@
   "moduleExtensions": {
     "//extensions:gcc.bzl%gcc": {
       "general": {
-        "bzlTransitiveDigest": "lVz0BSGdtqR7IicF8IVvanlzWugrPc8DJ/L0XDW2J9Y=",
+        "bzlTransitiveDigest": "jo240B3JULBsoqZSANmJFDYn2SLPkNuC+5eJ/beOkv0=",
         "usagesDigest": "RpV8/tWtoc7i2DmUjnpz6k+7KvGztgFknP54La2CbjQ=",
         "recordedInputs": [
           "REPO_MAPPING:,bazel_tools bazel_tools"
