@@ -51,46 +51,16 @@ def _libstdcxx_symbols_version_script_impl(ctx):
         action_name = preprocess_action,
     )
 
-    ctx.actions.run_shell(
+    assembler_args = ctx.actions.args()
+    assembler_args.add(filtered)
+    assembler_args.add(ctx.file.base_version_script)
+    assembler_args.add_all(ctx.files.port_version_scripts)
+
+    ctx.actions.run(
+        executable = ctx.executable._assembler,
         inputs = [ctx.file.base_version_script] + ctx.files.port_version_scripts,
         outputs = [filtered],
-        arguments = [
-            ctx.file.base_version_script.path,
-            filtered.path,
-        ] + [port.path for port in ctx.files.port_version_scripts] + ["--"],
-        command = """set -eu
-base="$1"
-filtered="$2"
-shift 2
-ports=()
-while [ "$#" -gt 0 ]; do
-    if [ "$1" = "--" ]; then
-        shift
-        break
-    fi
-    ports+=("$1")
-    shift
-done
-
-tmp="${TMPDIR:-/tmp}/libstdcxx-symbols-$$"
-mkdir -p "$tmp"
-trap 'rm -rf "$tmp"' EXIT
-combined="$tmp/libstdc++-symbols.ver.tmp"
-cp "$base" "$combined"
-chmod +w "$combined"
-
-for port in "${ports[@]}"; do
-    if grep '^# Appended to version file\\.' "$port" >/dev/null 2>&1; then
-        cat "$port" >> "$combined"
-    else
-        sed -n '1,/DO NOT DELETE/p' "$combined" > "$tmp/top"
-        sed -n '/DO NOT DELETE/,$p' "$combined" > "$tmp/bottom"
-        cat "$tmp/top" "$port" "$tmp/bottom" > "$combined"
-    fi
-done
-
-grep -Ev '^[[:space:]]*#(#| |$)' "$combined" > "$filtered"
-""",
+        arguments = [assembler_args],
         execution_requirements = {"supports-path-mapping": "1"},
         mnemonic = "LibstdcxxSymbolsVersionScriptAssemble",
     )
@@ -125,6 +95,11 @@ grep -Ev '^[[:space:]]*#(#| |$)' "$combined" > "$filtered"
 libstdcxx_symbols_version_script = rule(
     implementation = _libstdcxx_symbols_version_script_impl,
     attrs = {
+        "_assembler": attr.label(
+            default = Label("//tools/internal:libstdcxx-symbols-assembler"),
+            executable = True,
+            cfg = "exec",
+        ),
         "base_version_script": attr.label(allow_single_file = True, mandatory = True),
         "config_h": attr.label(allow_single_file = True, mandatory = True),
         "port_version_scripts": attr.label_list(allow_files = True),

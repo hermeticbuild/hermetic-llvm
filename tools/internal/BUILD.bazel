@@ -1,4 +1,5 @@
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load(":c_tool_binary.bzl", "c_tool_binary")
 
 cc_binary(
     name = "header-parser",
@@ -9,5 +10,11 @@ cc_binary(
 cc_binary(
     name = "static-library-validator",
     srcs = ["static_library_validator.cc"],
+    visibility = ["//visibility:public"],
+)
+
+c_tool_binary(
+    name = "libstdcxx-symbols-assembler",
+    srcs = ["libstdcxx_symbols_assembler.c"],
     visibility = ["//visibility:public"],
 )
