@@ -1,0 +1,7 @@
+exports_files(["gcc.BUILD.bazel"])
+
+filegroup(
+    name = "overlay_files",
+    srcs = ["gcc.BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)
