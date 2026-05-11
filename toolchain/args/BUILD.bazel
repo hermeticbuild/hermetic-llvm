@@ -95,7 +95,7 @@ cc_args(
 )
 
 cc_args(
-    name = "libcxx_headers_include_search_paths",
+    name = "cxxstdlib_headers_include_search_paths",
     actions = [
         # cpp_compile_actions - lto_backend
         # Omitted to avoid unused arg warning for -I paths.
@@ -109,18 +109,23 @@ cc_args(
     ],
     args = [
         "-isystem",
-        "{libcxx_headers_include_search_path}",
+        "{cxxstdlib_headers_include_search_path}",
         "-isystem",
-        "{libcxxabi_headers_include_search_path}",
+        "{cxxstdlib_abi_headers_include_search_path}",
     ],
     data = [
-        "//runtimes/libcxx:libcxx_headers_include_search_directory",
-        "//runtimes/libcxx:libcxxabi_headers_include_search_directory",
+        "//runtimes/cxxstdlib:headers_include_search_directory",
+        "//runtimes/cxxstdlib:abi_headers_include_search_directory",
     ],
     format = {
-        "libcxx_headers_include_search_path": "//runtimes/libcxx:libcxx_headers_include_search_directory",
-        "libcxxabi_headers_include_search_path": "//runtimes/libcxx:libcxxabi_headers_include_search_directory",
+        "cxxstdlib_headers_include_search_path": "//runtimes/cxxstdlib:headers_include_search_directory",
+        "cxxstdlib_abi_headers_include_search_path": "//runtimes/cxxstdlib:abi_headers_include_search_directory",
     },
+)
+
+alias(
+    name = "libcxx_headers_include_search_paths",
+    actual = ":cxxstdlib_headers_include_search_paths",
 )
 
 cc_args(
@@ -883,18 +888,18 @@ cc_args(
 
 # Those are stubs since we link against static_runtime_libs / dynamic_runtime_libs.
 cc_args(
-    name = "libcxx_library_search_paths",
+    name = "cxxstdlib_library_search_paths",
     actions = [
         "@rules_cc//cc/toolchains/actions:link_actions",
     ],
     args = [
-        "-L{libcxx_library_search_path}",
+        "-L{cxxstdlib_library_search_path}",
     ],
     data = [
-        "//runtimes/libcxx:libcxx_library_search_directory",
+        "//runtimes/cxxstdlib:library_search_directory",
     ],
     format = {
-        "libcxx_library_search_path": "//runtimes/libcxx:libcxx_library_search_directory",
+        "cxxstdlib_library_search_path": "//runtimes/cxxstdlib:library_search_directory",
     },
 )
 

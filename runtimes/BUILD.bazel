@@ -60,33 +60,13 @@ filegroup(
 
 filegroup(
     name = "static_runtime_lib",
-    srcs = select({
-        "@platforms//os:linux": [
-            "@llvm-project//libcxx:libcxx.static",
-            "@llvm-project//libcxxabi:libcxxabi.static",
-            "@llvm-project//libunwind:libunwind.static",
-        ],
-        "@platforms//os:windows": [
-            "@llvm-project//libcxx:libcxx.static",
-            "@llvm-project//libcxxabi:libcxxabi.static",
-            "@llvm-project//libunwind:libunwind.static",
-        ],
-        "//conditions:default": [],
-    }),
+    srcs = ["//runtimes/cxxstdlib:static_runtime_lib"],
     visibility = ["//visibility:public"],
 )
 
 filegroup(
     name = "dynamic_runtime_lib",
-    srcs = select({
-        "@platforms//os:linux": [
-            "@llvm-project//libcxx:libcxx.shared",
-            "@llvm-project//libcxxabi:libcxxabi.shared",
-            "@llvm-project//libunwind:libunwind.shared",
-        ],
-        # TODO(zbarsky): windows?
-        "//conditions:default": [],
-    }),
+    srcs = ["//runtimes/cxxstdlib:dynamic_runtime_lib"],
     visibility = ["//visibility:public"],
 )
 

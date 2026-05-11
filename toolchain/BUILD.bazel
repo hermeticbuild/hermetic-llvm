@@ -151,15 +151,15 @@ cc_args_list(
 
 # Those are stubs since we link against static_runtime_libs / dynamic_runtime_libs.
 cc_args_list(
-    name = "libcxx_library_search_paths",
+    name = "cxxstdlib_library_search_paths",
     args = select({
         # libc++ is provided by the macOS SDK.
         "@platforms//os:macos": [],
         "@platforms//os:linux": [
-            "//toolchain/args:libcxx_library_search_paths",
+            "//toolchain/args:cxxstdlib_library_search_paths",
         ],
         "@platforms//os:windows": [
-            "//toolchain/args:libcxx_library_search_paths",
+            "//toolchain/args:cxxstdlib_library_search_paths",
         ],
         "//conditions:default": [],
     }),
@@ -246,7 +246,7 @@ cc_args_list(
 cc_args_list(
     name = "linux_toolchain_args",
     args = [
-        "//toolchain/args:libcxx_headers_include_search_paths",
+        "//toolchain/args:cxxstdlib_headers_include_search_paths",
     ] + select({
         "//platforms/config:musl": [
             "//toolchain/args/linux:kernel_headers_include_search_paths",
@@ -274,7 +274,7 @@ cc_args_list(
 cc_args_list(
     name = "windows_toolchain_args",
     args = [
-        "//toolchain/args:libcxx_headers_include_search_paths",
+        "//toolchain/args:cxxstdlib_headers_include_search_paths",
         "//toolchain/args/windows:mingw_headers_include_search_paths",
     ],
 )
@@ -324,7 +324,7 @@ cc_args_list(
         # Common default link flags.
         "//toolchain/args:fuse_ld",
         "//toolchain/args:lto_plugin_target_flags",
-        ":libcxx_library_search_paths",
+        ":cxxstdlib_library_search_paths",
         ":libunwind_library_search_paths",
         ":rtlib",
         ":stdlib",
