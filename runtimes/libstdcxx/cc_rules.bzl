@@ -2,10 +2,12 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_shared_library.bzl", "cc_shared_library")
 load("@rules_cc//cc:cc_static_library.bzl", "cc_static_library")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
+load("@rules_cc//cc/common:cc_shared_library_info.bzl", "CcSharedLibraryInfo")
 load("@with_cfg.bzl", "with_cfg")
 
 def _declare_static_library(*, name, actions):
@@ -119,7 +121,7 @@ _cc_static_library_no_validate = rule(
     toolchains = use_cc_toolchain(),
 )
 
-def _configure_libstdcxx_runtime_builder(builder):
+def _configure_libstdcxx_runtime_builder(builder, linkmode = None):
     builder.set("copt", [])
     builder.set("cxxopt", [])
     builder.set("linkopt", [])
@@ -128,6 +130,9 @@ def _configure_libstdcxx_runtime_builder(builder):
     builder.set("host_linkopt", [])
 
     builder.set(Label("//toolchain:cxxstdlib_mode"), "disabled")
+
+    if linkmode != None:
+        builder.set(Label("//runtimes:linkmode"), linkmode)
 
     for sanitizer in [
         "//config:ubsan",
@@ -166,11 +171,17 @@ def _configure_libstdcxx_runtime_builder(builder):
 _library_builder = _configure_libstdcxx_runtime_builder(with_cfg(cc_library))
 libstdcxx_runtime_cc_library, _libstdcxx_runtime_cc_library_internal = _library_builder.build()
 
-_static_library_builder = _configure_libstdcxx_runtime_builder(with_cfg(cc_static_library))
+_static_library_builder = _configure_libstdcxx_runtime_builder(with_cfg(cc_static_library), "static")
 libstdcxx_runtime_cc_static_library, _libstdcxx_runtime_cc_static_library_internal = _static_library_builder.build()
 
-_static_library_no_validate_builder = _configure_libstdcxx_runtime_builder(with_cfg(_cc_static_library_no_validate))
+_static_library_no_validate_builder = _configure_libstdcxx_runtime_builder(with_cfg(_cc_static_library_no_validate), "static")
 libstdcxx_runtime_cc_static_library_no_validate, _libstdcxx_runtime_cc_static_library_no_validate_internal = _static_library_no_validate_builder.build()
+
+_shared_library_builder = _configure_libstdcxx_runtime_builder(with_cfg(
+    cc_shared_library,
+    extra_providers = [CcSharedLibraryInfo],
+), "dynamic")
+libstdcxx_runtime_cc_shared_library, _libstdcxx_runtime_cc_shared_library_internal = _shared_library_builder.build()
 
 _binary_builder = _configure_libstdcxx_runtime_builder(with_cfg(cc_binary))
 libstdcxx_runtime_cc_binary, _libstdcxx_runtime_cc_binary_internal = _binary_builder.build()

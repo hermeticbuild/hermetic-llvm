@@ -5,6 +5,7 @@ load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load(
     "@llvm//runtimes/libstdcxx:cc_rules.bzl",
     "libstdcxx_runtime_cc_library",
+    "libstdcxx_runtime_cc_shared_library",
     "libstdcxx_runtime_cc_static_library",
     "libstdcxx_runtime_cc_static_library_no_validate",
 )
@@ -21,6 +22,7 @@ load(
     "libstdcxx_numeric_members_cc",
     "libstdcxx_time_members_cc",
 )
+load("@llvm//runtimes/libstdcxx:symbols.bzl", "libstdcxx_symbols_version_script")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -376,6 +378,11 @@ LIBSTDCXX_LIBRARY_COPTS = LIBSTDCXX_BUILD_COPTS + [
     "-Wno-init-priority-reserved",
 ]
 
+LIBSTDCXX_COMPATIBILITY_COPTS = select({
+    "@llvm//runtimes:linkmode_dynamic": ["-D_GLIBCXX_SHARED"],
+    "//conditions:default": [],
+})
+
 write_file(
     name = "libiberty_config_h",
     out = "libsupcxx_generated/config.h",
@@ -690,6 +697,7 @@ filegroup(
         "libstdc++-v3/src/c++11/ios_errcat.cc",
         "libstdc++-v3/src/c++11/iostream-inst.cc",
         "libstdc++-v3/src/c++11/istream-inst.cc",
+        "libstdc++-v3/src/c++11/locale-inst.cc",
         "libstdc++-v3/src/c++11/ostream-inst.cc",
         "libstdc++-v3/src/c++11/placeholders.cc",
         "libstdc++-v3/src/c++11/random.cc",
@@ -979,7 +987,7 @@ libstdcxx_runtime_cc_library(
     name = "libstdcxx_cxx98_compat",
     srcs = [":libstdcxx_cxx98_compat_sources"],
     hdrs = LIBSTDCXX_LIBRARY_HDRS,
-    copts = LIBSTDCXX_LIBRARY_COPTS + ["-std=gnu++98"],
+    copts = LIBSTDCXX_LIBRARY_COPTS + LIBSTDCXX_COMPATIBILITY_COPTS + ["-std=gnu++98"],
     implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
     includes = LIBSTDCXX_LIBRARY_INCLUDES,
 )
@@ -988,9 +996,15 @@ libstdcxx_runtime_cc_library(
     name = "libstdcxx_cxx11_compat",
     srcs = [":libstdcxx_cxx11_compat_sources"],
     hdrs = LIBSTDCXX_LIBRARY_HDRS,
-    copts = LIBSTDCXX_LIBRARY_COPTS + ["-std=gnu++11"],
+    copts = LIBSTDCXX_LIBRARY_COPTS + LIBSTDCXX_COMPATIBILITY_COPTS + ["-std=gnu++11"],
     implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
     includes = LIBSTDCXX_LIBRARY_INCLUDES,
+)
+
+libstdcxx_symbols_version_script(
+    name = "libstdcxx_symbols_ver",
+    base_version_script = "libstdc++-v3/config/abi/pre/gnu.ver",
+    config_h = "@llvm//runtimes/libstdcxx:config_h_header",
 )
 
 libstdcxx_runtime_cc_library(
@@ -1036,6 +1050,53 @@ alias(
         "@platforms//os:windows": ":libstdcxx.static.unchecked",
         "//conditions:default": ":libstdcxx.static.checked",
     }),
+    visibility = ["//visibility:public"],
+)
+
+libstdcxx_runtime_cc_shared_library(
+    name = "libstdc++.so.6.0.35",
+    additional_linker_inputs = [":libstdcxx_symbols_ver"],
+    shared_lib_name = "libstdc++.so.6.0.35",
+    user_link_flags = [
+        "-Wl,-soname,libstdc++.so.6",
+        "-Wl,--version-script=$(location :libstdcxx_symbols_ver)",
+        "-Wl,--undefined-version",
+        "-lm",
+    ],
+    visibility = ["//visibility:public"],
+    # cc_shared_library needs the object-bearing cc_library targets so its
+    # graph aspect can decide what to link. The aggregate :libstdcxx target is
+    # only a wrapper and does not expose those roots through with_cfg.
+    deps = [
+        ":libstdcxx_cxx11_/libstdcxx_cxx11",
+        ":libstdcxx_cxx11_char8_/libstdcxx_cxx11_char8",
+        ":libstdcxx_cxx11_compat_/libstdcxx_cxx11_compat",
+        ":libstdcxx_cxx11_hashtable_/libstdcxx_cxx11_hashtable",
+        ":libstdcxx_cxx17_/libstdcxx_cxx17",
+        ":libstdcxx_cxx20_/libstdcxx_cxx20",
+        ":libstdcxx_cxx20_format_/libstdcxx_cxx20_format",
+        ":libstdcxx_cxx23_/libstdcxx_cxx23",
+        ":libstdcxx_cxx98_/libstdcxx_cxx98",
+        ":libstdcxx_cxx98_compat_/libstdcxx_cxx98_compat",
+        ":libstdcxx_cxx98_concept_inst_/libstdcxx_cxx98_concept_inst",
+        ":libstdcxx_cxx98_cow_locale_/libstdcxx_cxx98_cow_locale",
+        ":libstdcxx_cxx98_cxxlocale_/libstdcxx_cxx98_cxxlocale",
+        ":libstdcxx_cxx98_parallel_settings_/libstdcxx_cxx98_parallel_settings",
+        ":libstdcxx_cxx98_strstream_/libstdcxx_cxx98_strstream",
+        ":libsupcxx_atomicity_/libsupcxx_atomicity",
+        ":libsupcxx_demangle_/libsupcxx_demangle",
+        ":libsupcxx_objects_/libsupcxx_objects",
+    ] + select({
+        "@platforms//os:windows": [
+            # TODO: enable print.cc once MinGW native_handle_type selection is modeled.
+        ],
+        "//conditions:default": [":libstdcxx_cxx23_print_/libstdcxx_cxx23_print"],
+    }),
+)
+
+alias(
+    name = "libstdcxx.shared",
+    actual = ":libstdc++.so.6.0.35",
     visibility = ["//visibility:public"],
 )
 

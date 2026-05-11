@@ -1,3 +1,5 @@
+load("@bazel_skylib//rules/directory:providers.bzl", "DirectoryInfo")
+
 def _disabled_cxxstdlib_transition_impl(_settings, _attr):
     return {
         "//toolchain:cxxstdlib_mode": "disabled",
@@ -16,12 +18,15 @@ def _transitioned_alias_impl(ctx):
     if type(actual) == "list":
         actual = actual[0]
     default = actual[DefaultInfo]
-    return [
+    providers = [
         DefaultInfo(
             files = default.files,
             runfiles = default.default_runfiles,
         ),
     ]
+    if DirectoryInfo in actual:
+        providers.append(actual[DirectoryInfo])
+    return providers
 
 transitioned_alias = rule(
     implementation = _transitioned_alias_impl,

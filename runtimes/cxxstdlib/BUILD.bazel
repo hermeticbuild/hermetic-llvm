@@ -64,6 +64,11 @@ transitioned_alias(
     actual = "//runtimes/libstdcxx:libstdcxx_static_archive",
 )
 
+transitioned_alias(
+    name = "libstdcxx_dynamic_runtime_lib",
+    actual = "//runtimes/libstdcxx:libstdcxx_shared_soname",
+)
+
 filegroup(
     name = "static_runtime_lib",
     srcs = select({
@@ -92,12 +97,18 @@ filegroup(
 filegroup(
     name = "dynamic_runtime_lib",
     srcs = select({
+        ":libstdcxx_linux": [
+            ":libstdcxx_dynamic_runtime_lib",
+            "//runtimes/libunwind:libunwind.shared",
+        ],
+        ":libstdcxx_windows": [
+            # TODO: add MinGW libstdc++ DLL/import-library support.
+        ],
         ":libcxx_linux": [
             "@llvm-project//libcxx:libcxx.shared",
             "@llvm-project//libcxxabi:libcxxabi.shared",
             "@llvm-project//libunwind:libunwind.shared",
         ],
-        "//platforms/config:libstdcxx": [],
         # TODO(zbarsky): windows?
         "//conditions:default": [],
     }),

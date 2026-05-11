@@ -2,6 +2,8 @@ load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 load("@bazel_lib//lib:copy_file.bzl", "copy_file")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("@bazel_skylib//rules/directory:directory.bzl", "directory")
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load(":cc_rules.bzl", "libstdcxx_runtime_cc_binary")
 load(":config_probe.bzl", "libstdcxx_config_h")
@@ -32,6 +34,7 @@ load(
     "libstdcxx_messages_members_h",
     "libstdcxx_os_defines_h",
     "libstdcxx_os_include_dir",
+    "libstdcxx_symver_style",
     "libstdcxx_thread_header_h",
     "libstdcxx_time_members_h",
     "libstdcxx_use_allocator_new",
@@ -53,6 +56,7 @@ libstdcxx_config_h(
     error_constants_dir = libstdcxx_error_constants_dir(),
     host_triple = libstdcxx_host_triple(),
     os_include_dir = libstdcxx_os_include_dir(),
+    symver_style = libstdcxx_symver_style(),
 )
 
 filegroup(
@@ -304,15 +308,75 @@ alias(
     visibility = ["//visibility:public"],
 )
 
+alias(
+    name = "libstdcxx.shared",
+    actual = "@gcc//:libstdcxx.shared",
+    visibility = ["//visibility:public"],
+)
+
 copy_file(
     name = "libstdcxx_static_archive",
     src = ":libstdcxx.static",
     out = "libstdc++.a",
 )
 
-copy_to_directory(
+copy_file(
+    name = "libstdcxx_shared_real",
+    src = ":libstdcxx.shared",
+    out = "libstdc++.so.6.0.35",
+    allow_symlink = True,
+)
+
+copy_file(
+    name = "libstdcxx_shared_soname",
+    src = ":libstdcxx_shared_real",
+    out = "libstdc++.so.6",
+    allow_symlink = True,
+)
+
+copy_file(
+    name = "libstdcxx_shared_linker_name",
+    src = ":libstdcxx_shared_soname",
+    out = "libstdc++.so",
+    allow_symlink = True,
+)
+
+copy_file(
+    name = "libstdcxx_library_search_static_archive",
+    src = ":libstdcxx.static",
+    out = "libstdcxx_library_search_directory/libstdc++.a",
+)
+
+copy_file(
+    name = "libstdcxx_library_search_shared_real",
+    src = ":libstdcxx.shared",
+    out = "libstdcxx_library_search_directory/libstdc++.so.6.0.35",
+)
+
+copy_file(
+    name = "libstdcxx_library_search_shared_soname",
+    src = ":libstdcxx_library_search_shared_real",
+    out = "libstdcxx_library_search_directory/libstdc++.so.6",
+    allow_symlink = True,
+)
+
+copy_file(
+    name = "libstdcxx_library_search_shared_linker_name",
+    src = ":libstdcxx_library_search_shared_soname",
+    out = "libstdcxx_library_search_directory/libstdc++.so",
+    allow_symlink = True,
+)
+
+directory(
     name = "libstdcxx_library_search_directory",
-    srcs = [":libstdcxx_static_archive"],
+    srcs = [":libstdcxx_library_search_static_archive"] + select({
+        "@platforms//os:windows": [],
+        "//conditions:default": [
+            ":libstdcxx_library_search_shared_linker_name",
+            ":libstdcxx_library_search_shared_real",
+            ":libstdcxx_library_search_shared_soname",
+        ],
+    }),
     visibility = ["//visibility:public"],
 )
 
@@ -377,6 +441,25 @@ libstdcxx_runtime_cc_binary(
     ],
 )
 
+cc_binary(
+    name = "libstdcxx_toolchain_static_link_smoke",
+    srcs = [":libstdcxx_link_smoke_src"],
+    target_compatible_with = [
+        "@platforms//os:linux",
+        "//constraints/cxxstdlib:libstdcxx",
+    ],
+)
+
+cc_binary(
+    name = "libstdcxx_toolchain_dynamic_link_smoke",
+    srcs = [":libstdcxx_link_smoke_src"],
+    linkstatic = False,
+    target_compatible_with = [
+        "@platforms//os:linux",
+        "//constraints/cxxstdlib:libstdcxx",
+    ],
+)
+
 libstdcxx_header_smoke(
     name = "header_smoke",
     abi_headers_include_search_directory = ":abi_headers_include_search_directory",
@@ -424,6 +507,16 @@ bzl_library(
     srcs = ["headers.bzl"],
     deps = [
         ":config_probe",
+        "@rules_cc//cc:action_names_bzl",
+        "@rules_cc//cc:find_cc_toolchain_bzl",
+        "@rules_cc//cc/common",
+    ],
+)
+
+bzl_library(
+    name = "symbols",
+    srcs = ["symbols.bzl"],
+    deps = [
         "@rules_cc//cc:action_names_bzl",
         "@rules_cc//cc:find_cc_toolchain_bzl",
         "@rules_cc//cc/common",

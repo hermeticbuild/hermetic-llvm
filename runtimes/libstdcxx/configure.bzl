@@ -10,6 +10,10 @@ _SUPPORTED_TARGETS = {
         "host_triple": "x86_64-linux-gnu",
         "locale_dir": "locale/gnu",
         "os_include_dir": "os/gnu-linux",
+        "shared_library_real_name": "libstdc++.so.6.0.35",
+        "shared_library_soname": "libstdc++.so.6",
+        "symver_file": "abi/pre/gnu.ver",
+        "symver_style": "gnu",
         "thread_header": "gthr-posix.h",
     },
     "//platforms/config:linux_aarch64_gnu": {
@@ -23,6 +27,10 @@ _SUPPORTED_TARGETS = {
         "host_triple": "aarch64-linux-gnu",
         "locale_dir": "locale/gnu",
         "os_include_dir": "os/gnu-linux",
+        "shared_library_real_name": "libstdc++.so.6.0.35",
+        "shared_library_soname": "libstdc++.so.6",
+        "symver_file": "abi/pre/gnu.ver",
+        "symver_style": "gnu",
         "thread_header": "gthr-posix.h",
     },
     "//platforms/config:linux_riscv64_gnu": {
@@ -36,6 +44,10 @@ _SUPPORTED_TARGETS = {
         "host_triple": "riscv64-linux-gnu",
         "locale_dir": "locale/gnu",
         "os_include_dir": "os/gnu-linux",
+        "shared_library_real_name": "libstdc++.so.6.0.35",
+        "shared_library_soname": "libstdc++.so.6",
+        "symver_file": "abi/pre/gnu.ver",
+        "symver_style": "gnu",
         "thread_header": "gthr-posix.h",
     },
     "//platforms/config:linux_s390x_gnu": {
@@ -49,6 +61,10 @@ _SUPPORTED_TARGETS = {
         "host_triple": "s390x-linux-gnu",
         "locale_dir": "locale/gnu",
         "os_include_dir": "os/gnu-linux",
+        "shared_library_real_name": "libstdc++.so.6.0.35",
+        "shared_library_soname": "libstdc++.so.6",
+        "symver_file": "abi/pre/gnu.ver",
+        "symver_style": "gnu",
         "thread_header": "gthr-posix.h",
     },
     "//platforms/config:linux_x86_64_musl": {
@@ -62,6 +78,10 @@ _SUPPORTED_TARGETS = {
         "host_triple": "x86_64-linux-musl",
         "locale_dir": "locale/generic",
         "os_include_dir": "os/generic",
+        "shared_library_real_name": "libstdc++.so.6.0.35",
+        "shared_library_soname": "libstdc++.so.6",
+        "symver_file": "abi/pre/gnu.ver",
+        "symver_style": "gnu",
         "thread_header": "gthr-posix.h",
     },
     "//platforms/config:linux_aarch64_musl": {
@@ -75,6 +95,10 @@ _SUPPORTED_TARGETS = {
         "host_triple": "aarch64-linux-musl",
         "locale_dir": "locale/generic",
         "os_include_dir": "os/generic",
+        "shared_library_real_name": "libstdc++.so.6.0.35",
+        "shared_library_soname": "libstdc++.so.6",
+        "symver_file": "abi/pre/gnu.ver",
+        "symver_style": "gnu",
         "thread_header": "gthr-posix.h",
     },
     "//platforms/config:linux_riscv64_musl": {
@@ -88,6 +112,10 @@ _SUPPORTED_TARGETS = {
         "host_triple": "riscv64-linux-musl",
         "locale_dir": "locale/generic",
         "os_include_dir": "os/generic",
+        "shared_library_real_name": "libstdc++.so.6.0.35",
+        "shared_library_soname": "libstdc++.so.6",
+        "symver_file": "abi/pre/gnu.ver",
+        "symver_style": "gnu",
         "thread_header": "gthr-posix.h",
     },
     "//platforms/config:linux_s390x_musl": {
@@ -101,6 +129,10 @@ _SUPPORTED_TARGETS = {
         "host_triple": "s390x-linux-musl",
         "locale_dir": "locale/generic",
         "os_include_dir": "os/generic",
+        "shared_library_real_name": "libstdc++.so.6.0.35",
+        "shared_library_soname": "libstdc++.so.6",
+        "symver_file": "abi/pre/gnu.ver",
+        "symver_style": "gnu",
         "thread_header": "gthr-posix.h",
     },
     "//platforms/config:windows_x86_64": {
@@ -136,6 +168,10 @@ _DEFAULT_POLICY_FIELDS = {
     "extern_template": 1,
     "have_attribute_visibility": 1,
     "inline_version": 0,
+    "shared_library_real_name": "",
+    "shared_library_soname": "",
+    "symver_file": "abi/pre/none.ver",
+    "symver_style": "none",
     "use_allocator_new": 1,
     "use_cxx11_abi": 1,
     "use_dual_abi": 1,
@@ -210,6 +246,15 @@ def libstdcxx_use_cxx11_abi():
 def libstdcxx_use_dual_abi():
     return _select_field("use_dual_abi")
 
+def libstdcxx_shared_library_real_name():
+    return _select_field("shared_library_real_name")
+
+def libstdcxx_shared_library_soname():
+    return _select_field("shared_library_soname")
+
+def libstdcxx_symver_style():
+    return _select_field("symver_style")
+
 def _gcc_config_header_label(field, basename):
     return select({
         Label(config): "@gcc//:libstdc++-v3/config/{}/{}".format(values[field], basename)
@@ -219,6 +264,12 @@ def _gcc_config_header_label(field, basename):
 def _gcc_config_source_label(field, basename):
     return select({
         Label(config): "@gcc//:libstdc++-v3/config/{}/{}".format(values[field], basename)
+        for config, values in _SUPPORTED_TARGETS.items()
+    }, no_match_error = _NO_MATCH_ERROR)
+
+def _gcc_config_path_label(field):
+    return select({
+        Label(config): "@gcc//:libstdc++-v3/config/{}".format(_field_value(values, field))
         for config, values in _SUPPORTED_TARGETS.items()
     }, no_match_error = _NO_MATCH_ERROR)
 
@@ -299,3 +350,6 @@ def libstdcxx_time_members_cc():
 
 def libstdcxx_thread_header_h():
     return _gcc_libgcc_header_label("thread_header")
+
+def libstdcxx_symver_file():
+    return _gcc_config_path_label("symver_file")

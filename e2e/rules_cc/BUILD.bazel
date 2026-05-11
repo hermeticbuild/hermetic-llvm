@@ -91,10 +91,39 @@ cc_binary(
     }),
 )
 
+cc_binary(
+    name = "libstdcxx_main_dynamic",
+    srcs = ["main.cc"],
+    linkstatic = False,
+    target_compatible_with = select({
+        "@llvm//platforms/config:libstdcxx": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }) + select({
+        "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }) + select({
+        # We do not support musl libc.so.
+        "@llvm//constraints/libc:musl": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+)
+
 # dynamic linker + static runtime libs
 cc_binary(
     name = "main_default",
     srcs = ["main.cc"],
+)
+
+cc_binary(
+    name = "libstdcxx_main_static",
+    srcs = ["main.cc"],
+    target_compatible_with = select({
+        "@llvm//platforms/config:libstdcxx": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }) + select({
+        "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
 )
 
 # same as default

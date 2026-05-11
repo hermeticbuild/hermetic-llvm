@@ -276,6 +276,24 @@
   },
   "selectedYankedVersions": {},
   "moduleExtensions": {
+    "//extensions:gcc.bzl%gcc": {
+      "general": {
+        "bzlTransitiveDigest": "lVz0BSGdtqR7IicF8IVvanlzWugrPc8DJ/L0XDW2J9Y=",
+        "usagesDigest": "RpV8/tWtoc7i2DmUjnpz6k+7KvGztgFknP54La2CbjQ=",
+        "recordedInputs": [
+          "REPO_MAPPING:,bazel_tools bazel_tools"
+        ],
+        "generatedRepoSpecs": {
+          "gcc": {
+            "repoRuleId": "@@bazel_tools//tools/build_defs/repo:local.bzl%new_local_repository",
+            "attributes": {
+              "build_file": "@@//3rd_party/gcc:gcc.BUILD.bazel",
+              "path": "../gcc"
+            }
+          }
+        }
+      }
+    },
     "@@pybind11_bazel+//:internal_configure.bzl%internal_configure_extension": {
       "general": {
         "bzlTransitiveDigest": "b+RP7Sgl8KN0VHamrgTqzGLuYPcQ/Mo4ptNkkHUIIlA=",

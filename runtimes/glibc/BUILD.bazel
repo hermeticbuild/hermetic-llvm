@@ -105,6 +105,17 @@ write_file(
     ],
 )
 
+write_file(
+    name = "__tls_get_offset.S",
+    out = "glibc/build/__tls_get_offset.S",
+    content = [
+        ".balign 8",
+        ".globl __tls_get_offset",
+        ".type __tls_get_offset, %function;",
+        "__tls_get_offset: .quad 0",
+    ],
+)
+
 # Make one cc_shared_library target per lib, using the assembly file
 LIBS = [
     make_glibc_shared_library(
@@ -122,7 +133,10 @@ LIBS = [
             ":__stack_chk_guard.S",
             ":__tls_get_addr.S",
             ":libc.s",
-        ],
+        ] + select({
+            "@platforms//cpu:s390x": [":__tls_get_offset.S"],
+            "//conditions:default": [],
+        }),
         extra_link_flags = [
             # _IO_stdin_used is defined as a global symbol in .rodata
             # and needs to be relocated at runtime with values from the CRTs.
