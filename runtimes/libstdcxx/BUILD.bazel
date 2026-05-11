@@ -5,6 +5,7 @@ load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@bazel_skylib//rules/directory:directory.bzl", "directory")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load(":cc_rules.bzl", "libstdcxx_runtime_cc_binary")
 load(":config_probe.bzl", "libstdcxx_config_h")
 load(
@@ -378,6 +379,27 @@ directory(
         ],
     }),
     visibility = ["//visibility:public"],
+)
+
+sh_test(
+    name = "libstdcxx_shared_elf_test",
+    srcs = ["libstdcxx_shared_elf_test.sh"],
+    data = [
+        ":libstdcxx.shared",
+        ":libstdcxx_shared_linker_name",
+        ":libstdcxx_shared_real",
+        ":libstdcxx_shared_soname",
+    ],
+    env = {
+        "LIBSTDCXX_SHARED": "$(rootpath :libstdcxx.shared)",
+        "LIBSTDCXX_SHARED_LINKER_NAME": "$(rootpath :libstdcxx_shared_linker_name)",
+        "LIBSTDCXX_SHARED_REAL": "$(rootpath :libstdcxx_shared_real)",
+        "LIBSTDCXX_SHARED_SONAME": "$(rootpath :libstdcxx_shared_soname)",
+    },
+    target_compatible_with = select({
+        "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
 )
 
 write_file(
