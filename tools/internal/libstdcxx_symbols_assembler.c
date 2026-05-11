@@ -149,6 +149,9 @@ int main(int argc, char **argv) {
   struct File *ports = NULL;
   struct File out = {0};
   size_t ports_len = 0;
+  size_t top_end = 0;
+  size_t bottom_start = 0;
+  size_t output_len;
   int append_ports = 0;
   int ok = 0;
   int i;
@@ -180,7 +183,12 @@ int main(int argc, char **argv) {
     append_ports = append_ports || HasAppendedMarker(port);
   }
 
-  out.data = (char *)malloc(base.len + ports_len + 1);
+  if (!append_ports && ports_len != 0) {
+    FindInsertionPoint(&base, &top_end, &bottom_start);
+  }
+
+  output_len = base.len + ports_len + top_end - bottom_start;
+  out.data = (char *)malloc(output_len + 1);
   if (!out.data) {
     PrintErrno("malloc");
     goto done;
@@ -192,9 +200,6 @@ int main(int argc, char **argv) {
       Append(&out, ports[i - 3].data, ports[i - 3].len);
     }
   } else {
-    size_t top_end;
-    size_t bottom_start;
-    FindInsertionPoint(&base, &top_end, &bottom_start);
     Append(&out, base.data, top_end);
     for (i = 3; i < argc; ++i) {
       Append(&out, ports[i - 3].data, ports[i - 3].len);

@@ -1,0 +1,11 @@
+GLIBCXX_3.4 {
+  global:
+    keep_base;
+    # remove comment
+#define KEEP_PREPROCESSOR_DIRECTIVE
+
+  # DO NOT DELETE THIS LINE. Port-specific symbols, if any, will be here.
+
+  local:
+    *;
+};

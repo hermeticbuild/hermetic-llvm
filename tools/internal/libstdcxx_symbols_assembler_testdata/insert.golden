@@ -1,0 +1,10 @@
+GLIBCXX_3.4 {
+  global:
+    keep_base;
+#define KEEP_PREPROCESSOR_DIRECTIVE
+
+    inserted_symbol;
+
+  local:
+    *;
+};
