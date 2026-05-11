@@ -23,6 +23,16 @@ string_setting(
     ],
 )
 
+string_setting(
+    name = "cxxstdlib_mode",
+    build_setting_default = "enabled",
+    values = [
+        "enabled",
+        "disabled",
+    ],
+    visibility = ["//visibility:public"],
+)
+
 alias(
     name = "windows_crt",
     actual = "//constraints/windows/crt:crt",
@@ -59,6 +69,14 @@ config_setting(
     name = "runtimes_all",
     flag_values = {
         ":runtime_stage": "complete",
+    },
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "cxxstdlib_disabled",
+    flag_values = {
+        ":cxxstdlib_mode": "disabled",
     },
     visibility = ["//visibility:public"],
 )
@@ -245,9 +263,12 @@ cc_args_list(
 # TODO(zbarsky): This must match llvm/toolchains/llvm.bzl
 cc_args_list(
     name = "linux_toolchain_args",
-    args = [
-        "//toolchain/args:cxxstdlib_headers_include_search_paths",
-    ] + select({
+    args = select({
+        ":cxxstdlib_disabled": [],
+        "//conditions:default": [
+            "//toolchain/args:cxxstdlib_headers_include_search_paths",
+        ],
+    }) + select({
         "//platforms/config:musl": [
             "//toolchain/args/linux:kernel_headers_include_search_paths",
             "//toolchain/args/linux:musl_libc_headers_include_search_paths",
@@ -273,8 +294,12 @@ cc_args_list(
 # TODO(zbarsky): This must match llvm/toolchains/llvm.bzl
 cc_args_list(
     name = "windows_toolchain_args",
-    args = [
-        "//toolchain/args:cxxstdlib_headers_include_search_paths",
+    args = select({
+        ":cxxstdlib_disabled": [],
+        "//conditions:default": [
+            "//toolchain/args:cxxstdlib_headers_include_search_paths",
+        ],
+    }) + [
         "//toolchain/args/windows:mingw_headers_include_search_paths",
     ],
 )
@@ -324,7 +349,12 @@ cc_args_list(
         # Common default link flags.
         "//toolchain/args:fuse_ld",
         "//toolchain/args:lto_plugin_target_flags",
-        ":cxxstdlib_library_search_paths",
+    ] + select({
+        ":cxxstdlib_disabled": [],
+        "//conditions:default": [
+            ":cxxstdlib_library_search_paths",
+        ],
+    }) + [
         ":libunwind_library_search_paths",
         ":rtlib",
         ":stdlib",
