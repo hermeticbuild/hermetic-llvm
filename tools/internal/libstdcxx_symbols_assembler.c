@@ -4,10 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-struct Buffer {
+struct File {
   char *data;
   size_t len;
-  size_t cap;
 };
 
 static void PrintErrno(const char *path) {
@@ -15,76 +14,34 @@ static void PrintErrno(const char *path) {
           strerror(errno));
 }
 
-static int Reserve(struct Buffer *buffer, size_t extra) {
-  size_t needed;
-  char *new_data;
-  size_t new_cap;
+static int ReadFile(const char *path, struct File *out) {
+  FILE *file = fopen(path, "rb");
+  long size;
 
-  if (extra > ((size_t)-1) - buffer->len) {
-    fprintf(stderr, "libstdcxx-symbols-assembler: allocation overflow\n");
-    return 0;
-  }
-
-  needed = buffer->len + extra;
-  if (needed <= buffer->cap) {
-    return 1;
-  }
-
-  new_cap = buffer->cap ? buffer->cap : 4096;
-  while (new_cap < needed) {
-    if (new_cap > ((size_t)-1) / 2) {
-      fprintf(stderr, "libstdcxx-symbols-assembler: allocation overflow\n");
-      return 0;
-    }
-    new_cap *= 2;
-  }
-
-  new_data = (char *)realloc(buffer->data, new_cap);
-  if (!new_data) {
-    PrintErrno("realloc");
-    return 0;
-  }
-  buffer->data = new_data;
-  buffer->cap = new_cap;
-  return 1;
-}
-
-static int AppendBytes(struct Buffer *buffer, const char *data, size_t len) {
-  if (len == 0) {
-    return 1;
-  }
-  if (!Reserve(buffer, len)) {
-    return 0;
-  }
-  memcpy(buffer->data + buffer->len, data, len);
-  buffer->len += len;
-  return 1;
-}
-
-static int ReadFile(const char *path, struct Buffer *out) {
-  FILE *file;
-  char chunk[8192];
-  size_t n;
-
-  file = fopen(path, "rb");
   if (!file) {
     PrintErrno(path);
     return 0;
   }
-
-  while ((n = fread(chunk, 1, sizeof(chunk), file)) != 0) {
-    if (!AppendBytes(out, chunk, n)) {
-      fclose(file);
-      return 0;
-    }
-  }
-
-  if (ferror(file)) {
+  if (fseek(file, 0, SEEK_END) != 0 || (size = ftell(file)) < 0 ||
+      fseek(file, 0, SEEK_SET) != 0) {
     PrintErrno(path);
     fclose(file);
     return 0;
   }
 
+  out->data = (char *)malloc((size_t)size + 1);
+  out->len = (size_t)size;
+  if (!out->data) {
+    PrintErrno("malloc");
+    fclose(file);
+    return 0;
+  }
+  if (out->len && fread(out->data, 1, out->len, file) != out->len) {
+    PrintErrno(path);
+    fclose(file);
+    return 0;
+  }
+  out->data[out->len] = '\0';
   if (fclose(file) != 0) {
     PrintErrno(path);
     return 0;
@@ -92,135 +49,106 @@ static int ReadFile(const char *path, struct Buffer *out) {
   return 1;
 }
 
-static int WriteFile(const char *path, const struct Buffer *buffer) {
-  FILE *file = fopen(path, "wb");
-  if (!file) {
+static int WriteFile(const char *path, const struct File *file) {
+  FILE *out = fopen(path, "wb");
+  if (!out) {
     PrintErrno(path);
     return 0;
   }
-  if (buffer->len && fwrite(buffer->data, 1, buffer->len, file) != buffer->len) {
+  if (file->len && fwrite(file->data, 1, file->len, out) != file->len) {
     PrintErrno(path);
-    fclose(file);
+    fclose(out);
     return 0;
   }
-  if (fclose(file) != 0) {
+  if (fclose(out) != 0) {
     PrintErrno(path);
     return 0;
   }
   return 1;
 }
 
-static int ContainsAppendedMarker(const struct Buffer *buffer) {
-  const char marker[] = "# Appended to version file.";
-  size_t marker_len = sizeof(marker) - 1;
-  size_t pos = 0;
-
-  while (pos < buffer->len) {
-    size_t line_start = pos;
-    while (pos < buffer->len && buffer->data[pos] != '\n') {
-      pos++;
-    }
-    if (pos - line_start >= marker_len &&
-        memcmp(buffer->data + line_start, marker, marker_len) == 0) {
-      return 1;
-    }
-    if (pos < buffer->len) {
-      pos++;
-    }
-  }
-  return 0;
+static int Append(struct File *out, const char *data, size_t len) {
+  memcpy(out->data + out->len, data, len);
+  out->len += len;
+  return 1;
 }
 
-static int FindInsertionPoint(const struct Buffer *buffer, size_t *top_end,
-                              size_t *bottom_start) {
-  const char marker[] = "DO NOT DELETE";
-  size_t marker_len = sizeof(marker) - 1;
-  size_t pos = 0;
-
-  while (pos < buffer->len) {
-    size_t line_start = pos;
-    size_t line_end;
-    while (pos < buffer->len && buffer->data[pos] != '\n') {
-      pos++;
-    }
-    line_end = pos;
-    if (line_end - line_start >= marker_len) {
-      size_t i;
-      for (i = line_start; i + marker_len <= line_end; ++i) {
-        if (memcmp(buffer->data + i, marker, marker_len) == 0) {
-          *bottom_start = line_start;
-          *top_end = pos < buffer->len ? pos + 1 : pos;
-          return 1;
-        }
-      }
-    }
-    if (pos < buffer->len) {
-      pos++;
-    }
-  }
-
-  *bottom_start = buffer->len;
-  *top_end = buffer->len;
-  return 0;
+static int HasAppendedMarker(const struct File *file) {
+  return strstr(file->data, "# Appended to version file.") != NULL;
 }
 
-static int ShouldDropLine(const char *line, size_t len) {
-  size_t pos = 0;
-  char next;
+static void FindInsertionPoint(const struct File *base, size_t *top_end,
+                               size_t *bottom_start) {
+  const char *marker = strstr(base->data, "DO NOT DELETE");
+  const char *line;
+  const char *after_line;
 
+  if (!marker) {
+    *top_end = base->len;
+    *bottom_start = base->len;
+    return;
+  }
+
+  line = marker;
+  while (line > base->data && line[-1] != '\n') {
+    line--;
+  }
+  after_line = marker;
+  while (*after_line && *after_line != '\n') {
+    after_line++;
+  }
+  if (*after_line == '\n') {
+    after_line++;
+  }
+
+  *bottom_start = (size_t)(line - base->data);
+  *top_end = (size_t)(after_line - base->data);
+}
+
+static int DropLine(const char *line, size_t len) {
+  size_t pos = 0;
   while (pos < len && (line[pos] == ' ' || line[pos] == '\t')) {
     pos++;
   }
-
   if (pos >= len || line[pos] != '#') {
     return 0;
   }
-
-  if (pos + 1 >= len) {
-    return 1;
-  }
-
-  next = line[pos + 1];
-  return next == '#' || isspace((unsigned char)next);
+  return pos + 1 >= len || line[pos + 1] == '#' ||
+         isspace((unsigned char)line[pos + 1]);
 }
 
-static int FilterComments(const struct Buffer *input, struct Buffer *output) {
-  size_t pos = 0;
-  while (pos < input->len) {
-    size_t line_start = pos;
-    size_t line_content_end;
+static int FilterComments(struct File *file) {
+  size_t read = 0;
+  size_t write = 0;
+
+  while (read < file->len) {
+    size_t line_start = read;
+    size_t content_end;
     size_t line_end;
 
-    while (pos < input->len && input->data[pos] != '\n') {
-      pos++;
+    while (read < file->len && file->data[read] != '\n') {
+      read++;
     }
+    content_end = read;
+    line_end = read < file->len ? read + 1 : read;
 
-    line_content_end = pos;
-    line_end = pos < input->len ? pos + 1 : pos;
-    if (!ShouldDropLine(input->data + line_start,
-                        line_content_end - line_start)) {
-      if (!AppendBytes(output, input->data + line_start, line_end - line_start)) {
-        return 0;
-      }
+    if (!DropLine(file->data + line_start, content_end - line_start)) {
+      memmove(file->data + write, file->data + line_start,
+              line_end - line_start);
+      write += line_end - line_start;
     }
-
-    pos = line_end;
+    read = line_end;
   }
+
+  file->len = write;
   return 1;
 }
 
-static void FreeBuffer(struct Buffer *buffer) {
-  free(buffer->data);
-  buffer->data = NULL;
-  buffer->len = 0;
-  buffer->cap = 0;
-}
-
 int main(int argc, char **argv) {
-  struct Buffer base = {0};
-  struct Buffer ports = {0};
-  struct Buffer combined = {0};
-  struct Buffer filtered = {0};
+  struct File base = {0};
+  struct File *ports = NULL;
+  struct File out = {0};
+  size_t ports_len = 0;
   int append_ports = 0;
   int ok = 0;
   int i;
@@ -235,49 +163,56 @@ int main(int argc, char **argv) {
     goto done;
   }
 
-  for (i = 3; i < argc; ++i) {
-    struct Buffer port = {0};
-    if (!ReadFile(argv[i], &port)) {
-      FreeBuffer(&port);
+  if (argc > 3) {
+    ports = (struct File *)calloc((size_t)(argc - 3), sizeof(struct File));
+    if (!ports) {
+      PrintErrno("calloc");
       goto done;
     }
-    if (ContainsAppendedMarker(&port)) {
-      append_ports = 1;
-    }
-    if (!AppendBytes(&ports, port.data, port.len)) {
-      FreeBuffer(&port);
-      goto done;
-    }
-    FreeBuffer(&port);
   }
 
-  if (append_ports || ports.len == 0) {
-    if (!AppendBytes(&combined, base.data, base.len) ||
-        !AppendBytes(&combined, ports.data, ports.len)) {
+  for (i = 3; i < argc; ++i) {
+    struct File *port = &ports[i - 3];
+    if (!ReadFile(argv[i], port)) {
       goto done;
+    }
+    ports_len += port->len;
+    append_ports = append_ports || HasAppendedMarker(port);
+  }
+
+  out.data = (char *)malloc(base.len + ports_len + 1);
+  if (!out.data) {
+    PrintErrno("malloc");
+    goto done;
+  }
+
+  if (append_ports || ports_len == 0) {
+    Append(&out, base.data, base.len);
+    for (i = 3; i < argc; ++i) {
+      Append(&out, ports[i - 3].data, ports[i - 3].len);
     }
   } else {
     size_t top_end;
     size_t bottom_start;
     FindInsertionPoint(&base, &top_end, &bottom_start);
-    if (!AppendBytes(&combined, base.data, top_end) ||
-        !AppendBytes(&combined, ports.data, ports.len) ||
-        !AppendBytes(&combined, base.data + bottom_start,
-                     base.len - bottom_start)) {
-      goto done;
+    Append(&out, base.data, top_end);
+    for (i = 3; i < argc; ++i) {
+      Append(&out, ports[i - 3].data, ports[i - 3].len);
     }
+    Append(&out, base.data + bottom_start, base.len - bottom_start);
   }
 
-  if (!FilterComments(&combined, &filtered) || !WriteFile(argv[1], &filtered)) {
-    goto done;
-  }
-
-  ok = 1;
+  out.data[out.len] = '\0';
+  ok = FilterComments(&out) && WriteFile(argv[1], &out);
 
 done:
-  FreeBuffer(&base);
-  FreeBuffer(&ports);
-  FreeBuffer(&combined);
-  FreeBuffer(&filtered);
+  free(base.data);
+  if (ports) {
+    for (i = 3; i < argc; ++i) {
+      free(ports[i - 3].data);
+    }
+  }
+  free(ports);
+  free(out.data);
   return ok ? 0 : 1;
 }
