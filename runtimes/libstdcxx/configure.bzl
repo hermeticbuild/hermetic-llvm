@@ -216,6 +216,12 @@ def _gcc_config_header_label(field, basename):
         for config, values in _SUPPORTED_TARGETS.items()
     }, no_match_error = _NO_MATCH_ERROR)
 
+def _gcc_config_source_label(field, basename):
+    return select({
+        Label(config): "@gcc//:libstdc++-v3/config/{}/{}".format(values[field], basename)
+        for config, values in _SUPPORTED_TARGETS.items()
+    }, no_match_error = _NO_MATCH_ERROR)
+
 def _gcc_libgcc_header_label(field):
     return select({
         Label(config): "@gcc//:libgcc/{}".format(values[field])
@@ -263,6 +269,33 @@ def libstdcxx_messages_members_h():
 
 def libstdcxx_time_members_h():
     return _gcc_config_header_label("locale_dir", "time_members.h")
+
+def libstdcxx_ctype_configure_char_cc():
+    return _gcc_config_source_label("os_include_dir", "ctype_configure_char.cc")
+
+def libstdcxx_c_locale_cc():
+    return _gcc_config_source_label("locale_dir", "c_locale.cc")
+
+def libstdcxx_codecvt_members_cc():
+    return _gcc_config_source_label("locale_dir", "codecvt_members.cc")
+
+def libstdcxx_collate_members_cc():
+    return _gcc_config_source_label("locale_dir", "collate_members.cc")
+
+def libstdcxx_ctype_members_cc():
+    return _gcc_config_source_label("locale_dir", "ctype_members.cc")
+
+def libstdcxx_messages_members_cc():
+    return _gcc_config_source_label("locale_dir", "messages_members.cc")
+
+def libstdcxx_monetary_members_cc():
+    return _gcc_config_source_label("locale_dir", "monetary_members.cc")
+
+def libstdcxx_numeric_members_cc():
+    return _gcc_config_source_label("locale_dir", "numeric_members.cc")
+
+def libstdcxx_time_members_cc():
+    return _gcc_config_source_label("locale_dir", "time_members.cc")
 
 def libstdcxx_thread_header_h():
     return _gcc_libgcc_header_label("thread_header")

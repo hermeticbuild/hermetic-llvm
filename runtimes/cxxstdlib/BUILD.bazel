@@ -1,29 +1,86 @@
+load("@bazel_skylib//lib:selects.bzl", "selects")
+load(":transitioned_alias.bzl", "transitioned_alias")
+
 package(default_visibility = ["//visibility:public"])
 
-alias(
+selects.config_setting_group(
+    name = "libcxx_linux",
+    match_all = [
+        "//platforms/config:libcxx",
+        "@platforms//os:linux",
+    ],
+)
+
+selects.config_setting_group(
+    name = "libcxx_windows",
+    match_all = [
+        "//platforms/config:libcxx",
+        "@platforms//os:windows",
+    ],
+)
+
+selects.config_setting_group(
+    name = "libstdcxx_linux",
+    match_all = [
+        "//platforms/config:libstdcxx",
+        "@platforms//os:linux",
+    ],
+)
+
+selects.config_setting_group(
+    name = "libstdcxx_windows",
+    match_all = [
+        "//platforms/config:libstdcxx",
+        "@platforms//os:windows",
+    ],
+)
+
+transitioned_alias(
     name = "headers_include_search_directory",
-    actual = "@llvm-project//libcxx:libcxx_headers_include_search_directory",
+    actual = select({
+        "//platforms/config:libstdcxx": "//runtimes/libstdcxx:headers_include_search_directory",
+        "//conditions:default": "@llvm-project//libcxx:libcxx_headers_include_search_directory",
+    }),
 )
 
-alias(
+transitioned_alias(
     name = "abi_headers_include_search_directory",
-    actual = "@llvm-project//libcxxabi:libcxxabi_headers_include_search_directory",
+    actual = select({
+        "//platforms/config:libstdcxx": "//runtimes/libstdcxx:abi_headers_include_search_directory",
+        "//conditions:default": "@llvm-project//libcxxabi:libcxxabi_headers_include_search_directory",
+    }),
 )
 
-alias(
+transitioned_alias(
     name = "library_search_directory",
-    actual = "//runtimes/libcxx:libcxx_library_search_directory",
+    actual = select({
+        "//platforms/config:libstdcxx": "//runtimes/libstdcxx:libstdcxx_library_search_directory",
+        "//conditions:default": "//runtimes/libcxx:libcxx_library_search_directory",
+    }),
+)
+
+transitioned_alias(
+    name = "libstdcxx_static_runtime_lib",
+    actual = "//runtimes/libstdcxx:libstdcxx_static_archive",
 )
 
 filegroup(
     name = "static_runtime_lib",
     srcs = select({
-        "@platforms//os:linux": [
+        ":libstdcxx_linux": [
+            ":libstdcxx_static_runtime_lib",
+            "//runtimes/libunwind:libunwind.static",
+        ],
+        ":libstdcxx_windows": [
+            ":libstdcxx_static_runtime_lib",
+            # TODO: add libunwind once the COFF duplicate-symbol validator issue is fixed.
+        ],
+        ":libcxx_linux": [
             "@llvm-project//libcxx:libcxx.static",
             "@llvm-project//libcxxabi:libcxxabi.static",
             "@llvm-project//libunwind:libunwind.static",
         ],
-        "@platforms//os:windows": [
+        ":libcxx_windows": [
             "@llvm-project//libcxx:libcxx.static",
             "@llvm-project//libcxxabi:libcxxabi.static",
             "@llvm-project//libunwind:libunwind.static",
@@ -35,11 +92,12 @@ filegroup(
 filegroup(
     name = "dynamic_runtime_lib",
     srcs = select({
-        "@platforms//os:linux": [
+        ":libcxx_linux": [
             "@llvm-project//libcxx:libcxx.shared",
             "@llvm-project//libcxxabi:libcxxabi.shared",
             "@llvm-project//libunwind:libunwind.shared",
         ],
+        "//platforms/config:libstdcxx": [],
         # TODO(zbarsky): windows?
         "//conditions:default": [],
     }),

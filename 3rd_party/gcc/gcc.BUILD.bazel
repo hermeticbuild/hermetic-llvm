@@ -8,7 +8,19 @@ load(
     "libstdcxx_runtime_cc_static_library",
     "libstdcxx_runtime_cc_static_library_no_validate",
 )
-load("@llvm//runtimes/libstdcxx:configure.bzl", "libstdcxx_atomicity_h")
+load(
+    "@llvm//runtimes/libstdcxx:configure.bzl",
+    "libstdcxx_atomicity_h",
+    "libstdcxx_c_locale_cc",
+    "libstdcxx_codecvt_members_cc",
+    "libstdcxx_collate_members_cc",
+    "libstdcxx_ctype_configure_char_cc",
+    "libstdcxx_ctype_members_cc",
+    "libstdcxx_messages_members_cc",
+    "libstdcxx_monetary_members_cc",
+    "libstdcxx_numeric_members_cc",
+    "libstdcxx_time_members_cc",
+)
 
 package(default_visibility = ["//visibility:public"])
 
@@ -358,6 +370,12 @@ LIBSTDCXX_BUILD_COPTS = [
     "-fno-implicit-templates",
 ]
 
+LIBSTDCXX_LIBRARY_COPTS = LIBSTDCXX_BUILD_COPTS + [
+    "-fsized-deallocation",
+    "-Wno-invalid-constexpr",
+    "-Wno-init-priority-reserved",
+]
+
 write_file(
     name = "libiberty_config_h",
     out = "libsupcxx_generated/config.h",
@@ -462,6 +480,589 @@ alias(
     actual = select({
         "@platforms//os:windows": ":libsupcxx.static.unchecked",
         "//conditions:default": ":libsupcxx.static.checked",
+    }),
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "libstdcxx_src_internal_headers",
+    srcs = glob([
+        "libstdc++-v3/src/**/*.h",
+        "libstdc++-v3/src/**/*.cc",
+        "libstdc++-v3/src/c++17/ryu/*.c",
+    ]),
+)
+
+copy_file(
+    name = "libstdcxx_cxx98_cxxlocale_cc",
+    src = libstdcxx_c_locale_cc(),
+    out = "libstdcxx_generated/c++98/c++locale.cc",
+)
+
+copy_file(
+    name = "libstdcxx_cxx98_codecvt_members_cc",
+    src = libstdcxx_codecvt_members_cc(),
+    out = "libstdcxx_generated/c++98/codecvt_members.cc",
+)
+
+copy_file(
+    name = "libstdcxx_cxx98_collate_members_cc",
+    src = libstdcxx_collate_members_cc(),
+    out = "libstdcxx_generated/c++98/collate_members.cc",
+)
+
+copy_file(
+    name = "libstdcxx_cxx98_messages_members_cc",
+    src = libstdcxx_messages_members_cc(),
+    out = "libstdcxx_generated/c++98/messages_members.cc",
+)
+
+copy_file(
+    name = "libstdcxx_cxx98_monetary_members_cc",
+    src = libstdcxx_monetary_members_cc(),
+    out = "libstdcxx_generated/c++98/monetary_members.cc",
+)
+
+copy_file(
+    name = "libstdcxx_cxx98_numeric_members_cc",
+    src = libstdcxx_numeric_members_cc(),
+    out = "libstdcxx_generated/c++98/numeric_members.cc",
+)
+
+copy_file(
+    name = "libstdcxx_cxx98_time_members_cc",
+    src = libstdcxx_time_members_cc(),
+    out = "libstdcxx_generated/c++98/time_members.cc",
+)
+
+copy_file(
+    name = "libstdcxx_cxx98_collate_members_cow_cc",
+    src = libstdcxx_collate_members_cc(),
+    out = "libstdcxx_generated/c++98/collate_members_cow.cc",
+)
+
+copy_file(
+    name = "libstdcxx_cxx98_messages_members_cow_cc",
+    src = libstdcxx_messages_members_cc(),
+    out = "libstdcxx_generated/c++98/messages_members_cow.cc",
+)
+
+copy_file(
+    name = "libstdcxx_cxx98_monetary_members_cow_cc",
+    src = libstdcxx_monetary_members_cc(),
+    out = "libstdcxx_generated/c++98/monetary_members_cow.cc",
+)
+
+copy_file(
+    name = "libstdcxx_cxx98_numeric_members_cow_cc",
+    src = libstdcxx_numeric_members_cc(),
+    out = "libstdcxx_generated/c++98/numeric_members_cow.cc",
+)
+
+copy_file(
+    name = "libstdcxx_cxx11_ctype_configure_char_cc",
+    src = libstdcxx_ctype_configure_char_cc(),
+    out = "libstdcxx_generated/c++11/ctype_configure_char.cc",
+)
+
+copy_file(
+    name = "libstdcxx_cxx11_ctype_members_cc",
+    src = libstdcxx_ctype_members_cc(),
+    out = "libstdcxx_generated/c++11/ctype_members.cc",
+)
+
+copy_file(
+    name = "libstdcxx_cxx11_basic_file_cc",
+    src = "libstdc++-v3/config/io/basic_file_stdio.cc",
+    out = "libstdcxx_generated/c++11/basic_file.cc",
+)
+
+copy_file(
+    name = "libstdcxx_cxx17_cow_string_inst_cc",
+    src = "libstdc++-v3/src/c++17/cow-string-inst.cc",
+    out = "libstdcxx_generated/c++17/cow-string-inst.cc",
+)
+
+expand_template(
+    name = "libstdcxx_cxx17_string_inst_cc",
+    out = "libstdcxx_generated/c++17/string-inst.cc",
+    substitutions = {
+        "template char* basic_string<char>::data() noexcept;": "template char* basic_string<char>::data();",
+        "template wchar_t* basic_string<wchar_t>::data() noexcept;": "template wchar_t* basic_string<wchar_t>::data();",
+    },
+    template = "libstdc++-v3/src/c++17/string-inst.cc",
+)
+
+filegroup(
+    name = "libstdcxx_cxx98_sources",
+    srcs = [
+        "libstdc++-v3/src/c++98/allocator-inst.cc",
+        "libstdc++-v3/src/c++98/bitmap_allocator.cc",
+        "libstdc++-v3/src/c++98/codecvt.cc",
+        "libstdc++-v3/src/c++98/complex_io.cc",
+        "libstdc++-v3/src/c++98/cow-istream-string.cc",
+        "libstdc++-v3/src/c++98/ext-inst.cc",
+        "libstdc++-v3/src/c++98/globals_io.cc",
+        "libstdc++-v3/src/c++98/hash_tr1.cc",
+        "libstdc++-v3/src/c++98/hashtable_tr1.cc",
+        "libstdc++-v3/src/c++98/ios_failure.cc",
+        "libstdc++-v3/src/c++98/ios_init.cc",
+        "libstdc++-v3/src/c++98/ios_locale.cc",
+        "libstdc++-v3/src/c++98/istream.cc",
+        "libstdc++-v3/src/c++98/istream-string.cc",
+        "libstdc++-v3/src/c++98/list.cc",
+        "libstdc++-v3/src/c++98/list-aux.cc",
+        "libstdc++-v3/src/c++98/list-aux-2.cc",
+        "libstdc++-v3/src/c++98/list_associated.cc",
+        "libstdc++-v3/src/c++98/list_associated-2.cc",
+        "libstdc++-v3/src/c++98/locale.cc",
+        "libstdc++-v3/src/c++98/locale_facets.cc",
+        "libstdc++-v3/src/c++98/math_stubs_float.cc",
+        "libstdc++-v3/src/c++98/math_stubs_long_double.cc",
+        "libstdc++-v3/src/c++98/misc-inst.cc",
+        "libstdc++-v3/src/c++98/mt_allocator.cc",
+        "libstdc++-v3/src/c++98/pool_allocator.cc",
+        "libstdc++-v3/src/c++98/stdexcept.cc",
+        "libstdc++-v3/src/c++98/streambuf.cc",
+        "libstdc++-v3/src/c++98/tree.cc",
+        "libstdc++-v3/src/c++98/valarray.cc",
+        ":libstdcxx_cxx98_codecvt_members_cc",
+        ":libstdcxx_cxx98_collate_members_cc",
+        ":libstdcxx_cxx98_messages_members_cc",
+        ":libstdcxx_cxx98_monetary_members_cc",
+        ":libstdcxx_cxx98_numeric_members_cc",
+        ":libstdcxx_cxx98_time_members_cc",
+    ],
+)
+
+filegroup(
+    name = "libstdcxx_cxx98_cow_locale_sources",
+    srcs = [
+        ":libstdcxx_cxx98_collate_members_cow_cc",
+        ":libstdcxx_cxx98_messages_members_cow_cc",
+        ":libstdcxx_cxx98_monetary_members_cow_cc",
+        ":libstdcxx_cxx98_numeric_members_cow_cc",
+    ],
+)
+
+filegroup(
+    name = "libstdcxx_cxx98_compat_sources",
+    srcs = [
+        "libstdc++-v3/src/c++98/compatibility.cc",
+        "libstdc++-v3/src/c++98/compatibility-debug_list.cc",
+        "libstdc++-v3/src/c++98/compatibility-debug_list-2.cc",
+    ],
+)
+
+filegroup(
+    name = "libstdcxx_cxx11_sources",
+    srcs = [
+        "libstdc++-v3/src/c++11/assert_fail.cc",
+        "libstdc++-v3/src/c++11/chrono.cc",
+        "libstdc++-v3/src/c++11/condition_variable.cc",
+        "libstdc++-v3/src/c++11/cow-fstream-inst.cc",
+        "libstdc++-v3/src/c++11/cow-locale_init.cc",
+        "libstdc++-v3/src/c++11/cow-shim_facets.cc",
+        "libstdc++-v3/src/c++11/cow-sstream-inst.cc",
+        "libstdc++-v3/src/c++11/cow-stdexcept.cc",
+        "libstdc++-v3/src/c++11/cow-string-inst.cc",
+        "libstdc++-v3/src/c++11/cow-string-io-inst.cc",
+        "libstdc++-v3/src/c++11/cow-system_error.cc",
+        "libstdc++-v3/src/c++11/cow-wstring-inst.cc",
+        "libstdc++-v3/src/c++11/cow-wstring-io-inst.cc",
+        "libstdc++-v3/src/c++11/ctype.cc",
+        "libstdc++-v3/src/c++11/cxx11-hash_tr1.cc",
+        "libstdc++-v3/src/c++11/cxx11-ios_failure.cc",
+        "libstdc++-v3/src/c++11/cxx11-locale-inst.cc",
+        "libstdc++-v3/src/c++11/cxx11-shim_facets.cc",
+        "libstdc++-v3/src/c++11/cxx11-stdexcept.cc",
+        "libstdc++-v3/src/c++11/cxx11-wlocale-inst.cc",
+        "libstdc++-v3/src/c++11/debug.cc",
+        "libstdc++-v3/src/c++11/ext11-inst.cc",
+        "libstdc++-v3/src/c++11/fstream-inst.cc",
+        "libstdc++-v3/src/c++11/functexcept.cc",
+        "libstdc++-v3/src/c++11/functional.cc",
+        "libstdc++-v3/src/c++11/futex.cc",
+        "libstdc++-v3/src/c++11/future.cc",
+        "libstdc++-v3/src/c++11/hash_c++0x.cc",
+        "libstdc++-v3/src/c++11/ios.cc",
+        "libstdc++-v3/src/c++11/ios-inst.cc",
+        "libstdc++-v3/src/c++11/ios_errcat.cc",
+        "libstdc++-v3/src/c++11/iostream-inst.cc",
+        "libstdc++-v3/src/c++11/istream-inst.cc",
+        "libstdc++-v3/src/c++11/ostream-inst.cc",
+        "libstdc++-v3/src/c++11/placeholders.cc",
+        "libstdc++-v3/src/c++11/random.cc",
+        "libstdc++-v3/src/c++11/regex.cc",
+        "libstdc++-v3/src/c++11/shared_ptr.cc",
+        "libstdc++-v3/src/c++11/snprintf_lite.cc",
+        "libstdc++-v3/src/c++11/sso_string.cc",
+        "libstdc++-v3/src/c++11/sstream-inst.cc",
+        "libstdc++-v3/src/c++11/streambuf-inst.cc",
+        "libstdc++-v3/src/c++11/string-inst.cc",
+        "libstdc++-v3/src/c++11/string-io-inst.cc",
+        "libstdc++-v3/src/c++11/system_error.cc",
+        "libstdc++-v3/src/c++11/thread.cc",
+        "libstdc++-v3/src/c++11/wlocale-inst.cc",
+        "libstdc++-v3/src/c++11/wstring-inst.cc",
+        "libstdc++-v3/src/c++11/wstring-io-inst.cc",
+        ":libstdcxx_cxx11_basic_file_cc",
+        ":libstdcxx_cxx11_ctype_configure_char_cc",
+        ":libstdcxx_cxx11_ctype_members_cc",
+    ],
+)
+
+filegroup(
+    name = "libstdcxx_cxx11_char8_sources",
+    srcs = [
+        "libstdc++-v3/src/c++11/codecvt.cc",
+        "libstdc++-v3/src/c++11/limits.cc",
+        "libstdc++-v3/src/c++11/locale_init.cc",
+        "libstdc++-v3/src/c++11/localename.cc",
+    ],
+)
+
+filegroup(
+    name = "libstdcxx_cxx11_compat_sources",
+    srcs = [
+        "libstdc++-v3/src/c++11/compatibility-atomic-c++0x.cc",
+        "libstdc++-v3/src/c++11/compatibility-c++0x.cc",
+        "libstdc++-v3/src/c++11/compatibility-chrono.cc",
+        "libstdc++-v3/src/c++11/compatibility-condvar.cc",
+        "libstdc++-v3/src/c++11/compatibility-thread-c++0x.cc",
+    ],
+)
+
+filegroup(
+    name = "libstdcxx_cxx17_sources",
+    srcs = [
+        "libstdc++-v3/src/c++17/cow-fs_dir.cc",
+        "libstdc++-v3/src/c++17/cow-fs_ops.cc",
+        "libstdc++-v3/src/c++17/cow-fs_path.cc",
+        "libstdc++-v3/src/c++17/floating_from_chars.cc",
+        "libstdc++-v3/src/c++17/floating_to_chars.cc",
+        "libstdc++-v3/src/c++17/fs_dir.cc",
+        "libstdc++-v3/src/c++17/fs_ops.cc",
+        "libstdc++-v3/src/c++17/fs_path.cc",
+        "libstdc++-v3/src/c++17/memory_resource.cc",
+        "libstdc++-v3/src/c++17/ostream-inst.cc",
+        "libstdc++-v3/src/c++17/string-inst.cc",
+        ":libstdcxx_cxx17_cow_string_inst_cc",
+    ],
+)
+
+filegroup(
+    name = "libstdcxx_cxx20_sources",
+    srcs = [
+        "libstdc++-v3/src/c++20/atomic.cc",
+        "libstdc++-v3/src/c++20/clock.cc",
+        "libstdc++-v3/src/c++20/cow-string-inst.cc",
+        "libstdc++-v3/src/c++20/format-inst.cc",
+        "libstdc++-v3/src/c++20/sstream-inst.cc",
+        "libstdc++-v3/src/c++20/string-inst.cc",
+        "libstdc++-v3/src/c++20/syncbuf.cc",
+        "libstdc++-v3/src/c++20/tzdb.cc",
+    ],
+)
+
+filegroup(
+    name = "libstdcxx_cxx23_sources",
+    srcs = [
+        "libstdc++-v3/src/c++23/stacktrace.cc",
+    ],
+)
+
+filegroup(
+    name = "libstdcxx_filesystem_ts_sources",
+    srcs = [
+        "libstdc++-v3/src/filesystem/cow-dir.cc",
+        "libstdc++-v3/src/filesystem/cow-ops.cc",
+        "libstdc++-v3/src/filesystem/cow-path.cc",
+        "libstdc++-v3/src/filesystem/dir.cc",
+        "libstdc++-v3/src/filesystem/ops.cc",
+        "libstdc++-v3/src/filesystem/path.cc",
+    ],
+)
+
+LIBSTDCXX_LIBRARY_INCLUDES = [
+    "libstdc++-v3/src",
+    "libstdc++-v3/src/c++98",
+    "libstdc++-v3/src/c++11",
+    "libstdc++-v3/src/c++17",
+    "libstdc++-v3/src/c++20",
+    "libstdc++-v3/src/c++23",
+    "libstdc++-v3/src/c++26",
+    "libstdc++-v3/src/filesystem",
+    "libstdc++-v3/src/shared",
+    "libstdc++-v3/libsupc++",
+    "libstdcxx_generated/c++98",
+    "libstdcxx_generated/c++11",
+    "libstdcxx_generated/c++17",
+]
+
+LIBSTDCXX_LIBRARY_HDRS = [
+    ":libstdcxx_cxx17_string_inst_cc",
+    ":libsupcxx_headers",
+    ":libstdcxx_src_internal_headers",
+]
+
+LIBSTDCXX_LIBRARY_DEPS = [
+    "@llvm//runtimes/libstdcxx:build_headers",
+]
+
+libstdcxx_runtime_cc_library(
+    name = "libstdcxx_cxx98",
+    srcs = [":libstdcxx_cxx98_sources"],
+    hdrs = LIBSTDCXX_LIBRARY_HDRS,
+    copts = LIBSTDCXX_LIBRARY_COPTS + ["-std=gnu++98"],
+    implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
+    includes = LIBSTDCXX_LIBRARY_INCLUDES,
+)
+
+libstdcxx_runtime_cc_library(
+    name = "libstdcxx_cxx98_cxxlocale",
+    srcs = [":libstdcxx_cxx98_cxxlocale_cc"],
+    hdrs = LIBSTDCXX_LIBRARY_HDRS,
+    copts = LIBSTDCXX_LIBRARY_COPTS + [
+        "-std=gnu++98",
+        "-fimplicit-templates",
+    ],
+    implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
+    includes = LIBSTDCXX_LIBRARY_INCLUDES,
+)
+
+libstdcxx_runtime_cc_library(
+    name = "libstdcxx_cxx98_cow_locale",
+    srcs = [":libstdcxx_cxx98_cow_locale_sources"],
+    hdrs = LIBSTDCXX_LIBRARY_HDRS,
+    copts = LIBSTDCXX_LIBRARY_COPTS + [
+        "-std=gnu++98",
+        "-D_GLIBCXX_USE_CXX11_ABI=0",
+        "-fimplicit-templates",
+    ],
+    implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
+    includes = LIBSTDCXX_LIBRARY_INCLUDES,
+)
+
+libstdcxx_runtime_cc_library(
+    name = "libstdcxx_cxx98_concept_inst",
+    srcs = ["libstdc++-v3/src/c++98/concept-inst.cc"],
+    hdrs = LIBSTDCXX_LIBRARY_HDRS,
+    copts = LIBSTDCXX_LIBRARY_COPTS + [
+        "-std=gnu++98",
+        "-D_GLIBCXX_CONCEPT_CHECKS",
+        "-fimplicit-templates",
+    ],
+    implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
+    includes = LIBSTDCXX_LIBRARY_INCLUDES,
+)
+
+libstdcxx_runtime_cc_library(
+    name = "libstdcxx_cxx98_parallel_settings",
+    srcs = ["libstdc++-v3/src/c++98/parallel_settings.cc"],
+    hdrs = LIBSTDCXX_LIBRARY_HDRS,
+    copts = LIBSTDCXX_LIBRARY_COPTS + [
+        "-std=gnu++98",
+        "-D_GLIBCXX_PARALLEL",
+    ],
+    implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
+    includes = LIBSTDCXX_LIBRARY_INCLUDES,
+)
+
+libstdcxx_runtime_cc_library(
+    name = "libstdcxx_cxx98_strstream",
+    srcs = ["libstdc++-v3/src/c++98/strstream.cc"],
+    hdrs = LIBSTDCXX_LIBRARY_HDRS,
+    copts = LIBSTDCXX_LIBRARY_COPTS + [
+        "-std=gnu++98",
+        "-Wno-deprecated",
+    ],
+    implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
+    includes = LIBSTDCXX_LIBRARY_INCLUDES,
+)
+
+libstdcxx_runtime_cc_library(
+    name = "libstdcxx_cxx11",
+    srcs = [":libstdcxx_cxx11_sources"],
+    hdrs = LIBSTDCXX_LIBRARY_HDRS,
+    copts = LIBSTDCXX_LIBRARY_COPTS + ["-std=gnu++11"],
+    implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
+    includes = LIBSTDCXX_LIBRARY_INCLUDES,
+)
+
+libstdcxx_runtime_cc_library(
+    name = "libstdcxx_cxx11_char8",
+    srcs = [":libstdcxx_cxx11_char8_sources"],
+    hdrs = LIBSTDCXX_LIBRARY_HDRS,
+    copts = LIBSTDCXX_LIBRARY_COPTS + [
+        "-std=gnu++11",
+        "-fchar8_t",
+    ],
+    implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
+    includes = LIBSTDCXX_LIBRARY_INCLUDES,
+)
+
+libstdcxx_runtime_cc_library(
+    name = "libstdcxx_cxx11_hashtable",
+    srcs = ["libstdc++-v3/src/c++11/hashtable_c++0x.cc"],
+    hdrs = LIBSTDCXX_LIBRARY_HDRS,
+    copts = LIBSTDCXX_LIBRARY_COPTS + [
+        "-std=gnu++11",
+        "-fimplicit-templates",
+    ],
+    implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
+    includes = LIBSTDCXX_LIBRARY_INCLUDES,
+)
+
+libstdcxx_runtime_cc_library(
+    name = "libstdcxx_cxx17",
+    srcs = [":libstdcxx_cxx17_sources"],
+    hdrs = LIBSTDCXX_LIBRARY_HDRS,
+    copts = LIBSTDCXX_LIBRARY_COPTS + [
+        "-std=gnu++17",
+        "-fimplicit-templates",
+    ],
+    implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
+    includes = LIBSTDCXX_LIBRARY_INCLUDES,
+)
+
+libstdcxx_runtime_cc_library(
+    name = "libstdcxx_cxx20",
+    srcs = [":libstdcxx_cxx20_sources"],
+    hdrs = LIBSTDCXX_LIBRARY_HDRS,
+    copts = LIBSTDCXX_LIBRARY_COPTS + [
+        "-std=gnu++20",
+        "-fimplicit-templates",
+    ],
+    implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
+    includes = LIBSTDCXX_LIBRARY_INCLUDES,
+)
+
+libstdcxx_runtime_cc_library(
+    name = "libstdcxx_cxx20_format",
+    srcs = ["libstdc++-v3/src/c++20/format.cc"],
+    hdrs = LIBSTDCXX_LIBRARY_HDRS,
+    copts = LIBSTDCXX_LIBRARY_COPTS + [
+        "-std=gnu++26",
+        "-fimplicit-templates",
+        "-fno-access-control",
+    ],
+    implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
+    includes = LIBSTDCXX_LIBRARY_INCLUDES,
+)
+
+libstdcxx_runtime_cc_library(
+    name = "libstdcxx_cxx23",
+    srcs = [":libstdcxx_cxx23_sources"],
+    hdrs = LIBSTDCXX_LIBRARY_HDRS,
+    copts = LIBSTDCXX_LIBRARY_COPTS + [
+        "-std=gnu++23",
+        "-fimplicit-templates",
+    ],
+    implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
+    includes = LIBSTDCXX_LIBRARY_INCLUDES,
+)
+
+libstdcxx_runtime_cc_library(
+    name = "libstdcxx_cxx23_print",
+    srcs = ["libstdc++-v3/src/c++23/print.cc"],
+    hdrs = LIBSTDCXX_LIBRARY_HDRS,
+    copts = LIBSTDCXX_LIBRARY_COPTS + [
+        "-std=gnu++26",
+        "-fimplicit-templates",
+    ],
+    implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
+    includes = LIBSTDCXX_LIBRARY_INCLUDES,
+)
+
+libstdcxx_runtime_cc_library(
+    name = "libstdcxx_cxx98_compat",
+    srcs = [":libstdcxx_cxx98_compat_sources"],
+    hdrs = LIBSTDCXX_LIBRARY_HDRS,
+    copts = LIBSTDCXX_LIBRARY_COPTS + ["-std=gnu++98"],
+    implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
+    includes = LIBSTDCXX_LIBRARY_INCLUDES,
+)
+
+libstdcxx_runtime_cc_library(
+    name = "libstdcxx_cxx11_compat",
+    srcs = [":libstdcxx_cxx11_compat_sources"],
+    hdrs = LIBSTDCXX_LIBRARY_HDRS,
+    copts = LIBSTDCXX_LIBRARY_COPTS + ["-std=gnu++11"],
+    implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
+    includes = LIBSTDCXX_LIBRARY_INCLUDES,
+)
+
+libstdcxx_runtime_cc_library(
+    name = "libstdcxx",
+    deps = [
+        ":libstdcxx_cxx11",
+        ":libstdcxx_cxx11_char8",
+        ":libstdcxx_cxx11_compat",
+        ":libstdcxx_cxx11_hashtable",
+        ":libstdcxx_cxx17",
+        ":libstdcxx_cxx20",
+        ":libstdcxx_cxx20_format",
+        ":libstdcxx_cxx23",
+        ":libstdcxx_cxx98",
+        ":libstdcxx_cxx98_compat",
+        ":libstdcxx_cxx98_concept_inst",
+        ":libstdcxx_cxx98_cow_locale",
+        ":libstdcxx_cxx98_cxxlocale",
+        ":libstdcxx_cxx98_parallel_settings",
+        ":libstdcxx_cxx98_strstream",
+        ":libsupcxx",
+    ] + select({
+        "@platforms//os:windows": [
+            # TODO: enable print.cc once MinGW native_handle_type selection is modeled.
+        ],
+        "//conditions:default": [":libstdcxx_cxx23_print"],
+    }),
+)
+
+libstdcxx_runtime_cc_static_library(
+    name = "libstdcxx.static.checked",
+    deps = [":libstdcxx"],
+)
+
+libstdcxx_runtime_cc_static_library_no_validate(
+    name = "libstdcxx.static.unchecked",
+    deps = [":libstdcxx"],
+)
+
+alias(
+    name = "libstdcxx.static",
+    actual = select({
+        "@platforms//os:windows": ":libstdcxx.static.unchecked",
+        "//conditions:default": ":libstdcxx.static.checked",
+    }),
+    visibility = ["//visibility:public"],
+)
+
+libstdcxx_runtime_cc_library(
+    name = "libstdcxxfs",
+    srcs = [":libstdcxx_filesystem_ts_sources"],
+    hdrs = LIBSTDCXX_LIBRARY_HDRS,
+    copts = LIBSTDCXX_LIBRARY_COPTS + ["-std=gnu++17"],
+    implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
+    includes = LIBSTDCXX_LIBRARY_INCLUDES,
+)
+
+libstdcxx_runtime_cc_static_library(
+    name = "libstdcxxfs.static.checked",
+    deps = [":libstdcxxfs"],
+)
+
+libstdcxx_runtime_cc_static_library_no_validate(
+    name = "libstdcxxfs.static.unchecked",
+    deps = [":libstdcxxfs"],
+)
+
+alias(
+    name = "libstdcxxfs.static",
+    actual = select({
+        "@platforms//os:windows": ":libstdcxxfs.static.unchecked",
+        "//conditions:default": ":libstdcxxfs.static.checked",
     }),
     visibility = ["//visibility:public"],
 )

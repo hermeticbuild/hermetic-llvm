@@ -88,6 +88,8 @@ sed -e 's/HAVE_/_GLIBCXX_HAVE_/g' \
     -e 's/ICONV_CONST/_GLIBCXX_ICONV_CONST/g' \
     -e '/[	 ]_GLIBCXX_LONG_DOUBLE_COMPAT[	 ]/d' \
     -e '/[	 ]_GLIBCXX_LONG_DOUBLE_ALT128_COMPAT[	 ]/d' \
+    -e '/[	 ]_GLIBCXX_USE_DUAL_ABI[	 ]/d' \
+    -e '/[	 ]_GLIBCXX_USE_CXX11_ABI[	 ]/d' \
     < "$config_h" >> "$out"
 {
     echo ""

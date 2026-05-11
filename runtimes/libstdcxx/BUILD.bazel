@@ -281,6 +281,7 @@ cc_library(
     includes = [
         "build_headers_include_search_directory",
         "headers_include_search_directory",
+        "headers_include_search_directory/backward",
     ],
     visibility = ["//visibility:public"],
 )
@@ -294,6 +295,24 @@ alias(
 alias(
     name = "libsupcxx.static",
     actual = "@gcc//:libsupcxx.static",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "libstdcxx.static",
+    actual = "@gcc//:libstdcxx.static",
+    visibility = ["//visibility:public"],
+)
+
+copy_file(
+    name = "libstdcxx_static_archive",
+    src = ":libstdcxx.static",
+    out = "libstdc++.a",
+)
+
+copy_to_directory(
+    name = "libstdcxx_library_search_directory",
+    srcs = [":libstdcxx_static_archive"],
     visibility = ["//visibility:public"],
 )
 
@@ -320,6 +339,39 @@ libstdcxx_runtime_cc_binary(
     additional_linker_inputs = [":libsupcxx.static"],
     copts = ["-fno-exceptions"],
     linkopts = ["$(location :libsupcxx.static)"],
+    deps = [
+        ":build_headers",
+    ],
+)
+
+write_file(
+    name = "libstdcxx_link_smoke_src",
+    out = "libstdcxx_link_smoke.cc",
+    content = [
+        "#include <stdexcept>",
+        "#include <string>",
+        "#include <vector>",
+        "",
+        "int main() {",
+        "  std::vector<std::string> values;",
+        "  values.emplace_back(\"libstdc++\");",
+        "  if (values.front().size() != 9) throw std::runtime_error(\"bad string\");",
+        "  return 0;",
+        "}",
+    ],
+)
+
+libstdcxx_runtime_cc_binary(
+    name = "libstdcxx_link_smoke",
+    srcs = [":libstdcxx_link_smoke_src"],
+    additional_linker_inputs = [
+        ":libstdcxx.static",
+        "//runtimes/libunwind:libunwind.static",
+    ],
+    linkopts = [
+        "$(location :libstdcxx.static)",
+        "$(location //runtimes/libunwind:libunwind.static)",
+    ],
     deps = [
         ":build_headers",
     ],

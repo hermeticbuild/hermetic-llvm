@@ -535,7 +535,12 @@ LINK_CHECKS = _FILESYSTEM_LINK_CHECKS + _MATH_LINK_CHECKS + _STDLIB_LINK_CHECKS 
 POLICY_DEFINES = [
     policy_define("_GLIBCXX_HOSTED", "__STDC_HOSTED__"),
     policy_define("_GLIBCXX_USE_LONG_LONG"),
+    policy_define("_GLIBCXX_USE_WCHAR_T"),
     policy_define("_GLIBCXX_USE_C99"),
+    policy_define("_GLIBCXX98_USE_C99_MATH"),
+    policy_define("_GLIBCXX11_USE_C99_MATH"),
+    policy_define("_GLIBCXX_USE_C99_MATH_FUNCS"),
+    policy_define("_GLIBCXX_USE_C99_MATH_TR1"),
     policy_define("_GLIBCXX_USE_DUAL_ABI"),
     policy_define("_GLIBCXX_USE_CXX11_ABI"),
     policy_define("_GLIBCXX_ATOMIC_WORD_BUILTINS"),

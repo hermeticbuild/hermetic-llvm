@@ -224,8 +224,13 @@ def declare_llvm_targets(*, suffix = ""):
         name = "linux_target_headers",
         srcs = [
             ":builtin_resource_dir",
-            "@llvm//runtimes/cxxstdlib:headers_include_search_directory",
-            "@llvm//runtimes/cxxstdlib:abi_headers_include_search_directory",
+        ] + select({
+            "@llvm//toolchain:cxxstdlib_disabled": [],
+            "//conditions:default": [
+                "@llvm//runtimes/cxxstdlib:headers_include_search_directory",
+                "@llvm//runtimes/cxxstdlib:abi_headers_include_search_directory",
+            ],
+        }) + [
             "@kernel_headers//:kernel_headers_directory",
             "@llvm//sanitizers:sanitizers_headers_include_search_directory",
         ] + select({
@@ -243,8 +248,13 @@ def declare_llvm_targets(*, suffix = ""):
         name = "windows_target_headers",
         srcs = [
             ":builtin_resource_dir",
-            "@llvm//runtimes/cxxstdlib:headers_include_search_directory",
-            "@llvm//runtimes/cxxstdlib:abi_headers_include_search_directory",
+        ] + select({
+            "@llvm//toolchain:cxxstdlib_disabled": [],
+            "//conditions:default": [
+                "@llvm//runtimes/cxxstdlib:headers_include_search_directory",
+                "@llvm//runtimes/cxxstdlib:abi_headers_include_search_directory",
+            ],
+        }) + [
             "@mingw//:mingw_generated_headers_crt_directory",
             "@mingw//:mingw_w64_headers_include_directory",
             "@mingw//:mingw_w64_headers_crt_directory",
