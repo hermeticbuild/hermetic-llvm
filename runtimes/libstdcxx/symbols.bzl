@@ -10,6 +10,10 @@ def _libstdcxx_symbols_version_script_impl(ctx):
     )
     source_placeholder = "__libstdcxx_symbols_source__.ver"
     output_placeholder = "__libstdcxx_symbols_output__.ver"
+    config_h_placeholder = "__libstdcxx_symbols_config_h__.h"
+    filtered = ctx.actions.declare_file(ctx.attr.name + ".filtered.ver")
+    output = ctx.actions.declare_file(ctx.attr.name + ".ver")
+    preprocess_action = ACTION_NAMES.preprocess_assemble
     variables = cc_common.create_compile_variables(
         feature_configuration = feature_configuration,
         cc_toolchain = cc_toolchain,
@@ -21,49 +25,43 @@ def _libstdcxx_symbols_version_script_impl(ctx):
             "-E",
             "-P",
             "-include",
-            ctx.file.config_h.path,
+            config_h_placeholder,
         ],
     )
-    command_line = cc_common.get_memory_inefficient_command_line(
+    raw_command_line = cc_common.get_memory_inefficient_command_line(
         feature_configuration = feature_configuration,
-        action_name = ACTION_NAMES.c_compile,
+        action_name = preprocess_action,
         variables = variables,
     )
+    command_line = [
+        arg
+        for arg in raw_command_line
+        # The cc action template is compile-shaped. This action only
+        # preprocesses GCC's version script, so keep the cc_common-derived
+        # target and include flags but drop the compile-only marker.
+        if arg != "-c"
+    ]
     env = cc_common.get_environment_variables(
         feature_configuration = feature_configuration,
-        action_name = ACTION_NAMES.c_compile,
+        action_name = preprocess_action,
         variables = variables,
     )
     compiler = cc_common.get_tool_for_action(
         feature_configuration = feature_configuration,
-        action_name = ACTION_NAMES.c_compile,
+        action_name = preprocess_action,
     )
-    output = ctx.actions.declare_file(ctx.attr.name + ".ver")
 
     ctx.actions.run_shell(
-        inputs = depset(
-            direct = [ctx.file.base_version_script, ctx.file.config_h] + ctx.files.port_version_scripts,
-            transitive = [cc_toolchain.all_files],
-        ),
-        outputs = [output],
-        tools = cc_toolchain.all_files,
+        inputs = [ctx.file.base_version_script] + ctx.files.port_version_scripts,
+        outputs = [filtered],
         arguments = [
-            compiler,
             ctx.file.base_version_script.path,
-            ctx.file.config_h.path,
-            output.path,
-            source_placeholder,
-            output_placeholder,
-        ] + [port.path for port in ctx.files.port_version_scripts] + ["--"] + command_line,
-        env = env,
+            filtered.path,
+        ] + [port.path for port in ctx.files.port_version_scripts] + ["--"],
         command = """set -eu
-compiler="$1"
-base="$2"
-config_h="$3"
-output="$4"
-source_placeholder="$5"
-output_placeholder="$6"
-shift 6
+base="$1"
+filtered="$2"
+shift 2
 ports=()
 while [ "$#" -gt 0 ]; do
     if [ "$1" = "--" ]; then
@@ -78,8 +76,6 @@ tmp="${TMPDIR:-/tmp}/libstdcxx-symbols-$$"
 mkdir -p "$tmp"
 trap 'rm -rf "$tmp"' EXIT
 combined="$tmp/libstdc++-symbols.ver.tmp"
-filtered="$tmp/libstdc++-symbols.ver.filtered"
-preprocessed="$tmp/libstdc++-symbols.ver.preprocessed"
 cp "$base" "$combined"
 chmod +w "$combined"
 
@@ -94,26 +90,33 @@ for port in "${ports[@]}"; do
 done
 
 grep -Ev '^[[:space:]]*#(#| |$)' "$combined" > "$filtered"
-
-cmd=("$compiler")
-for arg in "$@"; do
-    case "$arg" in
-        "$source_placeholder")
-            cmd+=("$filtered")
-            ;;
-        "$output_placeholder")
-            cmd+=("$preprocessed")
-            ;;
-        *)
-            cmd+=("$arg")
-            ;;
-    esac
-done
-"${cmd[@]}"
-cp "$preprocessed" "$output"
 """,
         execution_requirements = {"supports-path-mapping": "1"},
-        mnemonic = "LibstdcxxSymbolsVersionScript",
+        mnemonic = "LibstdcxxSymbolsVersionScriptAssemble",
+    )
+
+    preprocessor_args = ctx.actions.args()
+    for arg in command_line:
+        if arg == source_placeholder:
+            preprocessor_args.add(filtered)
+        elif arg == output_placeholder:
+            preprocessor_args.add(output)
+        elif arg == config_h_placeholder:
+            preprocessor_args.add(ctx.file.config_h)
+        else:
+            preprocessor_args.add(arg)
+
+    ctx.actions.run(
+        executable = compiler,
+        inputs = depset(
+            direct = [filtered, ctx.file.config_h],
+            transitive = [cc_toolchain.all_files],
+        ),
+        outputs = [output],
+        arguments = [preprocessor_args],
+        env = env,
+        execution_requirements = {"supports-path-mapping": "1"},
+        mnemonic = "LibstdcxxSymbolsVersionScriptPreprocess",
         toolchain = CC_TOOLCHAIN_TYPE,
     )
 
