@@ -38,7 +38,8 @@ selects.config_setting_group(
 transitioned_alias(
     name = "headers_include_search_directory",
     actual = select({
-        "//platforms/config:libstdcxx": "//runtimes/libstdcxx:headers_include_search_directory",
+        ":libstdcxx_linux": "//runtimes/libstdcxx:headers_include_search_directory",
+        ":libstdcxx_windows": ":libstdcxx_windows_unsupported",
         "//conditions:default": "@llvm-project//libcxx:libcxx_headers_include_search_directory",
     }),
 )
@@ -46,7 +47,8 @@ transitioned_alias(
 transitioned_alias(
     name = "abi_headers_include_search_directory",
     actual = select({
-        "//platforms/config:libstdcxx": "//runtimes/libstdcxx:abi_headers_include_search_directory",
+        ":libstdcxx_linux": "//runtimes/libstdcxx:abi_headers_include_search_directory",
+        ":libstdcxx_windows": ":libstdcxx_windows_unsupported",
         "//conditions:default": "@llvm-project//libcxxabi:libcxxabi_headers_include_search_directory",
     }),
 )
@@ -54,14 +56,10 @@ transitioned_alias(
 transitioned_alias(
     name = "library_search_directory",
     actual = select({
-        "//platforms/config:libstdcxx": "//runtimes/libstdcxx:libstdcxx_library_search_directory",
+        ":libstdcxx_linux": "//runtimes/libstdcxx:libstdcxx_library_search_directory",
+        ":libstdcxx_windows": ":libstdcxx_windows_unsupported",
         "//conditions:default": "//runtimes/libcxx:libcxx_library_search_directory",
     }),
-)
-
-transitioned_alias(
-    name = "libstdcxx_static_runtime_lib",
-    actual = "//runtimes/libstdcxx:libstdcxx_static_archive",
 )
 
 transitioned_alias(
@@ -69,17 +67,25 @@ transitioned_alias(
     actual = "//runtimes/libstdcxx:libstdcxx_shared_soname",
 )
 
+genrule(
+    name = "libstdcxx_static_runtime_lib",
+    outs = ["unsupported/libstdc++.a"],
+    cmd = "echo 'libstdc++ is only supported as a dynamic C++ runtime; static libstdc++ is intentionally unsupported.' >&2; exit 1",
+)
+
+genrule(
+    name = "libstdcxx_windows_unsupported",
+    outs = ["unsupported/windows-libstdcxx"],
+    # TODO(corentin): replace this with MinGW libstdc++ DLL/import-library
+    # wiring once Windows libstdc++ support is intentionally added.
+    cmd = "echo 'libstdc++ is currently supported only for Linux targets; Windows/MinGW libstdc++ is intentionally unsupported.' >&2; exit 1",
+)
+
 filegroup(
     name = "static_runtime_lib",
     srcs = select({
-        ":libstdcxx_linux": [
-            ":libstdcxx_static_runtime_lib",
-            "//runtimes/libunwind:libunwind.static",
-        ],
-        ":libstdcxx_windows": [
-            ":libstdcxx_static_runtime_lib",
-            # TODO: add libunwind once the COFF duplicate-symbol validator issue is fixed.
-        ],
+        ":libstdcxx_linux": [":libstdcxx_static_runtime_lib"],
+        ":libstdcxx_windows": [":libstdcxx_windows_unsupported"],
         ":libcxx_linux": [
             "@llvm-project//libcxx:libcxx.static",
             "@llvm-project//libcxxabi:libcxxabi.static",
@@ -101,9 +107,7 @@ filegroup(
             ":libstdcxx_dynamic_runtime_lib",
             "//runtimes/libunwind:libunwind.shared",
         ],
-        ":libstdcxx_windows": [
-            # TODO: add MinGW libstdc++ DLL/import-library support.
-        ],
+        ":libstdcxx_windows": [":libstdcxx_windows_unsupported"],
         ":libcxx_linux": [
             "@llvm-project//libcxx:libcxx.shared",
             "@llvm-project//libcxxabi:libcxxabi.shared",

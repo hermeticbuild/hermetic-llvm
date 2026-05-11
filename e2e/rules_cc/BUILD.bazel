@@ -114,18 +114,6 @@ cc_binary(
     srcs = ["main.cc"],
 )
 
-cc_binary(
-    name = "libstdcxx_main_static",
-    srcs = ["main.cc"],
-    target_compatible_with = select({
-        "@llvm//platforms/config:libstdcxx": [],
-        "//conditions:default": ["@platforms//:incompatible"],
-    }) + select({
-        "@platforms//os:linux": [],
-        "//conditions:default": ["@platforms//:incompatible"],
-    }),
-)
-
 # same as default
 cc_binary(
     name = "main_static",

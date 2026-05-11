@@ -6,8 +6,6 @@ load(
     "@llvm//runtimes/libstdcxx:cc_rules.bzl",
     "libstdcxx_runtime_cc_library",
     "libstdcxx_runtime_cc_shared_library",
-    "libstdcxx_runtime_cc_static_library",
-    "libstdcxx_runtime_cc_static_library_no_validate",
 )
 load(
     "@llvm//runtimes/libstdcxx:configure.bzl",
@@ -470,25 +468,6 @@ libstdcxx_runtime_cc_library(
         ":libsupcxx_demangle",
         ":libsupcxx_objects",
     ],
-)
-
-libstdcxx_runtime_cc_static_library(
-    name = "libsupcxx.static.checked",
-    deps = [":libsupcxx"],
-)
-
-libstdcxx_runtime_cc_static_library_no_validate(
-    name = "libsupcxx.static.unchecked",
-    deps = [":libsupcxx"],
-)
-
-alias(
-    name = "libsupcxx.static",
-    actual = select({
-        "@platforms//os:windows": ":libsupcxx.static.unchecked",
-        "//conditions:default": ":libsupcxx.static.checked",
-    }),
-    visibility = ["//visibility:public"],
 )
 
 filegroup(
@@ -1034,25 +1013,6 @@ libstdcxx_runtime_cc_library(
     }),
 )
 
-libstdcxx_runtime_cc_static_library(
-    name = "libstdcxx.static.checked",
-    deps = [":libstdcxx"],
-)
-
-libstdcxx_runtime_cc_static_library_no_validate(
-    name = "libstdcxx.static.unchecked",
-    deps = [":libstdcxx"],
-)
-
-alias(
-    name = "libstdcxx.static",
-    actual = select({
-        "@platforms//os:windows": ":libstdcxx.static.unchecked",
-        "//conditions:default": ":libstdcxx.static.checked",
-    }),
-    visibility = ["//visibility:public"],
-)
-
 libstdcxx_runtime_cc_shared_library(
     name = "libstdc++.so.6.0.35",
     additional_linker_inputs = [":libstdcxx_symbols_ver"],
@@ -1107,25 +1067,6 @@ libstdcxx_runtime_cc_library(
     copts = LIBSTDCXX_LIBRARY_COPTS + ["-std=gnu++17"],
     implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
     includes = LIBSTDCXX_LIBRARY_INCLUDES,
-)
-
-libstdcxx_runtime_cc_static_library(
-    name = "libstdcxxfs.static.checked",
-    deps = [":libstdcxxfs"],
-)
-
-libstdcxx_runtime_cc_static_library_no_validate(
-    name = "libstdcxxfs.static.unchecked",
-    deps = [":libstdcxxfs"],
-)
-
-alias(
-    name = "libstdcxxfs.static",
-    actual = select({
-        "@platforms//os:windows": ":libstdcxxfs.static.unchecked",
-        "//conditions:default": ":libstdcxxfs.static.checked",
-    }),
-    visibility = ["//visibility:public"],
 )
 
 copy_to_directory(

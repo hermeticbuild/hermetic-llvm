@@ -298,27 +298,9 @@ alias(
 )
 
 alias(
-    name = "libsupcxx.static",
-    actual = "@gcc//:libsupcxx.static",
-    visibility = ["//visibility:public"],
-)
-
-alias(
-    name = "libstdcxx.static",
-    actual = "@gcc//:libstdcxx.static",
-    visibility = ["//visibility:public"],
-)
-
-alias(
     name = "libstdcxx.shared",
     actual = "@gcc//:libstdcxx.shared",
     visibility = ["//visibility:public"],
-)
-
-copy_file(
-    name = "libstdcxx_static_archive",
-    src = ":libstdcxx.static",
-    out = "libstdc++.a",
 )
 
 copy_file(
@@ -343,12 +325,6 @@ copy_file(
 )
 
 copy_file(
-    name = "libstdcxx_library_search_static_archive",
-    src = ":libstdcxx.static",
-    out = "libstdcxx_library_search_directory/libstdc++.a",
-)
-
-copy_file(
     name = "libstdcxx_library_search_shared_real",
     src = ":libstdcxx.shared",
     out = "libstdcxx_library_search_directory/libstdc++.so.6.0.35",
@@ -370,7 +346,7 @@ copy_file(
 
 directory(
     name = "libstdcxx_library_search_directory",
-    srcs = [":libstdcxx_library_search_static_archive"] + select({
+    srcs = select({
         "@platforms//os:windows": [],
         "//conditions:default": [
             ":libstdcxx_library_search_shared_linker_name",
@@ -403,34 +379,6 @@ sh_test(
 )
 
 write_file(
-    name = "libsupcxx_link_smoke_src",
-    out = "libsupcxx_link_smoke.cc",
-    content = [
-        "#include <cxxabi.h>",
-        "#include <cstdlib>",
-        "",
-        "int main() {",
-        "  int status = -1;",
-        "  char* demangled = abi::__cxa_demangle(\"_Z3foov\", nullptr, nullptr, &status);",
-        "  bool ok = status == 0 && demangled != nullptr && demangled[0] == 'f';",
-        "  std::free(demangled);",
-        "  return ok ? 0 : 1;",
-        "}",
-    ],
-)
-
-libstdcxx_runtime_cc_binary(
-    name = "libsupcxx_link_smoke",
-    srcs = [":libsupcxx_link_smoke_src"],
-    additional_linker_inputs = [":libsupcxx.static"],
-    copts = ["-fno-exceptions"],
-    linkopts = ["$(location :libsupcxx.static)"],
-    deps = [
-        ":build_headers",
-    ],
-)
-
-write_file(
     name = "libstdcxx_link_smoke_src",
     out = "libstdcxx_link_smoke.cc",
     content = [
@@ -444,31 +392,6 @@ write_file(
         "  if (values.front().size() != 9) throw std::runtime_error(\"bad string\");",
         "  return 0;",
         "}",
-    ],
-)
-
-libstdcxx_runtime_cc_binary(
-    name = "libstdcxx_link_smoke",
-    srcs = [":libstdcxx_link_smoke_src"],
-    additional_linker_inputs = [
-        ":libstdcxx.static",
-        "//runtimes/libunwind:libunwind.static",
-    ],
-    linkopts = [
-        "$(location :libstdcxx.static)",
-        "$(location //runtimes/libunwind:libunwind.static)",
-    ],
-    deps = [
-        ":build_headers",
-    ],
-)
-
-cc_binary(
-    name = "libstdcxx_toolchain_static_link_smoke",
-    srcs = [":libstdcxx_link_smoke_src"],
-    target_compatible_with = [
-        "@platforms//os:linux",
-        "//constraints/cxxstdlib:libstdcxx",
     ],
 )
 
@@ -498,12 +421,8 @@ bzl_library(
     srcs = ["cc_rules.bzl"],
     visibility = ["//visibility:public"],
     deps = [
-        "@bazel_skylib//lib:paths",
-        "@rules_cc//cc:action_names_bzl",
         "@rules_cc//cc:core_rules",
-        "@rules_cc//cc:find_cc_toolchain_bzl",
-        "@rules_cc//cc/common",
-        "@rules_cc//cc/common:cc_info_bzl",
+        "@rules_cc//cc/common:cc_shared_library_info_bzl",
         "@with_cfg.bzl//:with_cfg",
     ],
 )

@@ -71,6 +71,11 @@ def declare_platforms_cxxstdlib_aware():
             continue
 
         for cxxstdlib in CXXSTDLIBS:
+            # TODO(corentin): add Windows libstdc++ platforms once MinGW DLL
+            # and import-library support is modeled.
+            if cxxstdlib == "libstdcxx" and target_os != "linux":
+                continue
+
             constraints = [
                 "@platforms//cpu:{}".format(target_cpu),
                 "@platforms//os:{}".format(target_os),
