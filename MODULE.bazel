@@ -16,6 +16,8 @@ bazel_dep(name = "tar.bzl", version = "0.10.4")
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
+new_local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")
+
 rbe_platform_repository = use_repo_rule("//:rbe.bzl", "rbe_platform_repository")
 
 rbe_platform_repository(
@@ -114,6 +116,12 @@ use_repo(musl, "musl_libc")
 
 mingw = use_extension("//runtimes/mingw/extension:mingw.bzl", "mingw")
 use_repo(mingw, "mingw")
+
+new_local_repository(
+    name = "gcc",
+    build_file = "//3rd_party/gcc:gcc.BUILD.bazel",
+    path = "../gcc",
+)
 
 osx = use_extension("//extensions:osx.bzl", "osx")
 osx.from_archive(

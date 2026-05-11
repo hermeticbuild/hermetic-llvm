@@ -1,0 +1,314 @@
+load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load("@bazel_lib//lib:copy_file.bzl", "copy_file")
+load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load(":config_probe.bzl", "libstdcxx_config_h")
+load(
+    ":configure.bzl",
+    "libstdcxx_abi_baseline_pair",
+    "libstdcxx_abi_tweaks_dir",
+    "libstdcxx_atomic_word_dir",
+    "libstdcxx_atomic_word_h",
+    "libstdcxx_atomicity_dir",
+    "libstdcxx_bits_opt_random_h",
+    "libstdcxx_c_locale_h",
+    "libstdcxx_c_locale_internal_h",
+    "libstdcxx_cpu_defines_dir",
+    "libstdcxx_cpu_defines_h",
+    "libstdcxx_cpu_include_dir",
+    "libstdcxx_ctype_base_h",
+    "libstdcxx_ctype_inline_h",
+    "libstdcxx_cxxabi_tweaks_h",
+    "libstdcxx_enable_float128",
+    "libstdcxx_error_constants_dir",
+    "libstdcxx_error_constants_h",
+    "libstdcxx_ext_opt_random_h",
+    "libstdcxx_extern_template",
+    "libstdcxx_have_attribute_visibility",
+    "libstdcxx_host_triple",
+    "libstdcxx_inline_version",
+    "libstdcxx_messages_members_h",
+    "libstdcxx_os_defines_h",
+    "libstdcxx_os_include_dir",
+    "libstdcxx_thread_header_h",
+    "libstdcxx_time_members_h",
+    "libstdcxx_use_allocator_new",
+    "libstdcxx_use_cxx11_abi",
+    "libstdcxx_use_dual_abi",
+)
+load(":headers.bzl", "libstdcxx_cxxconfig_header", "libstdcxx_gthr_headers", "libstdcxx_header_smoke", "libstdcxx_largefile_config_header")
+
+package(default_visibility = ["//visibility:public"])
+
+libstdcxx_config_h(
+    name = "config_h",
+    abi_baseline_pair = libstdcxx_abi_baseline_pair(),
+    abi_tweaks_dir = libstdcxx_abi_tweaks_dir(),
+    atomic_word_dir = libstdcxx_atomic_word_dir(),
+    atomicity_dir = libstdcxx_atomicity_dir(),
+    cpu_defines_dir = libstdcxx_cpu_defines_dir(),
+    cpu_include_dir = libstdcxx_cpu_include_dir(),
+    error_constants_dir = libstdcxx_error_constants_dir(),
+    host_triple = libstdcxx_host_triple(),
+    os_include_dir = libstdcxx_os_include_dir(),
+)
+
+filegroup(
+    name = "config_h_header",
+    srcs = [":config_h"],
+    output_group = "config_h",
+)
+
+copy_file(
+    name = "ctype_base_h",
+    src = libstdcxx_ctype_base_h(),
+    out = "public_host_headers/bits/ctype_base.h",
+)
+
+copy_file(
+    name = "ctype_inline_h",
+    src = libstdcxx_ctype_inline_h(),
+    out = "public_host_headers/bits/ctype_inline.h",
+)
+
+copy_file(
+    name = "os_defines_h",
+    src = libstdcxx_os_defines_h(),
+    out = "public_host_headers/bits/os_defines.h",
+)
+
+copy_file(
+    name = "atomic_word_h",
+    src = libstdcxx_atomic_word_h(),
+    out = "public_host_headers/bits/atomic_word.h",
+)
+
+copy_file(
+    name = "cxxabi_tweaks_h",
+    src = libstdcxx_cxxabi_tweaks_h(),
+    out = "public_host_headers/bits/cxxabi_tweaks.h",
+)
+
+copy_file(
+    name = "cpu_defines_h",
+    src = libstdcxx_cpu_defines_h(),
+    out = "public_host_headers/bits/cpu_defines.h",
+)
+
+copy_file(
+    name = "error_constants_h",
+    src = libstdcxx_error_constants_h(),
+    out = "public_host_headers/bits/error_constants.h",
+)
+
+copy_file(
+    name = "basic_file_h",
+    src = "@gcc//:libstdc++-v3/config/io/basic_file_stdio.h",
+    out = "public_host_headers/bits/basic_file.h",
+)
+
+copy_file(
+    name = "allocator_h",
+    src = "@gcc//:libstdc++-v3/config/allocator/new_allocator_base.h",
+    out = "public_host_headers/bits/c++allocator.h",
+)
+
+copy_file(
+    name = "cstdio_h",
+    src = "@gcc//:libstdc++-v3/config/io/c_io_stdio.h",
+    out = "public_host_headers/bits/c++io.h",
+)
+
+copy_file(
+    name = "c_locale_h",
+    src = libstdcxx_c_locale_h(),
+    out = "public_host_headers/bits/c++locale.h",
+)
+
+copy_file(
+    name = "messages_members_h",
+    src = libstdcxx_messages_members_h(),
+    out = "public_host_headers/bits/messages_members.h",
+)
+
+copy_file(
+    name = "time_members_h",
+    src = libstdcxx_time_members_h(),
+    out = "public_host_headers/bits/time_members.h",
+)
+
+copy_file(
+    name = "precompiled_stdcxx_h",
+    src = "@gcc//:libstdc++-v3/include/precompiled/stdc++.h",
+    out = "public_host_headers/bits/stdc++.h",
+)
+
+copy_file(
+    name = "precompiled_stdtr1cxx_h",
+    src = "@gcc//:libstdc++-v3/include/precompiled/stdtr1c++.h",
+    out = "public_host_headers/bits/stdtr1c++.h",
+)
+
+copy_file(
+    name = "precompiled_extcxx_h",
+    src = "@gcc//:libstdc++-v3/include/precompiled/extc++.h",
+    out = "public_host_headers/bits/extc++.h",
+)
+
+copy_file(
+    name = "bits_opt_random_h",
+    src = libstdcxx_bits_opt_random_h(),
+    out = "public_host_headers/bits/opt_random.h",
+)
+
+copy_file(
+    name = "ext_opt_random_h",
+    src = libstdcxx_ext_opt_random_h(),
+    out = "public_host_headers/ext/opt_random.h",
+)
+
+libstdcxx_cxxconfig_header(
+    name = "cxxconfig_h",
+    basever = "@gcc//:gcc/BASE-VER",
+    config_h = ":config_h_header",
+    cxxconfig_template = "@gcc//:libstdc++-v3/include/bits/c++config",
+    datestamp = "@gcc//:gcc/DATESTAMP",
+    enable_float128 = libstdcxx_enable_float128(),
+    extern_template = libstdcxx_extern_template(),
+    have_attribute_visibility = libstdcxx_have_attribute_visibility(),
+    inline_version = libstdcxx_inline_version(),
+    use_allocator_new = libstdcxx_use_allocator_new(),
+    use_cxx11_abi = libstdcxx_use_cxx11_abi(),
+    use_dual_abi = libstdcxx_use_dual_abi(),
+)
+
+libstdcxx_gthr_headers(
+    name = "gthr_headers",
+    gthr_default_h = libstdcxx_thread_header_h(),
+    gthr_h = "@gcc//:libgcc/gthr.h",
+    gthr_posix_h = "@gcc//:libgcc/gthr-posix.h",
+    gthr_single_h = "@gcc//:libgcc/gthr-single.h",
+)
+
+copy_to_directory(
+    name = "generated_host_headers_include_search_directory",
+    srcs = [
+        ":allocator_h",
+        ":atomic_word_h",
+        ":basic_file_h",
+        ":bits_opt_random_h",
+        ":c_locale_h",
+        ":cpu_defines_h",
+        ":cstdio_h",
+        ":ctype_base_h",
+        ":ctype_inline_h",
+        ":cxxabi_tweaks_h",
+        ":cxxconfig_h",
+        ":error_constants_h",
+        ":ext_opt_random_h",
+        ":gthr_headers",
+        ":messages_members_h",
+        ":os_defines_h",
+        ":precompiled_extcxx_h",
+        ":precompiled_stdcxx_h",
+        ":precompiled_stdtr1cxx_h",
+        ":time_members_h",
+    ],
+    allow_overwrites = True,
+    root_paths = [
+        "runtimes/libstdcxx/public_host_headers",
+        "runtimes/libstdcxx/cxxconfig_h",
+        "runtimes/libstdcxx/gthr_headers",
+    ],
+)
+
+copy_file(
+    name = "c_locale_internal_h",
+    src = libstdcxx_c_locale_internal_h(),
+    out = "private_host_headers/bits/c++locale_internal.h",
+)
+
+copy_file(
+    name = "compatibility_h",
+    src = "@gcc//:libstdc++-v3/config/abi/compatibility.h",
+    out = "private_host_headers/bits/compatibility.h",
+)
+
+libstdcxx_largefile_config_header(
+    name = "largefile_config_h",
+    config_h = ":config_h_header",
+)
+
+copy_to_directory(
+    name = "build_headers_include_search_directory",
+    srcs = [
+        ":c_locale_internal_h",
+        ":compatibility_h",
+        ":generated_host_headers_include_search_directory",
+        ":largefile_config_h",
+    ],
+    allow_overwrites = True,
+    root_paths = [
+        "runtimes/libstdcxx/generated_host_headers_include_search_directory",
+        "runtimes/libstdcxx/private_host_headers",
+        "runtimes/libstdcxx/largefile_config_h",
+    ],
+)
+
+copy_to_directory(
+    name = "headers_include_search_directory",
+    srcs = [
+        "@gcc//:libstdcxx_ext_compat_headers_include_search_directory",
+        "@gcc//:libstdcxx_raw_headers_include_search_directory",
+    ],
+    allow_overwrites = True,
+    include_external_repositories = ["**"],
+    replace_prefixes = {
+        "libstdcxx_ext_compat_headers_include_search_directory": "",
+        "libstdcxx_raw_headers_include_search_directory": "",
+    },
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "abi_headers_include_search_directory",
+    actual = ":generated_host_headers_include_search_directory",
+    visibility = ["//visibility:public"],
+)
+
+libstdcxx_header_smoke(
+    name = "header_smoke",
+    abi_headers_include_search_directory = ":abi_headers_include_search_directory",
+    headers_include_search_directory = ":headers_include_search_directory",
+)
+
+bzl_library(
+    name = "config_checks",
+    srcs = ["config_checks.bzl"],
+)
+
+bzl_library(
+    name = "config_probe",
+    srcs = ["config_probe.bzl"],
+    deps = [
+        ":config_checks",
+        "@rules_cc//cc:action_names_bzl",
+        "@rules_cc//cc:find_cc_toolchain_bzl",
+        "@rules_cc//cc/common",
+    ],
+)
+
+bzl_library(
+    name = "configure",
+    srcs = ["configure.bzl"],
+)
+
+bzl_library(
+    name = "headers",
+    srcs = ["headers.bzl"],
+    deps = [
+        ":config_probe",
+        "@rules_cc//cc:action_names_bzl",
+        "@rules_cc//cc:find_cc_toolchain_bzl",
+        "@rules_cc//cc/common",
+    ],
+)

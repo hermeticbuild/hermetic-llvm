@@ -1,0 +1,265 @@
+_SUPPORTED_TARGETS = {
+    "//platforms/config:linux_x86_64_gnu": {
+        "abi_baseline_pair": "x86_64-linux-gnu",
+        "abi_tweaks_dir": "cpu/generic",
+        "atomic_word_dir": "cpu/generic",
+        "atomicity_dir": "cpu/generic",
+        "cpu_defines_dir": "cpu/generic",
+        "cpu_include_dir": "cpu/i486",
+        "error_constants_dir": "os/generic",
+        "host_triple": "x86_64-linux-gnu",
+        "locale_dir": "locale/gnu",
+        "os_include_dir": "os/gnu-linux",
+        "thread_header": "gthr-posix.h",
+    },
+    "//platforms/config:linux_aarch64_gnu": {
+        "abi_baseline_pair": "aarch64-linux-gnu",
+        "abi_tweaks_dir": "cpu/generic",
+        "atomic_word_dir": "cpu/generic",
+        "atomicity_dir": "cpu/generic",
+        "cpu_defines_dir": "cpu/generic",
+        "cpu_include_dir": "cpu/aarch64",
+        "error_constants_dir": "os/generic",
+        "host_triple": "aarch64-linux-gnu",
+        "locale_dir": "locale/gnu",
+        "os_include_dir": "os/gnu-linux",
+        "thread_header": "gthr-posix.h",
+    },
+    "//platforms/config:linux_riscv64_gnu": {
+        "abi_baseline_pair": "riscv64-linux-gnu",
+        "abi_tweaks_dir": "cpu/generic",
+        "atomic_word_dir": "cpu/generic",
+        "atomicity_dir": "cpu/generic",
+        "cpu_defines_dir": "cpu/generic",
+        "cpu_include_dir": "cpu/generic",
+        "error_constants_dir": "os/generic",
+        "host_triple": "riscv64-linux-gnu",
+        "locale_dir": "locale/gnu",
+        "os_include_dir": "os/gnu-linux",
+        "thread_header": "gthr-posix.h",
+    },
+    "//platforms/config:linux_s390x_gnu": {
+        "abi_baseline_pair": "s390x-linux-gnu",
+        "abi_tweaks_dir": "cpu/generic",
+        "atomic_word_dir": "cpu/generic",
+        "atomicity_dir": "cpu/generic",
+        "cpu_defines_dir": "cpu/generic",
+        "cpu_include_dir": "cpu/generic",
+        "error_constants_dir": "os/generic",
+        "host_triple": "s390x-linux-gnu",
+        "locale_dir": "locale/gnu",
+        "os_include_dir": "os/gnu-linux",
+        "thread_header": "gthr-posix.h",
+    },
+    "//platforms/config:linux_x86_64_musl": {
+        "abi_baseline_pair": "x86_64-linux-gnu",
+        "abi_tweaks_dir": "cpu/generic",
+        "atomic_word_dir": "cpu/generic",
+        "atomicity_dir": "cpu/generic",
+        "cpu_defines_dir": "cpu/generic",
+        "cpu_include_dir": "cpu/i486",
+        "error_constants_dir": "os/generic",
+        "host_triple": "x86_64-linux-musl",
+        "locale_dir": "locale/generic",
+        "os_include_dir": "os/generic",
+        "thread_header": "gthr-posix.h",
+    },
+    "//platforms/config:linux_aarch64_musl": {
+        "abi_baseline_pair": "aarch64-linux-gnu",
+        "abi_tweaks_dir": "cpu/generic",
+        "atomic_word_dir": "cpu/generic",
+        "atomicity_dir": "cpu/generic",
+        "cpu_defines_dir": "cpu/generic",
+        "cpu_include_dir": "cpu/aarch64",
+        "error_constants_dir": "os/generic",
+        "host_triple": "aarch64-linux-musl",
+        "locale_dir": "locale/generic",
+        "os_include_dir": "os/generic",
+        "thread_header": "gthr-posix.h",
+    },
+    "//platforms/config:linux_riscv64_musl": {
+        "abi_baseline_pair": "riscv64-linux-gnu",
+        "abi_tweaks_dir": "cpu/generic",
+        "atomic_word_dir": "cpu/generic",
+        "atomicity_dir": "cpu/generic",
+        "cpu_defines_dir": "cpu/generic",
+        "cpu_include_dir": "cpu/generic",
+        "error_constants_dir": "os/generic",
+        "host_triple": "riscv64-linux-musl",
+        "locale_dir": "locale/generic",
+        "os_include_dir": "os/generic",
+        "thread_header": "gthr-posix.h",
+    },
+    "//platforms/config:linux_s390x_musl": {
+        "abi_baseline_pair": "s390x-linux-gnu",
+        "abi_tweaks_dir": "cpu/generic",
+        "atomic_word_dir": "cpu/generic",
+        "atomicity_dir": "cpu/generic",
+        "cpu_defines_dir": "cpu/generic",
+        "cpu_include_dir": "cpu/generic",
+        "error_constants_dir": "os/generic",
+        "host_triple": "s390x-linux-musl",
+        "locale_dir": "locale/generic",
+        "os_include_dir": "os/generic",
+        "thread_header": "gthr-posix.h",
+    },
+    "//platforms/config:windows_x86_64": {
+        "abi_baseline_pair": "x86_64-mingw32",
+        "abi_tweaks_dir": "cpu/generic",
+        "atomic_word_dir": "cpu/generic",
+        "atomicity_dir": "cpu/generic",
+        "cpu_defines_dir": "cpu/generic",
+        "cpu_include_dir": "cpu/i486",
+        "error_constants_dir": "os/mingw32-w64",
+        "host_triple": "x86_64-w64-mingw32",
+        "locale_dir": "locale/generic",
+        "os_include_dir": "os/mingw32-w64",
+        "thread_header": "gthr-posix.h",
+    },
+    "//platforms/config:windows_aarch64": {
+        "abi_baseline_pair": "aarch64-mingw32",
+        "abi_tweaks_dir": "cpu/generic",
+        "atomic_word_dir": "cpu/generic",
+        "atomicity_dir": "cpu/generic",
+        "cpu_defines_dir": "cpu/generic",
+        "cpu_include_dir": "cpu/aarch64",
+        "error_constants_dir": "os/mingw32-w64",
+        "host_triple": "aarch64-w64-mingw32",
+        "locale_dir": "locale/generic",
+        "os_include_dir": "os/mingw32-w64",
+        "thread_header": "gthr-posix.h",
+    },
+}
+
+_DEFAULT_POLICY_FIELDS = {
+    "enable_float128": False,
+    "extern_template": 1,
+    "have_attribute_visibility": 1,
+    "inline_version": 0,
+    "use_allocator_new": 1,
+    "use_cxx11_abi": 1,
+    "use_dual_abi": 1,
+}
+
+_NO_MATCH_ERROR = "Unsupported libstdc++ target platform"
+
+def _field_value(values, field):
+    if field in values:
+        return values[field]
+    if field in _DEFAULT_POLICY_FIELDS:
+        return _DEFAULT_POLICY_FIELDS[field]
+    fail("Unknown libstdc++ target field: {}".format(field))
+
+def _select_field(field):
+    return select({
+        config: _field_value(values, field)
+        for config, values in _SUPPORTED_TARGETS.items()
+    }, no_match_error = _NO_MATCH_ERROR)
+
+def libstdcxx_host_triple():
+    return _select_field("host_triple")
+
+def libstdcxx_cpu_include_dir():
+    return _select_field("cpu_include_dir")
+
+def libstdcxx_os_include_dir():
+    return _select_field("os_include_dir")
+
+def libstdcxx_abi_baseline_pair():
+    return _select_field("abi_baseline_pair")
+
+def libstdcxx_abi_tweaks_dir():
+    return _select_field("abi_tweaks_dir")
+
+def libstdcxx_atomicity_dir():
+    return _select_field("atomicity_dir")
+
+def libstdcxx_atomic_word_dir():
+    return _select_field("atomic_word_dir")
+
+def libstdcxx_cpu_defines_dir():
+    return _select_field("cpu_defines_dir")
+
+def libstdcxx_error_constants_dir():
+    return _select_field("error_constants_dir")
+
+def libstdcxx_locale_dir():
+    return _select_field("locale_dir")
+
+def libstdcxx_thread_header():
+    return _select_field("thread_header")
+
+def libstdcxx_enable_float128():
+    return _select_field("enable_float128")
+
+def libstdcxx_extern_template():
+    return _select_field("extern_template")
+
+def libstdcxx_have_attribute_visibility():
+    return _select_field("have_attribute_visibility")
+
+def libstdcxx_inline_version():
+    return _select_field("inline_version")
+
+def libstdcxx_use_allocator_new():
+    return _select_field("use_allocator_new")
+
+def libstdcxx_use_cxx11_abi():
+    return _select_field("use_cxx11_abi")
+
+def libstdcxx_use_dual_abi():
+    return _select_field("use_dual_abi")
+
+def _gcc_config_header_label(field, basename):
+    return select({
+        config: "@gcc//:libstdc++-v3/config/{}/{}".format(values[field], basename)
+        for config, values in _SUPPORTED_TARGETS.items()
+    }, no_match_error = _NO_MATCH_ERROR)
+
+def _gcc_libgcc_header_label(field):
+    return select({
+        config: "@gcc//:libgcc/{}".format(values[field])
+        for config, values in _SUPPORTED_TARGETS.items()
+    }, no_match_error = _NO_MATCH_ERROR)
+
+def libstdcxx_ctype_base_h():
+    return _gcc_config_header_label("os_include_dir", "ctype_base.h")
+
+def libstdcxx_ctype_inline_h():
+    return _gcc_config_header_label("os_include_dir", "ctype_inline.h")
+
+def libstdcxx_os_defines_h():
+    return _gcc_config_header_label("os_include_dir", "os_defines.h")
+
+def libstdcxx_atomic_word_h():
+    return _gcc_config_header_label("atomic_word_dir", "atomic_word.h")
+
+def libstdcxx_cxxabi_tweaks_h():
+    return _gcc_config_header_label("abi_tweaks_dir", "cxxabi_tweaks.h")
+
+def libstdcxx_cpu_defines_h():
+    return _gcc_config_header_label("cpu_defines_dir", "cpu_defines.h")
+
+def libstdcxx_error_constants_h():
+    return _gcc_config_header_label("error_constants_dir", "error_constants.h")
+
+def libstdcxx_bits_opt_random_h():
+    return _gcc_config_header_label("cpu_include_dir", "opt/bits/opt_random.h")
+
+def libstdcxx_ext_opt_random_h():
+    return _gcc_config_header_label("cpu_include_dir", "opt/ext/opt_random.h")
+
+def libstdcxx_c_locale_h():
+    return _gcc_config_header_label("locale_dir", "c_locale.h")
+
+def libstdcxx_c_locale_internal_h():
+    return _gcc_config_header_label("locale_dir", "c++locale_internal.h")
+
+def libstdcxx_messages_members_h():
+    return _gcc_config_header_label("locale_dir", "messages_members.h")
+
+def libstdcxx_time_members_h():
+    return _gcc_config_header_label("locale_dir", "time_members.h")
+
+def libstdcxx_thread_header_h():
+    return _gcc_libgcc_header_label("thread_header")
