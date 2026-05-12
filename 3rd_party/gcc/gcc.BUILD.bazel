@@ -587,16 +587,28 @@ copy_file(
 )
 
 copy_file(
-    name = "libstdcxx_cxx17_cow_string_inst_cc",
-    src = "libstdc++-v3/src/c++17/cow-string-inst.cc",
-    out = "libstdcxx_generated/c++17/cow-string-inst.cc",
+    name = "libstdcxx_cxx17_string_inst_cc",
+    src = "libstdc++-v3/src/c++17/string-inst.cc",
+    out = "libstdcxx_generated/c++17/string-inst.cc",
 )
 
-# This keeps the source compatible with Clang while preserving the instantiation
-# role of libstdc++-v3/src/c++17/string-inst.cc.
+# cow-string-inst.cc reuses string-inst.cc with _GLIBCXX_USE_CXX11_ABI=0.
+# In that mode basic_string::data() is noexcept(false), while upstream's
+# shared instantiation source spells the C++11 ABI signature as noexcept.
+# GCC accepts that explicit-instantiation mismatch, but Clang rejects it, so
+# keep the adjustment scoped to the COW include path.
 expand_template(
-    name = "libstdcxx_cxx17_string_inst_cc",
-    out = "libstdcxx_generated/c++17/string-inst.cc",
+    name = "libstdcxx_cxx17_cow_string_inst_cc",
+    out = "libstdcxx_generated/c++17/cow-string-inst.cc",
+    substitutions = {
+        "#include \"string-inst.cc\"": "#include \"cow-string-inst.inc\"",
+    },
+    template = "libstdc++-v3/src/c++17/cow-string-inst.cc",
+)
+
+expand_template(
+    name = "libstdcxx_cxx17_cow_string_inst_inc",
+    out = "libstdcxx_generated/c++17/cow-string-inst.inc",
     substitutions = {
         "template char* basic_string<char>::data() noexcept;": "template char* basic_string<char>::data();",
         "template wchar_t* basic_string<wchar_t>::data() noexcept;": "template wchar_t* basic_string<wchar_t>::data();",
@@ -765,8 +777,9 @@ filegroup(
         "libstdc++-v3/src/c++17/fs_path.cc",
         "libstdc++-v3/src/c++17/memory_resource.cc",
         "libstdc++-v3/src/c++17/ostream-inst.cc",
-        "libstdc++-v3/src/c++17/string-inst.cc",
         ":libstdcxx_cxx17_cow_string_inst_cc",
+        ":libstdcxx_cxx17_cow_string_inst_inc",
+        ":libstdcxx_cxx17_string_inst_cc",
     ],
 )
 
