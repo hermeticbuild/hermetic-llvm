@@ -4,6 +4,10 @@ load("//:http_bsdtar_archive.bzl", "http_bsdtar_archive")
 GCC_COMMIT = "2bfd402f8569511901ec8fe7628f57471e6d240a"
 GCC_SHA256 = "dc033fdfd79caf199113446af6d082004534437b6ebd276f9732815d86cbe723"
 
+# Sparse archive roots required by 3rd_party/gcc/gcc.BUILD.bazel. Before
+# trimming or extending this list, check the BUILD file against GCC's
+# libstdc++-v3/include/Makefile.am, libsupc++/Makefile.am, and
+# src/*/Makefile.am inputs.
 _GCC_ARCHIVE_INCLUDES = [
     "gcc/BASE-VER",
     "gcc/DATESTAMP",

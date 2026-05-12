@@ -65,6 +65,8 @@ filegroup(
     output_group = "config_h",
 )
 
+# Configured public headers mirror libstdc++-v3/include/Makefile.am. The
+# selected source labels come from configure.host fields in :configure.bzl.
 copy_file(
     name = "ctype_base_h",
     src = libstdcxx_ctype_base_h(),
@@ -196,6 +198,8 @@ libstdcxx_gthr_headers(
     gthr_single_h = "@gcc//:libgcc/gthr-single.h",
 )
 
+# Generated/configured headers must precede raw GCC headers, matching the
+# include overlay order from libstdc++-v3/include/Makefile.am.
 copy_to_directory(
     name = "generated_host_headers_include_search_directory",
     srcs = [
@@ -228,6 +232,8 @@ copy_to_directory(
     ],
 )
 
+# Build-only private headers mirror libstdc++-v3/include/Makefile.am entries
+# that are needed to compile the library but are not public installed headers.
 copy_file(
     name = "c_locale_internal_h",
     src = libstdcxx_c_locale_internal_h(),
@@ -245,6 +251,8 @@ libstdcxx_largefile_config_header(
     config_h = ":config_h_header",
 )
 
+# During the libstdc++ build, private/generated headers override the installed
+# raw headers in the same order GCC arranges its build include directory.
 copy_to_directory(
     name = "build_headers_include_search_directory",
     srcs = [
@@ -261,6 +269,8 @@ copy_to_directory(
     ],
 )
 
+# Installed header search directory: raw GCC headers plus the backward ext
+# compatibility aliases from libstdc++-v3/include/Makefile.am.
 copy_to_directory(
     name = "headers_include_search_directory",
     srcs = [

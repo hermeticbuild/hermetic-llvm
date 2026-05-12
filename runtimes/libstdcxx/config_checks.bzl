@@ -28,6 +28,10 @@ def policy_undef(name):
         name = name,
     )
 
+# These checks are Bazel equivalents of selected GCC configure probes from
+# libstdc++-v3/configure.ac and libstdc++-v3/acinclude.m4. When changing a
+# HAVE_* or _GLIBCXX_* define, first check those files for the original probe
+# body and policy conditions.
 def _header_check(header):
     return compile_check(
         name = "HAVE_" + header.upper().replace("/", "_").replace(".", "_"),
@@ -532,6 +536,9 @@ int main() { return __cxa_thread_atexit_impl((void (*)(void *))0, (void *)0, (vo
 
 LINK_CHECKS = _FILESYSTEM_LINK_CHECKS + _MATH_LINK_CHECKS + _STDLIB_LINK_CHECKS + _IO_AND_LOCALE_LINK_CHECKS + _THREAD_AND_OS_LINK_CHECKS
 
+# Policy defines model configure decisions that are unconditional for the
+# supported hosted targets here. Compare against GLIBCXX_ENABLE_* and
+# GLIBCXX_CHECK_* macros in libstdc++-v3/acinclude.m4 before adding more.
 POLICY_DEFINES = [
     policy_define("_GLIBCXX_HOSTED", "__STDC_HOSTED__"),
     policy_define("_GLIBCXX_USE_LONG_LONG"),

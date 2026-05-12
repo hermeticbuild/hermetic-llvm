@@ -1,3 +1,7 @@
+# Mirrors the host-derived directory choices from GCC's
+# libstdc++-v3/configure.host. When adding a target or changing one of these
+# fields, compare against configure.host plus configure.ac's *_SRCDIR
+# substitutions for the generated include/source paths.
 _SUPPORTED_TARGETS = {
     "//platforms/config:linux_x86_64_gnu": {
         "abi_baseline_pair": "x86_64-linux-gnu",
@@ -255,6 +259,9 @@ def libstdcxx_shared_library_soname():
 def libstdcxx_symver_style():
     return _select_field("symver_style")
 
+# These adapters turn configure.host-style directory fields into the exact
+# config headers and sources consumed by libstdc++-v3/include/Makefile.am and
+# libstdc++-v3/src/*/Makefile.am.
 def _gcc_config_header_label(field, basename):
     return select({
         Label(config): "@gcc//:libstdc++-v3/config/{}/{}".format(values[field], basename)

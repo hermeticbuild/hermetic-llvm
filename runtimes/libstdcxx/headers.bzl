@@ -90,13 +90,16 @@ sed -e 's/HAVE_/_GLIBCXX_HAVE_/g' \
     echo ""
     echo "#endif // _GLIBCXX_CXX_CONFIG_H"
 } >> "$out"
-""",
+        """,
         execution_requirements = {"supports-path-mapping": "1"},
         mnemonic = "LibstdcxxCxxConfigHeader",
     )
 
     return DefaultInfo(files = depset([out]))
 
+# Generates bits/c++config.h from libstdc++-v3/include/bits/c++config.
+# Keep the substitutions aligned with libstdc++-v3/include/Makefile.am and
+# the config.h names produced by libstdc++-v3/configure.ac.
 libstdcxx_cxxconfig_header = rule(
     implementation = _libstdcxx_cxxconfig_header_impl,
     attrs = {
@@ -135,6 +138,8 @@ config_h="$2"
 
     return DefaultInfo(files = depset([out]))
 
+# Mirrors libstdc++'s largefile-config.h generation from
+# libstdc++-v3/include/Makefile.am.
 libstdcxx_largefile_config_header = rule(
     implementation = _libstdcxx_largefile_config_header_impl,
     attrs = {
@@ -215,6 +220,8 @@ sed -e 's/\\(UNUSED\\)/_GLIBCXX_\\1/g' \
         gthr_default_h,
     ]))
 
+# Mirrors the gthr header transformations performed by
+# libstdc++-v3/include/Makefile.am for libgcc/gthr*.h.
 libstdcxx_gthr_headers = rule(
     implementation = _libstdcxx_gthr_headers_impl,
     attrs = {

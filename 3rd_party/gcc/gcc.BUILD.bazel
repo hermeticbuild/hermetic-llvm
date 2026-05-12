@@ -21,11 +21,19 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 
 package(default_visibility = ["//visibility:public"])
 
+# This BUILD file is a Bazel translation of GCC libstdc++'s generated build.
+# Keep hand-maintained source/header partitions aligned with the upstream
+# libstdc++-v3/include/Makefile.am, libsupc++/Makefile.am, src/Makefile.am,
+# and src/*/Makefile.am files.
 filegroup(
     name = "empty",
     srcs = [],
 )
 
+# Keep this export list in sync with the sparse archive roots in
+# 3rd_party/gcc/extension/gcc.bzl. The libstdc++ configure inputs are exported
+# for the audit test; the config/include/libsupc++ entries are the files
+# consumed by runtimes/libstdcxx/configure.bzl and the targets below.
 exports_files([
     "gcc/BASE-VER",
     "gcc/DATESTAMP",
@@ -81,6 +89,9 @@ exports_files([
     "libstdc++-v3/include/precompiled/stdtr1c++.h",
 ])
 
+# Installed public headers come from libstdc++-v3/include/Makefile.am. The
+# explicitly listed groups stay auditable; the structured subtree glob below is
+# only for large installed header directories.
 filegroup(
     name = "libstdcxx_std_headers",
     srcs = [
@@ -222,8 +233,8 @@ filegroup(
 filegroup(
     name = "libstdcxx_structured_headers",
     # These installed subtrees are large enough to keep as globs. The excludes
-    # preserve the Makefile.am boundary between installed headers, generated
-    # templates, and maintainer-only inputs.
+    # preserve the libstdc++-v3/include/Makefile.am boundary between installed
+    # headers, generated templates, and maintainer-only inputs.
     srcs = glob(
         [
             "libstdc++-v3/include/backward/**",
@@ -248,6 +259,7 @@ filegroup(
     ),
 )
 
+# libsupc++ headers and sources follow libstdc++-v3/libsupc++/Makefile.am.
 filegroup(
     name = "libsupcxx_headers",
     srcs = [
@@ -350,6 +362,8 @@ filegroup(
     ],
 )
 
+# cp-demangle.c is pulled from libiberty by libsupc++/Makefile.am; the minimal
+# config.h below supplies only the defines needed by that translation unit.
 filegroup(
     name = "libiberty_demangle_headers",
     srcs = [
@@ -378,6 +392,8 @@ LIBSTDCXX_COMPATIBILITY_COPTS = select({
     "//conditions:default": [],
 })
 
+# Minimal libiberty config for cp-demangle.c. Recheck libiberty/configure.ac
+# before adding more defines here.
 write_file(
     name = "libiberty_config_h",
     out = "libsupcxx_generated/config.h",
@@ -388,18 +404,23 @@ write_file(
     ],
 )
 
+# configure.host selects the atomicity implementation; expose it as a generated
+# source to mirror the libsupc++/Makefile.am atomicity.cc substitution.
 copy_file(
     name = "libsupcxx_atomicity_cc",
     src = libstdcxx_atomicity_h(),
     out = "libsupcxx_generated/atomicity.cc",
 )
 
+# GCC installs libgcc/unwind-generic.h as unwind.h for libsupc++ consumers.
 copy_file(
     name = "libsupcxx_unwind_h",
     src = "libgcc/unwind-generic.h",
     out = "libgcc/unwind.h",
 )
 
+# MinGW does not support the alias used by the generic tinfo.cc path here, so
+# keep the smallest source rewrite local to the Windows-selected source.
 expand_template(
     name = "libsupcxx_tinfo_windows_cc",
     out = "libsupcxx_generated/tinfo_windows.cc",
@@ -476,6 +497,9 @@ filegroup(
     ]),
 )
 
+# Generated source adapters mirror the configure-selected source substitutions
+# referenced from libstdc++-v3/src/c++98/Makefile.am and
+# libstdc++-v3/src/c++11/Makefile.am.
 copy_file(
     name = "libstdcxx_cxx98_cxxlocale_cc",
     src = libstdcxx_c_locale_cc(),
@@ -566,6 +590,8 @@ copy_file(
     out = "libstdcxx_generated/c++17/cow-string-inst.cc",
 )
 
+# This keeps the source compatible with Clang while preserving the instantiation
+# role of libstdc++-v3/src/c++17/string-inst.cc.
 expand_template(
     name = "libstdcxx_cxx17_string_inst_cc",
     out = "libstdcxx_generated/c++17/string-inst.cc",
@@ -576,6 +602,8 @@ expand_template(
     template = "libstdc++-v3/src/c++17/string-inst.cc",
 )
 
+# C++ standard-version source partitions follow libstdc++-v3/src/Makefile.am
+# plus the matching libstdc++-v3/src/c++*/Makefile.am files.
 filegroup(
     name = "libstdcxx_cxx98_sources",
     srcs = [
@@ -628,6 +656,8 @@ filegroup(
     ],
 )
 
+# Compatibility sources are separate in GCC's makefiles because they carry ABI
+# symbols for older libstdc++ releases.
 filegroup(
     name = "libstdcxx_cxx98_compat_sources",
     srcs = [
@@ -707,6 +737,8 @@ filegroup(
     ],
 )
 
+# These compatibility objects are linked with _GLIBCXX_SHARED for dynamic
+# libstdc++ builds, matching the conditions in src/c++11/Makefile.am.
 filegroup(
     name = "libstdcxx_cxx11_compat_sources",
     srcs = [
@@ -757,6 +789,8 @@ filegroup(
     ],
 )
 
+# The filesystem TS library is still a distinct archive in GCC, sourced from
+# libstdc++-v3/src/filesystem/Makefile.am.
 filegroup(
     name = "libstdcxx_filesystem_ts_sources",
     srcs = [
@@ -785,6 +819,8 @@ LIBSTDCXX_LIBRARY_INCLUDES = [
     "libstdcxx_generated/c++17",
 ]
 
+# Shared private headers for the libstdc++ library objects. Public installed
+# headers come through @llvm//runtimes/libstdcxx:build_headers instead.
 LIBSTDCXX_LIBRARY_HDRS = [
     ":libstdcxx_cxx17_string_inst_cc",
     ":libsupcxx_headers",
@@ -795,6 +831,9 @@ LIBSTDCXX_LIBRARY_DEPS = [
     "@llvm//runtimes/libstdcxx:build_headers",
 ]
 
+# The small cc_library split below mirrors GCC's source partitions and per-file
+# build modes: language level, concept checks, parallel mode, char8_t, and
+# compatibility objects are intentionally separate instead of a single target.
 cc_library(
     name = "libstdcxx_cxx98",
     srcs = [":libstdcxx_cxx98_sources"],
@@ -978,6 +1017,8 @@ cc_library(
     includes = LIBSTDCXX_LIBRARY_INCLUDES,
 )
 
+# The symbol version script input comes from GLIBCXX_ENABLE_SYMVERS in
+# libstdc++-v3/acinclude.m4 and libstdc++-v3/config/abi/pre/gnu.ver.
 libstdcxx_symbols_version_script(
     name = "libstdcxx_symbols_ver",
     base_version_script = "libstdc++-v3/config/abi/pre/gnu.ver",
@@ -1011,6 +1052,8 @@ cc_library(
     }),
 )
 
+# The shared library version and linker flags should stay aligned with GCC's
+# libstdc++-v3/acinclude.m4 shared library and symbol-version settings.
 cc_runtime_stage1_shared_library(
     name = "libstdc++.so.6.0.35",
     additional_linker_inputs = [":libstdcxx_symbols_ver"],
@@ -1067,6 +1110,9 @@ cc_library(
     includes = LIBSTDCXX_LIBRARY_INCLUDES,
 )
 
+# Header search directory layout mirrors libstdc++-v3/include/Makefile.am:
+# generated/configured headers are overlaid by runtimes/libstdcxx/BUILD.bazel,
+# while this package contributes raw installed headers.
 copy_to_directory(
     name = "libstdcxx_raw_headers_include_search_directory",
     srcs = [

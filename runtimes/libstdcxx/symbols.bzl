@@ -92,6 +92,9 @@ def _libstdcxx_symbols_version_script_impl(ctx):
 
     return [DefaultInfo(files = depset([output]))]
 
+# Adapts GCC's libstdc++ symbol version map flow. Compare with
+# libstdc++-v3/acinclude.m4's GLIBCXX_ENABLE_SYMVERS and the
+# libstdc++-v3/config/abi/pre/*.ver files before changing the inputs.
 libstdcxx_symbols_version_script = rule(
     implementation = _libstdcxx_symbols_version_script_impl,
     attrs = {
