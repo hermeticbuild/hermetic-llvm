@@ -1,6 +1,6 @@
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
-load(":c_tool_binary.bzl", "c_tool_binary")
+load("//toolchain/runtimes:cc_runtime_tool_binary.bzl", "cc_runtime_tool_binary")
 
 cc_binary(
     name = "header-parser",
@@ -14,7 +14,7 @@ cc_binary(
     visibility = ["//visibility:public"],
 )
 
-c_tool_binary(
+cc_runtime_tool_binary(
     name = "libstdcxx-symbols-assembler",
     srcs = ["libstdcxx_symbols_assembler.c"],
     visibility = ["//visibility:public"],

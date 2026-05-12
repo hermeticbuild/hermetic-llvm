@@ -1,3 +1,10 @@
+/*
+ * Assembles the libstdc++ linker version script from GCC's base
+ * config/abi/pre/gnu.ver file and optional per-target port fragments. GCC's
+ * makefiles either append a port fragment or splice it after the introductory
+ * comment block; this helper reproduces that small text transform without
+ * shell-dependent sed/awk logic.
+ */
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
