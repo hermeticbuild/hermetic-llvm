@@ -87,6 +87,23 @@ write_file(
 
 # Same as above.
 write_file(
+    name = "__libc_stack_end.S",
+    out = "glibc/build/__libc_stack_end.S",
+    content = [
+        ".globl __libc_stack_end",
+        ".type __libc_stack_end, %object;",
+        "#if __SIZEOF_POINTER__ == 4",
+        ".size __libc_stack_end, 4",
+        "#else",
+        ".size __libc_stack_end, 8",
+        "#endif",
+        # Will be relocated at runtime by the dynamic linker itself.
+        "__libc_stack_end:",
+    ],
+)
+
+# Same as above.
+write_file(
     name = "__tls_get_addr.S",
     out = "glibc/build/__tls_get_addr.S",
     content = [
@@ -119,6 +136,7 @@ LIBS = [
     make_glibc_shared_library(
         name = "libc_shared_library",
         srcs = [
+            ":__libc_stack_end.S",
             ":__stack_chk_guard.S",
             ":__tls_get_addr.S",
             ":libc.s",
