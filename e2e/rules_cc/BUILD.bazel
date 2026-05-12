@@ -1,5 +1,7 @@
+load("@aspect_rules_js//js:defs.bzl", "js_test")
 load("@bazel_lib//lib:transitions.bzl", "platform_transition_binary")
 load("@llvm//:defs.bzl", "exec_test")
+load("@npm//:defs.bzl", "npm_link_all_packages")
 load("@platforms//host:constraints.bzl", "HOST_CONSTRAINTS")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
@@ -33,6 +35,8 @@ load(":musl_header_generation_tests.bzl", "musl_header_generation_tests")
 _VALIDATE_STATIC_LIBRARY_COMPATIBLE = validate_static_library_compatible()
 
 musl_header_generation_tests(name = "musl_header_generation_tests")
+
+npm_link_all_packages(name = "node_modules")
 
 cc_library(
     name = "objc_c_lib",
@@ -414,6 +418,21 @@ platform_transition_binary(
     name = "supports_pic",
     binary = ":supports_pic_",
     target_platform = "@llvm//platforms:linux_x86_64",
+)
+
+js_test(
+    name = "node_re2_test",
+    size = "small",
+    data = [
+        ":node_modules/re2",
+    ],
+    entry_point = "node_re2_test.js",
+    exec_compatible_with = HOST_CONSTRAINTS,
+    tags = ["no-remote"],
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
 )
 
 cc_test(

@@ -6,11 +6,16 @@ bazel_dep(name = "rules_cc", version = "0.2.18")
 bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "with_cfg.bzl", version = "0.12.0")
 bazel_dep(name = "rules_python", version = "1.7.0")
+bazel_dep(name = "rules_nodejs", version = "6.7.3")
+bazel_dep(name = "aspect_rules_js", version = "2.9.2")
+bazel_dep(name = "re2", version = "2025-11-05.bcr.1")
 bazel_dep(name = "llvm", version = "")
 local_path_override(
     module_name = "llvm",
     path = "../../",
 )
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 llvm = use_extension("@llvm//extensions:llvm.bzl", "llvm")
 use_repo(llvm, "llvm-project")
@@ -23,6 +28,48 @@ llvm_toolchains = use_extension("@llvm//extensions:toolchain.bzl", "toolchain")
 use_repo(llvm_toolchains, "llvm_toolchains")
 
 register_toolchains("@llvm_toolchains//:all")
+
+node = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node")
+node.toolchain(
+    include_headers = True,
+    node_version = "18.20.1",
+)
+use_repo(node, "nodejs_toolchains")
+
+register_toolchains("@nodejs_toolchains//:all")
+
+npm = use_extension("@aspect_rules_js//npm:extensions.bzl", "npm")
+npm.npm_translate_lock(
+    name = "npm",
+    lifecycle_hooks = {
+        "*": [],
+    },
+    pnpm_lock = "//:pnpm-lock.yaml",
+)
+npm.npm_replace_package(
+    package = "re2@1.20.1",
+    replacement = "@node-re2//:node-re2",
+)
+use_repo(npm, "npm")
+
+http_archive(
+    name = "nodejs_nan",
+    build_file = "//:BUILD.nodejs_nan",
+    sha256 = "bcf5dfe59c26377b2096d903ecf6c2dbdae92528b1373a0565c40fe07537610d",
+    strip_prefix = "nan-2.17.0",
+    urls = ["https://github.com/nodejs/nan/archive/refs/tags/v2.17.0.tar.gz"],
+)
+
+http_archive(
+    name = "node-re2",
+    build_file = "//:BUILD.node-re2",
+    patch_args = ["-p1"],
+    patch_cmds = ["rm binding.gyp package-lock.json"],
+    patches = ["//:node-re2.patch"],
+    sha256 = "3aec2bb3353ca0bdb960cad3650b35b692eedb025284e99bb224aa39719ec9e8",
+    strip_prefix = "node-re2-1.20.1",
+    urls = ["https://github.com/uhop/node-re2/archive/refs/tags/1.20.1.tar.gz"],
+)
 
 # Bump transitive zlib version to avoid genrules.
 bazel_dep(name = "zlib", version = "1.3.1.bcr.8")
