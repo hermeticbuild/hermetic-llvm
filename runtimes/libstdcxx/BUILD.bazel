@@ -2,10 +2,10 @@ load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 load("@bazel_lib//lib:copy_file.bzl", "copy_file")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
-load("@bazel_skylib//rules/directory:directory.bzl", "directory")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load("//runtimes:defs.bzl", "stub_library")
 load(":config_probe.bzl", "libstdcxx_config_h")
 load(
     ":configure.bzl",
@@ -323,36 +323,25 @@ copy_file(
     allow_symlink = True,
 )
 
-copy_file(
-    name = "libstdcxx_library_search_shared_real",
-    src = ":libstdcxx.shared",
-    out = "libstdcxx_library_search_directory/libstdc++.so.6.0.35",
+stub_library(
+    name = "stdc++",
 )
 
-copy_file(
-    name = "libstdcxx_library_search_shared_soname",
-    src = ":libstdcxx_library_search_shared_real",
-    out = "libstdcxx_library_search_directory/libstdc++.so.6",
-    allow_symlink = True,
+stub_library(
+    name = "supc++",
 )
 
-copy_file(
-    name = "libstdcxx_library_search_shared_linker_name",
-    src = ":libstdcxx_library_search_shared_soname",
-    out = "libstdcxx_library_search_directory/libstdc++.so",
-    allow_symlink = True,
+stub_library(
+    name = "stdc++fs",
 )
 
-directory(
+copy_to_directory(
     name = "libstdcxx_library_search_directory",
-    srcs = select({
-        "@platforms//os:windows": [],
-        "//conditions:default": [
-            ":libstdcxx_library_search_shared_linker_name",
-            ":libstdcxx_library_search_shared_real",
-            ":libstdcxx_library_search_shared_soname",
-        ],
-    }),
+    srcs = [
+        ":stdc++",
+        ":stdc++fs",
+        ":supc++",
+    ],
     visibility = ["//visibility:public"],
 )
 

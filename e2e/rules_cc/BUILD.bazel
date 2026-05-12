@@ -108,6 +108,28 @@ cc_binary(
     }),
 )
 
+cc_binary(
+    name = "libstdcxx_main_dynamic_with_linkopts",
+    srcs = ["main.cc"],
+    linkopts = [
+        "-lstdc++",
+        "-lstdc++fs",
+        "-lsupc++",
+    ],
+    linkstatic = False,
+    target_compatible_with = select({
+        "@llvm//constraints/cxxstdlib:libstdcxx": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }) + select({
+        "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }) + select({
+        # We do not support musl libc.so.
+        "@llvm//constraints/libc:musl": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+)
+
 LIBSTDCXX_PLATFORMS = [
     ("linux_x86_64_libstdcxx", "@platforms//cpu:x86_64", "@llvm//constraints/libc:gnu.2.28"),
     ("linux_aarch64_libstdcxx", "@platforms//cpu:aarch64", "@llvm//constraints/libc:gnu.2.28"),
@@ -134,6 +156,12 @@ platform_transition_filegroup(
     target_platform = ":linux_x86_64_libstdcxx",
 )
 
+platform_transition_filegroup(
+    name = "libstdcxx_main_dynamic_with_linkopts_linux_x86_64",
+    srcs = [":libstdcxx_main_dynamic_with_linkopts"],
+    target_platform = ":linux_x86_64_libstdcxx",
+)
+
 [
     platform_transition_binary(
         name = "libstdcxx_main_dynamic_" + platform_name,
@@ -148,6 +176,21 @@ exec_test(
     srcs = ["libstdcxx_main_dynamic_output_test.sh"],
     data = [":libstdcxx_main_dynamic_linux_x86_64"],
     env = {"BINARY": "$(rootpath :libstdcxx_main_dynamic_linux_x86_64)"},
+    rule = sh_test,
+    target_compatible_with = select({
+        "@platforms//cpu:x86_64": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }) + select({
+        "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)
+
+exec_test(
+    name = "libstdcxx_main_dynamic_with_linkopts_output_test",
+    srcs = ["libstdcxx_main_dynamic_output_test.sh"],
+    data = [":libstdcxx_main_dynamic_with_linkopts_linux_x86_64"],
+    env = {"BINARY": "$(rootpath :libstdcxx_main_dynamic_with_linkopts_linux_x86_64)"},
     rule = sh_test,
     target_compatible_with = select({
         "@platforms//cpu:x86_64": [],
