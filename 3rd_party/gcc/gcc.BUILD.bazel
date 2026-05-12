@@ -674,6 +674,7 @@ filegroup(
         "libstdc++-v3/src/c++11/iostream-inst.cc",
         "libstdc++-v3/src/c++11/istream-inst.cc",
         "libstdc++-v3/src/c++11/locale-inst.cc",
+        "libstdc++-v3/src/c++11/mutex.cc",
         "libstdc++-v3/src/c++11/ostream-inst.cc",
         "libstdc++-v3/src/c++11/placeholders.cc",
         "libstdc++-v3/src/c++11/random.cc",
