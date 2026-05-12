@@ -115,8 +115,7 @@ use_repo(musl, "musl_libc")
 mingw = use_extension("//runtimes/mingw/extension:mingw.bzl", "mingw")
 use_repo(mingw, "mingw")
 
-gcc = use_extension("//extensions:gcc.bzl", "gcc")
-gcc.from_path(path = "../gcc")
+gcc = use_extension("//3rd_party/gcc/extension:gcc.bzl", "gcc")
 use_repo(gcc, "gcc")
 
 osx = use_extension("//extensions:osx.bzl", "osx")

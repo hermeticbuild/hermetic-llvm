@@ -276,19 +276,44 @@
   },
   "selectedYankedVersions": {},
   "moduleExtensions": {
-    "//extensions:gcc.bzl%gcc": {
+    "//3rd_party/gcc/extension:gcc.bzl%gcc": {
       "general": {
-        "bzlTransitiveDigest": "jo240B3JULBsoqZSANmJFDYn2SLPkNuC+5eJ/beOkv0=",
-        "usagesDigest": "RpV8/tWtoc7i2DmUjnpz6k+7KvGztgFknP54La2CbjQ=",
+        "bzlTransitiveDigest": "VoANIPevTxb23ltg74huq1WO6whcmY6O5nrzp3nZuXA=",
+        "usagesDigest": "5oaUnmwah1O+M09fBeXvm+hF80aKWbzNthIt3AAD/aI=",
         "recordedInputs": [
+          "REPO_MAPPING:,bazel_lib bazel_lib+",
           "REPO_MAPPING:,bazel_tools bazel_tools"
         ],
         "generatedRepoSpecs": {
           "gcc": {
-            "repoRuleId": "@@bazel_tools//tools/build_defs/repo:local.bzl%new_local_repository",
+            "repoRuleId": "@@//:http_bsdtar_archive.bzl%http_bsdtar_archive",
             "attributes": {
               "build_file": "@@//3rd_party/gcc:gcc.BUILD.bazel",
-              "path": "../gcc"
+              "includes": [
+                "gcc/BASE-VER",
+                "gcc/DATESTAMP",
+                "include/ansidecl.h",
+                "include/demangle.h",
+                "include/dyn-string.h",
+                "include/getopt.h",
+                "include/libiberty.h",
+                "libgcc/gthr-posix.h",
+                "libgcc/gthr-single.h",
+                "libgcc/gthr.h",
+                "libgcc/unwind-generic.h",
+                "libgcc/unwind-pe.h",
+                "libiberty/cp-demangle.c",
+                "libiberty/cp-demangle.h",
+                "libstdc++-v3/config/**",
+                "libstdc++-v3/include/**",
+                "libstdc++-v3/libsupc++/**",
+                "libstdc++-v3/src/**"
+              ],
+              "sha256": "dc033fdfd79caf199113446af6d082004534437b6ebd276f9732815d86cbe723",
+              "strip_prefix": "gcc-2bfd402f8569511901ec8fe7628f57471e6d240a",
+              "urls": [
+                "https://github.com/gcc-mirror/gcc/archive/2bfd402f8569511901ec8fe7628f57471e6d240a.tar.gz"
+              ]
             }
           }
         }

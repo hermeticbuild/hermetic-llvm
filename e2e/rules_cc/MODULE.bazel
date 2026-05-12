@@ -15,8 +15,7 @@ local_path_override(
 llvm = use_extension("@llvm//extensions:llvm.bzl", "llvm")
 use_repo(llvm, "llvm-project")
 
-gcc = use_extension("@llvm//extensions:gcc.bzl", "gcc")
-gcc.from_path(path = "../../../gcc")
+gcc = use_extension("@llvm//3rd_party/gcc/extension:gcc.bzl", "gcc")
 use_repo(gcc, "gcc")
 
 musl = use_extension("@llvm//runtimes/musl/extension:musl.bzl", "musl")

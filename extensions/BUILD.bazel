@@ -4,7 +4,7 @@ bzl_library(
     name = "gcc",
     srcs = ["gcc.bzl"],
     visibility = ["//visibility:public"],
-    deps = ["@bazel_tools//tools/build_defs/repo:local.bzl"],
+    deps = ["//3rd_party/gcc/extension:gcc"],
 )
 
 bzl_library(
