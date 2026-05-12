@@ -36,6 +36,87 @@ cc_args_list(
     visibility = ["//toolchain:__subpackages__"],
 )
 
+cc_args_list(
+    name = "linux_target_headers",
+    args = select({
+        "//platforms/config:musl": [
+            "//toolchain/args/linux:kernel_headers_include_search_paths",
+            "//toolchain/args/linux:musl_libc_headers_include_search_paths",
+        ],
+        "//platforms/config:gnu": [
+            "//toolchain/args/linux:kernel_headers_include_search_paths",
+            "//toolchain/args/linux:glibc_headers_include_search_paths",
+        ],
+        "//conditions:default": [],
+    }),
+    visibility = ["//toolchain:__subpackages__"],
+)
+
+cc_args_list(
+    name = "windows_target_headers",
+    args = [
+        "//toolchain/args/windows:mingw_headers_include_search_paths",
+    ],
+    visibility = ["//toolchain:__subpackages__"],
+)
+
+cc_args_list(
+    name = "hosted_c_platform_specific_args",
+    args = select({
+        "@platforms//os:linux": [":linux_target_headers"],
+        "@platforms//os:windows": [":windows_target_headers"],
+        "//conditions:default": [],
+    }),
+    visibility = ["//toolchain:__subpackages__"],
+)
+
+cc_args_list(
+    name = "stage0_toolchain_args",
+    args = [
+        # Common default compile flags.
+        "//toolchain/args:target_flags",
+        "//toolchain/args:no_absolute_paths_for_builtins",
+        "//toolchain/args:deterministic_compile_flags",
+        "//toolchain/runtimes/args:optimization_flags",
+        "//toolchain:sysroot_flags",
+        "//toolchain:hermetic_compile_flags",
+        ":hermetic_link_flags",
+        ":platform_specific_args",
+
+        # Optional sanitizers
+        "//toolchain/runtimes/args:ubsan_flags",
+        "//toolchain/runtimes/args:cfi_flags",
+        "//toolchain/runtimes/args:msan_flags",
+        "//toolchain/runtimes/args:dfsan_flags",
+        "//toolchain/runtimes/args:nsan_flags",
+        "//toolchain/runtimes/args:safestack_flags",
+        "//toolchain/runtimes/args:rtsan_flags",
+        "//toolchain/runtimes/args:tysan_flags",
+        "//toolchain/runtimes/args:tsan_flags",
+        "//toolchain/runtimes/args:asan_flags",
+        "//toolchain/runtimes/args:lsan_flags",
+        "//toolchain/runtimes/args:profile_flags",
+
+        # Common default link flags.
+        "//toolchain/args:fuse_ld",
+        "//toolchain/args:lto_plugin_target_flags",
+        ":rtlib",
+        ":resource_dir",
+        ":default_link_flags",
+        # Needs to stay out of resource_dir since clang does not always search for crtstuff for all targets.
+        ":default_startfiles",
+        ":default_libs",
+    ],
+)
+
+cc_args_list(
+    name = "stage1_toolchain_args",
+    args = [
+        ":stage0_toolchain_args",
+        ":hosted_c_platform_specific_args",
+    ],
+)
+
 #TODO(cerisier): Maybe with a _gt_x select we could reuse this everywhere.
 
 cc_args_list(
@@ -81,41 +162,10 @@ cc_args_list(
 
 cc_args_list(
     name = "toolchain_args",
-    args = [
-        # Common default compile flags.
-        "//toolchain/args:target_flags",
-        "//toolchain/args:no_absolute_paths_for_builtins",
-        "//toolchain/args:deterministic_compile_flags",
-        "//toolchain/runtimes/args:optimization_flags",
-        "//toolchain:sysroot_flags",
-        "//toolchain:hermetic_compile_flags",
-        ":hermetic_link_flags",
-        ":platform_specific_args",
-
-        # Optional sanitizers
-        "//toolchain/runtimes/args:ubsan_flags",
-        "//toolchain/runtimes/args:cfi_flags",
-        "//toolchain/runtimes/args:msan_flags",
-        "//toolchain/runtimes/args:dfsan_flags",
-        "//toolchain/runtimes/args:nsan_flags",
-        "//toolchain/runtimes/args:safestack_flags",
-        "//toolchain/runtimes/args:rtsan_flags",
-        "//toolchain/runtimes/args:tysan_flags",
-        "//toolchain/runtimes/args:tsan_flags",
-        "//toolchain/runtimes/args:asan_flags",
-        "//toolchain/runtimes/args:lsan_flags",
-        "//toolchain/runtimes/args:profile_flags",
-
-        # Common default link flags.
-        "//toolchain/args:fuse_ld",
-        "//toolchain/args:lto_plugin_target_flags",
-        ":rtlib",
-        ":resource_dir",
-        ":default_link_flags",
-        # Needs to stay out of resource_dir since clang does not always search for crtstuff for all targets.
-        ":default_startfiles",
-        ":default_libs",
-    ],
+    args = select({
+        "//toolchain:runtimes_stage1": [":stage1_toolchain_args"],
+        "//conditions:default": [":stage0_toolchain_args"],
+    }),
     visibility = ["//visibility:public"],
 )
 

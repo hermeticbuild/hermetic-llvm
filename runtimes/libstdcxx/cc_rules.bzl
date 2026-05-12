@@ -12,7 +12,7 @@ def _configure_libstdcxx_runtime_builder(builder, linkmode = None):
     builder.set("host_cxxopt", [])
     builder.set("host_linkopt", [])
 
-    builder.set(Label("//toolchain:cxxstdlib_mode"), "disabled")
+    builder.set(Label("//toolchain:runtime_stage"), "stage1")
 
     if linkmode != None:
         builder.set(Label("//runtimes:linkmode"), linkmode)

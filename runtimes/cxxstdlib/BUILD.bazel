@@ -1,5 +1,3 @@
-load(":transitioned_alias.bzl", "transitioned_alias")
-
 package(default_visibility = ["//visibility:public"])
 
 config_setting(
@@ -34,7 +32,7 @@ config_setting(
     ],
 )
 
-transitioned_alias(
+alias(
     name = "headers_include_search_directory",
     actual = select({
         ":libstdcxx_linux": "//runtimes/libstdcxx:headers_include_search_directory",
@@ -43,7 +41,7 @@ transitioned_alias(
     }),
 )
 
-transitioned_alias(
+alias(
     name = "abi_headers_include_search_directory",
     actual = select({
         ":libstdcxx_linux": "//runtimes/libstdcxx:abi_headers_include_search_directory",
@@ -52,7 +50,7 @@ transitioned_alias(
     }),
 )
 
-transitioned_alias(
+alias(
     name = "library_search_directory",
     actual = select({
         ":libstdcxx_linux": "//runtimes/libstdcxx:libstdcxx_library_search_directory",
@@ -61,7 +59,7 @@ transitioned_alias(
     }),
 )
 
-transitioned_alias(
+alias(
     name = "libstdcxx_dynamic_runtime_lib",
     actual = "//runtimes/libstdcxx:libstdcxx_shared_soname",
 )

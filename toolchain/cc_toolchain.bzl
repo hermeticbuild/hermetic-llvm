@@ -112,13 +112,11 @@ def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
         tool_map = tool_map,
         module_map = module_map,
         static_runtime_lib = select({
-            "@llvm//toolchain:cxxstdlib_disabled": "@llvm//runtimes:none",
             "@llvm//toolchain:runtimes_none": "@llvm//runtimes:none",
             "@llvm//toolchain:runtimes_stage1": "@llvm//runtimes:none",
             "//conditions:default": "@llvm//runtimes:static_runtime_lib",
         }),
         dynamic_runtime_lib = select({
-            "@llvm//toolchain:cxxstdlib_disabled": "@llvm//runtimes:none",
             "@llvm//toolchain:runtimes_none": "@llvm//runtimes:none",
             "@llvm//toolchain:runtimes_stage1": "@llvm//runtimes:none",
             "//conditions:default": "@llvm//runtimes:dynamic_runtime_lib",

@@ -225,11 +225,11 @@ def declare_llvm_targets(*, suffix = ""):
         srcs = [
             ":builtin_resource_dir",
         ] + select({
-            "@llvm//toolchain:cxxstdlib_disabled": [],
-            "//conditions:default": [
+            "@llvm//toolchain:runtimes_all": [
                 "@llvm//runtimes/cxxstdlib:headers_include_search_directory",
                 "@llvm//runtimes/cxxstdlib:abi_headers_include_search_directory",
             ],
+            "//conditions:default": [],
         }) + [
             "@kernel_headers//:kernel_headers_directory",
             "@llvm//sanitizers:sanitizers_headers_include_search_directory",
@@ -249,11 +249,11 @@ def declare_llvm_targets(*, suffix = ""):
         srcs = [
             ":builtin_resource_dir",
         ] + select({
-            "@llvm//toolchain:cxxstdlib_disabled": [],
-            "//conditions:default": [
+            "@llvm//toolchain:runtimes_all": [
                 "@llvm//runtimes/cxxstdlib:headers_include_search_directory",
                 "@llvm//runtimes/cxxstdlib:abi_headers_include_search_directory",
             ],
+            "//conditions:default": [],
         }) + [
             "@mingw//:mingw_generated_headers_crt_directory",
             "@mingw//:mingw_w64_headers_include_directory",

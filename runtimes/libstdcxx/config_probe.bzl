@@ -36,7 +36,7 @@ _SANITIZER_SETTINGS = [
 
 def _config_probe_transition_impl(_settings, _attr):
     settings = {
-        "//toolchain:cxxstdlib_mode": "disabled",
+        "//toolchain:runtime_stage": "stage1",
         "//command_line_option:copt": [],
         "//command_line_option:cxxopt": [],
         "//command_line_option:conlyopt": [],
@@ -54,7 +54,7 @@ config_probe_transition = transition(
     implementation = _config_probe_transition_impl,
     inputs = [],
     outputs = [
-        "//toolchain:cxxstdlib_mode",
+        "//toolchain:runtime_stage",
         "//command_line_option:copt",
         "//command_line_option:cxxopt",
         "//command_line_option:conlyopt",
