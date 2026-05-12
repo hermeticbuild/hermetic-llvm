@@ -399,6 +399,9 @@ checks_json="$tmp/checks.json"
         if [ "$kind" = "define" ]; then
             echo "#define $name $value"
             printf '%s    "%s": {"kind": "%s", "value": "%s"}' "$comma" "$name" "$kind" "$value" >> "$checks_json"
+        elif [ "$kind" = "string_define" ]; then
+            echo "#define $name \\\"$value\\\""
+            printf '%s    "%s": {"kind": "%s", "value": "%s"}' "$comma" "$name" "$kind" "$value" >> "$checks_json"
         elif [ "$kind" = "undef" ]; then
             echo "/* #undef $name */"
             printf '%s    "%s": {"kind": "%s"}' "$comma" "$name" "$kind" >> "$checks_json"
