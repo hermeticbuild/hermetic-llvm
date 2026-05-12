@@ -365,12 +365,14 @@ sh_test(
         ":libstdcxx_shared_linker_name",
         ":libstdcxx_shared_real",
         ":libstdcxx_shared_soname",
+        "@llvm//tools:llvm-readelf",
     ],
     env = {
         "LIBSTDCXX_SHARED": "$(rootpath :libstdcxx.shared)",
         "LIBSTDCXX_SHARED_LINKER_NAME": "$(rootpath :libstdcxx_shared_linker_name)",
         "LIBSTDCXX_SHARED_REAL": "$(rootpath :libstdcxx_shared_real)",
         "LIBSTDCXX_SHARED_SONAME": "$(rootpath :libstdcxx_shared_soname)",
+        "READELF": "$(rootpath @llvm//tools:llvm-readelf)",
     },
     target_compatible_with = select({
         "@platforms//os:linux": [],

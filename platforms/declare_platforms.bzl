@@ -37,6 +37,7 @@ def declare_platforms():
             )
 
     declare_platforms_libc_aware()
+
 def declare_platforms_libc_aware():
     for target_os, target_cpu in LIBC_SUPPORTED_TARGETS:
         for libc in LIBCS:
