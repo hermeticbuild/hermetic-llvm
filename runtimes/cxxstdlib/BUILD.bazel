@@ -1,36 +1,35 @@
-load("@bazel_skylib//lib:selects.bzl", "selects")
 load(":transitioned_alias.bzl", "transitioned_alias")
 
 package(default_visibility = ["//visibility:public"])
 
-selects.config_setting_group(
+config_setting(
     name = "libcxx_linux",
-    match_all = [
-        "//platforms/config:libcxx",
+    constraint_values = [
+        "//constraints/cxxstdlib:libcxx",
         "@platforms//os:linux",
     ],
 )
 
-selects.config_setting_group(
+config_setting(
     name = "libcxx_windows",
-    match_all = [
-        "//platforms/config:libcxx",
+    constraint_values = [
+        "//constraints/cxxstdlib:libcxx",
         "@platforms//os:windows",
     ],
 )
 
-selects.config_setting_group(
+config_setting(
     name = "libstdcxx_linux",
-    match_all = [
-        "//platforms/config:libstdcxx",
+    constraint_values = [
+        "//constraints/cxxstdlib:libstdcxx",
         "@platforms//os:linux",
     ],
 )
 
-selects.config_setting_group(
+config_setting(
     name = "libstdcxx_windows",
-    match_all = [
-        "//platforms/config:libstdcxx",
+    constraint_values = [
+        "//constraints/cxxstdlib:libstdcxx",
         "@platforms//os:windows",
     ],
 )

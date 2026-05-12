@@ -1,4 +1,4 @@
-load("//constraints/cxxstdlib:cxxstdlib_versions.bzl", "CXXSTDLIBS", "DEFAULT_CXXSTDLIB")
+load("//constraints/cxxstdlib:cxxstdlib_versions.bzl", "DEFAULT_CXXSTDLIB")
 load("//constraints/libc:libc_versions.bzl", "LIBCS", "default_libc")
 load("//platforms:common.bzl", "ARCH_ALIASES", "LIBC_SUPPORTED_TARGETS", "SUPPORTED_TARGETS")
 
@@ -37,8 +37,6 @@ def declare_platforms():
             )
 
     declare_platforms_libc_aware()
-    declare_platforms_cxxstdlib_aware()
-
 def declare_platforms_libc_aware():
     for target_os, target_cpu in LIBC_SUPPORTED_TARGETS:
         for libc in LIBCS:
@@ -64,62 +62,3 @@ def declare_platforms_libc_aware():
                     ],
                     visibility = ["//visibility:public"],
                 )
-
-def declare_platforms_cxxstdlib_aware():
-    for target_os, target_cpu in SUPPORTED_TARGETS:
-        if target_os == "none":
-            continue
-
-        for cxxstdlib in CXXSTDLIBS:
-            # TODO(corentin): add Windows libstdc++ platforms once MinGW DLL
-            # and import-library support is modeled.
-            if cxxstdlib == "libstdcxx" and target_os != "linux":
-                continue
-
-            constraints = [
-                "@platforms//cpu:{}".format(target_cpu),
-                "@platforms//os:{}".format(target_os),
-                "//constraints/cxxstdlib:{}".format(cxxstdlib),
-            ]
-
-            if target_os == "linux":
-                constraints.append("//constraints/libc:{}".format(default_libc(target_os, target_cpu)))
-
-            native.platform(
-                name = "{}_{}_{}".format(target_os, target_cpu, cxxstdlib),
-                constraint_values = constraints,
-                visibility = ["//visibility:public"],
-            )
-
-            for alias in ARCH_ALIASES.get(target_cpu, []):
-                native.platform(
-                    name = "{}_{}_{}".format(target_os, alias, cxxstdlib),
-                    constraint_values = constraints,
-                    visibility = ["//visibility:public"],
-                )
-
-    for target_os, target_cpu in LIBC_SUPPORTED_TARGETS:
-        for libc in LIBCS:
-            for cxxstdlib in CXXSTDLIBS:
-                native.platform(
-                    name = "{}_{}_{}_{}".format(target_os, target_cpu, libc, cxxstdlib),
-                    constraint_values = [
-                        "@platforms//cpu:{}".format(target_cpu),
-                        "@platforms//os:{}".format(target_os),
-                        "//constraints/libc:{}".format(libc),
-                        "//constraints/cxxstdlib:{}".format(cxxstdlib),
-                    ],
-                    visibility = ["//visibility:public"],
-                )
-
-                for alias in ARCH_ALIASES.get(target_cpu, []):
-                    native.platform(
-                        name = "{}_{}_{}_{}".format(target_os, alias, libc, cxxstdlib),
-                        constraint_values = [
-                            "@platforms//cpu:{}".format(target_cpu),
-                            "@platforms//os:{}".format(target_os),
-                            "//constraints/libc:{}".format(libc),
-                            "//constraints/cxxstdlib:{}".format(cxxstdlib),
-                        ],
-                        visibility = ["//visibility:public"],
-                    )
