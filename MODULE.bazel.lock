@@ -278,7 +278,7 @@
   "moduleExtensions": {
     "//3rd_party/gcc/extension:gcc.bzl%gcc": {
       "general": {
-        "bzlTransitiveDigest": "VoANIPevTxb23ltg74huq1WO6whcmY6O5nrzp3nZuXA=",
+        "bzlTransitiveDigest": "9FLNreqMJGG6MdmximhSQurF3O7wbJKRBseT8P8vx3Y=",
         "usagesDigest": "5oaUnmwah1O+M09fBeXvm+hF80aKWbzNthIt3AAD/aI=",
         "recordedInputs": [
           "REPO_MAPPING:,bazel_lib bazel_lib+",
@@ -304,7 +304,9 @@
                 "libgcc/unwind-pe.h",
                 "libiberty/cp-demangle.c",
                 "libiberty/cp-demangle.h",
+                "libstdc++-v3/acinclude.m4",
                 "libstdc++-v3/config/**",
+                "libstdc++-v3/configure.ac",
                 "libstdc++-v3/include/**",
                 "libstdc++-v3/libsupc++/**",
                 "libstdc++-v3/src/**"

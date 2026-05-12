@@ -405,6 +405,31 @@ cc_binary(
     ],
 )
 
+sh_test(
+    name = "config_define_audit_test",
+    srcs = ["config_define_audit_test.sh"],
+    data = [
+        "config_checks.bzl",
+        "config_define_status.txt",
+        "config_probe.bzl",
+        "configure.bzl",
+        "headers.bzl",
+        "symbols.bzl",
+        "@gcc//:libstdc++-v3/acinclude.m4",
+        "@gcc//:libstdc++-v3/configure.ac",
+    ],
+    env = {
+        "CONFIG_CHECKS": "$(rootpath config_checks.bzl)",
+        "CONFIG_PROBE": "$(rootpath config_probe.bzl)",
+        "CONFIGURE": "$(rootpath configure.bzl)",
+        "GCC_ACINCLUDE": "$(rootpath @gcc//:libstdc++-v3/acinclude.m4)",
+        "GCC_CONFIGURE_AC": "$(rootpath @gcc//:libstdc++-v3/configure.ac)",
+        "HEADERS": "$(rootpath headers.bzl)",
+        "STATUS_FILE": "$(rootpath config_define_status.txt)",
+        "SYMBOLS": "$(rootpath symbols.bzl)",
+    },
+)
+
 bzl_library(
     name = "config_checks",
     srcs = ["config_checks.bzl"],

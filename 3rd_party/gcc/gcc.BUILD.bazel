@@ -49,6 +49,8 @@ exports_files([
     "libgcc/gthr-posix.h",
     "libgcc/gthr-single.h",
     "libgcc/gthr.h",
+    "libstdc++-v3/acinclude.m4",
+    "libstdc++-v3/configure.ac",
     "libstdc++-v3/config/allocator/new_allocator_base.h",
     "libstdc++-v3/config/cpu/aarch64/opt/bits/opt_random.h",
     "libstdc++-v3/config/cpu/aarch64/opt/ext/opt_random.h",
