@@ -180,7 +180,7 @@ still belongs in the usage checklist and glossary.
 Before committing configure-check changes, run from the repository root:
 
     bazel run //internal_tools:buildifier.check
-    bazel build --config remote //runtimes/libstdcxx:config_h //runtimes/libstdcxx:config_probe //runtimes/libstdcxx:configure_ac_checks
+    bazel build --config remote //runtimes/libstdcxx:config_h //runtimes/libstdcxx:libstdcxx_config_h //runtimes/libstdcxx:configure_ac_checks //runtimes/libstdcxx/autoconf:cc_configure_probe
     bazel test --config remote //runtimes/libstdcxx:autoconf_inventory_test
     bazel test --config remote //runtimes/libstdcxx:config_define_audit_test
 

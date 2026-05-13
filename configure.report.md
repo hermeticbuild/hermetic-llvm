@@ -291,7 +291,7 @@ Legend:
     x86_64, aarch64, riscv64, and s390x, where `_Atomic_word` atomic add is
     expected to lower to target instructions rather than a libatomic call.
     The actual `__atomic_fetch_add` link/assembly probe should become a
-    generic composed check after `config_probe.bzl` is split.
+    generic composed check in `runtimes/libstdcxx/autoconf`.
 
 - `GLIBCXX_ENABLE_LOCK_POLICY`
   - Policy: `--with-libstdcxx-lock-policy=atomic|mutex|auto`.
@@ -589,9 +589,8 @@ Legend:
     targets. Supporting that fallback would require config probe composition
     that can define `_GLIBCXX_USE_CLOCK_MONOTONIC`,
     `_GLIBCXX_USE_CLOCK_REALTIME`, and `_GLIBCXX_USE_CLOCK_GETTIME_SYSCALL`
-    from one conditional result, which should be done after splitting
-    `config_probe.bzl` into generic check machinery and libstdc++ `config.h`
-    emission.
+    from one conditional result in the generic check machinery under
+    `runtimes/libstdcxx/autoconf`.
 
 ## Header/function checks outside aggregate macros
 
@@ -1135,8 +1134,8 @@ Condition: `GLIBCXX_IS_NATIVE=false`.
   `runtimes/libstdcxx/acinclude_checks.bzl`,
   `runtimes/libstdcxx/crossconfig_checks.bzl`, and
   `runtimes/libstdcxx/configure_ac_checks.bzl`.
-- [x] Point `config_probe.bzl` directly at `configure_ac_checks.bzl` without a
-  compatibility facade.
+- [x] Point the libstdc++ `config.h` rule directly at
+  `configure_ac_checks.bzl` without a compatibility facade.
 - [x] Split `config_define_status.txt` statuses into `probe-modeled`,
   `policy-modeled`, `target-derived`, `unsupported`, and `not-needed`.
 - [x] Fix `HAVE_GETIPINFO` to model `_Unwind_GetIPInfo`, not `getaddrinfo`.
@@ -1210,6 +1209,6 @@ Condition: `GLIBCXX_IS_NATIVE=false`.
 - [x] Review the extracted check arguments and add checklist entries only for
   implemented checks, target-derived checks, deliberate deferrals, not-needed
   items, or explicitly out-of-scope items.
-- [ ] Split `config_probe.bzl` into generic configure-check machinery and
-  libstdc++ `config.h` emission, likely moving the generic pieces to a separate
-  package.
+- [x] Split `config_probe.bzl` into generic configure-check machinery under
+  `runtimes/libstdcxx/autoconf` and libstdc++ `config.h` emission in
+  `libstdcxx_config_h.bzl`.

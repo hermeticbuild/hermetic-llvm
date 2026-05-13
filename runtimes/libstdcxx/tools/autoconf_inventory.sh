@@ -303,11 +303,12 @@ write_gcc_macro_uses() {
 check_status() {
   require_env \
     ACINCLUDE_CHECKS \
-    CONFIG_PROBE \
+    CC_CONFIGURE_PROBE \
     CONFIGURE \
     CONFIGURE_AC_CHECKS \
     CROSSCONFIG_CHECKS \
     HEADERS \
+    LIBSTDCXX_CONFIG_H \
     NATIVE_AUTOCONF_CHECKS \
     SYMBOLS
 
@@ -421,11 +422,12 @@ BEGIN {
   while IFS= read -r define; do
     if ! grep -F -q "${define}" \
       "${ACINCLUDE_CHECKS}" \
-      "${CONFIG_PROBE}" \
+      "${CC_CONFIGURE_PROBE}" \
       "${CONFIGURE_AC_CHECKS}" \
       "${CONFIGURE}" \
       "${CROSSCONFIG_CHECKS}" \
       "${HEADERS}" \
+      "${LIBSTDCXX_CONFIG_H}" \
       "${NATIVE_AUTOCONF_CHECKS}" \
       "${SYMBOLS}"; then
       printf '%s\n' "${define}" >> "${missing_models}"
@@ -443,11 +445,12 @@ BEGIN {
   while IFS= read -r macro; do
     if ! grep -F -i -q "${macro}" \
       "${ACINCLUDE_CHECKS}" \
-      "${CONFIG_PROBE}" \
+      "${CC_CONFIGURE_PROBE}" \
       "${CONFIGURE_AC_CHECKS}" \
       "${CONFIGURE}" \
       "${CROSSCONFIG_CHECKS}" \
       "${HEADERS}" \
+      "${LIBSTDCXX_CONFIG_H}" \
       "${NATIVE_AUTOCONF_CHECKS}" \
       "${SYMBOLS}"; then
       printf '%s\n' "${macro}" >> "${missing_macro_models}"

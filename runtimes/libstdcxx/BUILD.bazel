@@ -7,7 +7,6 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//runtimes:defs.bzl", "stub_library")
 load("//toolchain/runtimes:cc_runtime_tool_binary.bzl", "cc_runtime_tool_binary")
-load(":config_probe.bzl", "libstdcxx_config_h")
 load(
     ":configure.bzl",
     "libstdcxx_abi_baseline_pair",
@@ -44,6 +43,7 @@ load(
     "libstdcxx_use_dual_abi",
 )
 load(":headers.bzl", "libstdcxx_cxxconfig_header", "libstdcxx_gthr_headers", "libstdcxx_largefile_config_header")
+load(":libstdcxx_config_h.bzl", "libstdcxx_config_h")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -472,22 +472,24 @@ _AUTOCONF_AUDIT_ENV = {
 
 _AUTOCONF_MODEL_DATA = [
     "acinclude_checks.bzl",
-    "config_probe.bzl",
     "configure.bzl",
     "configure_ac_checks.bzl",
     "crossconfig_checks.bzl",
     "headers.bzl",
+    "libstdcxx_config_h.bzl",
     "symbols.bzl",
+    "//runtimes/libstdcxx/autoconf:cc_configure_probe.bzl",
     "//runtimes/configure:native_autoconf_checks.bzl",
 ]
 
 _AUTOCONF_MODEL_ENV = {
     "ACINCLUDE_CHECKS": "$(rootpath acinclude_checks.bzl)",
-    "CONFIG_PROBE": "$(rootpath config_probe.bzl)",
+    "CC_CONFIGURE_PROBE": "$(rootpath //runtimes/libstdcxx/autoconf:cc_configure_probe.bzl)",
     "CONFIGURE": "$(rootpath configure.bzl)",
     "CONFIGURE_AC_CHECKS": "$(rootpath configure_ac_checks.bzl)",
     "CROSSCONFIG_CHECKS": "$(rootpath crossconfig_checks.bzl)",
     "HEADERS": "$(rootpath headers.bzl)",
+    "LIBSTDCXX_CONFIG_H": "$(rootpath libstdcxx_config_h.bzl)",
     "NATIVE_AUTOCONF_CHECKS": "$(rootpath //runtimes/configure:native_autoconf_checks.bzl)",
     "SYMBOLS": "$(rootpath symbols.bzl)",
 }
@@ -542,13 +544,11 @@ bzl_library(
 )
 
 bzl_library(
-    name = "config_probe",
-    srcs = ["config_probe.bzl"],
+    name = "libstdcxx_config_h",
+    srcs = ["libstdcxx_config_h.bzl"],
     deps = [
         ":configure_ac_checks",
-        "@rules_cc//cc:action_names_bzl",
-        "@rules_cc//cc:find_cc_toolchain_bzl",
-        "@rules_cc//cc/common",
+        "//runtimes/libstdcxx/autoconf:cc_configure_probe",
     ],
 )
 
