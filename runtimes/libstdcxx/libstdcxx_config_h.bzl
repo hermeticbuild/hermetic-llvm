@@ -101,6 +101,21 @@ checks_json="$tmp/checks.json"
     if [ "$atomic_lock_policy" = "1" ]; then
         echo "#define HAVE_ATOMIC_LOCK_POLICY 1"
     fi
+    json_defines_for_result() {
+        json_defines=""
+        if [ "$defines_on_success" != "$name" ]; then
+            json_defines=', "defines_on_success": ['
+            define_comma=""
+            old_ifs="$IFS"
+            IFS=","
+            for define_name in $defines_on_success; do
+                json_defines="${json_defines}${define_comma}\\"${define_name}\\""
+                define_comma=", "
+            done
+            IFS="$old_ifs"
+            json_defines="${json_defines}]"
+        fi
+    }
     comma=""
     while [ "$#" -gt 0 ]; do
         name="$1"
@@ -111,8 +126,14 @@ checks_json="$tmp/checks.json"
         defines_on_success="$6"
         shift 6
         if [ "$kind" = "define" ]; then
-            echo "#define $name $value"
-            printf '%s    "%s": {"kind": "%s", "value": "%s"}' "$comma" "$name" "$kind" "$value" >> "$checks_json"
+            json_defines_for_result
+            old_ifs="$IFS"
+            IFS=","
+            for define_name in $defines_on_success; do
+                echo "#define $define_name $value"
+            done
+            IFS="$old_ifs"
+            printf '%s    "%s": {"kind": "%s", "value": "%s"%s}' "$comma" "$name" "$kind" "$value" "$json_defines" >> "$checks_json"
         elif [ "$kind" = "string_define" ]; then
             echo "#define $name \\\"$value\\\""
             printf '%s    "%s": {"kind": "%s", "value": "%s"}' "$comma" "$name" "$kind" "$value" >> "$checks_json"
@@ -121,19 +142,7 @@ checks_json="$tmp/checks.json"
             printf '%s    "%s": {"kind": "%s"}' "$comma" "$name" "$kind" >> "$checks_json"
         else
             result="$(cat "$result_file")"
-            json_defines=""
-            if [ "$defines_on_success" != "$name" ]; then
-                json_defines=', "defines_on_success": ['
-                define_comma=""
-                old_ifs="$IFS"
-                IFS=","
-                for define_name in $defines_on_success; do
-                    json_defines="${json_defines}${define_comma}\\"${define_name}\\""
-                    define_comma=", "
-                done
-                IFS="$old_ifs"
-                json_defines="${json_defines}]"
-            fi
+            json_defines_for_result
             old_ifs="$IFS"
             IFS=","
             if [ "$result" = true ]; then

@@ -21,8 +21,15 @@ def glibcxx_crossconfig_linux_gnu():
         gcc_check_math_support() +
         gcc_check_stdlib_support() +
         [
-            policy_define("_GLIBCXX_USE_DEV_RANDOM"),
-            policy_define("_GLIBCXX_USE_RANDOM_TR1"),
+            # crossconfig.m4 hardcodes the same GLIBCXX_CHECK_DEV_RANDOM
+            # feature pair for Linux-family targets.
+            policy_define(
+                "_GLIBCXX_USE_DEV_RANDOM",
+                defines_on_success = [
+                    "_GLIBCXX_USE_DEV_RANDOM",
+                    "_GLIBCXX_USE_RANDOM_TR1",
+                ],
+            ),
         ] +
         gcc_check_tls() +
         am_iconv() +

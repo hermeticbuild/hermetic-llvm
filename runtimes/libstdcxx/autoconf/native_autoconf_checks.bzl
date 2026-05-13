@@ -41,8 +41,11 @@ def link_check(name, source, language = "c++", compile_flags = [], link_flags = 
         source = source.strip() + "\n",
     )
 
-def policy_define(name, value = "1"):
+def policy_define(name, value = "1", defines_on_success = None):
+    if defines_on_success == None:
+        defines_on_success = [name]
     return struct(
+        defines_on_success = defines_on_success,
         kind = "define",
         name = name,
         value = value,

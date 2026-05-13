@@ -1324,8 +1324,15 @@ def glibcxx_abi_policies():
 
 def glibcxx_random_policy():
     return [
-        policy_define("_GLIBCXX_USE_DEV_RANDOM"),
-        policy_define("_GLIBCXX_USE_RANDOM_TR1"),
+        # GLIBCXX_CHECK_DEV_RANDOM uses one host/filesystem decision to define
+        # both the C++11 and TR1 random_device feature macros.
+        policy_define(
+            "_GLIBCXX_USE_DEV_RANDOM",
+            defines_on_success = [
+                "_GLIBCXX_USE_DEV_RANDOM",
+                "_GLIBCXX_USE_RANDOM_TR1",
+            ],
+        ),
     ]
 
 def glibcxx_zoneinfo_policy():
