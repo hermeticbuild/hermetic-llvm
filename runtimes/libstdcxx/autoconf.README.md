@@ -59,7 +59,11 @@ the active Linux GNU result as `target-derived` policy in `configure.bzl`,
 `GLIBCXX_ENABLE_LIBSTDCXX_TIME` define the core hosted C/C++ library surface.
 The active Linux GNU path is modeled with Bazel policies and probes. Wide
 character, C99, TR1, LFS, and time support now follow upstream-style compile or
-link probe groups.
+link probe groups. The Linux `SYS_clock_gettime` fallback from
+`GLIBCXX_ENABLE_LIBSTDCXX_TIME` is intentionally left undefined for the current
+hosted Linux GNU matrix, where libc `clock_gettime` is expected. Supporting the
+fallback would require a composed probe result and should be revisited after the
+generic configure-check machinery is split from libstdc++ `config.h` emission.
 
 `GLIBCXX_CHECK_STDIO_PROTO`, `GLIBCXX_CHECK_MATH11_PROTO`,
 `GLIBCXX_CHECK_POLL`, `GLIBCXX_CHECK_S_ISREG_OR_S_IFREG`,
@@ -71,7 +75,9 @@ link probe groups.
 `GLIBCXX_CHECK_SC_NPROCESSORS_ONLN`, `GLIBCXX_CHECK_SC_NPROC_ONLN`,
 `GLIBCXX_CHECK_PTHREADS_NUM_PROCESSORS_NP`, and `GLIBCXX_CHECK_SDT_H`
 cover targeted libc, pthread, stdio, system, and header capabilities used by
-the supported runtime. Their active Linux GNU behavior is modeled.
+the supported runtime. Their active Linux GNU behavior is modeled. The stdio
+integer constants are policy-modeled to glibc values for the current Linux GNU
+matrix; they should become computed constants if non-GNU libc support is added.
 
 `GCC_CHECK_TLS`, `GCC_CHECK_UNWIND_GETIPINFO`, and `GCC_LINUX_FUTEX` are GCC
 top-level checks used by libstdc++. TLS and futex are modeled with target
@@ -82,6 +88,9 @@ supported Linux GNU configuration.
 `GLIBCXX_CHECK_GTHREADS` cover compiler section flags, lock-free atomic word
 support, and gthreads support. The active Linux GNU behavior is modeled, with
 some answers represented as target policy where GCC's result is target-derived.
+The gthreads availability and pthread read/write lock checks compile against
+the generated `bits/gthr.h` overlay so they follow the staged header context
+used by this Bazel port.
 
 `GLIBCXX_CHECK_LINKER_FEATURES`, `GLIBCXX_ENABLE_SYMVERS`,
 `GLIBCXX_CHECK_EXCEPTION_PTR_SYMVER`, `GLIBCXX_DEFAULT_ABI`,
@@ -110,7 +119,11 @@ as grouped link probes in `native_autoconf_checks.bzl`.
 `GLIBCXX_CHECK_INIT_PRIORITY`, `GLIBCXX_CHECK_X86_RDRAND`,
 `GLIBCXX_CHECK_X86_RDSEED`, and `GLIBCXX_CHECK_SIZE_T_MANGLING` cover runtime
 library details after the core libc checks. The active Linux GNU behavior is
-modeled as probes or policy.
+modeled as probes or policy. `GLIBCXX_CHECK_DEV_RANDOM` is policy-modeled
+rather than probed because GCC's native check reads the execution host's
+`/dev/random` and `/dev/urandom`, while the supported Bazel target decision is
+Linux GNU and GCC's cross configuration hardcodes that answer for Linux-family
+targets.
 
 `GLIBCXX_ENABLE_ALLOCATOR`, `GLIBCXX_ENABLE_CLOCALE`,
 `GLIBCXX_ENABLE_CSTDIO`, `GLIBCXX_ENABLE_CHEADERS`,
@@ -118,16 +131,21 @@ modeled as probes or policy.
 `GLIBCXX_ENABLE_LOCK_POLICY`, `GLIBCXX_ENABLE_EXTERN_TEMPLATE`, and
 `GLIBCXX_ENABLE_FILESYSTEM_TS` select headers, source families, allocator,
 locale, stdio, thread, and source graph policy. These are modeled or
-target-derived.
+target-derived. `GLIBCXX_ENABLE_LOCK_POLICY` is target-derived rather than a
+plain probe because GCC intentionally keeps RISC-V on the mutex shared_ptr
+reference-count ABI even when compare-and-swap builtins exist.
 
 ## Deferred Knobs
 
 `GLIBCXX_ENABLE_VERBOSE`, `GLIBCXX_ENABLE_CONCEPT_CHECKS`,
-`GLIBCXX_ENABLE_DECIMAL_FLOAT`, `GLIBCXX_ENABLE_FLOAT128`,
-`GLIBCXX_ENABLE_FULLY_DYNAMIC_STRING`, and `GLIBCXX_EMERGENCY_EH_ALLOC` are
-currently fixed policies. They are classified `build-setting-later` because
-they correspond to GCC configure knobs that should become explicit private
-Bazel settings if exposed.
+`GLIBCXX_ENABLE_FLOAT128`, `GLIBCXX_ENABLE_FULLY_DYNAMIC_STRING`,
+`GLIBCXX_ENABLE_CSTDIO`'s `stdio_pure` mode, `GLIBCXX_ENABLE_ALLOCATOR`'s
+`malloc` mode, NLS, and `GLIBCXX_EMERGENCY_EH_ALLOC` are currently fixed or
+disabled policies. They should become explicit private Bazel settings only if
+the port exposes the corresponding GCC variant. `GLIBCXX_ENABLE_DECIMAL_FLOAT`
+is a compile probe, not a build setting. Float128 remains fixed disabled until
+the probe result and `float128.ver` version-script input can be modeled
+together.
 
 ## Configure Plumbing Replaced By Bazel
 

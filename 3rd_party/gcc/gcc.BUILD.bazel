@@ -632,6 +632,18 @@ expand_template(
     template = "libstdc++-v3/src/c++17/string-inst.cc",
 )
 
+# bits/c++config.h declares this with _GLIBCXX_NORETURN. GCC accepts the
+# later C++ attribute spelling, but Clang requires the spelling to match the
+# first declaration when verbose assertions are enabled.
+expand_template(
+    name = "libstdcxx_cxx11_assert_fail_cc",
+    out = "libstdcxx_generated/c++11/assert_fail.cc",
+    substitutions = {
+        "[[__noreturn__]]": "_GLIBCXX_NORETURN",
+    },
+    template = "libstdc++-v3/src/c++11/assert_fail.cc",
+)
+
 # C++ standard-version source partitions follow libstdc++-v3/src/Makefile.am
 # plus the matching libstdc++-v3/src/c++*/Makefile.am files.
 filegroup(
@@ -700,7 +712,6 @@ filegroup(
 filegroup(
     name = "libstdcxx_cxx11_sources",
     srcs = [
-        "libstdc++-v3/src/c++11/assert_fail.cc",
         "libstdc++-v3/src/c++11/chrono.cc",
         "libstdc++-v3/src/c++11/condition_variable.cc",
         "libstdc++-v3/src/c++11/cow-fstream-inst.cc",
@@ -751,6 +762,7 @@ filegroup(
         "libstdc++-v3/src/c++11/wlocale-inst.cc",
         "libstdc++-v3/src/c++11/wstring-inst.cc",
         "libstdc++-v3/src/c++11/wstring-io-inst.cc",
+        ":libstdcxx_cxx11_assert_fail_cc",
         ":libstdcxx_cxx11_basic_file_cc",
         ":libstdcxx_cxx11_ctype_configure_char_cc",
         ":libstdcxx_cxx11_ctype_members_cc",

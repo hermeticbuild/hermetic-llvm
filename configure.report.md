@@ -240,7 +240,9 @@ Legend:
 - `GLIBCXX_ENABLE_VERBOSE`
   - Condition: `--disable-libstdcxx-verbose` toggles.
   - Output: `_GLIBCXX_VERBOSE=1|0`.
-  - Bazel status: fixed/policy; should be a build setting later.
+  - Bazel status: fixed to GCC's default enabled value. This should become a
+    private build setting only if the port needs to expose the smaller,
+    less-descriptive runtime variant.
 
 - `GLIBCXX_ENABLE_PCH`
   - Condition: default from caller and hosted status.
@@ -254,8 +256,7 @@ Legend:
   - Probe: C compile-only check that `_Decimal32`, `_Decimal64`, and
     `_Decimal128` are accepted.
   - Output: `_GLIBCXX_USE_DECIMAL_FLOAT`.
-  - Bazel status: fixed/policy today. Needs explicit decision before claiming
-    target parity.
+  - Bazel status: modeled as a C compile probe.
 
 - `GLIBCXX_ENABLE_FLOAT128`
   - Condition: always.
@@ -264,8 +265,10 @@ Legend:
   - Outputs:
     - `ENABLE_FLOAT128` conditional.
     - `float128.ver` appended to `port_specific_symbol_files` when enabled.
-  - Bazel status: target policy today. Needs to become a policy/probe with the
-    version-script consequence modeled together.
+  - Bazel status: fixed disabled for now. This should become a composed
+    probe/policy only when the version-script consequence is modeled at the
+    same time, because enabling the header macro without adding `float128.ver`
+    would diverge from GCC's exported ABI.
 
 - `GLIBCXX_ENABLE_THREADS`
   - Source: `GCC_AC_THREAD_MODEL`, `GCC_AC_THREAD_HEADER`.
@@ -283,8 +286,12 @@ Legend:
     - `_GLIBCXX_ATOMIC_WORD_BUILTINS`.
     - `atomicity_dir=cpu/generic/atomicity_builtins` on success.
     - falls back to `cpu/generic/atomicity_mutex` if generic and no builtins.
-  - Bazel status: currently policy-selected to builtins. Needs semantic audit
-    against GCC probe, especially for non-x86_64.
+  - Bazel status: policy-selected to builtins for the current Linux GNU
+    targets. The selected directory mirrors the GCC post-probe result for
+    x86_64, aarch64, riscv64, and s390x, where `_Atomic_word` atomic add is
+    expected to lower to target instructions rather than a libatomic call.
+    The actual `__atomic_fetch_add` link/assembly probe should become a
+    generic composed check after `config_probe.bzl` is split.
 
 - `GLIBCXX_ENABLE_LOCK_POLICY`
   - Policy: `--with-libstdcxx-lock-policy=atomic|mutex|auto`.
@@ -293,7 +300,11 @@ Legend:
     `__GCC_HAVE_SYNC_COMPARE_AND_SWAP_*`; RISC-V intentionally errors to keep
     mutex-based ABI compatibility; AMDGCN/NVPTX force yes.
   - Output: `HAVE_ATOMIC_LOCK_POLICY`.
-  - Bazel status: target-derived/policy today; needs per-target audit.
+  - Bazel status: target-derived from `configure.bzl`. Linux GNU x86_64,
+    aarch64, and s390x select atomic; RISC-V selects mutex to match GCC's
+    explicit ABI-compatibility exception. Unsupported musl and Windows entries
+    keep architecture-derived placeholders only because the broader target is
+    not supported by this libstdc++ port today.
 
 - `GLIBCXX_CHECK_GTHREADS`
   - Condition: `--enable-libstdcxx-threads=auto|yes`; after symbol versioning.
@@ -305,8 +316,11 @@ Legend:
       context.
   - Outputs: `_GTHREAD_USE_MUTEX_TIMEDLOCK`, `_GLIBCXX_HAS_GTHREADS`,
     `_GLIBCXX_USE_PTHREAD_RWLOCK_T`.
-  - Bazel status: mostly policy/probe modeled, but should be compared against
-    the exact `gthr.h` context.
+  - Bazel status: modeled as compile probes. `_GLIBCXX_HAS_GTHREADS` and
+    `_GLIBCXX_USE_PTHREAD_RWLOCK_T` compile against the generated
+    `bits/gthr.h` overlay, matching the staged header context used by the
+    Bazel port. `_GTHREAD_USE_MUTEX_TIMEDLOCK` follows GCC's POSIX
+    `_POSIX_TIMEOUTS` test for the supported Linux GNU pthread model.
 
 ## C library model, allocator, I/O, locale
 
@@ -317,7 +331,9 @@ Legend:
     - `BASIC_FILE_H=config/io/basic_file_stdio.h`.
     - `BASIC_FILE_CC=config/io/basic_file_stdio.cc`.
     - `_GLIBCXX_USE_STDIO_PURE` only for `stdio_pure`.
-  - Bazel status: stdio+POSIX model assumed.
+  - Bazel status: stdio+POSIX model assumed. `stdio_pure` remains disabled
+    because the supported Linux GNU target has POSIX read/write and the pure
+    stdio model changes the configured I/O semantics.
 
 - `GLIBCXX_ENABLE_CLOCALE`
   - Policy: `--enable-clocale=generic|gnu|ieee_1003.1-2001|newlib|yes|no|auto`.
@@ -342,13 +358,18 @@ Legend:
     `CLOCALE_H`, `CLOCALE_CC`, `CCODECVT_CC`, `CCOLLATE_CC`, `CCTYPE_CC`,
     `CMESSAGES_H`, `CMESSAGES_CC`, `CMONEY_CC`, `CNUMERIC_CC`, `CTIME_H`,
     `CTIME_CC`, `CLOCALE_INTERNAL_H`, plus `USE_NLS`.
-  - Bazel status: `gnu`/`generic` policy modeled; NLS not modeled.
+  - Bazel status: `gnu`/`generic` policy modeled; NLS remains disabled. NLS
+    should become a build setting only with the full gettext surface: msgfmt
+    tool detection, `.po` to `.mo` catalog generation, `libintl.h`/`gettext`
+    probing, and any required `libintl` link input.
 
 - `GLIBCXX_ENABLE_ALLOCATOR`
   - Policy: `--enable-libstdcxx-allocator=new|malloc|auto`.
   - Auto selection: `new` for all listed targets.
   - Outputs: `ALLOCATOR_H`, `ALLOCATOR_NAME`, `ENABLE_ALLOCATOR_NEW`.
-  - Bazel status: `new_allocator_base.h` assumed.
+  - Bazel status: `new_allocator_base.h` assumed. `malloc` remains disabled
+    for now; exposing it would need to switch both the configured allocator
+    header and `_GLIBCXX_USE_ALLOCATOR_NEW` consistently.
 
 - `GLIBCXX_ENABLE_CHEADERS($c_model)`
   - Policy: choose C header model from `configure.host` `c_model`.
@@ -560,8 +581,17 @@ Legend:
     `_GLIBCXX_USE_NANOSLEEP`, `_GLIBCXX_USE_WIN32_SLEEP`, `HAVE_SLEEP`,
     `HAVE_USLEEP`, `_GLIBCXX_NO_SLEEP`, `_GLIBCXX_USE_CLOCK_GETTIME_SYSCALL`,
     `GLIBCXX_LIBS`.
-  - Bazel status: most Linux path values are modeled; syscall fallback and
-    exact `timespec` compatibility are not.
+  - Bazel status: Linux GNU hosted support is modeled for the current matrix:
+    direct libc `clock_gettime`, `nanosleep`, and `sched_yield` are checked
+    through toolchain link probes. The raw `SYS_clock_gettime` fallback remains
+    intentionally undefined because it is only reached when Linux lacks usable
+    libc clock support, for example old glibc or non-current Linux-family
+    targets. Supporting that fallback would require config probe composition
+    that can define `_GLIBCXX_USE_CLOCK_MONOTONIC`,
+    `_GLIBCXX_USE_CLOCK_REALTIME`, and `_GLIBCXX_USE_CLOCK_GETTIME_SYSCALL`
+    from one conditional result, which should be done after splitting
+    `config_probe.bzl` into generic check machinery and libstdc++ `config.h`
+    emission.
 
 ## Header/function checks outside aggregate macros
 
@@ -608,7 +638,11 @@ Legend:
   - Probes: compute `EOF`, `SEEK_CUR`, `SEEK_END`.
   - Outputs: `_GLIBCXX_STDIO_EOF`, `_GLIBCXX_STDIO_SEEK_CUR`,
     `_GLIBCXX_STDIO_SEEK_END`.
-  - Bazel status: policy-defined to glibc values.
+  - Bazel status: policy-defined to glibc values: `EOF=-1`, `SEEK_CUR=1`,
+    `SEEK_END=2`. This is acceptable for the current Linux GNU-only matrix,
+    where these constants are stable libc ABI values. If the support matrix
+    grows beyond Linux GNU, this should become a generic computed-constant
+    check in the post-split configure probe machinery.
 
 - `GLIBCXX_CHECK_TMPNAM`
   - Probe: C++ `<stdio.h>` `tmpnam`.
@@ -701,7 +735,11 @@ Condition: `GLIBCXX_IS_NATIVE=true`.
   - Probe: readable `/dev/random` and `/dev/urandom`; disables for MinGW
     false positives.
   - Outputs: `_GLIBCXX_USE_DEV_RANDOM`, `_GLIBCXX_USE_RANDOM_TR1`.
-  - Bazel status: policy-defined for Linux; no filesystem probe.
+  - Bazel status: policy-defined for Linux; no filesystem probe. This should
+    stay target policy for the supported Linux GNU port because the upstream
+    native probe reads the execution host's `/dev`, which is not a hermetic
+    target property. GCC's `crossconfig.m4` also hardcodes these defines for
+    Linux-family targets, matching the Bazel model.
 
 - `GCC_CHECK_TLS`
   - Probe: compiler/runtime TLS support.
@@ -1119,26 +1157,26 @@ Condition: `GLIBCXX_IS_NATIVE=false`.
 - [x] Compare current math function probes against `GLIBCXX_CHECK_MATH_SUPPORT`
   and `GLIBCXX_CHECK_MATH_DECLS`.
 - [x] Compare stdlib function probes against `GLIBCXX_CHECK_STDLIB_SUPPORT`.
-- [ ] Decide whether `/dev/random` should remain a Linux policy or become a
+- [x] Decide whether `/dev/random` should remain a Linux policy or become a
   hermetic-compatible configured policy setting.
-- [ ] Revisit `GLIBCXX_ENABLE_LIBSTDCXX_TIME` syscall fallback and `timespec`
+- [x] Revisit `GLIBCXX_ENABLE_LIBSTDCXX_TIME` syscall fallback and `timespec`
   compatibility for Linux.
-- [ ] Revisit `GLIBCXX_COMPUTE_STDIO_INTEGER_CONSTANTS`; keep glibc constants
+- [x] Revisit `GLIBCXX_COMPUTE_STDIO_INTEGER_CONSTANTS`; keep glibc constants
   as policy only if all supported targets agree.
-- [ ] Audit `GLIBCXX_ENABLE_ATOMIC_BUILTINS` for every supported architecture,
+- [x] Audit `GLIBCXX_ENABLE_ATOMIC_BUILTINS` for every supported architecture,
   especially avoiding implicit libatomic dependencies.
-- [ ] Audit `GLIBCXX_ENABLE_LOCK_POLICY` for RISC-V and any target where GCC
+- [x] Audit `GLIBCXX_ENABLE_LOCK_POLICY` for RISC-V and any target where GCC
   chooses mutex for ABI compatibility.
-- [ ] Audit `GLIBCXX_CHECK_GTHREADS` in the exact staged `gthr.h` context.
-- [ ] Review whether NLS should remain unsupported or become a build setting.
-- [ ] Review whether `--enable-cstdio=stdio_pure` should remain unsupported or
+- [x] Audit `GLIBCXX_CHECK_GTHREADS` in the exact staged `gthr.h` context.
+- [x] Review whether NLS should remain unsupported or become a build setting.
+- [x] Review whether `--enable-cstdio=stdio_pure` should remain unsupported or
   become a build setting.
-- [ ] Review whether allocator `malloc` should remain unsupported or become a
+- [x] Review whether allocator `malloc` should remain unsupported or become a
   build setting.
-- [ ] Review whether `--enable-libstdcxx-verbose` should become a build setting.
-- [ ] Review whether decimal floating point should become a probe/build setting
+- [x] Review whether `--enable-libstdcxx-verbose` should become a build setting.
+- [x] Review whether decimal floating point should become a probe/build setting
   and whether `_GLIBCXX_USE_DECIMAL_FLOAT` should be target-derived.
-- [ ] Review whether float128 should become a probe/build setting instead of a
+- [x] Review whether float128 should become a probe/build setting instead of a
   fixed target policy, including automatic addition of `float128.ver`.
 - [ ] Review whether concept checks, debug library builds, parallel mode,
   extern-template selection, fully dynamic strings, vtable verification,
@@ -1172,3 +1210,6 @@ Condition: `GLIBCXX_IS_NATIVE=false`.
 - [x] Review the extracted check arguments and add checklist entries only for
   implemented checks, target-derived checks, deliberate deferrals, not-needed
   items, or explicitly out-of-scope items.
+- [ ] Split `config_probe.bzl` into generic configure-check machinery and
+  libstdc++ `config.h` emission, likely moving the generic pieces to a separate
+  package.

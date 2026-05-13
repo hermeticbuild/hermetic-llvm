@@ -6,6 +6,7 @@ _SUPPORTED_TARGETS = {
     "//platforms/config:linux_x86_64_gnu": {
         "abi_baseline_pair": "x86_64-linux-gnu",
         "abi_tweaks_dir": "cpu/generic",
+        "atomic_lock_policy": True,
         "atomic_word_dir": "cpu/generic",
         "atomicity_dir": "cpu/generic/atomicity_builtins",
         "cpu_defines_dir": "cpu/generic",
@@ -21,6 +22,7 @@ _SUPPORTED_TARGETS = {
     "//platforms/config:linux_aarch64_gnu": {
         "abi_baseline_pair": "aarch64-linux-gnu",
         "abi_tweaks_dir": "cpu/generic",
+        "atomic_lock_policy": True,
         "atomic_word_dir": "cpu/generic",
         "atomicity_dir": "cpu/generic/atomicity_builtins",
         "cpu_defines_dir": "cpu/generic",
@@ -36,6 +38,7 @@ _SUPPORTED_TARGETS = {
     "//platforms/config:linux_riscv64_gnu": {
         "abi_baseline_pair": "riscv64-linux-gnu",
         "abi_tweaks_dir": "cpu/generic",
+        "atomic_lock_policy": False,
         "atomic_word_dir": "cpu/generic",
         "atomicity_dir": "cpu/generic/atomicity_builtins",
         "cpu_defines_dir": "cpu/generic",
@@ -51,6 +54,7 @@ _SUPPORTED_TARGETS = {
     "//platforms/config:linux_s390x_gnu": {
         "abi_baseline_pair": "s390x-linux-gnu",
         "abi_tweaks_dir": "cpu/generic",
+        "atomic_lock_policy": True,
         "atomic_word_dir": "cpu/generic",
         "atomicity_dir": "cpu/generic/atomicity_builtins",
         "cpu_defines_dir": "cpu/generic",
@@ -66,6 +70,7 @@ _SUPPORTED_TARGETS = {
     "//platforms/config:linux_x86_64_musl": {
         "abi_baseline_pair": "x86_64-linux-gnu",
         "abi_tweaks_dir": "cpu/generic",
+        "atomic_lock_policy": True,
         "atomic_word_dir": "cpu/generic",
         "atomicity_dir": "cpu/generic/atomicity_builtins",
         "cpu_defines_dir": "cpu/generic",
@@ -81,6 +86,7 @@ _SUPPORTED_TARGETS = {
     "//platforms/config:linux_aarch64_musl": {
         "abi_baseline_pair": "aarch64-linux-gnu",
         "abi_tweaks_dir": "cpu/generic",
+        "atomic_lock_policy": True,
         "atomic_word_dir": "cpu/generic",
         "atomicity_dir": "cpu/generic/atomicity_builtins",
         "cpu_defines_dir": "cpu/generic",
@@ -96,6 +102,7 @@ _SUPPORTED_TARGETS = {
     "//platforms/config:linux_riscv64_musl": {
         "abi_baseline_pair": "riscv64-linux-gnu",
         "abi_tweaks_dir": "cpu/generic",
+        "atomic_lock_policy": False,
         "atomic_word_dir": "cpu/generic",
         "atomicity_dir": "cpu/generic/atomicity_builtins",
         "cpu_defines_dir": "cpu/generic",
@@ -111,6 +118,7 @@ _SUPPORTED_TARGETS = {
     "//platforms/config:linux_s390x_musl": {
         "abi_baseline_pair": "s390x-linux-gnu",
         "abi_tweaks_dir": "cpu/generic",
+        "atomic_lock_policy": True,
         "atomic_word_dir": "cpu/generic",
         "atomicity_dir": "cpu/generic/atomicity_builtins",
         "cpu_defines_dir": "cpu/generic",
@@ -126,6 +134,7 @@ _SUPPORTED_TARGETS = {
     "//platforms/config:windows_x86_64": {
         "abi_baseline_pair": "x86_64-mingw32",
         "abi_tweaks_dir": "cpu/generic",
+        "atomic_lock_policy": True,
         "atomic_word_dir": "cpu/generic",
         "atomicity_dir": "cpu/generic/atomicity_builtins",
         "cpu_defines_dir": "cpu/generic",
@@ -139,6 +148,7 @@ _SUPPORTED_TARGETS = {
     "//platforms/config:windows_aarch64": {
         "abi_baseline_pair": "aarch64-mingw32",
         "abi_tweaks_dir": "cpu/generic",
+        "atomic_lock_policy": True,
         "atomic_word_dir": "cpu/generic",
         "atomicity_dir": "cpu/generic/atomicity_builtins",
         "cpu_defines_dir": "cpu/generic",
@@ -198,6 +208,9 @@ def libstdcxx_atomicity_dir():
 
 def libstdcxx_atomic_word_dir():
     return _select_field("atomic_word_dir")
+
+def libstdcxx_atomic_lock_policy():
+    return _select_field("atomic_lock_policy")
 
 def libstdcxx_cpu_defines_dir():
     return _select_field("cpu_defines_dir")

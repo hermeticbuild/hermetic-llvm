@@ -3,6 +3,11 @@ load("@rules_cc//cc:find_cc_toolchain.bzl", "CC_TOOLCHAIN_TYPE", "find_cc_toolch
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load(":configure_ac_checks.bzl", "COMPILE_CHECKS", "LINK_CHECKS", "POLICY_DEFINES")
 
+_GTHREAD_CONTEXT_CHECKS = {
+    "_GLIBCXX_HAS_GTHREADS": True,
+    "_GLIBCXX_USE_PTHREAD_RWLOCK_T": True,
+}
+
 _SANITIZER_SETTINGS = [
     "//config:asan",
     "//config:msan",
@@ -126,15 +131,29 @@ def _declare_source(ctx, check):
     )
     return source
 
+def _gthr_include_root(ctx):
+    for file in ctx.files.gthr_headers:
+        if file.basename == "gthr.h":
+            if not file.dirname.endswith("/bits"):
+                fail("expected generated gthr.h under a bits directory")
+            return file.dirname[:-len("/bits")]
+    fail("generated gthr headers do not contain bits/gthr.h")
+
+def _probe_extra_inputs_and_flags(ctx, check):
+    if _GTHREAD_CONTEXT_CHECKS.get(check.name, False):
+        return (ctx.files.gthr_headers, ["-I" + _gthr_include_root(ctx)])
+    return ([], [])
+
 def _declare_compile_probe(ctx, cc_toolchain, check, template, source_placeholder, output_placeholder):
     source = _declare_source(ctx, check)
     stem = ctx.attr.name + "_" + check.name.lower()
     result = ctx.actions.declare_file(stem + ".result")
     log = ctx.actions.declare_file(stem + ".log")
+    extra_inputs, extra_flags = _probe_extra_inputs_and_flags(ctx, check)
 
     ctx.actions.run_shell(
         inputs = depset(
-            direct = [source],
+            direct = [source] + extra_inputs,
             transitive = [cc_toolchain.all_files],
         ),
         outputs = [result, log],
@@ -146,7 +165,7 @@ def _declare_compile_probe(ctx, cc_toolchain, check, template, source_placeholde
             log.path,
             source_placeholder,
             output_placeholder,
-        ] + check.flags + ["--"] + template.command_line,
+        ] + check.flags + extra_flags + ["--"] + template.command_line,
         env = template.env,
         command = """set -eu
 tool="$1"
@@ -208,10 +227,11 @@ def _declare_link_probe(ctx, cc_toolchain, check, compile_template, link_templat
     stem = ctx.attr.name + "_" + check.name.lower()
     result = ctx.actions.declare_file(stem + ".result")
     log = ctx.actions.declare_file(stem + ".log")
+    extra_inputs, extra_flags = _probe_extra_inputs_and_flags(ctx, check)
 
     ctx.actions.run_shell(
         inputs = depset(
-            direct = [source],
+            direct = [source] + extra_inputs,
             transitive = [cc_toolchain.all_files],
         ),
         outputs = [result, log],
@@ -225,7 +245,7 @@ def _declare_link_probe(ctx, cc_toolchain, check, compile_template, link_templat
             source_placeholder,
             object_placeholder,
             binary_placeholder,
-        ] + check.compile_flags + ["--"] + compile_template.command_line + ["--"] + check.link_flags + ["--"] + link_template.command_line,
+        ] + check.compile_flags + extra_flags + ["--"] + compile_template.command_line + ["--"] + check.link_flags + ["--"] + link_template.command_line,
         env = compile_template.env | link_template.env,
         command = """set -eu
 compile_tool="$1"
@@ -335,6 +355,7 @@ def _write_config_outputs(ctx, config_h, summary, results):
         ctx.attr.abi_tweaks_dir,
         ctx.attr.atomicity_dir,
         ctx.attr.atomic_word_dir,
+        "1" if ctx.attr.atomic_lock_policy else "0",
         ctx.attr.cpu_defines_dir,
         ctx.attr.error_constants_dir,
         ctx.attr.symver_style,
@@ -367,10 +388,11 @@ abi_baseline_pair="$6"
 abi_tweaks_dir="$7"
 atomicity_dir="$8"
 atomic_word_dir="$9"
-cpu_defines_dir="${10}"
-error_constants_dir="${11}"
-symver_style="${12}"
-shift 12
+atomic_lock_policy="${10}"
+cpu_defines_dir="${11}"
+error_constants_dir="${12}"
+symver_style="${13}"
+shift 13
 tmp="${TMPDIR:-/tmp}/libstdcxx-config-output-$$"
 mkdir -p "$tmp"
 trap 'rm -rf "$tmp"' EXIT
@@ -387,6 +409,9 @@ checks_json="$tmp/checks.json"
         echo "#define HAVE_AS_SYMVER_DIRECTIVE 1"
         echo "#define HAVE_SYMVER_SYMBOL_RENAMING_RUNTIME_SUPPORT 1"
         echo "#define HAVE_EXCEPTION_PTR_SINCE_GCC46 1"
+    fi
+    if [ "$atomic_lock_policy" = "1" ]; then
+        echo "#define HAVE_ATOMIC_LOCK_POLICY 1"
     fi
     comma=""
     while [ "$#" -gt 0 ]; do
@@ -429,6 +454,7 @@ checks_json="$tmp/checks.json"
     echo "  \\"abi_tweaks_dir\\": \\"$abi_tweaks_dir\\","
     echo "  \\"atomicity_dir\\": \\"$atomicity_dir\\","
     echo "  \\"atomic_word_dir\\": \\"$atomic_word_dir\\","
+    echo "  \\"atomic_lock_policy\\": $atomic_lock_policy,"
     echo "  \\"cpu_defines_dir\\": \\"$cpu_defines_dir\\","
     echo "  \\"error_constants_dir\\": \\"$error_constants_dir\\","
     echo "  \\"symver_style\\": \\"$symver_style\\","
@@ -522,11 +548,13 @@ libstdcxx_config_h = rule(
     attrs = {
         "abi_baseline_pair": attr.string(mandatory = True),
         "abi_tweaks_dir": attr.string(mandatory = True),
+        "atomic_lock_policy": attr.bool(mandatory = True),
         "atomic_word_dir": attr.string(mandatory = True),
         "atomicity_dir": attr.string(mandatory = True),
         "cpu_defines_dir": attr.string(mandatory = True),
         "cpu_include_dir": attr.string(mandatory = True),
         "error_constants_dir": attr.string(mandatory = True),
+        "gthr_headers": attr.label(allow_files = True, mandatory = True),
         "host_triple": attr.string(mandatory = True),
         "os_include_dir": attr.string(mandatory = True),
         "symver_style": attr.string(default = "none"),

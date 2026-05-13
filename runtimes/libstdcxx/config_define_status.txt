@@ -149,7 +149,7 @@ _GLIBCXX_ATOMIC_WORD_BUILTINS policy-modeled
 _GLIBCXX_CAN_ALIGNAS_DESTRUCTIVE_SIZE probe-modeled
 _GLIBCXX_CONCEPT_CHECKS policy-modeled
 _GLIBCXX_FULLY_DYNAMIC_STRING policy-modeled
-_GLIBCXX_HAS_GTHREADS policy-modeled
+_GLIBCXX_HAS_GTHREADS probe-modeled
 _GLIBCXX_HOSTED policy-modeled
 _GLIBCXX_LONG_DOUBLE_ALT128_COMPAT intentionally-defaulted
 _GLIBCXX_LONG_DOUBLE_COMPAT intentionally-defaulted
@@ -190,7 +190,7 @@ _GLIBCXX_USE_CLOCK_GETTIME_SYSCALL policy-modeled
 _GLIBCXX_USE_CLOCK_MONOTONIC probe-modeled
 _GLIBCXX_USE_CLOCK_REALTIME probe-modeled
 _GLIBCXX_USE_COPY_FILE_RANGE probe-modeled
-_GLIBCXX_USE_DECIMAL_FLOAT build-setting-later
+_GLIBCXX_USE_DECIMAL_FLOAT probe-modeled
 _GLIBCXX_USE_DEV_RANDOM policy-modeled
 _GLIBCXX_USE_FCHMOD probe-modeled
 _GLIBCXX_USE_FCHMODAT probe-modeled
@@ -233,10 +233,10 @@ _GLIBCXX_USE_UTIMENSAT probe-modeled
 _GLIBCXX_USE_WCHAR_T probe-modeled
 _GLIBCXX_USE_WIN32_SLEEP policy-modeled
 _GLIBCXX_USE__GET_OSFHANDLE unsupported-target
-_GLIBCXX_VERBOSE build-setting-later
+_GLIBCXX_VERBOSE policy-modeled
 _GLIBCXX_X86_RDRAND probe-modeled
 _GLIBCXX_X86_RDSEED probe-modeled
 _GLIBCXX_ZONEINFO_DIR policy-modeled
-_GTHREAD_USE_MUTEX_TIMEDLOCK policy-modeled
+_GTHREAD_USE_MUTEX_TIMEDLOCK probe-modeled
 __CORRECT_ISO_CPP11_MATH_H_PROTO_FP unsupported-target
 __CORRECT_ISO_CPP11_MATH_H_PROTO_INT unsupported-target

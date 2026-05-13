@@ -50,7 +50,7 @@ def glibcxx_enable_hosted():
     return [policy_define("_GLIBCXX_HOSTED", "__STDC_HOSTED__")]
 
 def glibcxx_enable_verbose():
-    return []
+    return [policy_define("_GLIBCXX_VERBOSE")]
 
 def glibcxx_enable_pch():
     return []
@@ -59,7 +59,24 @@ def glibcxx_enable_atomic_builtins():
     return [policy_define("_GLIBCXX_ATOMIC_WORD_BUILTINS")]
 
 def glibcxx_enable_lock_policy():
+    # HAVE_ATOMIC_LOCK_POLICY is target-derived because GCC keeps RISC-V on the
+    # mutex ABI even when compare-and-swap builtins are available.
     return []
+
+def glibcxx_enable_decimal_float():
+    return [
+        compile_check(
+            name = "_GLIBCXX_USE_DECIMAL_FLOAT",
+            source = """
+int main() {
+    _Decimal32 d1;
+    _Decimal64 d2;
+    _Decimal128 d3;
+    return 0;
+}
+""",
+        ),
+    ]
 
 def glibcxx_enable_cstdio():
     return []
@@ -923,20 +940,49 @@ def glibcxx_check_hardware_concurrency():
 
 def glibcxx_check_gthreads():
     return [
-        link_check(
-            name = "_GLIBCXX_USE_PTHREAD_RWLOCK_T",
-            compile_flags = CXX_NO_EXCEPTIONS_FLAGS,
-            link_flags = PTHREAD_LINK_FLAGS,
+        compile_check(
+            name = "_GTHREAD_USE_MUTEX_TIMEDLOCK",
+            language = "c++",
+            flags = CXX_NO_EXCEPTIONS_FLAGS,
             source = """
-#include <pthread.h>
+#define _PTHREADS 1
+#include <unistd.h>
+int main() {
+#if defined(_PTHREADS) && (!defined(_POSIX_TIMEOUTS) || _POSIX_TIMEOUTS <= 0)
+#error POSIX mutex timedlock cannot be assumed
+#endif
+    return 0;
+}
+""",
+        ),
+        compile_check(
+            name = "_GLIBCXX_HAS_GTHREADS",
+            language = "c++",
+            flags = CXX_NO_EXCEPTIONS_FLAGS,
+            source = """
+#define _PTHREADS 1
+#include <bits/gthr.h>
+int main() {
+#ifndef __GTHREADS_CXX0X
+#error gthreads are missing C++11 support
+#endif
+    return 0;
+}
+""",
+        ),
+        compile_check(
+            name = "_GLIBCXX_USE_PTHREAD_RWLOCK_T",
+            language = "c++",
+            flags = CXX_NO_EXCEPTIONS_FLAGS,
+            source = """
+#define _PTHREADS 1
+#include <bits/gthr.h>
 int main() {
     pthread_rwlock_t rwl;
     return sizeof(rwl) == 0;
 }
 """,
         ),
-        policy_define("_GLIBCXX_HAS_GTHREADS"),
-        policy_define("_GTHREAD_USE_MUTEX_TIMEDLOCK"),
     ]
 
 def glibcxx_check_filesystem_deps():

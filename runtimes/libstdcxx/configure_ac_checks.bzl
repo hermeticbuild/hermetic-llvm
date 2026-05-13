@@ -37,6 +37,7 @@ load(
     "glibcxx_enable_c99",
     "glibcxx_enable_clocale",
     "glibcxx_enable_cstdio",
+    "glibcxx_enable_decimal_float",
     "glibcxx_enable_hosted",
     "glibcxx_enable_libstdcxx_time",
     "glibcxx_enable_lock_policy",
@@ -117,6 +118,7 @@ def _linux_gnu_entries():
         glibcxx_enable_pch() +
         glibcxx_enable_atomic_builtins() +
         glibcxx_enable_lock_policy() +
+        glibcxx_enable_decimal_float() +
         glibcxx_check_compiler_features() +
         glibcxx_enable_cstdio() +
         glibcxx_enable_clocale() +
