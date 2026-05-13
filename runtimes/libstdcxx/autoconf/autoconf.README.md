@@ -24,7 +24,8 @@ classification.
 - `libstdc++-v3/crossconfig.m4` maps to `crossconfig_checks.bzl`.
 - GCC top-level `config/*.m4` files map to `native_autoconf_checks.bzl`.
 - `libstdc++-v3/configure.host` maps to target-derived policy in
-  `configure.bzl` and generated header selection in `BUILD.bazel`.
+  `configure.bzl`, generated header selection in the
+  `libstdcxx_*_header.bzl` rule files, and Bazel targets in `BUILD.bazel`.
 
 ## Status Glossary
 
@@ -62,8 +63,13 @@ character, C99, TR1, LFS, and time support now follow upstream-style compile or
 link probe groups. The Linux `SYS_clock_gettime` fallback from
 `GLIBCXX_ENABLE_LIBSTDCXX_TIME` is intentionally left undefined for the current
 hosted Linux GNU matrix, where libc `clock_gettime` is expected. Supporting the
-fallback would require a composed probe result and should be revisited after the
-generic configure-check machinery is split from libstdc++ `config.h` emission.
+fallback still requires decision-tree support in the probe model so one
+conditional result can decide which later probe runs.
+
+TODO: Model autoconf-style fallback decision trees separately from multi-output
+checks. A compile or link probe can emit multiple success defines, matching a
+single `AC_COMPILE_IFELSE` or `AC_LINK_IFELSE` branch, but the clock fallback
+still needs an ordered decision where one result controls which later probe runs.
 
 `GLIBCXX_CHECK_STDIO_PROTO`, `GLIBCXX_CHECK_MATH11_PROTO`,
 `GLIBCXX_CHECK_POLL`, `GLIBCXX_CHECK_S_ISREG_OR_S_IFREG`,

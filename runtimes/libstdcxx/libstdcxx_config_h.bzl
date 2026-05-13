@@ -59,6 +59,7 @@ def _write_config_outputs(ctx, config_h, summary, results):
             getattr(result.check, "language", "policy"),
             getattr(result.check, "value", ""),
             result_path,
+            ",".join(getattr(result.check, "defines_on_success", [])),
         ])
 
     ctx.actions.run_shell(
@@ -107,7 +108,8 @@ checks_json="$tmp/checks.json"
         language="$3"
         value="$4"
         result_file="$5"
-        shift 5
+        defines_on_success="$6"
+        shift 6
         if [ "$kind" = "define" ]; then
             echo "#define $name $value"
             printf '%s    "%s": {"kind": "%s", "value": "%s"}' "$comma" "$name" "$kind" "$value" >> "$checks_json"
@@ -119,12 +121,32 @@ checks_json="$tmp/checks.json"
             printf '%s    "%s": {"kind": "%s"}' "$comma" "$name" "$kind" >> "$checks_json"
         else
             result="$(cat "$result_file")"
-            if [ "$result" = true ]; then
-                echo "#define $name 1"
-            else
-                echo "/* #undef $name */"
+            json_defines=""
+            if [ "$defines_on_success" != "$name" ]; then
+                json_defines=', "defines_on_success": ['
+                define_comma=""
+                old_ifs="$IFS"
+                IFS=","
+                for define_name in $defines_on_success; do
+                    json_defines="${json_defines}${define_comma}\\"${define_name}\\""
+                    define_comma=", "
+                done
+                IFS="$old_ifs"
+                json_defines="${json_defines}]"
             fi
-            printf '%s    "%s": {"kind": "%s", "ok": %s, "language": "%s"}' "$comma" "$name" "$kind" "$result" "$language" >> "$checks_json"
+            old_ifs="$IFS"
+            IFS=","
+            if [ "$result" = true ]; then
+                for define_name in $defines_on_success; do
+                    echo "#define $define_name 1"
+                done
+            else
+                for define_name in $defines_on_success; do
+                    echo "/* #undef $define_name */"
+                done
+            fi
+            IFS="$old_ifs"
+            printf '%s    "%s": {"kind": "%s", "ok": %s, "language": "%s"%s}' "$comma" "$name" "$kind" "$result" "$language" "$json_defines" >> "$checks_json"
         fi
         comma=",
 "

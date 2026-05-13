@@ -47,9 +47,12 @@ Keep Bazel files shaped like the GCC files they port:
   for reusable native autoconf and GCC top-level `config/*.m4` checks.
 - `libstdc++-v3/linkage.m4` helpers are represented with the reusable native
   checks when they are generic math or stdlib declaration/linkage checks.
-- `runtimes/libstdcxx/configure.bzl`, the generated-header rule files,
-  `symbols.bzl`, and `BUILD.bazel` may consume configure-derived policy, but
-  should not hide new configure semantics without updating the inventories.
+- `runtimes/libstdcxx/configure.bzl`,
+  `runtimes/libstdcxx/libstdcxx_cxxconfig_header.bzl`,
+  `runtimes/libstdcxx/libstdcxx_gthr_headers.bzl`,
+  `runtimes/libstdcxx/libstdcxx_largefile_config_header.bzl`, `symbols.bzl`,
+  and `BUILD.bazel` may consume configure-derived policy, but should not hide
+  new configure semantics without updating the inventories.
 
 Each source-counterpart `.bzl` file should start with a short comment naming
 the GCC file(s) it was ported from. When a group of upstream macros is collapsed

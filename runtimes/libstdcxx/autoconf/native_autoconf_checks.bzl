@@ -13,18 +13,28 @@
 # GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_1, and
 # GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_2 are represented by
 # gcc_check_math_support() and gcc_check_stdlib_support().
+#
+# AC_COMPILE_IFELSE and AC_LINK_IFELSE success branches may define several
+# macros. The check name stays the audit key; defines_on_success records the
+# config.h fan-out for that successful probe.
 
-def compile_check(name, source, language = "c", flags = []):
+def compile_check(name, source, language = "c", flags = [], defines_on_success = None):
+    if defines_on_success == None:
+        defines_on_success = [name]
     return struct(
+        defines_on_success = defines_on_success,
         flags = flags,
         language = language,
         name = name,
         source = source.strip() + "\n",
     )
 
-def link_check(name, source, language = "c++", compile_flags = [], link_flags = []):
+def link_check(name, source, language = "c++", compile_flags = [], link_flags = [], defines_on_success = None):
+    if defines_on_success == None:
+        defines_on_success = [name]
     return struct(
         compile_flags = compile_flags,
+        defines_on_success = defines_on_success,
         language = language,
         link_flags = link_flags,
         name = name,
