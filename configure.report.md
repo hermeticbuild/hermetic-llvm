@@ -1088,11 +1088,11 @@ Condition: `GLIBCXX_IS_NATIVE=false`.
   `GLIBCXX_CHECK_LFS` group.
 - [ ] Decide whether `AC_SYS_LARGEFILE` needs an explicit Bazel equivalent for
   any supported target.
-- [ ] Audit every `GLIBCXX_ENABLE_C99` C++98 output and decide probe vs hosted
+- [x] Audit every `GLIBCXX_ENABLE_C99` C++98 output and decide probe vs hosted
   glibc policy.
-- [ ] Audit every `GLIBCXX_ENABLE_C99` C++11 output and decide probe vs hosted
+- [x] Audit every `GLIBCXX_ENABLE_C99` C++11 output and decide probe vs hosted
   glibc policy.
-- [ ] Replace or explicitly justify policy-defined `GLIBCXX_CHECK_C99_TR1`
+- [x] Replace or explicitly justify policy-defined `GLIBCXX_CHECK_C99_TR1`
   outputs.
 - [ ] Check that wide-character support is semantically equivalent to
   `GLIBCXX_ENABLE_WCHAR_T`, not only `HAVE_MBSTATE_T`.

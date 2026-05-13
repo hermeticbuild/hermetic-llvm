@@ -1,6 +1,7 @@
 load(
     "//runtimes/configure:native_autoconf_checks.bzl",
     "CXX_NO_EXCEPTIONS_FLAGS",
+    "MATH_LINK_FLAGS",
     "PTHREAD_LINK_FLAGS",
     "compile_check",
     "function_link_check",
@@ -87,11 +88,434 @@ int main() { return sizeof(state); }
         policy_define("_GLIBCXX_USE_WCHAR_T"),
     ]
 
+_C99_MATH_GENERIC_BODY = """
+volatile double d1, d2;
+volatile int i;
+i = fpclassify(d1);
+i = isfinite(d1);
+i = isinf(d1);
+i = isnan(d1);
+i = isnormal(d1);
+i = signbit(d1);
+i = isgreater(d1, d2);
+i = isgreaterequal(d1, d2);
+i = isless(d1, d2);
+i = islessequal(d1, d2);
+i = islessgreater(d1, d2);
+i = islessgreater(d1, d2);
+i = isunordered(d1, d2);
+"""
+
+_C99_COMPLEX_BODY = """
+typedef __complex__ float float_type;
+typedef __complex__ double double_type;
+typedef __complex__ long double ld_type;
+volatile float_type tmpf;
+volatile double_type tmpd;
+volatile ld_type tmpld;
+volatile float f;
+volatile double d;
+volatile long double ld;
+f = cabsf(tmpf);
+f = cargf(tmpf);
+tmpf = ccosf(tmpf);
+tmpf = ccoshf(tmpf);
+tmpf = cexpf(tmpf);
+tmpf = clogf(tmpf);
+tmpf = csinf(tmpf);
+tmpf = csinhf(tmpf);
+tmpf = csqrtf(tmpf);
+tmpf = ctanf(tmpf);
+tmpf = ctanhf(tmpf);
+tmpf = cpowf(tmpf, tmpf);
+tmpf = cprojf(tmpf);
+d = cabs(tmpd);
+d = carg(tmpd);
+tmpd = ccos(tmpd);
+tmpd = ccosh(tmpd);
+tmpd = cexp(tmpd);
+tmpd = clog(tmpd);
+tmpd = csin(tmpd);
+tmpd = csinh(tmpd);
+tmpd = csqrt(tmpd);
+tmpd = ctan(tmpd);
+tmpd = ctanh(tmpd);
+tmpd = cpow(tmpd, tmpd);
+tmpd = cproj(tmpd);
+ld = cabsl(tmpld);
+ld = cargl(tmpld);
+tmpld = ccosl(tmpld);
+tmpld = ccoshl(tmpld);
+tmpld = cexpl(tmpld);
+tmpld = clogl(tmpld);
+tmpld = csinl(tmpld);
+tmpld = csinhl(tmpld);
+tmpld = csqrtl(tmpld);
+tmpld = ctanl(tmpld);
+tmpld = ctanhl(tmpld);
+tmpld = cpowl(tmpld, tmpld);
+tmpld = cprojl(tmpld);
+"""
+
+_C99_COMPLEX_ARC_BODY = """
+typedef __complex__ float float_type;
+float_type tmpf;
+cacosf(tmpf);
+casinf(tmpf);
+catanf(tmpf);
+cacoshf(tmpf);
+casinhf(tmpf);
+catanhf(tmpf);
+typedef __complex__ double double_type;
+double_type tmpd;
+cacos(tmpd);
+casin(tmpd);
+catan(tmpd);
+cacosh(tmpd);
+casinh(tmpd);
+catanh(tmpd);
+typedef __complex__ long double ld_type;
+ld_type tmpld;
+cacosl(tmpld);
+casinl(tmpld);
+catanl(tmpld);
+cacoshl(tmpld);
+casinhl(tmpld);
+catanhl(tmpld);
+"""
+
+_C99_STDIO_BODY = """
+va_list args;
+va_start(args, fmt);
+vfscanf(stderr, "%i", args);
+vscanf("%i", args);
+vsnprintf(fmt, 0, "%i", args);
+vsscanf(fmt, "%i", args);
+snprintf(fmt, 0, "%i", 1);
+va_end(args);
+"""
+
+_C99_STDLIB_BODY = """
+volatile float f;
+volatile long double ld;
+volatile unsigned long long ll;
+lldiv_t mydivt;
+char *tmp;
+f = strtof("gnu", &tmp);
+ld = strtold("gnu", &tmp);
+ll = strtoll("gnu", &tmp, 10);
+ll = strtoull("gnu", &tmp, 10);
+ll = llabs(10);
+mydivt = lldiv(10, 1);
+ll = mydivt.quot;
+ll = mydivt.rem;
+ll = atoll("10");
+_Exit(0);
+"""
+
+_C99_WCHAR_BODY = """
+wchar_t *endptr;
+long double ld = wcstold(L"gnu", &endptr);
+long long ll = wcstoll(L"10", &endptr, 10);
+unsigned long long ull = wcstoull(L"10", &endptr, 10);
+"""
+
+_C99_STDINT_BODY = """
+typedef int8_t my_int8_t;
+my_int8_t i8 = INT8_MIN;
+i8 = INT8_MAX;
+typedef int16_t my_int16_t;
+my_int16_t i16 = INT16_MIN;
+i16 = INT16_MAX;
+typedef int32_t my_int32_t;
+my_int32_t i32 = INT32_MIN;
+i32 = INT32_MAX;
+typedef int64_t my_int64_t;
+my_int64_t i64 = INT64_MIN;
+i64 = INT64_MAX;
+typedef int_fast8_t my_int_fast8_t;
+my_int_fast8_t if8 = INT_FAST8_MIN;
+if8 = INT_FAST8_MAX;
+typedef int_fast16_t my_int_fast16_t;
+my_int_fast16_t if16 = INT_FAST16_MIN;
+if16 = INT_FAST16_MAX;
+typedef int_fast32_t my_int_fast32_t;
+my_int_fast32_t if32 = INT_FAST32_MIN;
+if32 = INT_FAST32_MAX;
+typedef int_fast64_t my_int_fast64_t;
+my_int_fast64_t if64 = INT_FAST64_MIN;
+if64 = INT_FAST64_MAX;
+typedef int_least8_t my_int_least8_t;
+my_int_least8_t il8 = INT_LEAST8_MIN;
+il8 = INT_LEAST8_MAX;
+typedef int_least16_t my_int_least16_t;
+my_int_least16_t il16 = INT_LEAST16_MIN;
+il16 = INT_LEAST16_MAX;
+typedef int_least32_t my_int_least32_t;
+my_int_least32_t il32 = INT_LEAST32_MIN;
+il32 = INT_LEAST32_MAX;
+typedef int_least64_t my_int_least64_t;
+my_int_least64_t il64 = INT_LEAST64_MIN;
+il64 = INT_LEAST64_MAX;
+typedef intmax_t my_intmax_t;
+my_intmax_t im = INTMAX_MAX;
+im = INTMAX_MIN;
+typedef intptr_t my_intptr_t;
+my_intptr_t ip = INTPTR_MAX;
+ip = INTPTR_MIN;
+typedef uint8_t my_uint8_t;
+my_uint8_t ui8 = UINT8_MAX;
+ui8 = UINT8_MAX;
+typedef uint16_t my_uint16_t;
+my_uint16_t ui16 = UINT16_MAX;
+ui16 = UINT16_MAX;
+typedef uint32_t my_uint32_t;
+my_uint32_t ui32 = UINT32_MAX;
+ui32 = UINT32_MAX;
+typedef uint64_t my_uint64_t;
+my_uint64_t ui64 = UINT64_MAX;
+ui64 = UINT64_MAX;
+typedef uint_fast8_t my_uint_fast8_t;
+my_uint_fast8_t uif8 = UINT_FAST8_MAX;
+uif8 = UINT_FAST8_MAX;
+typedef uint_fast16_t my_uint_fast16_t;
+my_uint_fast16_t uif16 = UINT_FAST16_MAX;
+uif16 = UINT_FAST16_MAX;
+typedef uint_fast32_t my_uint_fast32_t;
+my_uint_fast32_t uif32 = UINT_FAST32_MAX;
+uif32 = UINT_FAST32_MAX;
+typedef uint_fast64_t my_uint_fast64_t;
+my_uint_fast64_t uif64 = UINT_FAST64_MAX;
+uif64 = UINT_FAST64_MAX;
+typedef uint_least8_t my_uint_least8_t;
+my_uint_least8_t uil8 = UINT_LEAST8_MAX;
+uil8 = UINT_LEAST8_MAX;
+typedef uint_least16_t my_uint_least16_t;
+my_uint_least16_t uil16 = UINT_LEAST16_MAX;
+uil16 = UINT_LEAST16_MAX;
+typedef uint_least32_t my_uint_least32_t;
+my_uint_least32_t uil32 = UINT_LEAST32_MAX;
+uil32 = UINT_LEAST32_MAX;
+typedef uint_least64_t my_uint_least64_t;
+my_uint_least64_t uil64 = UINT_LEAST64_MAX;
+uil64 = UINT_LEAST64_MAX;
+typedef uintmax_t my_uintmax_t;
+my_uintmax_t uim = UINTMAX_MAX;
+uim = UINTMAX_MAX;
+typedef uintptr_t my_uintptr_t;
+my_uintptr_t uip = UINTPTR_MAX;
+uip = UINTPTR_MAX;
+"""
+
+_C99_MATH_FUNCS_BODY = """
+acosh(0.0);
+acoshf(0.0f);
+acoshl(0.0l);
+asinh(0.0);
+asinhf(0.0f);
+asinhl(0.0l);
+atanh(0.0);
+atanhf(0.0f);
+atanhl(0.0l);
+exp2(0.0);
+exp2f(0.0f);
+exp2l(0.0l);
+expm1(0.0);
+expm1f(0.0f);
+expm1l(0.0l);
+ilogb(0.0);
+ilogbf(0.0f);
+ilogbl(0.0l);
+log1p(0.0);
+log1pf(0.0f);
+log1pl(0.0l);
+log2(0.0);
+log2f(0.0f);
+log2l(0.0l);
+logb(0.0);
+logbf(0.0f);
+logbl(0.0l);
+scalbln(0.0, 0l);
+scalblnf(0.0f, 0l);
+scalblnl(0.0l, 0l);
+scalbn(0.0, 0);
+scalbnf(0.0f, 0);
+scalbnl(0.0l, 0);
+cbrt(0.0);
+cbrtf(0.0f);
+cbrtl(0.0l);
+hypot(0.0, 0.0);
+hypotf(0.0f, 0.0f);
+hypotl(0.0l, 0.0l);
+erf(0.0);
+erff(0.0f);
+erfl(0.0l);
+erfc(0.0);
+erfcf(0.0f);
+erfcl(0.0l);
+lgamma(0.0);
+lgammaf(0.0f);
+lgammal(0.0l);
+tgamma(0.0);
+tgammaf(0.0f);
+tgammal(0.0l);
+nearbyint(0.0);
+nearbyintf(0.0f);
+nearbyintl(0.0l);
+rint(0.0);
+rintf(0.0f);
+rintl(0.0l);
+round(0.0);
+roundf(0.0f);
+roundl(0.0l);
+lrint(0.0);
+lrintf(0.0f);
+lrintl(0.0l);
+lround(0.0);
+lroundf(0.0f);
+lroundl(0.0l);
+llrint(0.0);
+llrintf(0.0f);
+llrintl(0.0l);
+llround(0.0);
+llroundf(0.0f);
+llroundl(0.0l);
+trunc(0.0);
+truncf(0.0f);
+truncl(0.0l);
+remainder(0.0, 0.0);
+remainderf(0.0f, 0.0f);
+remainderl(0.0l, 0.0l);
+remquo(0.0, 0.0, 0);
+remquof(0.0f, 0.0f, 0);
+remquol(0.0l, 0.0l, 0);
+copysign(0.0, 0.0);
+copysignf(0.0f, 0.0f);
+copysignl(0.0l, 0.0l);
+nan("");
+nanf("");
+nanl("");
+nextafter(0.0, 0.0);
+nextafterf(0.0f, 0.0f);
+nextafterl(0.0l, 0.0l);
+nexttoward(0.0, 0.0);
+nexttowardf(0.0f, 0.0f);
+nexttowardl(0.0l, 0.0l);
+fdim(0.0, 0.0);
+fdimf(0.0f, 0.0f);
+fdiml(0.0l, 0.0l);
+fmax(0.0, 0.0);
+fmaxf(0.0f, 0.0f);
+fmaxl(0.0l, 0.0l);
+fmin(0.0, 0.0);
+fminf(0.0f, 0.0f);
+fminl(0.0l, 0.0l);
+fma(0.0, 0.0, 0.0);
+fmaf(0.0f, 0.0f, 0.0f);
+fmal(0.0l, 0.0l, 0.0l);
+"""
+
+_C99_FENV_BODY = """
+int except, mode;
+fexcept_t *pflag;
+fenv_t *penv;
+int ret;
+ret = feclearexcept(except);
+ret = fegetexceptflag(pflag, except);
+ret = feraiseexcept(except);
+ret = fesetexceptflag(pflag, except);
+ret = fetestexcept(except);
+ret = fegetround();
+ret = fesetround(mode);
+ret = fegetenv(penv);
+ret = feholdexcept(penv);
+ret = fesetenv(penv);
+ret = feupdateenv(penv);
+"""
+
+_C99_INTTYPES_BODY = """
+intmax_t i, numer, denom, base;
+const char *s;
+char **endptr;
+intmax_t ret = imaxabs(i);
+imaxdiv_t dret = imaxdiv(numer, denom);
+ret = strtoimax(s, endptr, base);
+uintmax_t uret = strtoumax(s, endptr, base);
+"""
+
+_C99_INTTYPES_WCHAR_BODY = """
+intmax_t base;
+const wchar_t *s;
+wchar_t **endptr;
+intmax_t ret = wcstoimax(s, endptr, base);
+uintmax_t uret = wcstoumax(s, endptr, base);
+"""
+
+def _scoped(body):
+    return "{\n" + body + "\n}\n"
+
+def _compile_body_check(name, header, body, standard):
+    return compile_check(
+        name = name,
+        language = "c++",
+        flags = ["-std=" + standard, "-nostdinc++"],
+        source = """
+#include <{header}>
+int main() {{
+{body}
+    return 0;
+}}
+""".format(header = header, body = body),
+    )
+
+def _stdint_compile_check(name, standard):
+    return compile_check(
+        name = name,
+        language = "c++",
+        flags = ["-std=" + standard, "-nostdinc++"],
+        source = """
+#define __STDC_LIMIT_MACROS
+#define __STDC_CONSTANT_MACROS
+#include <stdint.h>
+int main() {{
+{body}
+    return 0;
+}}
+""".format(body = _C99_STDINT_BODY),
+    )
+
+def _link_body_check(name, headers, body, standard, link_flags = []):
+    includes = "\n".join(["#include <{}>".format(header) for header in headers])
+    return link_check(
+        name = name,
+        language = "c++",
+        compile_flags = ["-std=" + standard, "-fno-exceptions", "-nostdinc++"],
+        link_flags = link_flags,
+        source = """
+{includes}
+void test(char *fmt, ...) {{
+{body}
+}}
+int main() {{
+    char fmt[16] = {{0}};
+    test(fmt);
+    return 0;
+}}
+""".format(includes = includes, body = body),
+    )
+
 def glibcxx_enable_c99():
-    # The Linux GNU configuration currently treats the aggregate C99 groups as
-    # hosted glibc policy. Keep this grouped like GLIBCXX_ENABLE_C99 so each
-    # policy decision can be replaced by its upstream probe body later.
     return [
+        _link_body_check("_GLIBCXX98_USE_C99_MATH", ["math.h"], _C99_MATH_GENERIC_BODY, "c++98", MATH_LINK_FLAGS),
+        _link_body_check("_GLIBCXX98_USE_C99_COMPLEX", ["complex.h"], _C99_COMPLEX_BODY, "c++98", MATH_LINK_FLAGS),
+        _link_body_check("_GLIBCXX98_USE_C99_STDIO", ["stdarg.h", "stdio.h"], _C99_STDIO_BODY, "c++98"),
+        _link_body_check("_GLIBCXX98_USE_C99_STDLIB", ["stdlib.h"], _C99_STDLIB_BODY, "c++98"),
+        _compile_body_check("_GLIBCXX98_USE_C99_WCHAR", "wchar.h", _C99_WCHAR_BODY, "c++98"),
+        _link_body_check("_GLIBCXX_USE_C99", ["complex.h", "math.h", "stdarg.h", "stdio.h", "stdlib.h", "wchar.h", "wctype.h"], _scoped(_C99_MATH_GENERIC_BODY) + _scoped(_C99_COMPLEX_BODY) + _scoped(_C99_STDIO_BODY) + _scoped(_C99_STDLIB_BODY) + _scoped(_C99_WCHAR_BODY), "c++98", MATH_LINK_FLAGS),
+        _stdint_compile_check("_GLIBCXX_USE_C99_STDINT", "c++11"),
+        _compile_body_check("_GLIBCXX_USE_C99_INTTYPES", "inttypes.h", _C99_INTTYPES_BODY, "c++11"),
+        _compile_body_check("_GLIBCXX_USE_C99_INTTYPES_WCHAR_T", "inttypes.h", _C99_INTTYPES_WCHAR_BODY, "c++11"),
+        _link_body_check("_GLIBCXX11_USE_C99_MATH", ["math.h"], _C99_MATH_GENERIC_BODY, "c++11", MATH_LINK_FLAGS),
         compile_check(
             name = "HAVE_C99_FLT_EVAL_TYPES",
             language = "c++",
@@ -103,6 +527,12 @@ double_t d;
 int main() { return sizeof(f) == sizeof(d); }
 """,
         ),
+        _compile_body_check("_GLIBCXX_USE_C99_MATH_FUNCS", "math.h", _C99_MATH_FUNCS_BODY, "c++11"),
+        _link_body_check("_GLIBCXX11_USE_C99_COMPLEX", ["complex.h"], _C99_COMPLEX_BODY, "c++11", MATH_LINK_FLAGS),
+        _compile_body_check("_GLIBCXX_USE_C99_COMPLEX_ARC", "complex.h", _C99_COMPLEX_ARC_BODY, "c++11"),
+        _link_body_check("_GLIBCXX11_USE_C99_STDIO", ["stdarg.h", "stdio.h"], _C99_STDIO_BODY, "c++11"),
+        _link_body_check("_GLIBCXX11_USE_C99_STDLIB", ["stdlib.h"], _C99_STDLIB_BODY, "c++11"),
+        _compile_body_check("_GLIBCXX11_USE_C99_WCHAR", "wchar.h", _C99_WCHAR_BODY, "c++11"),
         compile_check(
             name = "HAVE_ISWBLANK",
             language = "c++",
@@ -159,36 +589,20 @@ int main() { return 0; }
 """,
         ),
         function_link_check("HAVE_WCSTOF", "wchar.h", "float f = wcstof(L\"1\", (wchar_t **)0)"),
-        policy_define("_GLIBCXX_USE_C99"),
-        policy_define("_GLIBCXX98_USE_C99_COMPLEX"),
-        policy_define("_GLIBCXX98_USE_C99_MATH"),
-        policy_define("_GLIBCXX11_USE_C99_MATH"),
-        policy_define("_GLIBCXX11_USE_C99_COMPLEX"),
-        policy_define("_GLIBCXX98_USE_C99_STDIO"),
-        policy_define("_GLIBCXX11_USE_C99_STDIO"),
-        policy_define("_GLIBCXX98_USE_C99_STDLIB"),
-        policy_define("_GLIBCXX11_USE_C99_STDLIB"),
-        policy_define("_GLIBCXX98_USE_C99_WCHAR"),
-        policy_define("_GLIBCXX11_USE_C99_WCHAR"),
-        policy_define("_GLIBCXX_USE_C99_COMPLEX_ARC"),
-        policy_define("_GLIBCXX_USE_C99_CTYPE"),
-        policy_define("_GLIBCXX_USE_C99_FENV"),
-        policy_define("_GLIBCXX_USE_C99_INTTYPES"),
-        policy_define("_GLIBCXX_USE_C99_INTTYPES_WCHAR_T"),
-        policy_define("_GLIBCXX_USE_C99_MATH_FUNCS"),
-        policy_define("_GLIBCXX_USE_C99_STDINT"),
+        _compile_body_check("_GLIBCXX_USE_C99_CTYPE", "ctype.h", "int ch;\nint ret;\nret = isblank(ch);", "c++11"),
+        _compile_body_check("_GLIBCXX_USE_C99_FENV", "fenv.h", _C99_FENV_BODY, "c++11"),
         policy_undef("_GLIBCXX_NO_C99_ROUNDING_FUNCS"),
     ]
 
 def glibcxx_check_c99_tr1():
     return [
-        policy_define("_GLIBCXX_USE_C99_COMPLEX_TR1"),
-        policy_define("_GLIBCXX_USE_C99_CTYPE_TR1"),
-        policy_define("_GLIBCXX_USE_C99_FENV_TR1"),
-        policy_define("_GLIBCXX_USE_C99_INTTYPES_TR1"),
-        policy_define("_GLIBCXX_USE_C99_INTTYPES_WCHAR_T_TR1"),
-        policy_define("_GLIBCXX_USE_C99_MATH_TR1"),
-        policy_define("_GLIBCXX_USE_C99_STDINT_TR1"),
+        _compile_body_check("_GLIBCXX_USE_C99_COMPLEX_TR1", "complex.h", _C99_COMPLEX_ARC_BODY, "c++98"),
+        _compile_body_check("_GLIBCXX_USE_C99_CTYPE_TR1", "ctype.h", "int ch;\nint ret;\nret = isblank(ch);", "c++98"),
+        _compile_body_check("_GLIBCXX_USE_C99_FENV_TR1", "fenv.h", _C99_FENV_BODY, "c++98"),
+        _stdint_compile_check("_GLIBCXX_USE_C99_STDINT_TR1", "c++98"),
+        _compile_body_check("_GLIBCXX_USE_C99_MATH_TR1", "math.h", "typedef double_t my_double_t;\ntypedef float_t my_float_t;\n" + _C99_MATH_FUNCS_BODY, "c++98"),
+        _compile_body_check("_GLIBCXX_USE_C99_INTTYPES_TR1", "inttypes.h", _C99_INTTYPES_BODY, "c++98"),
+        _compile_body_check("_GLIBCXX_USE_C99_INTTYPES_WCHAR_T_TR1", "inttypes.h", _C99_INTTYPES_WCHAR_BODY, "c++98"),
     ]
 
 def glibcxx_check_uchar_h():
