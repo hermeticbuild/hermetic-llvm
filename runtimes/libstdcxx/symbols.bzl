@@ -99,7 +99,7 @@ libstdcxx_symbols_version_script = rule(
     implementation = _libstdcxx_symbols_version_script_impl,
     attrs = {
         "_assembler": attr.label(
-            default = Label("//tools/internal:libstdcxx-symbols-assembler"),
+            default = Label("//runtimes/libstdcxx:libstdcxx-symbols-assembler"),
             executable = True,
             cfg = "exec",
         ),

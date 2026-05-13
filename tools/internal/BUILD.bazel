@@ -1,6 +1,4 @@
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
-load("@rules_shell//shell:sh_test.bzl", "sh_test")
-load("//toolchain/runtimes:cc_runtime_tool_binary.bzl", "cc_runtime_tool_binary")
 
 cc_binary(
     name = "header-parser",
@@ -12,31 +10,4 @@ cc_binary(
     name = "static-library-validator",
     srcs = ["static_library_validator.cc"],
     visibility = ["//visibility:public"],
-)
-
-cc_runtime_tool_binary(
-    name = "libstdcxx-symbols-assembler",
-    srcs = ["libstdcxx_symbols_assembler.c"],
-    visibility = ["//visibility:public"],
-)
-
-sh_test(
-    name = "libstdcxx_symbols_assembler_test",
-    srcs = ["libstdcxx_symbols_assembler_test.sh"],
-    data = [
-        "libstdcxx_symbols_assembler_testdata/append.golden",
-        "libstdcxx_symbols_assembler_testdata/base.ver",
-        "libstdcxx_symbols_assembler_testdata/insert.golden",
-        "libstdcxx_symbols_assembler_testdata/port_append.ver",
-        "libstdcxx_symbols_assembler_testdata/port_insert.ver",
-        ":libstdcxx-symbols-assembler",
-    ],
-    env = {
-        "APPEND_GOLDEN": "$(rootpath libstdcxx_symbols_assembler_testdata/append.golden)",
-        "ASSEMBLER": "$(rootpath :libstdcxx-symbols-assembler)",
-        "BASE": "$(rootpath libstdcxx_symbols_assembler_testdata/base.ver)",
-        "INSERT_GOLDEN": "$(rootpath libstdcxx_symbols_assembler_testdata/insert.golden)",
-        "PORT_APPEND": "$(rootpath libstdcxx_symbols_assembler_testdata/port_append.ver)",
-        "PORT_INSERT": "$(rootpath libstdcxx_symbols_assembler_testdata/port_insert.ver)",
-    },
 )
