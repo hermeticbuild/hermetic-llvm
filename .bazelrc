@@ -60,7 +60,6 @@ common:rust    --@llvm//config:experimental_stub_libgcc_s=True
 
 common --bes_results_url=https://app.buildbuddy.io/invocation/
 common --bes_backend=grpcs://remote.buildbuddy.io
-common --experimental_remote_downloader=grpcs://remote.buildbuddy.io
 common --grpc_keepalive_time=30s
 common --remote_cache=grpcs://remote.buildbuddy.io
 common --remote_cache_compression

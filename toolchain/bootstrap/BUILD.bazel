@@ -1,6 +1,7 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 load("//tools:defs.bzl", "TOOLCHAIN_BINARIES")
 load(":bootstrap_binary.bzl", "bootstrap_binary")
+load(":fdo_profile.bzl", "llvm_fdo_profile_data")
 
 # bootstrap toolchains are declared top level
 
@@ -8,19 +9,58 @@ load(":bootstrap_binary.bzl", "bootstrap_binary")
     bootstrap_binary(
         name = tool,
         actual = "@llvm-project//llvm",
+        fdo_profile = ":llvm_fdo_profdata",
         visibility = ["//visibility:public"],
     )
     for tool in TOOLCHAIN_BINARIES
 ]
+
+llvm_fdo_profile_data(
+    name = "llvm_fdo_profdata",
+    clangxx = select({
+        "//platforms/config:linux_x86_64": "//toolchain:instrumented_linux_x86_64/bin/clang++",
+        "//platforms/config:linux_aarch64": "//toolchain:instrumented_linux_aarch64/bin/clang++",
+    }),
+    linker = select({
+        "//platforms/config:linux_x86_64": "//toolchain:instrumented_linux_x86_64/bin/ld.lld",
+        "//platforms/config:linux_aarch64": "//toolchain:instrumented_linux_aarch64/bin/ld.lld",
+    }),
+    llvm_profdata = "@llvm-project//llvm:llvm-profdata",
+    target_compatible_with = select({
+        "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+    visibility = ["//visibility:public"],
+)
 
 bzl_library(
     name = "bootstrap_binary",
     srcs = ["bootstrap_binary.bzl"],
     visibility = ["//visibility:public"],
     deps = [
+        ":transition_settings",
         "@bazel_lib//lib:copy_file",
         "@bazel_lib//lib:copy_to_directory",
     ],
+)
+
+bzl_library(
+    name = "fdo_profile",
+    srcs = ["fdo_profile.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":transition_settings",
+        "@rules_cc//cc:action_names_bzl",
+        "@rules_cc//cc:find_cc_toolchain_bzl",
+        "@rules_cc//cc/common",
+        "@rules_cc//cc/private/rules_impl/fdo:srcs",
+    ],
+)
+
+bzl_library(
+    name = "transition_settings",
+    srcs = ["transition_settings.bzl"],
+    visibility = ["//visibility:public"],
 )
 
 bzl_library(

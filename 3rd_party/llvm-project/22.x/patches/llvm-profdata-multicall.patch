@@ -397,7 +397,7 @@ index 74c4732ca129a..4c8c7519df9ca 100644
  namespace {
  enum ProfileKinds { instr, sample, memory };
  enum FailureMode { warnOnly, failIfAnyAreInvalid, failIfAllAreInvalid };
-@@ -90,408 +78,132 @@ enum ProfileFormat {
+@@ -90,408 +78,133 @@ enum ProfileFormat {
  };
  
  enum class ShowFormat { Text, Json, Yaml };
@@ -841,7 +841,8 @@ index 74c4732ca129a..4c8c7519df9ca 100644
 +      : opt::GenericOptTable(OptionStrTable, OptionPrefixesTable, InfoTable,
 +                             /*IgnoreCase=*/false, OptionSubCommands,
 +                             OptionSubCommandIDsTable) {
-+    setGroupedShortOptions(true);
++    // llvm-profdata accepts single-dash long options like -output.
++    // Grouped short parsing would treat those as -o with a joined value.
 +    setDashDashParsing(true);
 +  }
 +};
@@ -931,7 +932,7 @@ index 74c4732ca129a..4c8c7519df9ca 100644
  
  // We use this string to indicate that there are
  // multiple static functions map to the same name.
-@@ -637,7 +349,7 @@ class SymbolRemapper {
+@@ -637,7 +350,7 @@ class SymbolRemapper {
      return New.empty() ? Name : FunctionId(New);
    }
  };
@@ -940,7 +941,7 @@ index 74c4732ca129a..4c8c7519df9ca 100644
  
  struct WeightedFile {
    std::string Filename;
-@@ -897,13 +609,11 @@ getFuncName(const StringMap<InstrProfWriter::ProfilingData>::value_type &Val) {
+@@ -897,13 +610,11 @@ getFuncName(const StringMap<InstrProfWriter::ProfilingData>::value_type &Val) {
    return Val.first();
  }
  
@@ -956,7 +957,7 @@ index 74c4732ca129a..4c8c7519df9ca 100644
    bool hasFilter = !FuncNameFilter.empty();
    bool hasNegativeFilter = !FuncNameNegativeFilter.empty();
    if (!hasFilter && !hasNegativeFilter)
-@@ -973,8 +683,8 @@ static void mergeInstrProfile(const WeightedFileVector &Inputs,
+@@ -973,8 +684,8 @@ static void mergeInstrProfile(const WeightedFileVector &Inputs,
                                SymbolRemapper *Remapper,
                                int MaxDbgCorrelationWarnings,
                                const StringRef ProfiledBinary) {
@@ -967,7 +968,7 @@ index 74c4732ca129a..4c8c7519df9ca 100644
    if (OutputFormat == PF_Compact_Binary)
      exitWithError("Compact Binary is deprecated");
    if (OutputFormat != PF_Binary && OutputFormat != PF_Ext_Binary &&
-@@ -1171,21 +881,8 @@ const uint64_t HotPercentileIdx = 11;
+@@ -1171,21 +882,8 @@ const uint64_t HotPercentileIdx = 11;
  
  using sampleprof::FSDiscriminatorPass;
  
@@ -990,7 +991,7 @@ index 74c4732ca129a..4c8c7519df9ca 100644
  }
  
  /// Adjust the instr profile in \p WC based on the sample profile in
-@@ -1504,8 +1201,8 @@ remapSamples(const sampleprof::FunctionSamples &Samples,
+@@ -1504,8 +1202,8 @@ remapSamples(const sampleprof::FunctionSamples &Samples,
                            BodySample.second.getSamples());
      for (const auto &Target : BodySample.second.getCallTargets()) {
        Result.addCalledTargetSamples(BodySample.first.LineOffset,
@@ -1001,7 +1002,7 @@ index 74c4732ca129a..4c8c7519df9ca 100644
      }
    }
    for (const auto &CallsiteSamples : Samples.getCallsiteSamples()) {
-@@ -1522,12 +1219,8 @@ remapSamples(const sampleprof::FunctionSamples &Samples,
+@@ -1522,12 +1220,8 @@ remapSamples(const sampleprof::FunctionSamples &Samples,
  }
  
  static sampleprof::SampleProfileFormat FormatMap[] = {
@@ -1016,7 +1017,7 @@ index 74c4732ca129a..4c8c7519df9ca 100644
  
  static std::unique_ptr<MemoryBuffer>
  getInputFileBuf(const StringRef &InputFile) {
-@@ -3375,9 +3068,8 @@ static int showDebugInfoCorrelation(const std::string &Filename,
+@@ -3375,9 +3069,8 @@ static int showDebugInfoCorrelation(const std::string &Filename,
  
  static int show_main(StringRef ProgName) {
    if (Filename.empty() && DebugInfoFilename.empty())
@@ -1028,7 +1029,7 @@ index 74c4732ca129a..4c8c7519df9ca 100644
  
    if (Filename == OutputFilename) {
      errs() << ProgName
-@@ -3394,7 +3086,8 @@ static int show_main(StringRef ProgName) {
+@@ -3394,7 +3087,8 @@ static int show_main(StringRef ProgName) {
      exitWithErrorCode(EC, OutputFilename);
  
    if (ShowAllFunctions && !FuncNameFilter.empty())
@@ -1038,7 +1039,7 @@ index 74c4732ca129a..4c8c7519df9ca 100644
  
    if (!DebugInfoFilename.empty())
      return showDebugInfoCorrelation(DebugInfoFilename, SFormat, OS);
-@@ -3424,7 +3117,7 @@ static int order_main() {
+@@ -3424,7 +3118,7 @@ static int order_main() {
    ArrayRef Traces = Reader->getTemporalProfTraces();
    if (NumTestTraces && NumTestTraces >= Traces.size())
      exitWithError(
@@ -1047,7 +1048,7 @@ index 74c4732ca129a..4c8c7519df9ca 100644
          " must be smaller than the total number of traces: expected: < " +
          Twine(Traces.size()) + ", actual: " + Twine(NumTestTraces));
    ArrayRef TestTraces = Traces.take_back(NumTestTraces);
-@@ -3471,32 +3164,477 @@ static int order_main() {
+@@ -3471,32 +3165,477 @@ static int order_main() {
    return 0;
  }
  
@@ -1491,7 +1492,7 @@ index 74c4732ca129a..4c8c7519df9ca 100644
 +  ProfdataOptTable Tbl;
 +  bool HadParseError = false;
 +  opt::InputArgList Args =
-+      Tbl.parseArgs(argc - 2, argv + 2, OPT_UNKNOWN, Saver, [&](StringRef Msg) {
++      Tbl.parseArgs(argc - 1, argv + 1, OPT_UNKNOWN, Saver, [&](StringRef Msg) {
 +        WithColor::error(errs(), ProgramName) << Msg << "\n";
 +        HadParseError = true;
 +      });
