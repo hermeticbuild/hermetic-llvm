@@ -2,12 +2,34 @@ load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 
 package(default_visibility = ["//visibility:public"])
 
+exports_files([
+    "acinclude_checks.bzl",
+    "autoconf.README.md",
+    "autoconf.checks.md",
+    "autoconf.usage.md",
+    "config_define_status.txt",
+    "config_macro_status.txt",
+    "configure_ac_checks.bzl",
+    "crossconfig_checks.bzl",
+])
+
 bzl_library(
-    name = "cc_configure_probe",
-    srcs = ["cc_configure_probe.bzl"],
+    name = "acinclude_checks",
+    srcs = ["acinclude_checks.bzl"],
+    deps = ["//runtimes/configure:native_autoconf_checks"],
+)
+
+bzl_library(
+    name = "crossconfig_checks",
+    srcs = ["crossconfig_checks.bzl"],
+    deps = ["//runtimes/configure:native_autoconf_checks"],
+)
+
+bzl_library(
+    name = "configure_ac_checks",
+    srcs = ["configure_ac_checks.bzl"],
     deps = [
-        "@rules_cc//cc:action_names_bzl",
-        "@rules_cc//cc:find_cc_toolchain_bzl",
-        "@rules_cc//cc/common",
+        ":acinclude_checks",
+        "//runtimes/configure:native_autoconf_checks",
     ],
 )

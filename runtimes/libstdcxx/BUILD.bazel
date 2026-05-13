@@ -425,8 +425,8 @@ sh_test(
 )
 
 _AUTOCONF_AUDIT_DATA = [
-    "config_define_status.txt",
-    "config_macro_status.txt",
+    "//runtimes/libstdcxx/autoconf:config_define_status.txt",
+    "//runtimes/libstdcxx/autoconf:config_macro_status.txt",
     "@gcc//:config/acx.m4",
     "@gcc//:config/cet.m4",
     "@gcc//:config/futex.m4",
@@ -466,28 +466,28 @@ _AUTOCONF_AUDIT_ENV = {
     "GCC_CONFIGURE_HOST": "$(rootpath @gcc//:libstdc++-v3/configure.host)",
     "GCC_CROSSCONFIG": "$(rootpath @gcc//:libstdc++-v3/crossconfig.m4)",
     "GCC_LINKAGE": "$(rootpath @gcc//:libstdc++-v3/linkage.m4)",
-    "MACRO_STATUS_FILE": "$(rootpath config_macro_status.txt)",
-    "STATUS_FILE": "$(rootpath config_define_status.txt)",
+    "MACRO_STATUS_FILE": "$(rootpath //runtimes/libstdcxx/autoconf:config_macro_status.txt)",
+    "STATUS_FILE": "$(rootpath //runtimes/libstdcxx/autoconf:config_define_status.txt)",
 }
 
 _AUTOCONF_MODEL_DATA = [
-    "acinclude_checks.bzl",
+    "cc_configure_probe.bzl",
     "configure.bzl",
-    "configure_ac_checks.bzl",
-    "crossconfig_checks.bzl",
     "headers.bzl",
     "libstdcxx_config_h.bzl",
     "symbols.bzl",
-    "//runtimes/libstdcxx/autoconf:cc_configure_probe.bzl",
+    "//runtimes/libstdcxx/autoconf:acinclude_checks.bzl",
+    "//runtimes/libstdcxx/autoconf:configure_ac_checks.bzl",
+    "//runtimes/libstdcxx/autoconf:crossconfig_checks.bzl",
     "//runtimes/configure:native_autoconf_checks.bzl",
 ]
 
 _AUTOCONF_MODEL_ENV = {
-    "ACINCLUDE_CHECKS": "$(rootpath acinclude_checks.bzl)",
-    "CC_CONFIGURE_PROBE": "$(rootpath //runtimes/libstdcxx/autoconf:cc_configure_probe.bzl)",
+    "ACINCLUDE_CHECKS": "$(rootpath //runtimes/libstdcxx/autoconf:acinclude_checks.bzl)",
+    "CC_CONFIGURE_PROBE": "$(rootpath cc_configure_probe.bzl)",
     "CONFIGURE": "$(rootpath configure.bzl)",
-    "CONFIGURE_AC_CHECKS": "$(rootpath configure_ac_checks.bzl)",
-    "CROSSCONFIG_CHECKS": "$(rootpath crossconfig_checks.bzl)",
+    "CONFIGURE_AC_CHECKS": "$(rootpath //runtimes/libstdcxx/autoconf:configure_ac_checks.bzl)",
+    "CROSSCONFIG_CHECKS": "$(rootpath //runtimes/libstdcxx/autoconf:crossconfig_checks.bzl)",
     "HEADERS": "$(rootpath headers.bzl)",
     "LIBSTDCXX_CONFIG_H": "$(rootpath libstdcxx_config_h.bzl)",
     "NATIVE_AUTOCONF_CHECKS": "$(rootpath //runtimes/configure:native_autoconf_checks.bzl)",
@@ -495,15 +495,15 @@ _AUTOCONF_MODEL_ENV = {
 }
 
 _AUTOCONF_DOC_DATA = [
-    "autoconf.README.md",
-    "autoconf.checks.md",
-    "autoconf.usage.md",
+    "//runtimes/libstdcxx/autoconf:autoconf.README.md",
+    "//runtimes/libstdcxx/autoconf:autoconf.checks.md",
+    "//runtimes/libstdcxx/autoconf:autoconf.usage.md",
 ]
 
 _AUTOCONF_DOC_ENV = {
-    "AUTOCONF_CHECKS": "$(rootpath autoconf.checks.md)",
-    "AUTOCONF_README": "$(rootpath autoconf.README.md)",
-    "AUTOCONF_USAGE": "$(rootpath autoconf.usage.md)",
+    "AUTOCONF_CHECKS": "$(rootpath //runtimes/libstdcxx/autoconf:autoconf.checks.md)",
+    "AUTOCONF_README": "$(rootpath //runtimes/libstdcxx/autoconf:autoconf.README.md)",
+    "AUTOCONF_USAGE": "$(rootpath //runtimes/libstdcxx/autoconf:autoconf.usage.md)",
 }
 
 sh_test(
@@ -523,23 +523,12 @@ sh_test(
 )
 
 bzl_library(
-    name = "acinclude_checks",
-    srcs = ["acinclude_checks.bzl"],
-    deps = ["//runtimes/configure:native_autoconf_checks"],
-)
-
-bzl_library(
-    name = "crossconfig_checks",
-    srcs = ["crossconfig_checks.bzl"],
-    deps = ["//runtimes/configure:native_autoconf_checks"],
-)
-
-bzl_library(
-    name = "configure_ac_checks",
-    srcs = ["configure_ac_checks.bzl"],
+    name = "cc_configure_probe",
+    srcs = ["cc_configure_probe.bzl"],
     deps = [
-        ":acinclude_checks",
-        "//runtimes/configure:native_autoconf_checks",
+        "@rules_cc//cc:action_names_bzl",
+        "@rules_cc//cc:find_cc_toolchain_bzl",
+        "@rules_cc//cc/common",
     ],
 )
 
@@ -547,8 +536,8 @@ bzl_library(
     name = "libstdcxx_config_h",
     srcs = ["libstdcxx_config_h.bzl"],
     deps = [
-        ":configure_ac_checks",
-        "//runtimes/libstdcxx/autoconf:cc_configure_probe",
+        ":cc_configure_probe",
+        "//runtimes/libstdcxx/autoconf:configure_ac_checks",
     ],
 )
 

@@ -6,9 +6,9 @@ This report audits the configuration decisions made by GCC libstdc++'s
 port, not a statement that every item must become a dynamic Bazel probe.
 
 The active libstdc++ autoconf tracking files now live under
-`runtimes/libstdcxx`: `autoconf.checks.md`, `autoconf.usage.md`, and
-`autoconf.README.md`. Keep those files and this report consistent when updating
-the configure model.
+`runtimes/libstdcxx/autoconf`: `autoconf.checks.md`, `autoconf.usage.md`, and
+`autoconf.README.md`. Keep those files and this report consistent when
+updating the configure model.
 
 Sources reviewed:
 
@@ -1131,9 +1131,9 @@ Condition: `GLIBCXX_IS_NATIVE=false`.
   macros used by libstdc++ configure sources.
 - [x] Split the Bazel configure model into source-counterpart files:
   `runtimes/configure/native_autoconf_checks.bzl`,
-  `runtimes/libstdcxx/acinclude_checks.bzl`,
-  `runtimes/libstdcxx/crossconfig_checks.bzl`, and
-  `runtimes/libstdcxx/configure_ac_checks.bzl`.
+  `runtimes/libstdcxx/autoconf/acinclude_checks.bzl`,
+  `runtimes/libstdcxx/autoconf/crossconfig_checks.bzl`, and
+  `runtimes/libstdcxx/autoconf/configure_ac_checks.bzl`.
 - [x] Point the libstdc++ `config.h` rule directly at
   `configure_ac_checks.bzl` without a compatibility facade.
 - [x] Split `config_define_status.txt` statuses into `probe-modeled`,

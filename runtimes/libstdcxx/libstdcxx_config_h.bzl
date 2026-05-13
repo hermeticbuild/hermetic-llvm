@@ -1,9 +1,9 @@
 # Emits the libstdc++ config.h model from the checks selected by
-# configure_ac_checks.bzl. Generic CC probe execution lives in
-# //runtimes/libstdcxx/autoconf:cc_configure_probe.bzl.
+# //runtimes/libstdcxx/autoconf:configure_ac_checks.bzl. Generic CC probe
+# execution lives in //runtimes/libstdcxx:cc_configure_probe.bzl.
 
 load(
-    "//runtimes/libstdcxx/autoconf:cc_configure_probe.bzl",
+    "//runtimes/libstdcxx:cc_configure_probe.bzl",
     "cc_configure_probe_context",
     "cc_configure_probe_toolchains",
     "cc_configure_probe_transition",
@@ -11,7 +11,7 @@ load(
     "declare_link_probe",
     "policy_result",
 )
-load(":configure_ac_checks.bzl", "COMPILE_CHECKS", "LINK_CHECKS", "POLICY_DEFINES")
+load("//runtimes/libstdcxx/autoconf:configure_ac_checks.bzl", "COMPILE_CHECKS", "LINK_CHECKS", "POLICY_DEFINES")
 
 _GTHREAD_CONTEXT_CHECKS = {
     "_GLIBCXX_HAS_GTHREADS": True,

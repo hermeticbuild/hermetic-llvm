@@ -37,11 +37,12 @@ the target family is out of scope or because the feature is out of scope.
 
 Keep Bazel files shaped like the GCC files they port:
 
-- `runtimes/libstdcxx/configure_ac_checks.bzl` is the active counterpart of
-  `libstdc++-v3/configure.ac`. It composes the supported configure flow.
-- `runtimes/libstdcxx/acinclude_checks.bzl` is the counterpart of
+- `runtimes/libstdcxx/autoconf/configure_ac_checks.bzl` is the active
+  counterpart of `libstdc++-v3/configure.ac`. It composes the supported
+  configure flow.
+- `runtimes/libstdcxx/autoconf/acinclude_checks.bzl` is the counterpart of
   `libstdc++-v3/acinclude.m4`.
-- `runtimes/libstdcxx/crossconfig_checks.bzl` is the counterpart of
+- `runtimes/libstdcxx/autoconf/crossconfig_checks.bzl` is the counterpart of
   `libstdc++-v3/crossconfig.m4`.
 - `runtimes/configure/native_autoconf_checks.bzl` is the counterpart for
   reusable native autoconf and GCC top-level `config/*.m4` checks.
@@ -57,7 +58,7 @@ into one Bazel helper, leave an anchor comment listing the upstream macro names.
 
 ## Required Tracking Files
 
-Maintain these human-readable tracking files in this package:
+Maintain these human-readable tracking files in `runtimes/libstdcxx/autoconf`:
 
 - `autoconf.checks.md`: checklist of check definitions available from GCC
   sources. This covers native autoconf helpers, GCC top-level `config/*.m4`
@@ -180,7 +181,7 @@ still belongs in the usage checklist and glossary.
 Before committing configure-check changes, run from the repository root:
 
     bazel run //internal_tools:buildifier.check
-    bazel build --config remote //runtimes/libstdcxx:config_h //runtimes/libstdcxx:libstdcxx_config_h //runtimes/libstdcxx:configure_ac_checks //runtimes/libstdcxx/autoconf:cc_configure_probe
+    bazel build --config remote //runtimes/libstdcxx:config_h //runtimes/libstdcxx:libstdcxx_config_h //runtimes/libstdcxx:cc_configure_probe //runtimes/libstdcxx/autoconf:configure_ac_checks
     bazel test --config remote //runtimes/libstdcxx:autoconf_inventory_test
     bazel test --config remote //runtimes/libstdcxx:config_define_audit_test
 
