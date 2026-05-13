@@ -1,67 +1,6 @@
 load("@bazel_lib//lib:copy_file.bzl", "COPY_FILE_TOOLCHAINS", "copy_file_action")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory_bin_action")
-
-# Enable the same set of tools we provide with prebuilts.
-_LLVM_TOOLS = [
-    "clang",
-    "clang-scan-deps",
-    "dsymutil",
-    "lld",
-    "llvm-ar",
-    "llvm-cgdata",
-    "llvm-cov",
-    "llvm-cxxfilt",
-    "llvm-debuginfod-find",
-    "llvm-dwp",
-    "llvm-gsymutil",
-    "llvm-ifs",
-    "llvm-libtool-darwin",
-    "llvm-link",
-    "llvm-lipo",
-    "llvm-ml",
-    "llvm-mt",
-    "llvm-nm",
-    "llvm-objcopy",
-    "llvm-objdump",
-    "llvm-profdata",
-    "llvm-rc",
-    "llvm-readobj",
-    "llvm-readtapi",
-    "llvm-size",
-    "llvm-symbolizer",
-    "sancov",
-]
-
-_SANITIZER_FLAGS = [
-    "//config:ubsan",
-    "//config:cfi",
-    "//config:msan",
-    "//config:dfsan",
-    "//config:nsan",
-    "//config:safestack",
-    "//config:rtsan",
-    "//config:tysan",
-    "//config:tsan",
-    "//config:asan",
-    "//config:lsan",
-    "//config:xray",
-    "//config:fuzzer",
-    "//config:profile",
-    "//config:host_ubsan",
-    "//config:host_cfi",
-    "//config:host_msan",
-    "//config:host_dfsan",
-    "//config:host_nsan",
-    "//config:host_safestack",
-    "//config:host_rtsan",
-    "//config:host_tysan",
-    "//config:host_tsan",
-    "//config:host_asan",
-    "//config:host_lsan",
-    "//config:host_xray",
-    "//config:host_fuzzer",
-    "//config:host_profile",
-]
+load(":transition_settings.bzl", "FDO_EXECUTION_PLATFORMS", "LLVM_TOOLS", "SANITIZER_FLAGS", "disable_sanitizers")
 
 _LLVM_TOOL_LTO_FLAGS = [
     "-flto=thin",
@@ -74,10 +13,6 @@ _LLVM_TOOL_COPTS = _LLVM_TOOL_LTO_FLAGS + [
 ]
 
 _LLVM_TOOL_LINKOPTS = _LLVM_TOOL_LTO_FLAGS
-
-_FDO_EXECUTION_PLATFORMS = [
-    "@llvm//:rbe_platform",
-]
 
 def _append_unique(values, extra_values):
     result = list(values)
@@ -112,16 +47,14 @@ def _bootstrap_transition_impl(settings, attr):
         "//command_line_option:linkopt": _append_unique(linkopts, _LLVM_TOOL_LINKOPTS) if needs_llvm_optimization else _remove_values(linkopts, _LLVM_TOOL_LTO_FLAGS),
         "//command_line_option:extra_execution_platforms": settings["//command_line_option:extra_execution_platforms"],
         "//command_line_option:fdo_profile": str(fdo_profile) if fdo_profile else None,
-        "@llvm-project//llvm:driver-tools": _LLVM_TOOLS,
+        "@llvm-project//llvm:driver-tools": LLVM_TOOLS,
     }
 
-    for flag in _SANITIZER_FLAGS:
-        transition_settings[flag] = False
+    disable_sanitizers(transition_settings)
 
     if profile_instrumented:
         transition_settings["//config:profile"] = True
-        transition_settings["//command_line_option:compilation_mode"] = "opt"
-        transition_settings["//command_line_option:extra_execution_platforms"] = _FDO_EXECUTION_PLATFORMS
+        transition_settings["//command_line_option:extra_execution_platforms"] = FDO_EXECUTION_PLATFORMS
 
     if attr.platform:
         transition_settings["//command_line_option:platforms"] = str(attr.platform)
@@ -138,7 +71,6 @@ bootstrap_transition = transition(
         "//command_line_option:extra_execution_platforms",
         "//command_line_option:linkopt",
         "//command_line_option:platforms",
-        "//toolchain:source",
     ],
     outputs = [
         "//command_line_option:copt",
@@ -147,34 +79,7 @@ bootstrap_transition = transition(
         "//command_line_option:fdo_profile",
         "//command_line_option:linkopt",
         "//command_line_option:platforms",
-        "//config:ubsan",
-        "//config:cfi",
-        "//config:msan",
-        "//config:dfsan",
-        "//config:nsan",
-        "//config:safestack",
-        "//config:rtsan",
-        "//config:tysan",
-        "//config:tsan",
-        "//config:asan",
-        "//config:lsan",
-        "//config:xray",
-        "//config:fuzzer",
-        "//config:profile",
-        "//config:host_ubsan",
-        "//config:host_cfi",
-        "//config:host_msan",
-        "//config:host_dfsan",
-        "//config:host_nsan",
-        "//config:host_safestack",
-        "//config:host_rtsan",
-        "//config:host_tysan",
-        "//config:host_tsan",
-        "//config:host_asan",
-        "//config:host_lsan",
-        "//config:host_xray",
-        "//config:host_fuzzer",
-        "//config:host_profile",
+    ] + SANITIZER_FLAGS + [
         "//toolchain:runtime_stage",
         "//toolchain:source",
         "@llvm-project//llvm:driver-tools",

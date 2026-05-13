@@ -62,6 +62,7 @@ bzl_library(
     srcs = ["bootstrap_binary.bzl"],
     visibility = ["//visibility:public"],
     deps = [
+        ":transition_settings",
         "@bazel_lib//lib:copy_file",
         "@bazel_lib//lib:copy_to_directory",
     ],
@@ -72,11 +73,18 @@ bzl_library(
     srcs = ["fdo_profile.bzl"],
     visibility = ["//visibility:public"],
     deps = [
+        ":transition_settings",
         "@rules_cc//cc:action_names",
         "@rules_cc//cc:find_cc_toolchain",
         "@rules_cc//cc/common:cc_common",
         "@rules_cc//cc/common:cc_info",
     ],
+)
+
+bzl_library(
+    name = "transition_settings",
+    srcs = ["transition_settings.bzl"],
+    visibility = ["//visibility:public"],
 )
 
 bzl_library(

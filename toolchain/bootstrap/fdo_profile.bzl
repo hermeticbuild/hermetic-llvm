@@ -4,67 +4,7 @@ load("@rules_cc//cc:action_names.bzl", "CPP_COMPILE_ACTION_NAME", "CPP_LINK_EXEC
 load("@rules_cc//cc:find_cc_toolchain.bzl", "CC_TOOLCHAIN_TYPE", "find_cc_toolchain", "use_cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
-
-_SANITIZER_FLAGS = [
-    "//config:ubsan",
-    "//config:cfi",
-    "//config:msan",
-    "//config:dfsan",
-    "//config:nsan",
-    "//config:safestack",
-    "//config:rtsan",
-    "//config:tysan",
-    "//config:tsan",
-    "//config:asan",
-    "//config:lsan",
-    "//config:xray",
-    "//config:fuzzer",
-    "//config:profile",
-    "//config:host_ubsan",
-    "//config:host_cfi",
-    "//config:host_msan",
-    "//config:host_dfsan",
-    "//config:host_nsan",
-    "//config:host_safestack",
-    "//config:host_rtsan",
-    "//config:host_tysan",
-    "//config:host_tsan",
-    "//config:host_asan",
-    "//config:host_lsan",
-    "//config:host_xray",
-    "//config:host_fuzzer",
-    "//config:host_profile",
-]
-
-_LLVM_TOOLS = [
-    "clang",
-    "clang-scan-deps",
-    "dsymutil",
-    "lld",
-    "llvm-ar",
-    "llvm-cgdata",
-    "llvm-cov",
-    "llvm-cxxfilt",
-    "llvm-debuginfod-find",
-    "llvm-dwp",
-    "llvm-gsymutil",
-    "llvm-ifs",
-    "llvm-libtool-darwin",
-    "llvm-link",
-    "llvm-lipo",
-    "llvm-ml",
-    "llvm-mt",
-    "llvm-nm",
-    "llvm-objcopy",
-    "llvm-objdump",
-    "llvm-profdata",
-    "llvm-rc",
-    "llvm-readobj",
-    "llvm-readtapi",
-    "llvm-size",
-    "llvm-symbolizer",
-    "sancov",
-]
+load(":transition_settings.bzl", "FDO_EXECUTION_PLATFORMS", "LLVM_TOOLS", "SANITIZER_FLAGS", "disable_sanitizers")
 
 _TRAINING_COPTS = [
     "-O3",
@@ -81,22 +21,17 @@ _TRAINING_LINKOPTS = [
     "-fuse-ld=lld",
 ]
 
-_FDO_EXECUTION_PLATFORMS = [
-    "@llvm//:rbe_platform",
-]
-
 def _profile_generation_transition_impl(settings, attr):
     transition_settings = {
-        "//command_line_option:extra_execution_platforms": _FDO_EXECUTION_PLATFORMS,
+        "//command_line_option:extra_execution_platforms": FDO_EXECUTION_PLATFORMS,
         "//command_line_option:fdo_profile": None,
         "//command_line_option:platforms": str(attr.platform),
         "//toolchain:runtime_stage": "complete",
         "//toolchain:source": "prebuilt",
-        "@llvm-project//llvm:driver-tools": _LLVM_TOOLS,
+        "@llvm-project//llvm:driver-tools": LLVM_TOOLS,
     }
 
-    for flag in _SANITIZER_FLAGS:
-        transition_settings[flag] = False
+    disable_sanitizers(transition_settings)
 
     return transition_settings
 
@@ -107,34 +42,7 @@ _profile_generation_transition = transition(
         "//command_line_option:extra_execution_platforms",
         "//command_line_option:fdo_profile",
         "//command_line_option:platforms",
-        "//config:ubsan",
-        "//config:cfi",
-        "//config:msan",
-        "//config:dfsan",
-        "//config:nsan",
-        "//config:safestack",
-        "//config:rtsan",
-        "//config:tysan",
-        "//config:tsan",
-        "//config:asan",
-        "//config:lsan",
-        "//config:xray",
-        "//config:fuzzer",
-        "//config:profile",
-        "//config:host_ubsan",
-        "//config:host_cfi",
-        "//config:host_msan",
-        "//config:host_dfsan",
-        "//config:host_nsan",
-        "//config:host_safestack",
-        "//config:host_rtsan",
-        "//config:host_tysan",
-        "//config:host_tsan",
-        "//config:host_asan",
-        "//config:host_lsan",
-        "//config:host_xray",
-        "//config:host_fuzzer",
-        "//config:host_profile",
+    ] + SANITIZER_FLAGS + [
         "//toolchain:runtime_stage",
         "//toolchain:source",
         "@llvm-project//llvm:driver-tools",
