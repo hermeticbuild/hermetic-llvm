@@ -35,6 +35,19 @@ filegroup(
 # for the audit test; the config/include/libsupc++ entries are the files
 # consumed by runtimes/libstdcxx/configure.bzl and the targets below.
 exports_files([
+    "config/acx.m4",
+    "config/cet.m4",
+    "config/futex.m4",
+    "config/gc++filt.m4",
+    "config/gthr.m4",
+    "config/hwcaps.m4",
+    "config/iconv.m4",
+    "config/lthostflags.m4",
+    "config/multi.m4",
+    "config/no-executables.m4",
+    "config/tls.m4",
+    "config/toolexeclibdir.m4",
+    "config/unwind_ipinfo.m4",
     "gcc/BASE-VER",
     "gcc/DATESTAMP",
     "libgcc/unwind-generic.h",
@@ -51,6 +64,8 @@ exports_files([
     "libgcc/gthr.h",
     "libstdc++-v3/acinclude.m4",
     "libstdc++-v3/configure.ac",
+    "libstdc++-v3/configure.host",
+    "libstdc++-v3/crossconfig.m4",
     "libstdc++-v3/config/allocator/new_allocator_base.h",
     "libstdc++-v3/config/cpu/aarch64/opt/bits/opt_random.h",
     "libstdc++-v3/config/cpu/aarch64/opt/ext/opt_random.h",

@@ -2,8 +2,9 @@
 #
 # Audits the libstdc++ config define port against GCC's configure sources.
 # The checked-in status file must classify every AC_DEFINE from GCC's
-# libstdc++-v3/acinclude.m4 and configure.ac, so GCC updates fail until new
-# configure decisions are reviewed and either modeled or intentionally tracked.
+# libstdc++-v3/acinclude.m4, configure.ac, crossconfig.m4, and selected
+# top-level GCC config macros, so GCC updates fail until new configure
+# decisions are reviewed and either modeled or intentionally tracked.
 set -euo pipefail
 
 tmp="${TEST_TMPDIR:-${TMPDIR:-/tmp}}/libstdcxx-config-audit.$$"
@@ -26,7 +27,7 @@ function emit_defines(line) {
     token = substr(line, RSTART, RLENGTH)
     sub(/^AC_DEFINE(_UNQUOTED)?[ \t]*\(?[ \t]*\[?/, "", token)
     token = trim(token)
-    if (token !~ /\$/ && token ~ /^([A-Z_]|__)/) {
+    if (token != "AS_TR_CPP" && token !~ /\$/ && token ~ /^([A-Z_]|__)/) {
       print token
     }
     line = substr(line, RSTART + RLENGTH)
@@ -40,7 +41,24 @@ function emit_defines(line) {
   }
   emit_defines($0)
 }
-' "${GCC_ACINCLUDE}" "${GCC_CONFIGURE_AC}" | sort -u > "${gcc_defines}"
+' \
+  "${GCC_ACINCLUDE}" \
+  "${GCC_CONFIGURE_AC}" \
+  "${GCC_CROSSCONFIG}" \
+  "${GCC_CONFIG_ACX}" \
+  "${GCC_CONFIG_CET}" \
+  "${GCC_CONFIG_FUTEX}" \
+  "${GCC_CONFIG_GCXXFILT}" \
+  "${GCC_CONFIG_GTHR}" \
+  "${GCC_CONFIG_HWCAPS}" \
+  "${GCC_CONFIG_ICONV}" \
+  "${GCC_CONFIG_LTHOSTFLAGS}" \
+  "${GCC_CONFIG_MULTI}" \
+  "${GCC_CONFIG_NO_EXECUTABLES}" \
+  "${GCC_CONFIG_TLS}" \
+  "${GCC_CONFIG_TOOLEXECLIBDIR}" \
+  "${GCC_CONFIG_UNWIND_IPINFO}" \
+  | sort -u > "${gcc_defines}"
 
 awk -v modeled="${modeled_defines}" -v invalid="${invalid_statuses}" '
 BEGIN {
@@ -94,10 +112,13 @@ missing_models="${tmp}/missing-models.txt"
 : > "${missing_models}"
 while IFS= read -r define; do
   if ! grep -F -q "${define}" \
-    "${CONFIG_CHECKS}" \
+    "${ACINCLUDE_CHECKS}" \
     "${CONFIG_PROBE}" \
+    "${CONFIGURE_AC_CHECKS}" \
     "${CONFIGURE}" \
+    "${CROSSCONFIG_CHECKS}" \
     "${HEADERS}" \
+    "${NATIVE_AUTOCONF_CHECKS}" \
     "${SYMBOLS}"; then
     printf '%s\n' "${define}" >> "${missing_models}"
   fi

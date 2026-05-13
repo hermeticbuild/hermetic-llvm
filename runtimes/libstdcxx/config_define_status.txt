@@ -1,5 +1,6 @@
 # Statuses for GCC libstdc++ configure defines discovered in
-# libstdc++-v3/acinclude.m4 and libstdc++-v3/configure.ac.
+# libstdc++-v3/acinclude.m4, configure.ac, crossconfig.m4, and selected GCC
+# top-level config macros.
 #
 # modeled: represented directly in the Bazel port.
 # header-probe: represented by the generated _HEADER_CHECKS normalization.
@@ -33,6 +34,9 @@ HAVE_EXPF modeled
 HAVE_EXPL modeled
 HAVE_FABSF modeled
 HAVE_FABSL modeled
+HAVE_FINITE modeled
+HAVE_FINITEF modeled
+HAVE_FINITEL modeled
 HAVE_FDOPENDIR modeled
 HAVE_FLOORF modeled
 HAVE_FLOORL modeled
@@ -42,10 +46,18 @@ HAVE_FREXPF modeled
 HAVE_FREXPL modeled
 HAVE_FWRITE_UNLOCKED modeled
 HAVE_GETENTROPY modeled
+HAVE_GETIPINFO modeled
 HAVE_GETS modeled
 HAVE_HYPOT modeled
 HAVE_HYPOTF modeled
+HAVE_HYPOTL modeled
 HAVE_ICONV modeled
+HAVE_ISINF modeled
+HAVE_ISINFF modeled
+HAVE_ISINFL modeled
+HAVE_ISNAN modeled
+HAVE_ISNANF modeled
+HAVE_ISNANL modeled
 HAVE_ISWBLANK modeled
 HAVE_LC_MESSAGES modeled
 HAVE_LDEXPF modeled
@@ -59,6 +71,7 @@ HAVE_LOGL modeled
 HAVE_LSEEK modeled
 HAVE_MBSTATE_T modeled
 HAVE_MEMALIGN modeled
+HAVE_MODF modeled
 HAVE_MODFF modeled
 HAVE_MODFL modeled
 HAVE_OBSOLETE_ISINF modeled
@@ -72,6 +85,8 @@ HAVE_QUICK_EXIT modeled
 HAVE_READLINK modeled
 HAVE_SETENV modeled
 HAVE_SINCOSL modeled
+HAVE_SINCOS modeled
+HAVE_SINCOSF modeled
 HAVE_SINF modeled
 HAVE_SINHF modeled
 HAVE_SINHL modeled
@@ -81,9 +96,11 @@ HAVE_SOCKATMARK modeled
 HAVE_SQRTF modeled
 HAVE_SQRTL modeled
 HAVE_STACKTRACE unsupported
+HAVE_STDBOOL_H unsupported
 HAVE_STRERROR_L modeled
 HAVE_STRERROR_R modeled
 HAVE_STRTOF modeled
+HAVE_STRTOLD modeled
 HAVE_STRUCT_DIRENT_D_TYPE modeled
 HAVE_STRXFRM_L modeled
 HAVE_SYMLINK modeled
@@ -101,12 +118,18 @@ HAVE_TLS modeled
 HAVE_TRUNCATE modeled
 HAVE_UNISTD_H header-probe
 HAVE_UNLINKAT modeled
+HAVE_USELOCALE modeled
 HAVE_USLEEP modeled
 HAVE_VFWSCANF modeled
 HAVE_VSWSCANF modeled
 HAVE_VWSCANF modeled
 HAVE_WCSTOF modeled
 HAVE_WRITEV modeled
+HAVE__BOOL unsupported
+HAVE_CC_TLS modeled
+ICONV_CONST intentionally-defaulted
+STRING_WITH_STRINGS unsupported
+USE_EMUTLS intentionally-defaulted
 _GLIBCXX11_USE_C99_COMPLEX modeled
 _GLIBCXX11_USE_C99_MATH modeled
 _GLIBCXX11_USE_C99_STDIO modeled

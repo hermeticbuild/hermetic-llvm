@@ -1,0 +1,53 @@
+load(
+    "//runtimes/configure:native_autoconf_checks.bzl",
+    "am_iconv",
+    "gcc_check_math_support",
+    "gcc_check_stdlib_support",
+    "gcc_check_tls",
+    "gcc_linux_futex",
+    "policy_define",
+)
+
+def glibcxx_crossconfig_linux_gnu():
+    # libstdc++-v3/crossconfig.m4 uses this branch for *-linux*, *-uclinux*,
+    # *-gnu*, *-kfreebsd*-gnu, *-cygwin*, and *-solaris*. Only Linux GNU is
+    # active in this Bazel port; cygwin/solaris and non-glibc targets are out
+    # of scope.
+    return (
+        gcc_check_math_support() +
+        gcc_check_stdlib_support() +
+        [
+            policy_define("_GLIBCXX_USE_DEV_RANDOM"),
+            policy_define("_GLIBCXX_USE_RANDOM_TR1"),
+        ] +
+        gcc_check_tls() +
+        am_iconv() +
+        gcc_linux_futex()
+    )
+
+# Unsupported crossconfig.m4 branches intentionally left inactive:
+#
+# arm*-*-symbianelf*: freestanding target, not supported by this libstdc++ port.
+#
+# avr*-*-*: AVR/newlib-style target, not supported.
+#
+# mips*-sde-elf*: SDE C library target, not supported.
+#
+# *-aix*: AIX target, not supported.
+#
+# *-darwin*: Darwin target, not supported for libstdc++ in this repository.
+#
+# *djgpp: DOS/DJGPP target, not supported.
+#
+# *-freebsd*, *-netbsd*, *-openbsd*: BSD libc targets, not supported.
+#
+# *-fuchsia*: Fuchsia target, not supported.
+#
+# *-hpux*: HP-UX target, not supported.
+#
+# *-mingw32*: Windows libstdc++ target is intentionally unsupported for now.
+#
+# *-qnx*, *-tpf, *-*vms*, *-vxworks*: non-Linux targets, not supported.
+#
+# newlib and picolibc branches are handled directly in configure.ac upstream;
+# this Bazel port does not support those C libraries today.

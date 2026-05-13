@@ -1,7 +1,7 @@
 load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "CC_TOOLCHAIN_TYPE", "find_cc_toolchain", "use_cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
-load(":config_checks.bzl", "COMPILE_CHECKS", "LINK_CHECKS", "POLICY_DEFINES")
+load(":configure_ac_checks.bzl", "COMPILE_CHECKS", "LINK_CHECKS", "POLICY_DEFINES")
 
 _SANITIZER_SETTINGS = [
     "//config:asan",

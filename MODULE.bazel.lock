@@ -278,7 +278,7 @@
   "moduleExtensions": {
     "//3rd_party/gcc/extension:gcc.bzl%gcc": {
       "general": {
-        "bzlTransitiveDigest": "9FLNreqMJGG6MdmximhSQurF3O7wbJKRBseT8P8vx3Y=",
+        "bzlTransitiveDigest": "ldP9/9odB5R/ygHjMYfuxG4Yp2IV2vWIbJOnEBVJP5U=",
         "usagesDigest": "5oaUnmwah1O+M09fBeXvm+hF80aKWbzNthIt3AAD/aI=",
         "recordedInputs": [
           "REPO_MAPPING:,bazel_lib bazel_lib+",
@@ -292,6 +292,19 @@
               "includes": [
                 "gcc/BASE-VER",
                 "gcc/DATESTAMP",
+                "config/acx.m4",
+                "config/cet.m4",
+                "config/futex.m4",
+                "config/gc++filt.m4",
+                "config/gthr.m4",
+                "config/hwcaps.m4",
+                "config/iconv.m4",
+                "config/lthostflags.m4",
+                "config/multi.m4",
+                "config/no-executables.m4",
+                "config/tls.m4",
+                "config/toolexeclibdir.m4",
+                "config/unwind_ipinfo.m4",
                 "include/ansidecl.h",
                 "include/demangle.h",
                 "include/dyn-string.h",
@@ -307,6 +320,8 @@
                 "libstdc++-v3/acinclude.m4",
                 "libstdc++-v3/config/**",
                 "libstdc++-v3/configure.ac",
+                "libstdc++-v3/configure.host",
+                "libstdc++-v3/crossconfig.m4",
                 "libstdc++-v3/include/**",
                 "libstdc++-v3/libsupc++/**",
                 "libstdc++-v3/src/**"
