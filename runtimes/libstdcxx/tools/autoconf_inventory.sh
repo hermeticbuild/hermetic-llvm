@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 #
-# Static inventory helper for GCC libstdc++ configure sources. It reads the
-# fetched GCC files from Bazel runfiles and checks that the Markdown checklists
-# mention every status-tracked configure macro.
+# Static inventory and audit helper for GCC libstdc++ configure sources. It
+# reads fetched GCC files from Bazel runfiles, checks status coverage, and
+# verifies that Markdown checklists mention every status-tracked configure
+# macro.
 set -euo pipefail
 
 mode="${1:-inventory}"
@@ -166,6 +167,15 @@ status_symbols() {
   awk '/^[ \t]*(#|$)/ { next } { print $1 }' "$1" | sort -u
 }
 
+require_env() {
+  for name in "$@"; do
+    if [ -z "${!name:-}" ]; then
+      echo "missing required environment variable: ${name}" >&2
+      exit 1
+    fi
+  done
+}
+
 print_inventory() {
   echo "# Macro definitions"
   extract_macro_defs
@@ -278,6 +288,179 @@ extract_check_arguments() {
   ' "${all_sources[@]}" | sort -u
 }
 
+write_gcc_defines() {
+  output="$1"
+  extract_defines > "${output}"
+  printf '%s\n' HAVE_FPCLASS HAVE_QFPCLASS >> "${output}"
+  sort -u -o "${output}" "${output}"
+}
+
+write_gcc_macro_uses() {
+  output="$1"
+  extract_macro_uses > "${output}"
+}
+
+check_status() {
+  require_env \
+    ACINCLUDE_CHECKS \
+    CONFIG_PROBE \
+    CONFIGURE \
+    CONFIGURE_AC_CHECKS \
+    CROSSCONFIG_CHECKS \
+    HEADERS \
+    NATIVE_AUTOCONF_CHECKS \
+    SYMBOLS
+
+  gcc_defines="${tmp}/gcc-defines.txt"
+  gcc_macros="${tmp}/gcc-macros.txt"
+  status_defines="${tmp}/status-defines.txt"
+  status_macros="${tmp}/status-macros.txt"
+  modeled_defines="${tmp}/modeled-defines.txt"
+  modeled_macros="${tmp}/modeled-macros.txt"
+  invalid_statuses="${tmp}/invalid-statuses.txt"
+
+  write_gcc_defines "${gcc_defines}"
+  write_gcc_macro_uses "${gcc_macros}"
+
+  awk -v modeled="${modeled_defines}" -v invalid="${invalid_statuses}" '
+BEGIN {
+  known["probe-modeled"] = 1
+  known["policy-modeled"] = 1
+  known["target-derived"] = 1
+  known["header-probe"] = 1
+  known["build-setting-later"] = 1
+  known["intentionally-defaulted"] = 1
+  known["not-needed"] = 1
+  known["unsupported-feature"] = 1
+  known["unsupported-target"] = 1
+}
+/^[ \t]*(#|$)/ { next }
+{
+  if (NF < 2 || !known[$2]) {
+    print FILENAME ":" FNR ": " $0 > invalid
+    next
+  }
+  print $1
+  if ($2 == "probe-modeled" || $2 == "policy-modeled") {
+    print $1 > modeled
+  }
+}
+' "${STATUS_FILE}" | sort > "${status_defines}"
+  sort -o "${modeled_defines}" "${modeled_defines}"
+
+  awk -v modeled="${modeled_macros}" -v invalid="${invalid_statuses}" '
+BEGIN {
+  known["modeled"] = 1
+  known["target-derived"] = 1
+  known["build-setting-later"] = 1
+  known["not-needed"] = 1
+  known["unsupported-feature"] = 1
+  known["unsupported-target"] = 1
+}
+/^[ \t]*(#|$)/ { next }
+{
+  if (NF < 2 || !known[$2]) {
+    print FILENAME ":" FNR ": " $0 > invalid
+    next
+  }
+  print $1
+  if ($2 == "modeled") {
+    print $1 > modeled
+  }
+}
+' "${MACRO_STATUS_FILE}" | sort > "${status_macros}"
+  sort -o "${modeled_macros}" "${modeled_macros}"
+
+  if [ -s "${invalid_statuses}" ]; then
+    cat "${invalid_statuses}" >&2
+    exit 1
+  fi
+
+  if duplicates="$(uniq -d "${status_defines}")" && [ -n "${duplicates}" ]; then
+    echo "duplicate statuses:" >&2
+    printf '%s\n' "${duplicates}" >&2
+    exit 1
+  fi
+
+  if duplicates="$(uniq -d "${status_macros}")" && [ -n "${duplicates}" ]; then
+    echo "duplicate macro statuses:" >&2
+    printf '%s\n' "${duplicates}" >&2
+    exit 1
+  fi
+
+  missing_statuses="$(comm -23 "${gcc_defines}" "${status_defines}")"
+  if [ -n "${missing_statuses}" ]; then
+    echo "missing statuses for GCC defines:" >&2
+    printf '%s\n' "${missing_statuses}" >&2
+    exit 1
+  fi
+
+  unknown_statuses="$(comm -13 "${gcc_defines}" "${status_defines}")"
+  if [ -n "${unknown_statuses}" ]; then
+    echo "statuses for unknown GCC defines:" >&2
+    printf '%s\n' "${unknown_statuses}" >&2
+    exit 1
+  fi
+
+  missing_macro_statuses="$(comm -23 "${gcc_macros}" "${status_macros}")"
+  if [ -n "${missing_macro_statuses}" ]; then
+    echo "missing statuses for GCC/libstdc++ configure macro calls:" >&2
+    printf '%s\n' "${missing_macro_statuses}" >&2
+    exit 1
+  fi
+
+  unknown_macro_statuses="$(comm -13 "${gcc_macros}" "${status_macros}")"
+  if [ -n "${unknown_macro_statuses}" ]; then
+    echo "statuses for unknown GCC/libstdc++ configure macro calls:" >&2
+    printf '%s\n' "${unknown_macro_statuses}" >&2
+    exit 1
+  fi
+
+  missing_models="${tmp}/missing-models.txt"
+  : > "${missing_models}"
+  while IFS= read -r define; do
+    if ! grep -F -q "${define}" \
+      "${ACINCLUDE_CHECKS}" \
+      "${CONFIG_PROBE}" \
+      "${CONFIGURE_AC_CHECKS}" \
+      "${CONFIGURE}" \
+      "${CROSSCONFIG_CHECKS}" \
+      "${HEADERS}" \
+      "${NATIVE_AUTOCONF_CHECKS}" \
+      "${SYMBOLS}"; then
+      printf '%s\n' "${define}" >> "${missing_models}"
+    fi
+  done < "${modeled_defines}"
+
+  if [ -s "${missing_models}" ]; then
+    echo "modeled defines not found in libstdc++ model sources:" >&2
+    cat "${missing_models}" >&2
+    exit 1
+  fi
+
+  missing_macro_models="${tmp}/missing-macro-models.txt"
+  : > "${missing_macro_models}"
+  while IFS= read -r macro; do
+    if ! grep -F -i -q "${macro}" \
+      "${ACINCLUDE_CHECKS}" \
+      "${CONFIG_PROBE}" \
+      "${CONFIGURE_AC_CHECKS}" \
+      "${CONFIGURE}" \
+      "${CROSSCONFIG_CHECKS}" \
+      "${HEADERS}" \
+      "${NATIVE_AUTOCONF_CHECKS}" \
+      "${SYMBOLS}"; then
+      printf '%s\n' "${macro}" >> "${missing_macro_models}"
+    fi
+  done < "${modeled_macros}"
+
+  if [ -s "${missing_macro_models}" ]; then
+    echo "modeled macro calls not found in libstdc++ model sources:" >&2
+    cat "${missing_macro_models}" >&2
+    exit 1
+  fi
+}
+
 check_docs() {
   : "${AUTOCONF_CHECKS:?missing AUTOCONF_CHECKS}"
   : "${AUTOCONF_USAGE:?missing AUTOCONF_USAGE}"
@@ -308,11 +491,18 @@ case "${mode}" in
   inventory)
     print_inventory
     ;;
+  check-status)
+    check_status
+    ;;
   check-docs)
     check_docs
     ;;
+  check-all)
+    check_status
+    check_docs
+    ;;
   *)
-    echo "usage: $0 [inventory|check-docs]" >&2
+    echo "usage: $0 [inventory|check-status|check-docs|check-all]" >&2
     exit 2
     ;;
 esac

@@ -84,7 +84,9 @@ exposed through Bazel tests or runnable targets.
 The current entry point is `tools/autoconf_inventory.sh`. Its `inventory` mode
 prints raw discoveries: macro definitions, macro uses, config defines, check
 form counts, and check arguments. Raw discoveries are not checklist entries by
-themselves. The Bazel target `//runtimes/libstdcxx:autoconf_inventory_test`
+themselves. The Bazel target `//runtimes/libstdcxx:config_define_audit_test`
+uses `check-status` mode to verify status coverage and modeled-source
+references. The Bazel target `//runtimes/libstdcxx:autoconf_inventory_test`
 uses `check-docs` mode to verify that the Markdown checklists and glossary
 mention every status-tracked configure macro.
 
