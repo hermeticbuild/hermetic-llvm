@@ -1,6 +1,9 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load("@rules_cc//cc:defs.bzl", "fdo_profile")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("//tools:defs.bzl", "TOOLCHAIN_BINARIES")
 load(":bootstrap_binary.bzl", "bootstrap_binary")
+load(":fdo_profile.bzl", "llvm_fdo_profile_data")
 
 # bootstrap toolchains are declared top level
 
@@ -8,10 +11,51 @@ load(":bootstrap_binary.bzl", "bootstrap_binary")
     bootstrap_binary(
         name = tool,
         actual = "@llvm-project//llvm",
+        fdo_profile = ":llvm_fdo_profile",
         visibility = ["//visibility:public"],
     )
     for tool in TOOLCHAIN_BINARIES
 ]
+
+sh_binary(
+    name = "llvm_fdo_profile_runner",
+    srcs = ["llvm_fdo_profile_runner.sh"],
+)
+
+llvm_fdo_profile_data(
+    name = "llvm_fdo_profdata",
+    src = "zstd_training.cc",
+    clangxx = select({
+        "//platforms/config:linux_x86_64": "//toolchain:instrumented_linux_x86_64/bin/clang++",
+        "//platforms/config:linux_aarch64": "//toolchain:instrumented_linux_aarch64/bin/clang++",
+    }),
+    data = select({
+        "//platforms/config:linux_x86_64": [
+            "//toolchain:instrumented_linux_x86_64/bin/ld.lld",
+            "//toolchain:instrumented_linux_x86_64/bin/lld",
+            "//toolchain:instrumented_linux_x86_64/bin/wasm-ld",
+            "//toolchain:instrumented_linux_x86_64/clang_builtin_headers_include_directory",
+        ],
+        "//platforms/config:linux_aarch64": [
+            "//toolchain:instrumented_linux_aarch64/bin/ld.lld",
+            "//toolchain:instrumented_linux_aarch64/bin/lld",
+            "//toolchain:instrumented_linux_aarch64/bin/wasm-ld",
+            "//toolchain:instrumented_linux_aarch64/clang_builtin_headers_include_directory",
+        ],
+    }),
+    llvm_profdata = "//tools:llvm-profdata",
+    target_compatible_with = select({
+        "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+    deps = ["@llvm_zstd//:zstd"],
+)
+
+fdo_profile(
+    name = "llvm_fdo_profile",
+    profile = ":llvm_fdo_profdata",
+    visibility = ["//visibility:public"],
+)
 
 bzl_library(
     name = "bootstrap_binary",
@@ -20,6 +64,18 @@ bzl_library(
     deps = [
         "@bazel_lib//lib:copy_file",
         "@bazel_lib//lib:copy_to_directory",
+    ],
+)
+
+bzl_library(
+    name = "fdo_profile",
+    srcs = ["fdo_profile.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@rules_cc//cc:action_names",
+        "@rules_cc//cc:find_cc_toolchain",
+        "@rules_cc//cc/common:cc_common",
+        "@rules_cc//cc/common:cc_info",
     ],
 )
 

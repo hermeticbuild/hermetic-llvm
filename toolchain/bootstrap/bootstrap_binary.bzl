@@ -32,39 +32,96 @@ _LLVM_TOOLS = [
     "sancov",
 ]
 
-def _bootstrap_transition_impl(settings, attr):
-    transition_settings = {
-        # we don't want to pass sanitizers up the compiler toolchain for now
-        "//config:ubsan": False,
-        "//config:cfi": False,
-        "//config:msan": False,
-        "//config:dfsan": False,
-        "//config:nsan": False,
-        "//config:safestack": False,
-        "//config:rtsan": False,
-        "//config:tysan": False,
-        "//config:tsan": False,
-        "//config:asan": False,
-        "//config:lsan": False,
-        "//config:host_ubsan": False,
-        "//config:host_cfi": False,
-        "//config:host_msan": False,
-        "//config:host_dfsan": False,
-        "//config:host_nsan": False,
-        "//config:host_safestack": False,
-        "//config:host_rtsan": False,
-        "//config:host_tysan": False,
-        "//config:host_tsan": False,
-        "//config:host_asan": False,
-        "//config:host_lsan": False,
+_SANITIZER_FLAGS = [
+    "//config:ubsan",
+    "//config:cfi",
+    "//config:msan",
+    "//config:dfsan",
+    "//config:nsan",
+    "//config:safestack",
+    "//config:rtsan",
+    "//config:tysan",
+    "//config:tsan",
+    "//config:asan",
+    "//config:lsan",
+    "//config:xray",
+    "//config:fuzzer",
+    "//config:profile",
+    "//config:host_ubsan",
+    "//config:host_cfi",
+    "//config:host_msan",
+    "//config:host_dfsan",
+    "//config:host_nsan",
+    "//config:host_safestack",
+    "//config:host_rtsan",
+    "//config:host_tysan",
+    "//config:host_tsan",
+    "//config:host_asan",
+    "//config:host_lsan",
+    "//config:host_xray",
+    "//config:host_fuzzer",
+    "//config:host_profile",
+]
 
+_LLVM_TOOL_LTO_FLAGS = [
+    "-flto=thin",
+]
+
+_LLVM_TOOL_COPTS = _LLVM_TOOL_LTO_FLAGS + [
+    "-fno-exceptions",
+    "-fno-rtti",
+    "-fomit-frame-pointer",
+]
+
+_LLVM_TOOL_LINKOPTS = _LLVM_TOOL_LTO_FLAGS
+
+_FDO_EXECUTION_PLATFORMS = [
+    "@llvm//:rbe_platform",
+]
+
+def _append_unique(values, extra_values):
+    result = list(values)
+    for value in extra_values:
+        if value not in result:
+            result.append(value)
+    return result
+
+def _remove_values(values, removed_values):
+    removed = {value: None for value in removed_values}
+    return [
+        value
+        for value in values
+        if value not in removed
+    ]
+
+def _bootstrap_transition_impl(settings, attr):
+    fdo_profile = getattr(attr, "fdo_profile", None)
+    profile_instrumented = getattr(attr, "profile_instrumented", False)
+    if fdo_profile and profile_instrumented:
+        fail("fdo_profile and profile_instrumented are mutually exclusive")
+
+    copts = settings["//command_line_option:copt"]
+    linkopts = settings["//command_line_option:linkopt"]
+    needs_llvm_optimization = fdo_profile or profile_instrumented
+    transition_settings = {
         # we are compiling final programs, so we want all runtimes.
         "//toolchain:runtime_stage": "complete",
-
-        # We want to build those binaries using the prebuilt compiler toolchain
-        "//toolchain:source": "prebuilt",
+        "//toolchain:source": "instrumented" if fdo_profile else "stage1" if profile_instrumented else "prebuilt",
+        "//command_line_option:compilation_mode": "opt" if needs_llvm_optimization else settings["//command_line_option:compilation_mode"],
+        "//command_line_option:copt": _append_unique(copts, _LLVM_TOOL_COPTS) if needs_llvm_optimization else _remove_values(copts, _LLVM_TOOL_LTO_FLAGS),
+        "//command_line_option:linkopt": _append_unique(linkopts, _LLVM_TOOL_LINKOPTS) if needs_llvm_optimization else _remove_values(linkopts, _LLVM_TOOL_LTO_FLAGS),
+        "//command_line_option:extra_execution_platforms": settings["//command_line_option:extra_execution_platforms"],
+        "//command_line_option:fdo_profile": str(fdo_profile) if fdo_profile else None,
         "@llvm-project//llvm:driver-tools": _LLVM_TOOLS,
     }
+
+    for flag in _SANITIZER_FLAGS:
+        transition_settings[flag] = False
+
+    if profile_instrumented:
+        transition_settings["//config:profile"] = True
+        transition_settings["//command_line_option:compilation_mode"] = "opt"
+        transition_settings["//command_line_option:extra_execution_platforms"] = _FDO_EXECUTION_PLATFORMS
 
     if attr.platform:
         transition_settings["//command_line_option:platforms"] = str(attr.platform)
@@ -76,9 +133,19 @@ def _bootstrap_transition_impl(settings, attr):
 bootstrap_transition = transition(
     implementation = _bootstrap_transition_impl,
     inputs = [
+        "//command_line_option:copt",
+        "//command_line_option:compilation_mode",
+        "//command_line_option:extra_execution_platforms",
+        "//command_line_option:linkopt",
         "//command_line_option:platforms",
+        "//toolchain:source",
     ],
     outputs = [
+        "//command_line_option:copt",
+        "//command_line_option:compilation_mode",
+        "//command_line_option:extra_execution_platforms",
+        "//command_line_option:fdo_profile",
+        "//command_line_option:linkopt",
         "//command_line_option:platforms",
         "//config:ubsan",
         "//config:cfi",
@@ -91,6 +158,9 @@ bootstrap_transition = transition(
         "//config:tsan",
         "//config:asan",
         "//config:lsan",
+        "//config:xray",
+        "//config:fuzzer",
+        "//config:profile",
         "//config:host_ubsan",
         "//config:host_cfi",
         "//config:host_msan",
@@ -102,6 +172,9 @@ bootstrap_transition = transition(
         "//config:host_tsan",
         "//config:host_asan",
         "//config:host_lsan",
+        "//config:host_xray",
+        "//config:host_fuzzer",
+        "//config:host_profile",
         "//toolchain:runtime_stage",
         "//toolchain:source",
         "@llvm-project//llvm:driver-tools",
@@ -146,6 +219,14 @@ bootstrap_binary = rule(
         "symlink": attr.bool(
             default = True,
             doc = "If set to False, will copy the tool instead of symlinking",
+        ),
+        "fdo_profile": attr.label(
+            default = None,
+            doc = "If set, build the actual binary with this LLVM FDO profile.",
+        ),
+        "profile_instrumented": attr.bool(
+            default = False,
+            doc = "If set, build the actual binary with LLVM profile instrumentation.",
         ),
     },
     toolchains = COPY_FILE_TOOLCHAINS,

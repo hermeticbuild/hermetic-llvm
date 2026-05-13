@@ -1,6 +1,10 @@
 load("@rules_cc//cc/toolchains:feature_set.bzl", "cc_feature_set")
 load("@rules_cc//cc/toolchains:toolchain.bzl", _cc_toolchain = "cc_toolchain")
 
+_FDO_FEATURES = [
+    "@llvm//toolchain/features:fdo_optimize",
+]
+
 def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
     cc_feature_set(
         name = name + "_known_features",
@@ -12,7 +16,7 @@ def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
             "@llvm//toolchain/features:archive_param_file",
             "@llvm//toolchain/features:prefer_pic_for_opt_binaries",
             "@llvm//toolchain/features:parse_headers",
-        ] + select({
+        ] + _FDO_FEATURES + select({
             "@platforms//os:linux": [
                 "@rules_cc//cc/toolchains/args/thin_lto:feature",
             ],
@@ -35,6 +39,7 @@ def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
             #"@rules_cc//cc/toolchains/args/layering_check:use_module_maps",
             "@llvm//toolchain/features:archive_param_file",
             "@llvm//toolchain/features:prefer_pic_for_opt_binaries",
+        ] + _FDO_FEATURES + [
             # Always last (contains user_compile_flags and user_link_flags who should apply last).
             "@llvm//toolchain/features/legacy:experimental_replace_legacy_action_config_features",
         ],

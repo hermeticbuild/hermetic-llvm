@@ -1,5 +1,8 @@
 def _rbe_platform_repo_impl(rctx):
-    arch = rctx.os.arch
+    arch = rctx.attr.arch
+    if arch == "host":
+        arch = rctx.os.arch
+
     if arch in ["x86_64", "amd64"]:
         cpu = "x86_64"
         exec_arch = "amd64"
@@ -9,9 +12,16 @@ def _rbe_platform_repo_impl(rctx):
     else:
         fail("Unsupported host arch for rbe platform: {}".format(arch))
 
-    rctx.file("BUILD.bazel", """\
+    rctx.file("BUILD.bazel", _rbe_platform_block(
+        name = "rbe_platform",
+        cpu = cpu,
+        arch = exec_arch,
+    ))
+
+def _rbe_platform_block(name, cpu, arch):
+    return """\
 platform(
-    name = "rbe_platform",
+    name = "{name}",
     constraint_values = [
         "@platforms//cpu:{cpu}",
         "@platforms//os:linux",
@@ -25,11 +35,19 @@ platform(
     visibility = ["//visibility:public"],
 )
 """.format(
+        name = name,
         cpu = cpu,
-        arch = exec_arch,
-    ))
+        arch = arch,
+    )
 
 rbe_platform_repository = repository_rule(
     implementation = _rbe_platform_repo_impl,
-    doc = "Sets up a platform for remote builds with an Arch exec_property matching the host.",
+    attrs = {
+        "arch": attr.string(
+            default = "x86_64",
+            values = ["host", "x86_64", "amd64", "aarch64", "arm64"],
+            doc = "Remote execution architecture. Use 'host' to match the local host architecture.",
+        ),
+    },
+    doc = "Sets up the single platform used for remote builds.",
 )
