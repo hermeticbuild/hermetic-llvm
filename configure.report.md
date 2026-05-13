@@ -72,8 +72,11 @@ Legend:
 - Large file support.
   - Source: `AC_SYS_LARGEFILE`.
   - Output: autoconf large-file defines such as `_FILE_OFFSET_BITS` when needed.
-  - Bazel status: not explicitly modeled. Separate from libstdc++'s
-    `_GLIBCXX_USE_LFS` check below.
+  - Bazel status: not emitted for the current supported Linux GNU libstdc++
+    targets because they are 64-bit triples where large file support is the
+    default ABI. `largefile-config.h` already forwards `_FILE_OFFSET_BITS`,
+    `_LARGE_FILES`, and `_DARWIN_USE_64_BIT_INODE` from generated `config_h` if
+    a future 32-bit or Darwin target needs them.
 
 ## GLIBCXX_CONFIGURE and GLIBCXX_CHECK_HOST
 
@@ -1086,7 +1089,7 @@ Condition: `GLIBCXX_IS_NATIVE=false`.
 - [x] Fix `HAVE_GETIPINFO` to model `_Unwind_GetIPInfo`, not `getaddrinfo`.
 - [x] Replace the weak `_GLIBCXX_USE_LFS` check with GCC's full
   `GLIBCXX_CHECK_LFS` group.
-- [ ] Decide whether `AC_SYS_LARGEFILE` needs an explicit Bazel equivalent for
+- [x] Decide whether `AC_SYS_LARGEFILE` needs an explicit Bazel equivalent for
   any supported target.
 - [x] Audit every `GLIBCXX_ENABLE_C99` C++98 output and decide probe vs hosted
   glibc policy.
