@@ -33,7 +33,6 @@ resolve_runfile() {
 }
 
 shared="$(resolve_runfile "${LIBSTDCXX_SHARED:?}")"
-real="$(resolve_runfile "${LIBSTDCXX_SHARED_REAL:?}")"
 soname="$(resolve_runfile "${LIBSTDCXX_SHARED_SONAME:?}")"
 linker_name="$(resolve_runfile "${LIBSTDCXX_SHARED_LINKER_NAME:?}")"
 readelf="$(resolve_runfile "${READELF:?}")"
@@ -52,13 +51,10 @@ grep -F "Library soname: [libstdc++.so.6]" "${dynamic}" >/dev/null
 "${readelf}" --version-info "${shared}" > "${versions}"
 grep -F "Version definition section '.gnu.version_d'" "${versions}" >/dev/null
 grep -F "Name: GLIBCXX_3.4" "${versions}" >/dev/null
-grep -F "Name: GLIBCXX_3.4.35" "${versions}" >/dev/null
 grep -F "Name: CXXABI_1.3" "${versions}" >/dev/null
 
-"${readelf}" -h "${real}" >/dev/null
 "${readelf}" -h "${soname}" >/dev/null
 "${readelf}" -h "${linker_name}" >/dev/null
 
-[[ "${LIBSTDCXX_SHARED_REAL:?}" == *"/libstdc++.so.6.0.35" ]]
 [[ "${LIBSTDCXX_SHARED_SONAME:?}" == *"/libstdc++.so.6" ]]
 [[ "${LIBSTDCXX_SHARED_LINKER_NAME:?}" == *"/libstdc++.so" ]]

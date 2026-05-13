@@ -1070,9 +1070,9 @@ cc_library(
 # The shared library version and linker flags should stay aligned with GCC's
 # libstdc++-v3/acinclude.m4 shared library and symbol-version settings.
 cc_runtime_stage1_shared_library(
-    name = "libstdc++.so.6.0.35",
+    name = "libstdc++.so.6",
     additional_linker_inputs = [":libstdcxx_symbols_ver"],
-    shared_lib_name = "libstdc++.so.6.0.35",
+    shared_lib_name = "libstdc++.so.6",
     user_link_flags = [
         "-Wl,-soname,libstdc++.so.6",
         "-Wl,--version-script=$(location :libstdcxx_symbols_ver)",
@@ -1112,7 +1112,7 @@ cc_runtime_stage1_shared_library(
 
 alias(
     name = "libstdcxx.shared",
-    actual = ":libstdc++.so.6.0.35",
+    actual = ":libstdc++.so.6",
     visibility = ["//visibility:public"],
 )
 
