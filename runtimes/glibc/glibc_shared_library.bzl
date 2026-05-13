@@ -6,6 +6,8 @@ def make_glibc_shared_library(
         lib_name,
         lib_version,
         srcs,
+        soname = None,
+        soname_link_flags = None,
         extra_link_flags = []):
     cc_library(
         name = "lib%s" % lib_name,
@@ -18,10 +20,12 @@ def make_glibc_shared_library(
         srcs = srcs,
     )
 
-    soname = "lib{lib}.so{version}".format(
-        lib = lib_name,
-        version = "." + lib_version if len(lib_version) > 0 else "",
-    )
+    if soname == None:
+        soname = "lib{lib}.so{version}".format(
+            lib = lib_name,
+            version = "." + lib_version if len(lib_version) > 0 else "",
+        )
+        soname_link_flags = ["-Wl,-soname,{}".format(soname)]
 
     # Stage0 because libc doesn't depend on anything at all
     cc_runtime_stage0_shared_library(
@@ -32,8 +36,7 @@ def make_glibc_shared_library(
         ],
         user_link_flags = [
             "-Wl,--version-script=$(location :all.map)",
-            "-Wl,-soname,{}".format(soname),
-        ] + extra_link_flags,
+        ] + soname_link_flags + extra_link_flags,
         shared_lib_name = soname,
         visibility = ["//visibility:public"],
     )

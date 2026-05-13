@@ -1,8 +1,8 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 load("@bazel_lib//lib:copy_file.bzl", "copy_file")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
-load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("//toolchain:selects.bzl", "platform_extra_binary")
+load(":glibc_dynamic_linker.bzl", "glibc_dynamic_linker", "glibc_dynamic_linker_as_needed", "glibc_dynamic_linker_soname_flags")
 load(":glibc_linker_script.bzl", "make_glibc_linker_script")
 load(":glibc_shared_library.bzl", "make_glibc_shared_library")
 load(":glibc_stubs_assembly_files.bzl", "glibc_stubs_assembly_files")
@@ -56,72 +56,6 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
-# The below are global symbols that are provided and initialized by the dynamic
-# linker (ld.so) when using glibc.
-#
-# To avoid having to compute the proper ld.so name in the linker script, we
-# resort to providing those symbols here.
-#
-# These symbols may not be normally available for all targets and versions of the
-# glibc but it should be "mostly" harmless.
-#
-# It might cause faulty programs to successfully link when they should not, even
-# tho the situations should be very rare or non-existent in practice.
-write_file(
-    name = "__stack_chk_guard.S",
-    out = "glibc/build/__stack_chk_guard.S",
-    content = [
-        ".globl __stack_chk_guard",
-        ".type __stack_chk_guard, %object;",
-        # TODO: Support 32 bit architectures,
-        #      Infer this from the target.
-        "#if __SIZEOF_POINTER__ == 4",
-        ".size __stack_chk_guard, 4",
-        "#else",
-        ".size __stack_chk_guard, 8",
-        "#endif",
-        # Will be relocated at runtime by the dynamic linker itself.
-        "__stack_chk_guard:",
-    ],
-)
-
-# Same as above.
-write_file(
-    name = "__libc_stack_end.S",
-    out = "glibc/build/__libc_stack_end.S",
-    content = [
-        ".globl __libc_stack_end",
-        ".type __libc_stack_end, %object;",
-        "#if __SIZEOF_POINTER__ == 4",
-        ".size __libc_stack_end, 4",
-        "#else",
-        ".size __libc_stack_end, 8",
-        "#endif",
-        # Will be relocated at runtime by the dynamic linker itself.
-        "__libc_stack_end:",
-    ],
-)
-
-# Same as above.
-write_file(
-    name = "__tls_get_addr.S",
-    out = "glibc/build/__tls_get_addr.S",
-    content = [
-        "#if __SIZEOF_POINTER__ == 4",
-        ".balign 4",
-        "#else",
-        ".balign 8",
-        "#endif",
-        ".globl __tls_get_addr",
-        ".type __tls_get_addr, %function;",
-        "#if __SIZEOF_POINTER__ == 4",
-        "__tls_get_addr: .long 0",
-        "#else",
-        "__tls_get_addr: .quad 0",
-        "#endif",
-    ],
-)
-
 # Make one cc_shared_library target per lib, using the assembly file
 LIBS = [
     make_glibc_shared_library(
@@ -129,18 +63,15 @@ LIBS = [
         srcs = [":lib" + lib + ".s"],
         lib_name = lib,
         lib_version = version,
+        soname = glibc_dynamic_linker() if lib == "ld" else None,
+        soname_link_flags = glibc_dynamic_linker_soname_flags() if lib == "ld" else None,
     )
     for (lib, version) in LIBC_SO_VERSIONS.items()
     if lib != "c"
 ] + [
     make_glibc_shared_library(
         name = "libc_shared_library",
-        srcs = [
-            ":__libc_stack_end.S",
-            ":__stack_chk_guard.S",
-            ":__tls_get_addr.S",
-            ":libc.s",
-        ],
+        srcs = [":libc.s"],
         extra_link_flags = [
             # _IO_stdin_used is defined as a global symbol in .rodata
             # and needs to be relocated at runtime with values from the CRTs.
@@ -160,11 +91,12 @@ LINKER_SCRIPTS = [
         additional_linker_inputs = [
             # we make it available in the search directory sibling to the libc.so
             "libc_nonshared.a",
-        ] if lib == "c" else [],
+        ] + glibc_dynamic_linker_as_needed() if lib == "c" else [],
         lib_name = lib,
         lib_version = version,
     )
     for (lib, version) in LIBC_SO_VERSIONS.items()
+    if lib != "ld"
 ]
 
 copy_file(
@@ -211,6 +143,12 @@ bzl_library(
     srcs = ["glibc_linker_script.bzl"],
     visibility = ["//visibility:public"],
     deps = ["@bazel_skylib//rules:write_file"],
+)
+
+bzl_library(
+    name = "glibc_dynamic_linker",
+    srcs = ["glibc_dynamic_linker.bzl"],
+    visibility = ["//visibility:public"],
 )
 
 bzl_library(
