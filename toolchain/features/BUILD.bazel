@@ -342,6 +342,28 @@ cc_args(
     args = ["-static"],
 )
 
+cc_feature(
+    name = "fdo_optimize",
+    args = [":fdo_optimize_compile_args"],
+    overrides = "@rules_cc//cc/toolchains/features/legacy:fdo_optimize",
+)
+
+cc_args(
+    name = "fdo_optimize_compile_args",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:compile_actions",
+    ],
+    args = [
+        "-fprofile-use={fdo_profile_path}",
+        "-Wno-profile-instr-unprofiled",
+        "-Wno-profile-instr-out-of-date",
+    ],
+    format = {
+        "fdo_profile_path": "@rules_cc//cc/toolchains/variables:fdo_profile_path",
+    },
+    requires_not_none = "@rules_cc//cc/toolchains/variables:fdo_profile_path",
+)
+
 cc_args(
     name = "module_map_home_cwd_args",
     actions = [

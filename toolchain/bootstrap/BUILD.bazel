@@ -1,6 +1,19 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load("//platforms:common.bzl", "SUPPORTED_TARGETS")
 load("//tools:defs.bzl", "TOOLCHAIN_BINARIES")
 load(":bootstrap_binary.bzl", "bootstrap_binary")
+load(":fdo_profile.bzl", "llvm_fdo_profile_data", "llvm_fdo_profile_workload")
+
+_LLVM_FDO_EXECUTORS = {
+    "linux_aarch64": {
+        "buildbuddy_arch": "arm64",
+        "cpu": "aarch64",
+    },
+    "linux_x86_64": {
+        "buildbuddy_arch": "amd64",
+        "cpu": "x86_64",
+    },
+}
 
 # bootstrap toolchains are declared top level
 
@@ -8,19 +21,92 @@ load(":bootstrap_binary.bzl", "bootstrap_binary")
     bootstrap_binary(
         name = tool,
         actual = "@llvm-project//llvm",
+        fdo_profile = ":llvm_fdo_profdata",
         visibility = ["//visibility:public"],
     )
     for tool in TOOLCHAIN_BINARIES
 ]
+
+[
+    llvm_fdo_profile_workload(
+        name = "llvm_fdo_profile_workload_{}_to_{}_{}".format(executor, target_os, target_cpu),
+        srcs = ":fdo_freestanding.c" if target_os == "none" else "@llvm_fdo_zstd//:zstd_compress_files",
+        clangxx = "//toolchain:instrumented_{}/bin/clang++".format(executor),
+        exec_compatible_with = [
+            "@platforms//cpu:{}".format(executor_config["cpu"]),
+            "@platforms//os:linux",
+        ],
+        exec_properties = {
+            "Arch": executor_config["buildbuddy_arch"],
+        },
+        linker = None if target_os == "none" else "//toolchain:instrumented_{}/bin/{}".format(
+            executor,
+            "ld64.lld" if target_os == "macos" else "ld.lld",
+        ),
+        target_platform = "//platforms:{}_{}".format(target_os, target_cpu),
+        workload_kind = "freestanding" if target_os == "none" else "hosted",
+    )
+    for executor, executor_config in _LLVM_FDO_EXECUTORS.items()
+    for target_os, target_cpu in SUPPORTED_TARGETS
+]
+
+[
+    llvm_fdo_profile_data(
+        name = "llvm_fdo_profdata_{}".format(executor),
+        exec_compatible_with = [
+            "@platforms//cpu:{}".format(executor_config["cpu"]),
+            "@platforms//os:linux",
+        ],
+        exec_properties = {
+            "Arch": executor_config["buildbuddy_arch"],
+        },
+        llvm_profdata = "//toolchain:stage1_{}/bin/llvm-profdata".format(executor),
+        profiles = [
+            ":llvm_fdo_profile_workload_{}_to_{}_{}".format(executor, target_os, target_cpu)
+            for target_os, target_cpu in SUPPORTED_TARGETS
+        ],
+        visibility = ["//visibility:public"],
+    )
+    for executor, executor_config in _LLVM_FDO_EXECUTORS.items()
+]
+
+alias(
+    name = "llvm_fdo_profdata",
+    actual = select({
+        "//platforms/config:linux_aarch64": ":llvm_fdo_profdata_linux_aarch64",
+        "//platforms/config:linux_x86_64": ":llvm_fdo_profdata_linux_x86_64",
+    }),
+    visibility = ["//visibility:public"],
+)
 
 bzl_library(
     name = "bootstrap_binary",
     srcs = ["bootstrap_binary.bzl"],
     visibility = ["//visibility:public"],
     deps = [
+        ":transition_settings",
         "@bazel_lib//lib:copy_file",
         "@bazel_lib//lib:copy_to_directory",
     ],
+)
+
+bzl_library(
+    name = "fdo_profile",
+    srcs = ["fdo_profile.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":transition_settings",
+        "@rules_cc//cc:action_names_bzl",
+        "@rules_cc//cc:find_cc_toolchain_bzl",
+        "@rules_cc//cc/common",
+        "@rules_cc//cc/private/rules_impl/fdo:srcs",
+    ],
+)
+
+bzl_library(
+    name = "transition_settings",
+    srcs = ["transition_settings.bzl"],
+    visibility = ["//visibility:public"],
 )
 
 bzl_library(

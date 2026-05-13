@@ -53,7 +53,9 @@ string_flag(
     build_setting_default = "prebuilt",
     values = [
         "bootstrapped",
+        "instrumented",
         "prebuilt",
+        "stage1",
     ],
     visibility = ["//visibility:public"],
 )
@@ -125,6 +127,22 @@ config_setting(
     name = "bootstrapped_toolchain",
     flag_values = {
         ":source": "bootstrapped",
+    },
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "instrumented_toolchain",
+    flag_values = {
+        ":source": "instrumented",
+    },
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "stage1_toolchain",
+    flag_values = {
+        ":source": "stage1",
     },
     visibility = ["//visibility:public"],
 )

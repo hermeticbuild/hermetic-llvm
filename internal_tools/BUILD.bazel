@@ -4,7 +4,10 @@ buildifier(
     name = "buildifier.fix",
     add_tables = "//:.buildifier.json",
     diff_command = "diff",
-    exclude_patterns = ["./.git/*"],
+    exclude_patterns = [
+        "./.git/*",
+        "./bazel-*",
+    ],
     lint_mode = "fix",
     mode = "fix",
 )
@@ -14,7 +17,10 @@ buildifier_test(
     size = "small",
     add_tables = "//:.buildifier.json",
     diff_command = "diff",
-    exclude_patterns = ["./.git/*"],
+    exclude_patterns = [
+        "./.git/*",
+        "./bazel-*",
+    ],
     lint_mode = "warn",
     mode = "diff",
     no_sandbox = True,

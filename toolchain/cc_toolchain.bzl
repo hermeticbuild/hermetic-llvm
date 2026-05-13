@@ -12,6 +12,7 @@ def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
             "@llvm//toolchain/features:parse_headers",
             "@llvm//toolchain/features:external_include_paths",
             "@llvm//toolchain/features:generate_pdb_file",
+            "@llvm//toolchain/features:fdo_optimize",
             # TODO: Restore this after a rules_cc release includes the macOS
             # and Windows distributed ThinLTO arguments and uses NUL for
             # Windows ThinLTO backends without an index.
@@ -98,9 +99,9 @@ def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
             "//conditions:default": [],
         }),
         known_features = select({
-            "@llvm//toolchain:runtimes_none": [],
-            "@llvm//toolchain:runtimes_stage1": [],
-            "@llvm//toolchain:runtimes_stage1_hosted": [],
+            "@llvm//toolchain:runtimes_none": ["@llvm//toolchain/features:fdo_optimize"],
+            "@llvm//toolchain:runtimes_stage1": ["@llvm//toolchain/features:fdo_optimize"],
+            "@llvm//toolchain:runtimes_stage1_hosted": ["@llvm//toolchain/features:fdo_optimize"],
             "//conditions:default": [name + "_known_features"],
         }),
         enabled_features = select({
