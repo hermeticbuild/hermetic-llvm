@@ -1,9 +1,8 @@
 # libstdc++ Bazel Porting Guide
 
 This file defines the protocol for porting GCC libstdc++ source and configure
-logic into Bazel. It applies to files under `runtimes/libstdcxx`, the matching
-GCC source declarations in `3rd_party/gcc`, and the shared configure helpers in
-`runtimes/configure`.
+logic into Bazel. It applies to files under `runtimes/libstdcxx` and the
+matching GCC source declarations in `3rd_party/gcc`.
 
 The scope here is the libstdc++ Bazel port itself: source lists, generated
 headers, header overlays, configure checks, and configure-derived policy. This
@@ -44,13 +43,13 @@ Keep Bazel files shaped like the GCC files they port:
   `libstdc++-v3/acinclude.m4`.
 - `runtimes/libstdcxx/autoconf/crossconfig_checks.bzl` is the counterpart of
   `libstdc++-v3/crossconfig.m4`.
-- `runtimes/configure/native_autoconf_checks.bzl` is the counterpart for
-  reusable native autoconf and GCC top-level `config/*.m4` checks.
+- `runtimes/libstdcxx/autoconf/native_autoconf_checks.bzl` is the counterpart
+  for reusable native autoconf and GCC top-level `config/*.m4` checks.
 - `libstdc++-v3/linkage.m4` helpers are represented with the reusable native
   checks when they are generic math or stdlib declaration/linkage checks.
-- `runtimes/libstdcxx/configure.bzl`, `headers.bzl`, `symbols.bzl`, and
-  `BUILD.bazel` may consume configure-derived policy, but should not hide new
-  configure semantics without updating the inventories.
+- `runtimes/libstdcxx/configure.bzl`, the generated-header rule files,
+  `symbols.bzl`, and `BUILD.bazel` may consume configure-derived policy, but
+  should not hide new configure semantics without updating the inventories.
 
 Each source-counterpart `.bzl` file should start with a short comment naming
 the GCC file(s) it was ported from. When a group of upstream macros is collapsed
@@ -78,16 +77,15 @@ Markdown files, but they are not a substitute for the glossary.
 
 ## Inventory Scripts
 
-The inventory must be scriptable and reproducible. Scripts should live under a
-package-local tools directory, for example `runtimes/libstdcxx/tools`, and be
-exposed through Bazel tests or runnable targets.
+The inventory must be scriptable and reproducible. Scripts should live next to
+the autoconf model and be exposed through Bazel tests or runnable targets.
 
-The current entry point is `tools/autoconf_inventory.sh`. Its `inventory` mode
+The current entry point is `autoconf/autoconf_inventory.sh`. Its `inventory` mode
 prints raw discoveries: macro definitions, macro uses, config defines, check
 form counts, and check arguments. Raw discoveries are not checklist entries by
-themselves. The Bazel target `//runtimes/libstdcxx:config_define_audit_test`
+themselves. The Bazel target `//runtimes/libstdcxx/autoconf:config_define_audit_test`
 uses `check-status` mode to verify status coverage and modeled-source
-references. The Bazel target `//runtimes/libstdcxx:autoconf_inventory_test`
+references. The Bazel target `//runtimes/libstdcxx/autoconf:autoconf_inventory_test`
 uses `check-docs` mode to verify that the Markdown checklists and glossary
 mention every status-tracked configure macro.
 
@@ -181,9 +179,9 @@ still belongs in the usage checklist and glossary.
 Before committing configure-check changes, run from the repository root:
 
     bazel run //internal_tools:buildifier.check
-    bazel build --config remote //runtimes/libstdcxx:config_h //runtimes/libstdcxx:libstdcxx_config_h //runtimes/libstdcxx:cc_configure_probe //runtimes/libstdcxx/autoconf:configure_ac_checks
-    bazel test --config remote //runtimes/libstdcxx:autoconf_inventory_test
-    bazel test --config remote //runtimes/libstdcxx:config_define_audit_test
+    bazel build --config remote //runtimes/libstdcxx:config_h //runtimes/libstdcxx:libstdcxx_config_h //runtimes/libstdcxx/autoconf:cc_configure_probe //runtimes/libstdcxx/autoconf:configure_ac_checks
+    bazel test --config remote //runtimes/libstdcxx/autoconf:autoconf_inventory_test
+    bazel test --config remote //runtimes/libstdcxx/autoconf:config_define_audit_test
 
 When the change can affect real runtime behavior, also run from
 `e2e/rules_cc`:

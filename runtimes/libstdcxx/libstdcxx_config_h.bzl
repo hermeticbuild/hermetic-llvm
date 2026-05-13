@@ -1,9 +1,9 @@
 # Emits the libstdc++ config.h model from the checks selected by
 # //runtimes/libstdcxx/autoconf:configure_ac_checks.bzl. Generic CC probe
-# execution lives in //runtimes/libstdcxx:cc_configure_probe.bzl.
+# execution lives in //runtimes/libstdcxx/autoconf:cc_configure_probe.bzl.
 
 load(
-    "//runtimes/libstdcxx:cc_configure_probe.bzl",
+    "//runtimes/libstdcxx/autoconf:cc_configure_probe.bzl",
     "cc_configure_probe_context",
     "cc_configure_probe_toolchains",
     "cc_configure_probe_transition",

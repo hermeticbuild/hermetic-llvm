@@ -307,7 +307,9 @@ check_status() {
     CONFIGURE \
     CONFIGURE_AC_CHECKS \
     CROSSCONFIG_CHECKS \
-    HEADERS \
+    CXXCONFIG_HEADER \
+    GTHR_HEADERS \
+    LARGEFILE_CONFIG_HEADER \
     LIBSTDCXX_CONFIG_H \
     NATIVE_AUTOCONF_CHECKS \
     SYMBOLS
@@ -426,7 +428,9 @@ BEGIN {
       "${CONFIGURE_AC_CHECKS}" \
       "${CONFIGURE}" \
       "${CROSSCONFIG_CHECKS}" \
-      "${HEADERS}" \
+      "${CXXCONFIG_HEADER}" \
+      "${GTHR_HEADERS}" \
+      "${LARGEFILE_CONFIG_HEADER}" \
       "${LIBSTDCXX_CONFIG_H}" \
       "${NATIVE_AUTOCONF_CHECKS}" \
       "${SYMBOLS}"; then
@@ -449,7 +453,9 @@ BEGIN {
       "${CONFIGURE_AC_CHECKS}" \
       "${CONFIGURE}" \
       "${CROSSCONFIG_CHECKS}" \
-      "${HEADERS}" \
+      "${CXXCONFIG_HEADER}" \
+      "${GTHR_HEADERS}" \
+      "${LARGEFILE_CONFIG_HEADER}" \
       "${LIBSTDCXX_CONFIG_H}" \
       "${NATIVE_AUTOCONF_CHECKS}" \
       "${SYMBOLS}"; then

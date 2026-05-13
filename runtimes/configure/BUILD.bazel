@@ -1,8 +1,0 @@
-load("@bazel_lib//:bzl_library.bzl", "bzl_library")
-
-package(default_visibility = ["//visibility:public"])
-
-bzl_library(
-    name = "native_autoconf_checks",
-    srcs = ["native_autoconf_checks.bzl"],
-)

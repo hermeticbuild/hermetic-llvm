@@ -3,7 +3,7 @@
 # this Bazel port; other target branches remain documented as unsupported.
 
 load(
-    "//runtimes/configure:native_autoconf_checks.bzl",
+    ":native_autoconf_checks.bzl",
     "am_iconv",
     "gcc_check_math_support",
     "gcc_check_stdlib_support",

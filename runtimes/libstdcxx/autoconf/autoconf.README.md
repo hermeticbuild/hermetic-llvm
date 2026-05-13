@@ -4,7 +4,7 @@ This file is the human glossary for the Bazel port of GCC libstdc++ configure
 logic. The check definition inventory is in `autoconf.checks.md`; the
 configure usage inventory is in `autoconf.usage.md`; the mechanical status
 inputs are `config_macro_status.txt` and `config_define_status.txt`.
-The raw output from `tools/autoconf_inventory.sh inventory` is a review queue;
+The raw output from `autoconf_inventory.sh inventory` is a review queue;
 it is not itself evidence that a check has been implemented.
 
 The current active support scope is Linux with GNU libc. Other target branches
@@ -50,8 +50,8 @@ plumbing with explicit labels and source lists, so the macro is `not-needed`.
 
 `GLIBCXX_CHECK_HOST` sources `configure.host` and chooses OS, CPU, ABI,
 atomicity, thread, and header directories from the host triple. Bazel models
-the active Linux GNU result as `target-derived` policy in `configure.bzl`,
-`headers.bzl`, and `BUILD.bazel`.
+the active Linux GNU result as `target-derived` policy in `configure.bzl`, the
+generated-header rule files, and `BUILD.bazel`.
 
 `GLIBCXX_ENABLE_HOSTED`, `GLIBCXX_ENABLE_LONG_LONG`,
 `GLIBCXX_ENABLE_WCHAR_T`, `GLIBCXX_ENABLE_C99`, `GLIBCXX_CHECK_C99_TR1`,
@@ -194,5 +194,5 @@ Important groups are:
 - Windows, Solaris, BSD/macOS, and libbacktrace-only outputs are
   `unsupported-target` or `unsupported-feature`.
 
-Run `bazel test --config remote //runtimes/libstdcxx:config_define_audit_test`
+Run `bazel test --config remote //runtimes/libstdcxx/autoconf:config_define_audit_test`
 to verify the source inventory and status files still agree.

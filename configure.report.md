@@ -1130,7 +1130,7 @@ Condition: `GLIBCXX_IS_NATIVE=false`.
 - [x] Fetch or otherwise expose the selected top-level GCC `config/*.m4`
   macros used by libstdc++ configure sources.
 - [x] Split the Bazel configure model into source-counterpart files:
-  `runtimes/configure/native_autoconf_checks.bzl`,
+  `runtimes/libstdcxx/autoconf/native_autoconf_checks.bzl`,
   `runtimes/libstdcxx/autoconf/acinclude_checks.bzl`,
   `runtimes/libstdcxx/autoconf/crossconfig_checks.bzl`, and
   `runtimes/libstdcxx/autoconf/configure_ac_checks.bzl`.

@@ -3,16 +3,6 @@
 # configure flow; unsupported branches stay documented as inactive notes below.
 
 load(
-    "//runtimes/configure:native_autoconf_checks.bzl",
-    "ac_check_headers",
-    "am_iconv",
-    "gcc_check_math_support",
-    "gcc_check_stdlib_support",
-    "gcc_check_tls",
-    "gcc_check_unwind_getipinfo",
-    "gcc_linux_futex",
-)
-load(
     ":acinclude_checks.bzl",
     "glibcxx_abi_policies",
     "glibcxx_check_c99_tr1",
@@ -50,6 +40,16 @@ load(
     "glibcxx_random_policy",
     "glibcxx_resource_limits_policy",
     "glibcxx_zoneinfo_policy",
+)
+load(
+    ":native_autoconf_checks.bzl",
+    "ac_check_headers",
+    "am_iconv",
+    "gcc_check_math_support",
+    "gcc_check_stdlib_support",
+    "gcc_check_tls",
+    "gcc_check_unwind_getipinfo",
+    "gcc_linux_futex",
 )
 
 _HEADER_CHECKS = [

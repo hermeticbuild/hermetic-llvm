@@ -1,28 +1,144 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 
 package(default_visibility = ["//visibility:public"])
 
 exports_files([
     "acinclude_checks.bzl",
+    "autoconf_inventory.sh",
     "autoconf.README.md",
     "autoconf.checks.md",
     "autoconf.usage.md",
+    "cc_configure_probe.bzl",
     "config_define_status.txt",
     "config_macro_status.txt",
     "configure_ac_checks.bzl",
     "crossconfig_checks.bzl",
+    "native_autoconf_checks.bzl",
 ])
+
+_AUTOCONF_AUDIT_DATA = [
+    "config_define_status.txt",
+    "config_macro_status.txt",
+    "@gcc//:config/acx.m4",
+    "@gcc//:config/cet.m4",
+    "@gcc//:config/futex.m4",
+    "@gcc//:config/gc++filt.m4",
+    "@gcc//:config/gthr.m4",
+    "@gcc//:config/hwcaps.m4",
+    "@gcc//:config/iconv.m4",
+    "@gcc//:config/lthostflags.m4",
+    "@gcc//:config/multi.m4",
+    "@gcc//:config/no-executables.m4",
+    "@gcc//:config/tls.m4",
+    "@gcc//:config/toolexeclibdir.m4",
+    "@gcc//:config/unwind_ipinfo.m4",
+    "@gcc//:libstdc++-v3/acinclude.m4",
+    "@gcc//:libstdc++-v3/configure.ac",
+    "@gcc//:libstdc++-v3/configure.host",
+    "@gcc//:libstdc++-v3/crossconfig.m4",
+    "@gcc//:libstdc++-v3/linkage.m4",
+]
+
+_AUTOCONF_AUDIT_ENV = {
+    "GCC_ACINCLUDE": "$(rootpath @gcc//:libstdc++-v3/acinclude.m4)",
+    "GCC_CONFIG_ACX": "$(rootpath @gcc//:config/acx.m4)",
+    "GCC_CONFIG_CET": "$(rootpath @gcc//:config/cet.m4)",
+    "GCC_CONFIG_FUTEX": "$(rootpath @gcc//:config/futex.m4)",
+    "GCC_CONFIG_GCXXFILT": "$(rootpath @gcc//:config/gc++filt.m4)",
+    "GCC_CONFIG_GTHR": "$(rootpath @gcc//:config/gthr.m4)",
+    "GCC_CONFIG_HWCAPS": "$(rootpath @gcc//:config/hwcaps.m4)",
+    "GCC_CONFIG_ICONV": "$(rootpath @gcc//:config/iconv.m4)",
+    "GCC_CONFIG_LTHOSTFLAGS": "$(rootpath @gcc//:config/lthostflags.m4)",
+    "GCC_CONFIG_MULTI": "$(rootpath @gcc//:config/multi.m4)",
+    "GCC_CONFIG_NO_EXECUTABLES": "$(rootpath @gcc//:config/no-executables.m4)",
+    "GCC_CONFIG_TLS": "$(rootpath @gcc//:config/tls.m4)",
+    "GCC_CONFIG_TOOLEXECLIBDIR": "$(rootpath @gcc//:config/toolexeclibdir.m4)",
+    "GCC_CONFIG_UNWIND_IPINFO": "$(rootpath @gcc//:config/unwind_ipinfo.m4)",
+    "GCC_CONFIGURE_AC": "$(rootpath @gcc//:libstdc++-v3/configure.ac)",
+    "GCC_CONFIGURE_HOST": "$(rootpath @gcc//:libstdc++-v3/configure.host)",
+    "GCC_CROSSCONFIG": "$(rootpath @gcc//:libstdc++-v3/crossconfig.m4)",
+    "GCC_LINKAGE": "$(rootpath @gcc//:libstdc++-v3/linkage.m4)",
+    "MACRO_STATUS_FILE": "$(rootpath config_macro_status.txt)",
+    "STATUS_FILE": "$(rootpath config_define_status.txt)",
+}
+
+_AUTOCONF_MODEL_DATA = [
+    "acinclude_checks.bzl",
+    "cc_configure_probe.bzl",
+    "configure_ac_checks.bzl",
+    "crossconfig_checks.bzl",
+    "native_autoconf_checks.bzl",
+    "//runtimes/libstdcxx:configure.bzl",
+    "//runtimes/libstdcxx:libstdcxx_config_h.bzl",
+    "//runtimes/libstdcxx:libstdcxx_cxxconfig_header.bzl",
+    "//runtimes/libstdcxx:libstdcxx_gthr_headers.bzl",
+    "//runtimes/libstdcxx:libstdcxx_largefile_config_header.bzl",
+    "//runtimes/libstdcxx:symbols.bzl",
+]
+
+_AUTOCONF_MODEL_ENV = {
+    "ACINCLUDE_CHECKS": "$(rootpath acinclude_checks.bzl)",
+    "CC_CONFIGURE_PROBE": "$(rootpath cc_configure_probe.bzl)",
+    "CONFIGURE": "$(rootpath //runtimes/libstdcxx:configure.bzl)",
+    "CONFIGURE_AC_CHECKS": "$(rootpath configure_ac_checks.bzl)",
+    "CROSSCONFIG_CHECKS": "$(rootpath crossconfig_checks.bzl)",
+    "CXXCONFIG_HEADER": "$(rootpath //runtimes/libstdcxx:libstdcxx_cxxconfig_header.bzl)",
+    "GTHR_HEADERS": "$(rootpath //runtimes/libstdcxx:libstdcxx_gthr_headers.bzl)",
+    "LARGEFILE_CONFIG_HEADER": "$(rootpath //runtimes/libstdcxx:libstdcxx_largefile_config_header.bzl)",
+    "LIBSTDCXX_CONFIG_H": "$(rootpath //runtimes/libstdcxx:libstdcxx_config_h.bzl)",
+    "NATIVE_AUTOCONF_CHECKS": "$(rootpath native_autoconf_checks.bzl)",
+    "SYMBOLS": "$(rootpath //runtimes/libstdcxx:symbols.bzl)",
+}
+
+_AUTOCONF_DOC_DATA = [
+    "autoconf.README.md",
+    "autoconf.checks.md",
+    "autoconf.usage.md",
+]
+
+_AUTOCONF_DOC_ENV = {
+    "AUTOCONF_CHECKS": "$(rootpath autoconf.checks.md)",
+    "AUTOCONF_README": "$(rootpath autoconf.README.md)",
+    "AUTOCONF_USAGE": "$(rootpath autoconf.usage.md)",
+}
+
+sh_test(
+    name = "config_define_audit_test",
+    srcs = ["autoconf_inventory.sh"],
+    args = ["check-status"],
+    data = _AUTOCONF_AUDIT_DATA + _AUTOCONF_MODEL_DATA,
+    env = dict(_AUTOCONF_AUDIT_ENV.items() + _AUTOCONF_MODEL_ENV.items()),
+)
+
+sh_test(
+    name = "autoconf_inventory_test",
+    srcs = ["autoconf_inventory.sh"],
+    args = ["check-docs"],
+    data = _AUTOCONF_AUDIT_DATA + _AUTOCONF_DOC_DATA,
+    env = dict(_AUTOCONF_AUDIT_ENV.items() + _AUTOCONF_DOC_ENV.items()),
+)
 
 bzl_library(
     name = "acinclude_checks",
     srcs = ["acinclude_checks.bzl"],
-    deps = ["//runtimes/configure:native_autoconf_checks"],
+    deps = [":native_autoconf_checks"],
+)
+
+bzl_library(
+    name = "cc_configure_probe",
+    srcs = ["cc_configure_probe.bzl"],
+    deps = [
+        "@rules_cc//cc:action_names_bzl",
+        "@rules_cc//cc:find_cc_toolchain_bzl",
+        "@rules_cc//cc/common",
+    ],
 )
 
 bzl_library(
     name = "crossconfig_checks",
     srcs = ["crossconfig_checks.bzl"],
-    deps = ["//runtimes/configure:native_autoconf_checks"],
+    deps = [":native_autoconf_checks"],
 )
 
 bzl_library(
@@ -30,6 +146,11 @@ bzl_library(
     srcs = ["configure_ac_checks.bzl"],
     deps = [
         ":acinclude_checks",
-        "//runtimes/configure:native_autoconf_checks",
+        ":native_autoconf_checks",
     ],
+)
+
+bzl_library(
+    name = "native_autoconf_checks",
+    srcs = ["native_autoconf_checks.bzl"],
 )
