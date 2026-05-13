@@ -12,6 +12,32 @@ load(
 
 CXX_FILESYSTEM_FLAGS = ["-fno-exceptions"]
 
+# Upstream macro coverage anchors for audit. The active Linux GNU port groups
+# some acinclude.m4 macros when they share one Bazel probe/policy site:
+#
+# GLIBCXX_CHECK_MATH_SUPPORT and GLIBCXX_CHECK_STDLIB_SUPPORT are delegated to
+# reusable GCC-native checks in //runtimes/configure:native_autoconf_checks.bzl.
+# GLIBCXX_CHECK_MATH_DECL and GLIBCXX_CHECK_MATH_DECLS are currently represented
+# by glibcxx_enable_c99() and glibcxx_check_math11_proto().
+# GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_3 is currently represented by
+# glibcxx_enable_c99() and glibcxx_check_c99_tr1().
+# GLIBCXX_CHECK_GET_NPROCS, GLIBCXX_CHECK_SC_NPROCESSORS_ONLN,
+# GLIBCXX_CHECK_SC_NPROC_ONLN, and GLIBCXX_CHECK_PTHREADS_NUM_PROCESSORS_NP are
+# represented by glibcxx_check_hardware_concurrency().
+# GLIBCXX_CHECK_PTHREAD_COND_CLOCKWAIT, GLIBCXX_CHECK_PTHREAD_MUTEX_CLOCKLOCK,
+# and GLIBCXX_CHECK_PTHREAD_RWLOCK_CLOCKLOCK are represented by
+# glibcxx_check_pthread_clock_apis().
+# GLIBCXX_CHECK_X86_RDRAND, GLIBCXX_CHECK_X86_RDSEED,
+# GLIBCXX_CHECK_ALIGNAS_CACHELINE, GLIBCXX_CHECK_INIT_PRIORITY,
+# GLIBCXX_STRUCT_TM_TM_ZONE, GLIBCXX_CHECK_POLL, GLIBCXX_CHECK_ARC4RANDOM,
+# GLIBCXX_CHECK_GETENTROPY, GLIBCXX_CHECK_DEV_RANDOM, GLIBCXX_CHECK_WRITEV,
+# GLIBCXX_CHECK_S_ISREG_OR_S_IFREG, GLIBCXX_CHECK_SDT_H,
+# GLIBCXX_CHECK_SIZE_T_MANGLING, GLIBCXX_CHECK_LINKER_FEATURES, and
+# GLIBCXX_CHECK_EXCEPTION_PTR_SYMVER are represented by grouped checks below.
+# GLIBCXX_ENABLE_EXTERN_TEMPLATE, GLIBCXX_ENABLE_FILESYSTEM_TS,
+# GLIBCXX_ENABLE_LIBSTDCXX_DUAL_ABI, GLIBCXX_ENABLE_LIBSTDCXX_VISIBILITY, and
+# GLIBCXX_DEFAULT_ABI are represented by glibcxx_abi_policies().
+
 def glibcxx_check_compiler_features():
     return []
 

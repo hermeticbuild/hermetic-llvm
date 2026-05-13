@@ -400,6 +400,7 @@ sh_test(
     data = [
         "acinclude_checks.bzl",
         "config_define_status.txt",
+        "config_macro_status.txt",
         "config_probe.bzl",
         "configure.bzl",
         "configure_ac_checks.bzl",
@@ -449,6 +450,7 @@ sh_test(
         "GCC_CROSSCONFIG": "$(rootpath @gcc//:libstdc++-v3/crossconfig.m4)",
         "CROSSCONFIG_CHECKS": "$(rootpath crossconfig_checks.bzl)",
         "HEADERS": "$(rootpath headers.bzl)",
+        "MACRO_STATUS_FILE": "$(rootpath config_macro_status.txt)",
         "NATIVE_AUTOCONF_CHECKS": "$(rootpath //runtimes/configure:native_autoconf_checks.bzl)",
         "STATUS_FILE": "$(rootpath config_define_status.txt)",
         "SYMBOLS": "$(rootpath symbols.bzl)",

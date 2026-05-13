@@ -22,7 +22,7 @@ The implementation must not run `make`, `./configure`, autoconf, Python, or GCC 
 - [x] (2026-05-13) Replaced the monolithic `runtimes/libstdcxx/config_checks.bzl` shape with source-counterpart modules and direct `config_probe.bzl` imports.
 - [x] (2026-05-13) Updated `configure.report.md` from the now-complete fetched source set and recorded completed source-split work.
 - [x] (2026-05-13) Expanded the existing audit test to include `crossconfig.m4` and selected top-level GCC config macros.
-- [ ] Add macro-call coverage to the audit test so it tracks called `GLIBCXX_*` and `GCC_*` macros, not only defines.
+- [x] (2026-05-13) Added macro-call coverage to `config_define_audit_test` so it tracks called `GLIBCXX_*` and `GCC_*` macros, not only defines.
 - [ ] Continue fixing known weak C99/TR1 grouping; `HAVE_GETIPINFO` and `_GLIBCXX_USE_LFS` are done.
 
 ## Surprises & Discoveries
@@ -60,6 +60,8 @@ The implementation must not run `make`, `./configure`, autoconf, Python, or GCC 
 Milestone update on 2026-05-13: the source fetch and source-counterpart split are implemented directly without a compatibility facade. `config_probe.bzl` imports `configure_ac_checks.bzl`, and the deleted monolithic file is no longer in the build graph.
 
 Validation on 2026-05-13: `bazel run //internal_tools:buildifier.check`, `bazel build --config remote //runtimes/libstdcxx:config_h //runtimes/libstdcxx:config_probe //runtimes/libstdcxx:configure_ac_checks`, `bazel test --config remote //runtimes/libstdcxx:config_define_audit_test`, and the `e2e/rules_cc` libstdc++ dynamic output tests all passed.
+
+Milestone update on 2026-05-13: the audit now extracts direct `GLIBCXX_*` and `GCC_*` macro calls, `AC_REQUIRE`, and `AC_BEFORE` references from `libstdc++-v3/configure.ac`, `libstdc++-v3/acinclude.m4`, and `libstdc++-v3/crossconfig.m4`. The checked-in `runtimes/libstdcxx/config_macro_status.txt` classifies each discovered macro call as modeled, target-derived, future build setting, not needed, or unsupported. Grouped modeled macros have explicit source anchors in `runtimes/libstdcxx/acinclude_checks.bzl` so GCC updates fail visibly instead of silently bypassing the Bazel model.
 
 ## Context and Orientation
 
