@@ -1,3 +1,9 @@
+# Shared configure-check model for GCC/libstdc++ macros that are not specific
+# to libstdc++-v3/acinclude.m4. Compare these helpers with GCC's top-level
+# config/*.m4 files, especially config/tls.m4, config/unwind_ipinfo.m4,
+# config/futex.m4, config/iconv.m4, and config/no-executables.m4, before
+# changing their semantics.
+
 def compile_check(name, source, language = "c", flags = []):
     return struct(
         flags = flags,

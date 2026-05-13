@@ -1,3 +1,7 @@
+# Cross-configuration check model ported from GCC's
+# libstdc++-v3/crossconfig.m4. Only the Linux GNU-relevant branch is active in
+# this Bazel port; other target branches remain documented as unsupported.
+
 load(
     "//runtimes/configure:native_autoconf_checks.bzl",
     "am_iconv",

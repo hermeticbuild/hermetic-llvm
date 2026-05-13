@@ -1,3 +1,7 @@
+# Active libstdc++ config.h composition ported from GCC's
+# libstdc++-v3/configure.ac. This file should read like the supported Linux GNU
+# configure flow; unsupported branches stay documented as inactive notes below.
+
 load(
     "//runtimes/configure:native_autoconf_checks.bzl",
     "ac_check_headers",

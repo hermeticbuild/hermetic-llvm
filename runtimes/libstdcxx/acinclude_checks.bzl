@@ -1,3 +1,7 @@
+# Configure-check model ported from GCC's libstdc++-v3/acinclude.m4. Keep
+# function names and grouping close to the GLIBCXX_* macros in that file so GCC
+# updates can be reviewed by comparing acinclude.m4 against this module.
+
 load(
     "//runtimes/configure:native_autoconf_checks.bzl",
     "CXX_NO_EXCEPTIONS_FLAGS",
