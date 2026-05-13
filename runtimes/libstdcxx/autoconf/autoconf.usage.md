@@ -37,6 +37,7 @@ Status meanings are defined in `AGENTS.md`.
 - [x] `GLIBCXX_CHECK_SDT_H` - systemtap header probe is modeled; `modeled`.
 - [x] `GLIBCXX_CHECK_COMPILER_FEATURES` - compiler feature checks are modeled as build policy; `modeled`.
 - [x] `GLIBCXX_ENABLE_ATOMIC_BUILTINS` - atomic builtin policy is modeled; `modeled`.
+- [x] `GLIBCXX_ENABLE_DECIMAL_FLOAT` - decimal floating-point support is probed; `modeled`.
 - [x] `GLIBCXX_CHECK_GTHREADS` - gthreads checks are modeled; `modeled`.
 - [x] `GCC_CHECK_TLS` - TLS probe is modeled; `modeled`.
 - [x] `GCC_CHECK_UNWIND_GETIPINFO` - unwind policy is modeled; `modeled`.
@@ -93,10 +94,12 @@ Status meanings are defined in `AGENTS.md`.
 
 - [x] `GLIBCXX_ENABLE_VERBOSE` - fixed today; should become a private knob.
 - [x] `GLIBCXX_ENABLE_CONCEPT_CHECKS` - fixed today; should become a private knob if exposed.
-- [x] `GLIBCXX_ENABLE_DECIMAL_FLOAT` - fixed today; needs target/probe knob work.
 - [x] `GLIBCXX_ENABLE_FLOAT128` - fixed today; needs target/probe knob and version-map work.
 - [x] `GLIBCXX_ENABLE_FULLY_DYNAMIC_STRING` - fixed today; needs ABI knob work.
 - [x] `GLIBCXX_EMERGENCY_EH_ALLOC` - fixed today; needs EH pool knobs.
+- [x] `nls` / `_GLIBCXX_USE_NLS` - fixed off; needs NLS catalog build policy if exposed.
+- [x] `stdio_pure` / `_GLIBCXX_USE_STDIO_PURE` - fixed off; needs a C stdio variant knob if exposed.
+- [x] `malloc` allocator mode - fixed to the normal allocator; needs an allocator variant knob if exposed.
 
 ## Not Needed In Bazel
 

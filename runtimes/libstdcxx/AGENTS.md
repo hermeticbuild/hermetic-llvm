@@ -86,11 +86,14 @@ the autoconf model and be exposed through Bazel tests or runnable targets.
 The current entry point is `autoconf/autoconf_inventory.sh`. Its `inventory` mode
 prints raw discoveries: macro definitions, macro uses, config defines, check
 form counts, and check arguments. Raw discoveries are not checklist entries by
-themselves. The Bazel target `//runtimes/libstdcxx/autoconf:config_define_audit_test`
+themselves. Run `bazel run //runtimes/libstdcxx/autoconf:autoconf_inventory -- inventory`
+to inspect that raw queue through Bazel runfiles. The Bazel target
+`//runtimes/libstdcxx/autoconf:config_define_audit_test`
 uses `check-status` mode to verify status coverage and modeled-source
 references. The Bazel target `//runtimes/libstdcxx/autoconf:autoconf_inventory_test`
 uses `check-docs` mode to verify that the Markdown checklists and glossary
-mention every status-tracked configure macro.
+mention every status-tracked configure macro and every reviewed concrete
+`AC_ARG_*`, `AC_CHECK_*`, and `AC_COMPUTE_INT` argument.
 
 The scripts should read the fetched GCC source files from Bazel runfiles, not
 from an arbitrary local GCC checkout. They should cover at least:

@@ -90,13 +90,14 @@ top-level checks used by libstdc++. TLS and futex are modeled with target
 compiler/linker probes; unwind IP info is modeled as GCC target policy for the
 supported Linux GNU configuration.
 
-`GLIBCXX_CHECK_COMPILER_FEATURES`, `GLIBCXX_ENABLE_ATOMIC_BUILTINS`, and
-`GLIBCXX_CHECK_GTHREADS` cover compiler section flags, lock-free atomic word
-support, and gthreads support. The active Linux GNU behavior is modeled, with
-some answers represented as target policy where GCC's result is target-derived.
-The gthreads availability and pthread read/write lock checks compile against
-the generated `bits/gthr.h` overlay so they follow the staged header context
-used by this Bazel port.
+`GLIBCXX_CHECK_COMPILER_FEATURES`, `GLIBCXX_ENABLE_ATOMIC_BUILTINS`,
+`GLIBCXX_ENABLE_DECIMAL_FLOAT`, and `GLIBCXX_CHECK_GTHREADS` cover compiler
+section flags, lock-free atomic word support, decimal floating-point support,
+and gthreads support. The active Linux GNU behavior is modeled, with some
+answers represented as target policy where GCC's result is target-derived. The
+decimal floating-point check is a compile probe. The gthreads availability and
+pthread read/write lock checks compile against the generated `bits/gthr.h`
+overlay so they follow the staged header context used by this Bazel port.
 
 `GLIBCXX_CHECK_LINKER_FEATURES`, `GLIBCXX_ENABLE_SYMVERS`,
 `GLIBCXX_CHECK_EXCEPTION_PTR_SYMVER`, `GLIBCXX_DEFAULT_ABI`,
@@ -149,9 +150,39 @@ reference-count ABI even when compare-and-swap builtins exist.
 `malloc` mode, NLS, and `GLIBCXX_EMERGENCY_EH_ALLOC` are currently fixed or
 disabled policies. They should become explicit private Bazel settings only if
 the port exposes the corresponding GCC variant. `GLIBCXX_ENABLE_DECIMAL_FLOAT`
-is a compile probe, not a build setting. Float128 remains fixed disabled until
-the probe result and `float128.ver` version-script input can be modeled
-together.
+is already represented by a compile probe and is not a deferred knob. Float128
+remains fixed disabled until the probe result and `float128.ver` version-script
+input can be modeled together.
+
+## Audited Policy And Defaults
+
+The current Linux GNU policy/default set was reviewed against the active
+support scope. `ICONV_CONST` is intentionally left undefined because the
+supported glibc iconv declaration uses a non-const input pointer. `USE_EMUTLS`
+is intentionally left undefined because the supported compiler and target path
+uses real TLS through `GCC_CHECK_TLS`. The long-double compatibility defines
+are intentionally left undefined because the supported CPU/version-script
+policy does not enable GCC's long-double compatibility port files. The
+`SYS_clock_gettime` and Win32 sleep fallback defines are left undefined for the
+supported Linux GNU path, where libc `clock_gettime`, `nanosleep`, and
+`sched_yield` probes are expected to decide the active time support. The stdio
+integer constants are policy-modeled to glibc values; this remains acceptable
+only while non-GNU libc support is out of scope.
+
+## High-Risk Probe Audit
+
+The high-risk modeled groups were reviewed for source-counterpart alignment.
+C99/TR1 and wide-character checks live in `acinclude_checks.bzl` and keep the
+upstream C++98/C++11 split. Filesystem checks keep the upstream function and
+member probes, with non-Linux branches inactive. Stdio locking is modeled as
+three independent probes for locking, `fwrite_unlocked`, and glibc FILE
+internals; this is slightly less conditional than upstream but safe for the
+supported glibc path because each generated define still requires its own
+successful compile/link probe. Gthreads probes compile against the generated
+`bits/gthr.h` overlay so they see the same staged header context as the
+runtime build. Linker, symbol-version, and ABI policy remains target-selected
+for Linux GNU and tied to the generated version script and `libstdc++.so.6`
+soname.
 
 ## Configure Plumbing Replaced By Bazel
 

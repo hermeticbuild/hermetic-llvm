@@ -300,6 +300,16 @@ write_gcc_macro_uses() {
   extract_macro_uses > "${output}"
 }
 
+reviewed_check_arguments() {
+  extract_check_arguments | awk -F: '
+    $1 ~ /^(AC_ARG_ENABLE|AC_ARG_WITH|AC_CHECK_DECL|AC_CHECK_DECLS|AC_CHECK_FUNCS|AC_CHECK_HEADERS|AC_CHECK_TYPE|AC_CHECK_TYPES|AC_COMPUTE_INT)$/ {
+      if ($2 != "funclist") {
+        print
+      }
+    }
+  ' | sort -u
+}
+
 check_status() {
   require_env \
     ACINCLUDE_CHECKS \
@@ -489,6 +499,13 @@ check_docs() {
       printf 'autoconf.README.md missing macro: %s\n' "${macro}" >> "${missing}"
     fi
   done < <(status_symbols "${MACRO_STATUS_FILE}")
+
+  while IFS= read -r check_argument; do
+    argument="${check_argument#*:}"
+    if ! grep -F -q "${argument}" "${AUTOCONF_CHECKS}"; then
+      printf 'autoconf.checks.md missing concrete check argument: %s\n' "${check_argument}" >> "${missing}"
+    fi
+  done < <(reviewed_check_arguments)
 
   if [ -s "${missing}" ]; then
     cat "${missing}" >&2

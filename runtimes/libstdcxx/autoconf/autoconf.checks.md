@@ -68,6 +68,7 @@ Status meanings are defined in `AGENTS.md`.
 - [x] `GLIBCXX_ENABLE_C99` - C99 support probe groups.
 - [x] `GLIBCXX_ENABLE_CLOCALE` - C locale policy/probes.
 - [x] `GLIBCXX_ENABLE_CSTDIO` - C stdio policy/probes.
+- [x] `GLIBCXX_ENABLE_DECIMAL_FLOAT` - decimal float compile probe.
 - [x] `GLIBCXX_ENABLE_EXTERN_TEMPLATE` - extern template policy.
 - [x] `GLIBCXX_ENABLE_FILESYSTEM_TS` - filesystem source policy.
 - [x] `GLIBCXX_ENABLE_HOSTED` - hosted policy.
@@ -226,10 +227,12 @@ classification. They are not generic raw inventory entries.
 
 - [x] `GLIBCXX_EMERGENCY_EH_ALLOC` - needs private EH pool knobs.
 - [x] `GLIBCXX_ENABLE_CONCEPT_CHECKS` - needs a private feature knob if exposed.
-- [x] `GLIBCXX_ENABLE_DECIMAL_FLOAT` - needs policy/probe knob work.
 - [x] `GLIBCXX_ENABLE_FLOAT128` - needs policy/probe knob and version-map work.
 - [x] `GLIBCXX_ENABLE_FULLY_DYNAMIC_STRING` - needs ABI-affecting private knob.
 - [x] `GLIBCXX_ENABLE_VERBOSE` - needs private verbose-mode knob.
+- [x] `nls` / `_GLIBCXX_USE_NLS` - needs private NLS enablement if message catalogs are built.
+- [x] `stdio_pure` / `_GLIBCXX_USE_STDIO_PURE` - needs a private C stdio variant knob if exposed.
+- [x] `malloc` allocator mode - needs an allocator variant knob if exposed.
 
 ## Not Needed
 
