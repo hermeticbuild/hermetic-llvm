@@ -26,6 +26,9 @@ The implementation must not run `make`, `./configure`, autoconf, Python, or GCC 
 - [x] (2026-05-13) Replaced the policy-defined C99 and TR1 aggregate outputs with Linux GNU probes modeled after `GLIBCXX_ENABLE_C99` and `GLIBCXX_CHECK_C99_TR1`; `HAVE_GETIPINFO` and `_GLIBCXX_USE_LFS` were already fixed.
 - [x] (2026-05-13) Split define audit statuses so directly modeled defines distinguish `probe-modeled` from `policy-modeled`.
 - [x] (2026-05-13) Resolved `AC_SYS_LARGEFILE` for the current scope: no active define is needed for supported 64-bit Linux GNU targets; 32-bit or Darwin targets must revisit it.
+- [x] (2026-05-13) Added `libstdc++-v3/linkage.m4` to the sparse GCC fetch and audit data so math/stdlib helper macros are checked directly.
+- [x] (2026-05-13) Modeled `_GLIBCXX_USE_WCHAR_T` as the upstream wide API declaration probe instead of a fixed policy define.
+- [x] (2026-05-13) Updated the configure report and source-counterpart file headers to document where the Bazel checks were ported from.
 
 ## Surprises & Discoveries
 
@@ -33,9 +36,9 @@ The implementation must not run `make`, `./configure`, autoconf, Python, or GCC 
 
   Evidence: before the sparse archive edit, `find .../external/+gcc+gcc/libstdc++-v3 -name configure.host -o -name crossconfig.m4` returned no files. After the edit, `bazel query '@gcc//:*'` lists `@gcc//:libstdc++-v3/configure.host` and `@gcc//:libstdc++-v3/crossconfig.m4`.
 
-- Observation: Top-level GCC `config/*.m4` macro files are still not in the sparse archive.
+- Observation: Top-level GCC `config/*.m4` macro files and `libstdc++-v3/linkage.m4` were not originally in the sparse archive, so audit coverage had blind spots.
 
-  Evidence: `find .../external/+gcc+gcc/config -maxdepth 1 -type f` failed because the sparse external repository does not contain a top-level `config` directory yet.
+  Evidence: the sparse archive was extended to include only the specific top-level `config/*.m4` files used by libstdc++ configure logic and `libstdc++-v3/linkage.m4`; `config_define_audit_test` now receives those files through runfiles.
 
 ## Decision Log
 
@@ -71,9 +74,11 @@ Milestone update on 2026-05-13: `config_define_status.txt` now separates `probe-
 
 Milestone update on 2026-05-13: `AC_SYS_LARGEFILE` was reviewed against `runtimes/libstdcxx/configure.bzl` and `runtimes/libstdcxx/headers.bzl`. The active supported GNU libstdc++ targets are 64-bit Linux triples, so no `_FILE_OFFSET_BITS` or `_LARGE_FILES` define is needed today. `libstdcxx_largefile_config_header` already forwards those defines from `config_h`, so adding 32-bit GNU or Darwin support should add the relevant config entries rather than changing the header plumbing.
 
+Milestone update on 2026-05-13: `libstdc++-v3/linkage.m4` is now fetched and audited. Its math and stdlib helper macros are represented by `gcc_check_math_support()` and `gcc_check_stdlib_support()`, including `HAVE_FPCLASS` and `HAVE_QFPCLASS` in the discovered define set. `_GLIBCXX_USE_WCHAR_T` now follows the upstream `GLIBCXX_ENABLE_WCHAR_T` wide API declaration group.
+
 ## Context and Orientation
 
-GCC's libstdc++ configuration is spread across several source files. `libstdc++-v3/configure.ac` is the main autoconf script. It decides the top-level order of policy choices and probes. `libstdc++-v3/acinclude.m4` defines most libstdc++-specific macros, such as `GLIBCXX_ENABLE_C99`, `GLIBCXX_CHECK_LFS`, and `GLIBCXX_ENABLE_SYMVERS`. `libstdc++-v3/configure.host` is a shell file sourced by configure to choose CPU, OS, ABI, header, and source directories from the host triple. `libstdc++-v3/crossconfig.m4` contains hardcoded define choices for non-native or cross builds. GCC also has top-level `config/*.m4` macro files used by libstdc++, for example unwind, futex, CET, and generic compiler/linker helper macros.
+GCC's libstdc++ configuration is spread across several source files. `libstdc++-v3/configure.ac` is the main autoconf script. It decides the top-level order of policy choices and probes. `libstdc++-v3/acinclude.m4` defines most libstdc++-specific macros, such as `GLIBCXX_ENABLE_C99`, `GLIBCXX_CHECK_LFS`, and `GLIBCXX_ENABLE_SYMVERS`. `libstdc++-v3/linkage.m4` defines helper macros for math and stdlib declaration/linkage checks. `libstdc++-v3/configure.host` is a shell file sourced by configure to choose CPU, OS, ABI, header, and source directories from the host triple. `libstdc++-v3/crossconfig.m4` contains hardcoded define choices for non-native or cross builds. GCC also has top-level `config/*.m4` macro files used by libstdc++, for example unwind, futex, CET, and generic compiler/linker helper macros.
 
 In this repository, `3rd_party/gcc/extension/gcc.bzl` defines the sparse source archive for GCC. `3rd_party/gcc/gcc.BUILD.bazel` exports files and builds the translated libstdc++ source targets. `runtimes/libstdcxx/configure.bzl` maps Bazel platform constraints to values that currently mimic parts of `configure.host`. The config.h probe and policy definitions are split across `runtimes/configure/native_autoconf_checks.bzl`, `runtimes/libstdcxx/acinclude_checks.bzl`, `runtimes/libstdcxx/crossconfig_checks.bzl`, and `runtimes/libstdcxx/configure_ac_checks.bzl`. `runtimes/libstdcxx/config_probe.bzl` executes those probes with the Bazel C/C++ toolchain and writes generated `config.h` outputs.
 
@@ -173,8 +178,8 @@ Initial fetch verification:
     @gcc//:libstdc++-v3/crossconfig.m4
     ...
 
-Known first correctness fixes from the current report:
+Known remaining correctness work from the current report:
 
-- `HAVE_GETIPINFO` currently must stop checking an unrelated networking function and follow `_Unwind_GetIPInfo` or GCC's target policy.
-- `_GLIBCXX_USE_LFS` currently needs GCC's full `fopen64`, `fseeko64`, `ftello64`, `lseek64`, `stat64`, and `fstat64` group.
-- C99 and TR1 checks need a deliberate split between aggregate probes and Linux GNU hosted policy.
+- Build-setting-backed policies still need a real knob layer for options such as verbose mode, concept checks, decimal float, float128, fully dynamic string, and emergency EH pool sizing.
+- Target-derived policies still need broader matrix validation before adding non-Linux-GNU libstdc++ support.
+- Unsupported branches for newlib, picolibc, Darwin, Solaris, Windows, RTEMS, VxWorks, and libbacktrace should stay visible in the report until those targets are deliberately supported or rejected.

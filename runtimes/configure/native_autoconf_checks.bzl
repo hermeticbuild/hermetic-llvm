@@ -1,8 +1,18 @@
-# Shared configure-check model for GCC/libstdc++ macros that are not specific
-# to libstdc++-v3/acinclude.m4. Compare these helpers with GCC's top-level
-# config/*.m4 files, especially config/tls.m4, config/unwind_ipinfo.m4,
-# config/futex.m4, config/iconv.m4, and config/no-executables.m4, before
-# changing their semantics.
+# Shared configure-check model ported from GCC's top-level config/*.m4 files
+# and GCC's libstdc++-v3/linkage.m4. Compare these helpers with config/tls.m4,
+# config/unwind_ipinfo.m4, config/futex.m4, config/iconv.m4,
+# config/no-executables.m4, and libstdc++-v3/linkage.m4 before changing their
+# semantics.
+#
+# The linkage.m4 helper macros GLIBCXX_CHECK_MATH_DECL_1,
+# GLIBCXX_CHECK_MATH_DECL_2, GLIBCXX_CHECK_MATH_DECL_3,
+# GLIBCXX_CHECK_MATH_DECL_AND_LINKAGE_1,
+# GLIBCXX_CHECK_MATH_DECL_AND_LINKAGE_2,
+# GLIBCXX_CHECK_MATH_DECL_AND_LINKAGE_3,
+# GLIBCXX_CHECK_MATH_DECLS_AND_LINKAGES_1,
+# GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_1, and
+# GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_2 are represented by
+# gcc_check_math_support() and gcc_check_stdlib_support().
 
 def compile_check(name, source, language = "c", flags = []):
     return struct(
@@ -94,6 +104,7 @@ _MATH_FUNCTIONS = [
     ("HAVE_FINITE", "finite(0.0)"),
     ("HAVE_FINITEF", "finitef(0.0f)"),
     ("HAVE_FINITEL", "finitel(0.0L)"),
+    ("HAVE_FPCLASS", "fpclass(0.0)"),
     ("HAVE_FLOORF", "floorf(0.0f)"),
     ("HAVE_FLOORL", "floorl(0.0L)"),
     ("HAVE_FMODF", "fmodf(1.0f, 1.0f)"),
@@ -120,6 +131,7 @@ _MATH_FUNCTIONS = [
     ("HAVE_MODFL", "modfl(1.0L, &ld)"),
     ("HAVE_POWF", "powf(1.0f, 1.0f)"),
     ("HAVE_POWL", "powl(1.0L, 1.0L)"),
+    ("HAVE_QFPCLASS", "qfpclass(0.0)"),
     ("HAVE_SINCOS", "sincos(1.0, &sd, &cd)"),
     ("HAVE_SINCOSF", "sincosf(1.0f, &sf, &cf)"),
     ("HAVE_SINCOSL", "sincosl(1.0L, &sld, &cld)"),

@@ -278,7 +278,7 @@
   "moduleExtensions": {
     "//3rd_party/gcc/extension:gcc.bzl%gcc": {
       "general": {
-        "bzlTransitiveDigest": "ldP9/9odB5R/ygHjMYfuxG4Yp2IV2vWIbJOnEBVJP5U=",
+        "bzlTransitiveDigest": "pwkyiRq5qUv/J6PpS3XxY7LaV66sbA+6JgLxXlT5R1Q=",
         "usagesDigest": "5oaUnmwah1O+M09fBeXvm+hF80aKWbzNthIt3AAD/aI=",
         "recordedInputs": [
           "REPO_MAPPING:,bazel_lib bazel_lib+",
@@ -322,6 +322,7 @@
                 "libstdc++-v3/configure.ac",
                 "libstdc++-v3/configure.host",
                 "libstdc++-v3/crossconfig.m4",
+                "libstdc++-v3/linkage.m4",
                 "libstdc++-v3/include/**",
                 "libstdc++-v3/libsupc++/**",
                 "libstdc++-v3/src/**"

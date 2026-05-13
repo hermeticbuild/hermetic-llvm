@@ -1,5 +1,5 @@
 # Statuses for GCC/libstdc++ configure macro calls discovered in
-# libstdc++-v3/configure.ac, acinclude.m4, and crossconfig.m4.
+# libstdc++-v3/configure.ac, acinclude.m4, linkage.m4, and crossconfig.m4.
 #
 # modeled: represented directly in the Bazel port.
 # target-derived: selected from target/platform rules rather than a probe.
@@ -35,9 +35,16 @@ GLIBCXX_CHECK_HOST target-derived
 GLIBCXX_CHECK_INIT_PRIORITY modeled
 GLIBCXX_CHECK_LFS modeled
 GLIBCXX_CHECK_LINKER_FEATURES modeled
+GLIBCXX_CHECK_MATH_DECL_1 modeled
+GLIBCXX_CHECK_MATH_DECL_2 modeled
+GLIBCXX_CHECK_MATH_DECL_3 modeled
+GLIBCXX_CHECK_MATH_DECLS_AND_LINKAGES_1 modeled
 GLIBCXX_CHECK_MATH11_PROTO modeled
 GLIBCXX_CHECK_MATH_DECL modeled
 GLIBCXX_CHECK_MATH_DECLS modeled
+GLIBCXX_CHECK_MATH_DECL_AND_LINKAGE_1 modeled
+GLIBCXX_CHECK_MATH_DECL_AND_LINKAGE_2 modeled
+GLIBCXX_CHECK_MATH_DECL_AND_LINKAGE_3 modeled
 GLIBCXX_CHECK_MATH_SUPPORT modeled
 GLIBCXX_CHECK_POLL modeled
 GLIBCXX_CHECK_PTHREADS_NUM_PROCESSORS_NP modeled
@@ -51,6 +58,8 @@ GLIBCXX_CHECK_SETRLIMIT not-needed
 GLIBCXX_CHECK_SIZE_T_MANGLING modeled
 GLIBCXX_CHECK_STDIO_LOCKING modeled
 GLIBCXX_CHECK_STDIO_PROTO modeled
+GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_1 modeled
+GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_2 modeled
 GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_3 modeled
 GLIBCXX_CHECK_STDLIB_SUPPORT modeled
 GLIBCXX_CHECK_SYSCTL_HW_NCPU unsupported

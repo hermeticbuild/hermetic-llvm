@@ -1,6 +1,6 @@
 # Statuses for GCC libstdc++ configure defines discovered in
-# libstdc++-v3/acinclude.m4, configure.ac, crossconfig.m4, and selected GCC
-# top-level config macros.
+# libstdc++-v3/acinclude.m4, linkage.m4, configure.ac, crossconfig.m4, and
+# selected GCC top-level config macros.
 #
 # probe-modeled: represented by a compile or link probe in the Bazel port.
 # policy-modeled: represented by a Bazel policy, target decision, or fixed value.
@@ -40,6 +40,7 @@ HAVE_FINITE probe-modeled
 HAVE_FINITEF probe-modeled
 HAVE_FINITEL probe-modeled
 HAVE_FDOPENDIR probe-modeled
+HAVE_FPCLASS probe-modeled
 HAVE_FLOORF probe-modeled
 HAVE_FLOORL probe-modeled
 HAVE_FMODF probe-modeled
@@ -83,6 +84,7 @@ HAVE_O_NONBLOCK probe-modeled
 HAVE_POLL probe-modeled
 HAVE_POWF probe-modeled
 HAVE_POWL probe-modeled
+HAVE_QFPCLASS probe-modeled
 HAVE_QUICK_EXIT probe-modeled
 HAVE_READLINK probe-modeled
 HAVE_SETENV probe-modeled
@@ -227,7 +229,7 @@ _GLIBCXX_USE_UCHAR_C8RTOMB_MBRTOC8_CXX20 probe-modeled
 _GLIBCXX_USE_UCHAR_C8RTOMB_MBRTOC8_FCHAR8_T probe-modeled
 _GLIBCXX_USE_UTIME probe-modeled
 _GLIBCXX_USE_UTIMENSAT probe-modeled
-_GLIBCXX_USE_WCHAR_T policy-modeled
+_GLIBCXX_USE_WCHAR_T probe-modeled
 _GLIBCXX_USE_WIN32_SLEEP policy-modeled
 _GLIBCXX_USE__GET_OSFHANDLE unsupported
 _GLIBCXX_VERBOSE build-setting-later

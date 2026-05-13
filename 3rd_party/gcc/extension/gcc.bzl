@@ -41,6 +41,7 @@ _GCC_ARCHIVE_INCLUDES = [
     "libstdc++-v3/configure.ac",
     "libstdc++-v3/configure.host",
     "libstdc++-v3/crossconfig.m4",
+    "libstdc++-v3/linkage.m4",
     "libstdc++-v3/include/**",
     "libstdc++-v3/libsupc++/**",
     "libstdc++-v3/src/**",

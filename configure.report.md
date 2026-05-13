@@ -9,6 +9,7 @@ Sources reviewed:
 
 - `@gcc//:libstdc++-v3/configure.ac`
 - `@gcc//:libstdc++-v3/acinclude.m4`
+- `@gcc//:libstdc++-v3/linkage.m4`
 - `@gcc//:libstdc++-v3/configure.host`
 - `@gcc//:libstdc++-v3/crossconfig.m4`
 - GCC top-level config macro sources now fetched by the sparse Bazel GCC
@@ -441,7 +442,9 @@ Legend:
       `wctob`, `wmemchr`, `wmemcmp`, `wmemcpy`, `wmemmove`, `wmemset`,
       `wprintf`, `wscanf`.
   - Output: `_GLIBCXX_USE_WCHAR_T`.
-  - Bazel status: mostly policy-defined; `HAVE_MBSTATE_T` probed.
+  - Bazel status: modeled as compile probes. `HAVE_MBSTATE_T` is checked
+    separately, and `_GLIBCXX_USE_WCHAR_T` now uses the upstream wide API
+    declaration group.
 
 - `GLIBCXX_ENABLE_C99`
   - Policy: `--enable-c99` default yes.
@@ -481,8 +484,9 @@ Legend:
     - C99 wchar group -> `_GLIBCXX11_USE_C99_WCHAR`.
     - `isblank` in `<ctype.h>` -> `_GLIBCXX_USE_C99_CTYPE`.
     - Full `<fenv.h>` group -> `_GLIBCXX_USE_C99_FENV`.
-  - Bazel status: many of these are currently policy-defined; this is a high
-    priority area for probe fidelity.
+  - Bazel status: modeled as compile or link probes for the active Linux GNU
+    configuration. The probe groups intentionally follow the upstream C++98 and
+    C++11 split.
 
 - `GLIBCXX_CHECK_C99_TR1`
   - Condition: always after C99 enablement, with C++98 mode.
@@ -498,8 +502,8 @@ Legend:
     - `<inttypes.h>` `wcstoimax`, `wcstoumax` ->
       `_GLIBCXX_USE_C99_INTTYPES_WCHAR_T_TR1`.
     - `stdbool.h` and `stdalign.h` header checks.
-  - Bazel status: currently policy-defined; should become aggregate probes or
-    explicitly documented hosted-glibc assumptions.
+  - Bazel status: modeled as compile probes for the active Linux GNU
+    configuration.
 
 - `GLIBCXX_CHECK_UCHAR_H`
   - Probes:
@@ -517,7 +521,8 @@ Legend:
     - LFS group: `fopen64`, `fseeko64`, `ftello64`, `lseek64`, `stat64`,
       `fstat64` -> `_GLIBCXX_USE_LFS`.
     - POSIX group: `fseeko`, `ftello` -> `_GLIBCXX_USE_FSEEKO_FTELLO`.
-  - Bazel status: `_GLIBCXX_USE_LFS` probe is currently too weak.
+  - Bazel status: modeled. `_GLIBCXX_USE_LFS` uses the full upstream function
+    group.
 
 - `GLIBCXX_CHECK_GETTIMEOFDAY`
   - Condition: hosted C++ with `-fno-exceptions`.
@@ -669,11 +674,14 @@ Condition: `GLIBCXX_IS_NATIVE=true`.
     `HAVE_ISINFL`, `HAVE_ISNAN`, `HAVE_ISNANF`, `HAVE_ISNANL`,
     `HAVE_LDEXPF`, `HAVE_LDEXPL`, `HAVE_LOG10F`, `HAVE_LOG10L`,
     `HAVE_LOGF`, `HAVE_LOGL`, `HAVE_MODF`, `HAVE_MODFF`, `HAVE_MODFL`,
-    `HAVE_POWF`, `HAVE_POWL`, `HAVE_SINCOS`, `HAVE_SINCOSF`,
+    `HAVE_FPCLASS`, `HAVE_QFPCLASS`, `HAVE_POWF`, `HAVE_POWL`,
+    `HAVE_SINCOS`, `HAVE_SINCOSF`,
     `HAVE_SINCOSL`, `HAVE_SINF`, `HAVE_SINHF`, `HAVE_SINHL`, `HAVE_SINL`,
     `HAVE_SQRTF`, `HAVE_SQRTL`, `HAVE_TANF`, `HAVE_TANHF`, `HAVE_TANHL`,
     `HAVE_TANL`.
-  - Bazel status: modeled as individual math link probes.
+  - Bazel status: modeled as individual math link probes. `linkage.m4`
+    declares some of these through helper macros; those helpers are tracked in
+    `config_macro_status.txt` and represented by `gcc_check_math_support()`.
 
 - `GLIBCXX_CHECK_STDLIB_SUPPORT`
   - Probes standard library allocation/conversion/termination functions.
@@ -681,7 +689,8 @@ Condition: `GLIBCXX_IS_NATIVE=true`.
     `HAVE_POSIX_MEMALIGN`, `HAVE_MEMALIGN`, `HAVE__ALIGNED_MALLOC`,
     `HAVE_AT_QUICK_EXIT`, `HAVE_QUICK_EXIT`, `HAVE_SETENV`,
     `HAVE_SECURE_GETENV`, `HAVE_TIMESPEC_GET`.
-  - Bazel status: mostly modeled.
+  - Bazel status: modeled. `linkage.m4` helper macros are tracked in
+    `config_macro_status.txt` and represented by `gcc_check_stdlib_support()`.
 
 - `GLIBCXX_CHECK_DEV_RANDOM`
   - Probe: readable `/dev/random` and `/dev/urandom`; disables for MinGW
@@ -771,8 +780,9 @@ Condition: `GLIBCXX_IS_NATIVE=false`.
     - If using system libunwind: `ia64-*-*` -> no, otherwise yes.
     - If not using system libunwind: Darwin 3 through 8 -> no, otherwise yes.
   - Output: `HAVE_GETIPINFO` for `_Unwind_GetIPInfo`.
-  - Bazel status: currently wrong; existing probe checks `getaddrinfo`, not
-    `_Unwind_GetIPInfo` or GCC's target policy.
+  - Bazel status: modeled by GCC target policy for the supported Linux GNU
+    configuration; the previous unrelated `getaddrinfo` probe has been
+    removed.
 
 - `GCC_LINUX_FUTEX`
   - Policy: `--enable-linux-futex=default|yes|no`.

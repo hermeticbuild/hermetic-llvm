@@ -89,7 +89,75 @@ mbstate_t state;
 int main() { return sizeof(state); }
 """,
         ),
-        policy_define("_GLIBCXX_USE_WCHAR_T"),
+        compile_check(
+            name = "_GLIBCXX_USE_WCHAR_T",
+            language = "c++",
+            flags = ["-nostdinc++"],
+            source = """
+#include <stddef.h>
+#include <wchar.h>
+#include <wctype.h>
+wint_t i;
+long l = WEOF;
+long j = WCHAR_MIN;
+long k = WCHAR_MAX;
+namespace test {
+    using ::btowc;
+    using ::fgetwc;
+    using ::fgetws;
+    using ::fputwc;
+    using ::fputws;
+    using ::fwide;
+    using ::fwprintf;
+    using ::fwscanf;
+    using ::getwc;
+    using ::getwchar;
+    using ::mbrlen;
+    using ::mbrtowc;
+    using ::mbsinit;
+    using ::mbsrtowcs;
+    using ::putwc;
+    using ::putwchar;
+    using ::swprintf;
+    using ::swscanf;
+    using ::ungetwc;
+    using ::vfwprintf;
+    using ::vswprintf;
+    using ::vwprintf;
+    using ::wcrtomb;
+    using ::wcscat;
+    using ::wcschr;
+    using ::wcscmp;
+    using ::wcscoll;
+    using ::wcscpy;
+    using ::wcscspn;
+    using ::wcsftime;
+    using ::wcslen;
+    using ::wcsncat;
+    using ::wcsncmp;
+    using ::wcsncpy;
+    using ::wcspbrk;
+    using ::wcsrchr;
+    using ::wcsrtombs;
+    using ::wcsspn;
+    using ::wcsstr;
+    using ::wcstod;
+    using ::wcstok;
+    using ::wcstol;
+    using ::wcstoul;
+    using ::wcsxfrm;
+    using ::wctob;
+    using ::wmemchr;
+    using ::wmemcmp;
+    using ::wmemcpy;
+    using ::wmemmove;
+    using ::wmemset;
+    using ::wprintf;
+    using ::wscanf;
+}
+int main() { return 0; }
+""",
+        ),
     ]
 
 _C99_MATH_GENERIC_BODY = """

@@ -2,8 +2,8 @@
 #
 # Audits the libstdc++ config define port against GCC's configure sources.
 # The checked-in status file must classify every AC_DEFINE from GCC's
-# libstdc++-v3/acinclude.m4, configure.ac, crossconfig.m4, and selected
-# top-level GCC config macros, so GCC updates fail until new configure
+# libstdc++-v3/acinclude.m4, linkage.m4, configure.ac, crossconfig.m4, and
+# selected top-level GCC config macros, so GCC updates fail until new configure
 # decisions are reviewed and either modeled or intentionally tracked.
 set -euo pipefail
 
@@ -46,6 +46,7 @@ function emit_defines(line) {
 }
 ' \
   "${GCC_ACINCLUDE}" \
+  "${GCC_LINKAGE}" \
   "${GCC_CONFIGURE_AC}" \
   "${GCC_CROSSCONFIG}" \
   "${GCC_CONFIG_ACX}" \
@@ -62,6 +63,8 @@ function emit_defines(line) {
   "${GCC_CONFIG_TOOLEXECLIBDIR}" \
   "${GCC_CONFIG_UNWIND_IPINFO}" \
   | sort -u > "${gcc_defines}"
+printf '%s\n' HAVE_FPCLASS HAVE_QFPCLASS >> "${gcc_defines}"
+sort -u -o "${gcc_defines}" "${gcc_defines}"
 
 awk '
 function emit_macro(name) {
@@ -99,6 +102,7 @@ function process(line) {
 }
 ' \
   "${GCC_ACINCLUDE}" \
+  "${GCC_LINKAGE}" \
   "${GCC_CONFIGURE_AC}" \
   "${GCC_CROSSCONFIG}" \
   | sort -u > "${gcc_macros}"

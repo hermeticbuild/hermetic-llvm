@@ -425,6 +425,7 @@ sh_test(
         "@gcc//:libstdc++-v3/configure.ac",
         "@gcc//:libstdc++-v3/configure.host",
         "@gcc//:libstdc++-v3/crossconfig.m4",
+        "@gcc//:libstdc++-v3/linkage.m4",
     ],
     env = {
         "ACINCLUDE_CHECKS": "$(rootpath acinclude_checks.bzl)",
@@ -448,6 +449,7 @@ sh_test(
         "GCC_CONFIGURE_AC": "$(rootpath @gcc//:libstdc++-v3/configure.ac)",
         "GCC_CONFIGURE_HOST": "$(rootpath @gcc//:libstdc++-v3/configure.host)",
         "GCC_CROSSCONFIG": "$(rootpath @gcc//:libstdc++-v3/crossconfig.m4)",
+        "GCC_LINKAGE": "$(rootpath @gcc//:libstdc++-v3/linkage.m4)",
         "CROSSCONFIG_CHECKS": "$(rootpath crossconfig_checks.bzl)",
         "HEADERS": "$(rootpath headers.bzl)",
         "MACRO_STATUS_FILE": "$(rootpath config_macro_status.txt)",
