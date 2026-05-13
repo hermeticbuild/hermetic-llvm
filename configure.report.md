@@ -1081,7 +1081,7 @@ Condition: `GLIBCXX_IS_NATIVE=false`.
   `runtimes/libstdcxx/configure_ac_checks.bzl`.
 - [x] Point `config_probe.bzl` directly at `configure_ac_checks.bzl` without a
   compatibility facade.
-- [ ] Split `config_define_status.txt` statuses into `probe-modeled`,
+- [x] Split `config_define_status.txt` statuses into `probe-modeled`,
   `policy-modeled`, `target-derived`, `unsupported`, and `not-needed`.
 - [x] Fix `HAVE_GETIPINFO` to model `_Unwind_GetIPInfo`, not `getaddrinfo`.
 - [x] Replace the weak `_GLIBCXX_USE_LFS` check with GCC's full

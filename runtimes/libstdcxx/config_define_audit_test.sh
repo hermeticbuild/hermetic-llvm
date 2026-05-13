@@ -105,7 +105,8 @@ function process(line) {
 
 awk -v modeled="${modeled_defines}" -v invalid="${invalid_statuses}" '
 BEGIN {
-  known["modeled"] = 1
+  known["probe-modeled"] = 1
+  known["policy-modeled"] = 1
   known["target-derived"] = 1
   known["header-probe"] = 1
   known["build-setting-later"] = 1
@@ -119,7 +120,7 @@ BEGIN {
     next
   }
   print $1
-  if ($2 == "modeled") {
+  if ($2 == "probe-modeled" || $2 == "policy-modeled") {
     print $1 > modeled
   }
 }

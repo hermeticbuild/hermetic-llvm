@@ -24,6 +24,7 @@ The implementation must not run `make`, `./configure`, autoconf, Python, or GCC 
 - [x] (2026-05-13) Expanded the existing audit test to include `crossconfig.m4` and selected top-level GCC config macros.
 - [x] (2026-05-13) Added macro-call coverage to `config_define_audit_test` so it tracks called `GLIBCXX_*` and `GCC_*` macros, not only defines.
 - [x] (2026-05-13) Replaced the policy-defined C99 and TR1 aggregate outputs with Linux GNU probes modeled after `GLIBCXX_ENABLE_C99` and `GLIBCXX_CHECK_C99_TR1`; `HAVE_GETIPINFO` and `_GLIBCXX_USE_LFS` were already fixed.
+- [x] (2026-05-13) Split define audit statuses so directly modeled defines distinguish `probe-modeled` from `policy-modeled`.
 
 ## Surprises & Discoveries
 
@@ -64,6 +65,8 @@ Validation on 2026-05-13: `bazel run //internal_tools:buildifier.check`, `bazel 
 Milestone update on 2026-05-13: the audit now extracts direct `GLIBCXX_*` and `GCC_*` macro calls, `AC_REQUIRE`, and `AC_BEFORE` references from `libstdc++-v3/configure.ac`, `libstdc++-v3/acinclude.m4`, and `libstdc++-v3/crossconfig.m4`. The checked-in `runtimes/libstdcxx/config_macro_status.txt` classifies each discovered macro call as modeled, target-derived, future build setting, not needed, or unsupported. Grouped modeled macros have explicit source anchors in `runtimes/libstdcxx/acinclude_checks.bzl` so GCC updates fail visibly instead of silently bypassing the Bazel model.
 
 Milestone update on 2026-05-13: `glibcxx_enable_c99()` and `glibcxx_check_c99_tr1()` no longer policy-define their aggregate C99/TR1 outputs. The Linux GNU model now uses compile or link probes for the C++98 math, complex, stdio, stdlib, and wchar groups; the C++11 stdint, inttypes, math, complex, stdio, stdlib, wchar, ctype, and fenv groups; and the TR1 complex, ctype, fenv, stdint, math, and inttypes groups. Generated `config_h.json` shows the expected Linux GNU C99 and TR1 outputs still evaluate true.
+
+Milestone update on 2026-05-13: `config_define_status.txt` now separates `probe-modeled` entries from `policy-modeled` entries. The audit still requires both categories to appear in the Bazel model sources, but future report work can now identify remaining fixed policies without reclassifying probe-backed defines by hand.
 
 ## Context and Orientation
 
