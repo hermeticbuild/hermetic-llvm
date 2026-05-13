@@ -5,6 +5,11 @@ This report audits the configuration decisions made by GCC libstdc++'s
 `libstdc++-v3/acinclude.m4`. It is intended to be a work queue for the Bazel
 port, not a statement that every item must become a dynamic Bazel probe.
 
+The active libstdc++ autoconf tracking files now live under
+`runtimes/libstdcxx`: `autoconf.checks.md`, `autoconf.usage.md`, and
+`autoconf.README.md`. Keep those files and this report consistent when updating
+the configure model.
+
 Sources reviewed:
 
 - `@gcc//:libstdc++-v3/configure.ac`
@@ -1107,13 +1112,13 @@ Condition: `GLIBCXX_IS_NATIVE=false`.
   glibc policy.
 - [x] Replace or explicitly justify policy-defined `GLIBCXX_CHECK_C99_TR1`
   outputs.
-- [ ] Check that wide-character support is semantically equivalent to
+- [x] Check that wide-character support is semantically equivalent to
   `GLIBCXX_ENABLE_WCHAR_T`, not only `HAVE_MBSTATE_T`.
-- [ ] Compare `GLIBCXX_CHECK_MATH11_PROTO` Solaris-only defines with the current
+- [x] Compare `GLIBCXX_CHECK_MATH11_PROTO` Solaris-only defines with the current
   unsupported target list.
-- [ ] Compare current math function probes against `GLIBCXX_CHECK_MATH_SUPPORT`
+- [x] Compare current math function probes against `GLIBCXX_CHECK_MATH_SUPPORT`
   and `GLIBCXX_CHECK_MATH_DECLS`.
-- [ ] Compare stdlib function probes against `GLIBCXX_CHECK_STDLIB_SUPPORT`.
+- [x] Compare stdlib function probes against `GLIBCXX_CHECK_STDLIB_SUPPORT`.
 - [ ] Decide whether `/dev/random` should remain a Linux policy or become a
   hermetic-compatible configured policy setting.
 - [ ] Revisit `GLIBCXX_ENABLE_LIBSTDCXX_TIME` syscall fallback and `timespec`
@@ -1157,9 +1162,13 @@ Condition: `GLIBCXX_IS_NATIVE=false`.
   GCC only compiles.
 - [ ] Review build-only/doc/install macros and mark them permanently
   `not-needed` in the status file.
-- [ ] Add an automated audit test that extracts `AC_DEFINE`,
-  `AC_DEFINE_UNQUOTED`, `AC_CHECK_HEADERS`, and `AC_CHECK_FUNCS` references
-  from `configure.ac` and `acinclude.m4`, then compares them to the Bazel status
-  file.
-- [ ] Extend that audit test to identify called `GLIBCXX_*` and `GCC_*` macros
+- [x] Add an automated audit test that extracts `AC_DEFINE` and
+  `AC_DEFINE_UNQUOTED` references from configure sources, then compares them to
+  the Bazel status file.
+- [x] Extend that audit test to identify called `GLIBCXX_*` and `GCC_*` macros
   so new GCC macro calls are not silently missed during a GCC source update.
+- [x] Extend the inventory to extract exact `AC_CHECK_HEADERS`,
+  `AC_CHECK_FUNCS`, `AC_CHECK_DECLS`, and related check arguments.
+- [x] Review the extracted check arguments and add checklist entries only for
+  implemented checks, target-derived checks, deliberate deferrals, not-needed
+  items, or explicitly out-of-scope items.

@@ -1,0 +1,180 @@
+# libstdc++ Autoconf Glossary
+
+This file is the human glossary for the Bazel port of GCC libstdc++ configure
+logic. The check definition inventory is in `autoconf.checks.md`; the
+configure usage inventory is in `autoconf.usage.md`; the mechanical status
+inputs are `config_macro_status.txt` and `config_define_status.txt`.
+The raw output from `tools/autoconf_inventory.sh inventory` is a review queue;
+it is not itself evidence that a check has been implemented.
+
+The current active support scope is Linux with GNU libc. Other target branches
+are documented so GCC updates are reviewable, but they do not imply support.
+`autoconf.checks.md` also contains reviewed concrete entries for implemented
+header, declaration, type, function, computed-value, and configure-option
+checks. Those entries are narrower than the raw inventory output: they are
+added only after mapping the upstream check to a Bazel probe or explicit
+classification.
+
+## Source Map
+
+- `libstdc++-v3/configure.ac` maps to `configure_ac_checks.bzl`.
+- `libstdc++-v3/acinclude.m4` maps to `acinclude_checks.bzl`.
+- `libstdc++-v3/linkage.m4` maps to math and stdlib helpers in
+  `native_autoconf_checks.bzl`.
+- `libstdc++-v3/crossconfig.m4` maps to `crossconfig_checks.bzl`.
+- GCC top-level `config/*.m4` files map to `native_autoconf_checks.bzl`.
+- `libstdc++-v3/configure.host` maps to target-derived policy in
+  `configure.bzl` and generated header selection in `BUILD.bazel`.
+
+## Status Glossary
+
+- `modeled`: the check or macro has an active Bazel equivalent.
+- `probe-modeled`: a config define is produced by a Bazel compile, link,
+  header, declaration, or related probe.
+- `policy-modeled`: a config define is produced by target or fixed Bazel
+  policy, not by compiling a snippet.
+- `target-derived`: the answer comes from Bazel target/platform policy.
+- `build-setting-later`: currently fixed, but should become a private build
+  setting before claiming knob parity with GCC configure.
+- `not-needed`: configure/build/install/testsuite plumbing replaced by Bazel.
+- `unsupported-target`: target family branch not supported by this libstdc++
+  port today.
+- `unsupported-feature`: optional libstdc++ feature not built by this port
+  today.
+
+## Active Linux GNU Configure Flow
+
+`GLIBCXX_CONFIGURE` initializes the libstdc++ configure script, computes source
+and build paths, and sets make subdirectories. Bazel replaces that build-system
+plumbing with explicit labels and source lists, so the macro is `not-needed`.
+
+`GLIBCXX_CHECK_HOST` sources `configure.host` and chooses OS, CPU, ABI,
+atomicity, thread, and header directories from the host triple. Bazel models
+the active Linux GNU result as `target-derived` policy in `configure.bzl`,
+`headers.bzl`, and `BUILD.bazel`.
+
+`GLIBCXX_ENABLE_HOSTED`, `GLIBCXX_ENABLE_LONG_LONG`,
+`GLIBCXX_ENABLE_WCHAR_T`, `GLIBCXX_ENABLE_C99`, `GLIBCXX_CHECK_C99_TR1`,
+`GLIBCXX_CHECK_LFS`, `GLIBCXX_CHECK_GETTIMEOFDAY`, and
+`GLIBCXX_ENABLE_LIBSTDCXX_TIME` define the core hosted C/C++ library surface.
+The active Linux GNU path is modeled with Bazel policies and probes. Wide
+character, C99, TR1, LFS, and time support now follow upstream-style compile or
+link probe groups.
+
+`GLIBCXX_CHECK_STDIO_PROTO`, `GLIBCXX_CHECK_MATH11_PROTO`,
+`GLIBCXX_CHECK_POLL`, `GLIBCXX_CHECK_S_ISREG_OR_S_IFREG`,
+`GLIBCXX_CHECK_WRITEV`, `GLIBCXX_CHECK_UCHAR_H`,
+`GLIBCXX_COMPUTE_STDIO_INTEGER_CONSTANTS`, `GLIBCXX_CHECK_TMPNAM`,
+`GLIBCXX_CHECK_PTHREAD_COND_CLOCKWAIT`,
+`GLIBCXX_CHECK_PTHREAD_MUTEX_CLOCKLOCK`,
+`GLIBCXX_CHECK_PTHREAD_RWLOCK_CLOCKLOCK`, `GLIBCXX_CHECK_GET_NPROCS`,
+`GLIBCXX_CHECK_SC_NPROCESSORS_ONLN`, `GLIBCXX_CHECK_SC_NPROC_ONLN`,
+`GLIBCXX_CHECK_PTHREADS_NUM_PROCESSORS_NP`, and `GLIBCXX_CHECK_SDT_H`
+cover targeted libc, pthread, stdio, system, and header capabilities used by
+the supported runtime. Their active Linux GNU behavior is modeled.
+
+`GCC_CHECK_TLS`, `GCC_CHECK_UNWIND_GETIPINFO`, and `GCC_LINUX_FUTEX` are GCC
+top-level checks used by libstdc++. TLS and futex are modeled with target
+compiler/linker probes; unwind IP info is modeled as GCC target policy for the
+supported Linux GNU configuration.
+
+`GLIBCXX_CHECK_COMPILER_FEATURES`, `GLIBCXX_ENABLE_ATOMIC_BUILTINS`, and
+`GLIBCXX_CHECK_GTHREADS` cover compiler section flags, lock-free atomic word
+support, and gthreads support. The active Linux GNU behavior is modeled, with
+some answers represented as target policy where GCC's result is target-derived.
+
+`GLIBCXX_CHECK_LINKER_FEATURES`, `GLIBCXX_ENABLE_SYMVERS`,
+`GLIBCXX_CHECK_EXCEPTION_PTR_SYMVER`, `GLIBCXX_DEFAULT_ABI`,
+`GLIBCXX_ENABLE_LIBSTDCXX_DUAL_ABI`, and
+`GLIBCXX_ENABLE_LIBSTDCXX_VISIBILITY` cover ABI and shared-library policy.
+The Bazel port models the Linux GNU dynamic libstdc++ path.
+
+`GLIBCXX_CHECK_MATH_SUPPORT`, `GLIBCXX_CHECK_STDLIB_SUPPORT`,
+`GLIBCXX_CHECK_MATH_DECL`, `GLIBCXX_CHECK_MATH_DECLS`,
+`GLIBCXX_CHECK_MATH_DECL_1`, `GLIBCXX_CHECK_MATH_DECL_2`,
+`GLIBCXX_CHECK_MATH_DECL_3`, `GLIBCXX_CHECK_MATH_DECLS_AND_LINKAGES_1`,
+`GLIBCXX_CHECK_MATH_DECL_AND_LINKAGE_1`,
+`GLIBCXX_CHECK_MATH_DECL_AND_LINKAGE_2`,
+`GLIBCXX_CHECK_MATH_DECL_AND_LINKAGE_3`,
+`GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_1`,
+`GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_2`, and
+`GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_3` are the math and stdlib support
+groups from `acinclude.m4` and `linkage.m4`. The Bazel port represents these
+as grouped link probes in `native_autoconf_checks.bzl`.
+
+`GLIBCXX_CHECK_DEV_RANDOM`, `GLIBCXX_CHECK_ARC4RANDOM`,
+`GLIBCXX_CHECK_GETENTROPY`, `GLIBCXX_CHECK_FILESYSTEM_DEPS`,
+`GLIBCXX_CHECK_TEXT_ENCODING`, `GLIBCXX_CHECK_DEBUGGING`,
+`GLIBCXX_CHECK_STDIO_LOCKING`, `GLIBCXX_STRUCT_TM_TM_ZONE`,
+`GLIBCXX_ZONEINFO_DIR`, `GLIBCXX_CHECK_ALIGNAS_CACHELINE`,
+`GLIBCXX_CHECK_INIT_PRIORITY`, `GLIBCXX_CHECK_X86_RDRAND`,
+`GLIBCXX_CHECK_X86_RDSEED`, and `GLIBCXX_CHECK_SIZE_T_MANGLING` cover runtime
+library details after the core libc checks. The active Linux GNU behavior is
+modeled as probes or policy.
+
+`GLIBCXX_ENABLE_ALLOCATOR`, `GLIBCXX_ENABLE_CLOCALE`,
+`GLIBCXX_ENABLE_CSTDIO`, `GLIBCXX_ENABLE_CHEADERS`,
+`GLIBCXX_ENABLE_THREADS`, `GCC_AC_THREAD_MODEL`, `GCC_AC_THREAD_HEADER`,
+`GLIBCXX_ENABLE_LOCK_POLICY`, `GLIBCXX_ENABLE_EXTERN_TEMPLATE`, and
+`GLIBCXX_ENABLE_FILESYSTEM_TS` select headers, source families, allocator,
+locale, stdio, thread, and source graph policy. These are modeled or
+target-derived.
+
+## Deferred Knobs
+
+`GLIBCXX_ENABLE_VERBOSE`, `GLIBCXX_ENABLE_CONCEPT_CHECKS`,
+`GLIBCXX_ENABLE_DECIMAL_FLOAT`, `GLIBCXX_ENABLE_FLOAT128`,
+`GLIBCXX_ENABLE_FULLY_DYNAMIC_STRING`, and `GLIBCXX_EMERGENCY_EH_ALLOC` are
+currently fixed policies. They are classified `build-setting-later` because
+they correspond to GCC configure knobs that should become explicit private
+Bazel settings if exposed.
+
+## Configure Plumbing Replaced By Bazel
+
+`GCC_BASE_VER`, `GCC_NO_EXECUTABLES`, `GCC_TRY_COMPILE_OR_LINK`,
+`GCC_WITH_TOOLEXECLIBDIR`, `GLIBCXX_CHECK_SETRLIMIT`,
+`GLIBCXX_CONDITIONAL`, `GLIBCXX_CONFIGURE_DOCBOOK`,
+`GLIBCXX_CONFIGURE_TESTSUITE`, `GLIBCXX_ENABLE`, `GLIBCXX_ENABLE_CXX_FLAGS`,
+`GLIBCXX_ENABLE_PCH`, `GLIBCXX_ENABLE_PYTHON`, `GLIBCXX_ENABLE_WERROR`,
+`GLIBCXX_EVALUATE_CONDITIONALS`, `GLIBCXX_EXPORT_FLAGS`,
+`GLIBCXX_EXPORT_INCLUDES`, and `GLIBCXX_EXPORT_INSTALL_INFO` are make,
+install, doc, testsuite, or generic configure plumbing. Bazel replaces these
+with explicit build graph structure or user/toolchain options.
+
+## Inactive Target Branches
+
+`GCC_CHECK_ASSEMBLER_HWCAP` is Solaris-only assembler HWCAP handling.
+`GCC_PROG_GNU_CXXFILT` is needed for Sun/Solaris symbol versioning.
+`GLIBCXX_CHECK_FILEBUF_NATIVE_HANDLES` is the Windows `_get_osfhandle` path.
+`GLIBCXX_CHECK_SYSCTL_HW_NCPU` is the BSD/macOS CPU-count path.
+`GLIBCXX_CROSSCONFIG` covers cross and non-current target branches. These are
+classified `unsupported-target`.
+
+## Inactive Feature Branches
+
+`GCC_CET_FLAGS` is not modeled as a target-library flag policy yet.
+`GLIBCXX_ENABLE_BACKTRACE` is inactive because libbacktrace and `<stacktrace>`
+are not built. `GLIBCXX_ENABLE_DEBUG`, `GLIBCXX_ENABLE_DEBUG_FLAGS`,
+`GLIBCXX_ENABLE_PARALLEL`, and `GLIBCXX_ENABLE_VTABLE_VERIFY` are optional
+runtime-library feature families not built by this port today.
+
+## Config Define Status
+
+The detailed config define list is tracked in `config_define_status.txt`.
+Important groups are:
+
+- C99/TR1 and wide-character defines are `probe-modeled`.
+- Math and stdlib function defines are `probe-modeled`.
+- Header checks from `configure.ac` are generated through `ac_check_headers`
+  and listed explicitly in `autoconf.checks.md` for auditability.
+- `F_GETFL` and `F_SETFL` are configure cache gates for `HAVE_O_NONBLOCK`, not
+  separate generated config defines in this port.
+- ABI, symbol version, hosted, and Linux GNU fixed choices are
+  `policy-modeled` or `target-derived`.
+- Generic `acx.m4` defines that are not called by the active libstdc++ flow are
+  `not-needed`.
+- Windows, Solaris, BSD/macOS, and libbacktrace-only outputs are
+  `unsupported-target` or `unsupported-feature`.
+
+Run `bazel test --config remote //runtimes/libstdcxx:config_define_audit_test`
+to verify the source inventory and status files still agree.

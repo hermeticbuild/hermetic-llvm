@@ -115,7 +115,9 @@ BEGIN {
   known["header-probe"] = 1
   known["build-setting-later"] = 1
   known["intentionally-defaulted"] = 1
-  known["unsupported"] = 1
+  known["not-needed"] = 1
+  known["unsupported-feature"] = 1
+  known["unsupported-target"] = 1
 }
 /^[ \t]*(#|$)/ { next }
 {
@@ -137,7 +139,8 @@ BEGIN {
   known["target-derived"] = 1
   known["build-setting-later"] = 1
   known["not-needed"] = 1
-  known["unsupported"] = 1
+  known["unsupported-feature"] = 1
+  known["unsupported-target"] = 1
 }
 /^[ \t]*(#|$)/ { next }
 {

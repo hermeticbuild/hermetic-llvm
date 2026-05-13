@@ -5,17 +5,18 @@
 # target-derived: selected from target/platform rules rather than a probe.
 # build-setting-later: currently fixed/defaulted; keep as a future knob.
 # not-needed: configure/build/install/testsuite plumbing replaced by Bazel.
-# unsupported: not supported by this libstdc++ port today.
+# unsupported-feature: optional libstdc++ feature not built by this port today.
+# unsupported-target: target family not supported by this libstdc++ port today.
 GCC_AC_THREAD_HEADER target-derived
 GCC_AC_THREAD_MODEL target-derived
 GCC_BASE_VER not-needed
-GCC_CET_FLAGS unsupported
-GCC_CHECK_ASSEMBLER_HWCAP unsupported
+GCC_CET_FLAGS unsupported-feature
+GCC_CHECK_ASSEMBLER_HWCAP unsupported-target
 GCC_CHECK_TLS modeled
 GCC_CHECK_UNWIND_GETIPINFO modeled
 GCC_LINUX_FUTEX modeled
 GCC_NO_EXECUTABLES not-needed
-GCC_PROG_GNU_CXXFILT unsupported
+GCC_PROG_GNU_CXXFILT unsupported-target
 GCC_TRY_COMPILE_OR_LINK not-needed
 GCC_WITH_TOOLEXECLIBDIR not-needed
 GLIBCXX_CHECK_ALIGNAS_CACHELINE modeled
@@ -25,7 +26,7 @@ GLIBCXX_CHECK_COMPILER_FEATURES modeled
 GLIBCXX_CHECK_DEBUGGING modeled
 GLIBCXX_CHECK_DEV_RANDOM modeled
 GLIBCXX_CHECK_EXCEPTION_PTR_SYMVER modeled
-GLIBCXX_CHECK_FILEBUF_NATIVE_HANDLES unsupported
+GLIBCXX_CHECK_FILEBUF_NATIVE_HANDLES unsupported-target
 GLIBCXX_CHECK_FILESYSTEM_DEPS modeled
 GLIBCXX_CHECK_GETENTROPY modeled
 GLIBCXX_CHECK_GETTIMEOFDAY modeled
@@ -62,7 +63,7 @@ GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_1 modeled
 GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_2 modeled
 GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_3 modeled
 GLIBCXX_CHECK_STDLIB_SUPPORT modeled
-GLIBCXX_CHECK_SYSCTL_HW_NCPU unsupported
+GLIBCXX_CHECK_SYSCTL_HW_NCPU unsupported-target
 GLIBCXX_CHECK_S_ISREG_OR_S_IFREG modeled
 GLIBCXX_CHECK_TEXT_ENCODING modeled
 GLIBCXX_CHECK_TMPNAM modeled
@@ -75,21 +76,21 @@ GLIBCXX_CONDITIONAL not-needed
 GLIBCXX_CONFIGURE not-needed
 GLIBCXX_CONFIGURE_DOCBOOK not-needed
 GLIBCXX_CONFIGURE_TESTSUITE not-needed
-GLIBCXX_CROSSCONFIG unsupported
+GLIBCXX_CROSSCONFIG unsupported-target
 GLIBCXX_DEFAULT_ABI modeled
 GLIBCXX_EMERGENCY_EH_ALLOC build-setting-later
 GLIBCXX_ENABLE not-needed
 GLIBCXX_ENABLE_ALLOCATOR modeled
 GLIBCXX_ENABLE_ATOMIC_BUILTINS modeled
-GLIBCXX_ENABLE_BACKTRACE unsupported
+GLIBCXX_ENABLE_BACKTRACE unsupported-feature
 GLIBCXX_ENABLE_C99 modeled
 GLIBCXX_ENABLE_CHEADERS target-derived
 GLIBCXX_ENABLE_CLOCALE modeled
 GLIBCXX_ENABLE_CONCEPT_CHECKS build-setting-later
 GLIBCXX_ENABLE_CSTDIO modeled
 GLIBCXX_ENABLE_CXX_FLAGS not-needed
-GLIBCXX_ENABLE_DEBUG unsupported
-GLIBCXX_ENABLE_DEBUG_FLAGS unsupported
+GLIBCXX_ENABLE_DEBUG unsupported-feature
+GLIBCXX_ENABLE_DEBUG_FLAGS unsupported-feature
 GLIBCXX_ENABLE_DECIMAL_FLOAT build-setting-later
 GLIBCXX_ENABLE_EXTERN_TEMPLATE modeled
 GLIBCXX_ENABLE_FILESYSTEM_TS modeled
@@ -101,13 +102,13 @@ GLIBCXX_ENABLE_LIBSTDCXX_TIME modeled
 GLIBCXX_ENABLE_LIBSTDCXX_VISIBILITY modeled
 GLIBCXX_ENABLE_LOCK_POLICY target-derived
 GLIBCXX_ENABLE_LONG_LONG modeled
-GLIBCXX_ENABLE_PARALLEL unsupported
+GLIBCXX_ENABLE_PARALLEL unsupported-feature
 GLIBCXX_ENABLE_PCH not-needed
 GLIBCXX_ENABLE_PYTHON not-needed
 GLIBCXX_ENABLE_SYMVERS modeled
 GLIBCXX_ENABLE_THREADS target-derived
 GLIBCXX_ENABLE_VERBOSE build-setting-later
-GLIBCXX_ENABLE_VTABLE_VERIFY unsupported
+GLIBCXX_ENABLE_VTABLE_VERIFY unsupported-feature
 GLIBCXX_ENABLE_WCHAR_T modeled
 GLIBCXX_ENABLE_WERROR not-needed
 GLIBCXX_EVALUATE_CONDITIONALS not-needed

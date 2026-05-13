@@ -9,7 +9,8 @@
 # target-derived: selected from target/platform rules rather than a probe.
 # build-setting-later: currently fixed/defaulted; keep as a future knob.
 # intentionally-defaulted: deliberately left undefined for supported targets.
-# unsupported: not supported by this libstdc++ port today.
+# unsupported-feature: optional libstdc++ feature not built by this port today.
+# unsupported-target: target family not supported by this libstdc++ port today.
 HAVE_ACOSF probe-modeled
 HAVE_ACOSL probe-modeled
 HAVE_ALIGNED_ALLOC probe-modeled
@@ -99,8 +100,8 @@ HAVE_SLEEP probe-modeled
 HAVE_SOCKATMARK probe-modeled
 HAVE_SQRTF probe-modeled
 HAVE_SQRTL probe-modeled
-HAVE_STACKTRACE unsupported
-HAVE_STDBOOL_H unsupported
+HAVE_STACKTRACE unsupported-feature
+HAVE_STDBOOL_H not-needed
 HAVE_STRERROR_L probe-modeled
 HAVE_STRERROR_R probe-modeled
 HAVE_STRTOF probe-modeled
@@ -129,10 +130,10 @@ HAVE_VSWSCANF probe-modeled
 HAVE_VWSCANF probe-modeled
 HAVE_WCSTOF probe-modeled
 HAVE_WRITEV probe-modeled
-HAVE__BOOL unsupported
+HAVE__BOOL not-needed
 HAVE_CC_TLS probe-modeled
 ICONV_CONST intentionally-defaulted
-STRING_WITH_STRINGS unsupported
+STRING_WITH_STRINGS not-needed
 USE_EMUTLS intentionally-defaulted
 _GLIBCXX11_USE_C99_COMPLEX probe-modeled
 _GLIBCXX11_USE_C99_MATH probe-modeled
@@ -223,7 +224,7 @@ _GLIBCXX_USE_STDIO_LOCKING probe-modeled
 _GLIBCXX_USE_STDIO_PURE build-setting-later
 _GLIBCXX_USE_STRUCT_TM_TM_ZONE probe-modeled
 _GLIBCXX_USE_ST_MTIM probe-modeled
-_GLIBCXX_USE_SYSCTL_HW_NCPU unsupported
+_GLIBCXX_USE_SYSCTL_HW_NCPU unsupported-target
 _GLIBCXX_USE_TMPNAM probe-modeled
 _GLIBCXX_USE_UCHAR_C8RTOMB_MBRTOC8_CXX20 probe-modeled
 _GLIBCXX_USE_UCHAR_C8RTOMB_MBRTOC8_FCHAR8_T probe-modeled
@@ -231,11 +232,11 @@ _GLIBCXX_USE_UTIME probe-modeled
 _GLIBCXX_USE_UTIMENSAT probe-modeled
 _GLIBCXX_USE_WCHAR_T probe-modeled
 _GLIBCXX_USE_WIN32_SLEEP policy-modeled
-_GLIBCXX_USE__GET_OSFHANDLE unsupported
+_GLIBCXX_USE__GET_OSFHANDLE unsupported-target
 _GLIBCXX_VERBOSE build-setting-later
 _GLIBCXX_X86_RDRAND probe-modeled
 _GLIBCXX_X86_RDSEED probe-modeled
 _GLIBCXX_ZONEINFO_DIR policy-modeled
 _GTHREAD_USE_MUTEX_TIMEDLOCK policy-modeled
-__CORRECT_ISO_CPP11_MATH_H_PROTO_FP unsupported
-__CORRECT_ISO_CPP11_MATH_H_PROTO_INT unsupported
+__CORRECT_ISO_CPP11_MATH_H_PROTO_FP unsupported-target
+__CORRECT_ISO_CPP11_MATH_H_PROTO_INT unsupported-target
