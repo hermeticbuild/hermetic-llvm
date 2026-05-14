@@ -56,10 +56,10 @@ _profile_generation_transition = transition(
     ] + SANITIZER_FLAGS,
 )
 
-def _single_file(files, attr_name):
-    if len(files) != 1:
-        fail("expected exactly one file in {}, got {}".format(attr_name, len(files)))
-    return files[0]
+def _add_internal_isystem(args, dirs):
+    for directory in dirs:
+        args.add_all(["-Xclang", "-internal-isystem", "-Xclang"])
+        args.add_all([directory], expand_directories = False)
 
 def _llvm_fdo_profile_data_impl(ctx):
     binary_file = ctx.actions.declare_file(ctx.label.name + ".zstd")
@@ -70,14 +70,6 @@ def _llvm_fdo_profile_data_impl(ctx):
     if len(target_triple) != 1:
         fail("expected exactly one target triple, got {}".format(target_triple))
 
-    builtin_headers = _single_file(ctx.files.builtin_headers, "builtin_headers")
-    crt_objects = _single_file(ctx.files.crt_objects, "crt_objects")
-    kernel_headers = _single_file(ctx.files.kernel_headers, "kernel_headers")
-    libc_headers = _single_file(ctx.files.libc_headers, "libc_headers")
-    libc_library_search = _single_file(ctx.files.libc_library_search, "libc_library_search")
-    resource_dir = _single_file(ctx.files.resource_dir, "resource_dir")
-    sanitizer_headers = _single_file(ctx.files.sanitizer_headers, "sanitizer_headers")
-
     include_dirs = {}
     for file in ctx.files.zstd_headers + ctx.files.zstd_srcs:
         include_dirs[file.dirname] = None
@@ -86,28 +78,17 @@ def _llvm_fdo_profile_data_impl(ctx):
     training_args.add("-target")
     training_args.add(target_triple[0])
     training_args.add("-nostdlibinc")
-    training_args.add("-isystem")
-    training_args.add(kernel_headers.path)
-    training_args.add("-isystem")
-    training_args.add(libc_headers.path)
-    training_args.add_all([
-        "-Xclang",
-        "-internal-isystem",
-        "-Xclang",
-        sanitizer_headers.path,
-        "-Xclang",
-        "-internal-isystem",
-        "-Xclang",
-        builtin_headers.path,
-    ])
+    training_args.add_all(ctx.files.kernel_headers, before_each = "-isystem", expand_directories = False)
+    training_args.add_all(ctx.files.libc_headers, before_each = "-isystem", expand_directories = False)
+    _add_internal_isystem(training_args, ctx.files.sanitizer_headers)
+    _add_internal_isystem(training_args, ctx.files.builtin_headers)
     training_args.add_all(_TRAINING_FLAGS)
     training_args.add_all(_LINK_FLAGS)
     training_args.add("-o")
     training_args.add(binary_file)
-    training_args.add("-resource-dir")
-    training_args.add(resource_dir.path)
-    training_args.add("-B" + crt_objects.path)
-    training_args.add("-L" + libc_library_search.path)
+    training_args.add_all(ctx.files.resource_dir, before_each = "-resource-dir", expand_directories = False)
+    training_args.add_all(ctx.files.crt_objects, format_each = "-B%s", expand_directories = False)
+    training_args.add_all(ctx.files.libc_library_search, format_each = "-L%s", expand_directories = False)
     training_args.add_all(["-I" + include_dir for include_dir in sorted(include_dirs.keys())])
     training_args.add("-x")
     training_args.add("c")
@@ -132,7 +113,7 @@ def _llvm_fdo_profile_data_impl(ctx):
                 ctx.attr.zstd_srcs[DefaultInfo].files,
             ],
         ),
-        tools = ctx.files.data,
+        tools = [ctx.file.linker],
         outputs = [
             binary_file,
             profraw,
@@ -187,9 +168,10 @@ llvm_fdo_profile_data = rule(
             allow_files = True,
             mandatory = True,
         ),
-        "data": attr.label_list(
-            allow_files = True,
-            doc = "Files needed next to the instrumented compiler, such as lld and builtin headers.",
+        "linker": attr.label(
+            allow_single_file = True,
+            mandatory = True,
+            doc = "Instrumented ld.lld used by the clang driver through -fuse-ld=lld.",
         ),
         "llvm_profdata": attr.label(
             allow_single_file = True,

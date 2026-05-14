@@ -52,6 +52,11 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, profi
         prefix = _exec_prefix(exec_os, exec_cpu)
 
     platform_name = _exec_platform_name(exec_os, exec_cpu)
+    bootstrap_tool_kwargs = {
+        "platform": platform_name,
+        "fdo_profile": fdo_profile,
+        "profile_instrumented": profile_instrumented,
+    }
 
     COMMON_TOOLS = {
         "@rules_cc//cc/toolchains/actions:assembly_actions": prefix + "/clang",
@@ -81,10 +86,8 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, profi
 
     _bootstrap_tool_binary(
         name = prefix + "/bin/clang",
-        platform = platform_name,
         actual = "@llvm-project//llvm:llvm.stripped",
-        fdo_profile = fdo_profile,
-        profile_instrumented = profile_instrumented,
+        **bootstrap_tool_kwargs
     )
 
     bootstrap_directory(
@@ -107,13 +110,11 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, profi
 
     _bootstrap_tool_binary(
         name = prefix + "/bin/clang++",
-        platform = platform_name,
         actual = "@llvm-project//llvm:llvm.stripped",
-        fdo_profile = fdo_profile,
-        profile_instrumented = profile_instrumented,
         # Copy instead of symlink so clang's InstalledDir matches the packaged tree.
         # This is crucial for properly locating the various linkers, since we don't use `-ld-path`.
         symlink = False,
+        **bootstrap_tool_kwargs
     )
 
     cc_tool(
@@ -127,10 +128,8 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, profi
 
     _bootstrap_tool_binary(
         name = prefix + "/bin/header-parser",
-        platform = platform_name,
         actual = "@llvm//tools/internal:header-parser",
-        fdo_profile = fdo_profile,
-        profile_instrumented = profile_instrumented,
+        **bootstrap_tool_kwargs
     )
 
     cc_args(
@@ -160,26 +159,20 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, profi
 
     _bootstrap_tool_binary(
         name = prefix + "/bin/static-library-validator",
-        platform = platform_name,
         actual = "@llvm//tools/internal:static-library-validator",
-        fdo_profile = fdo_profile,
-        profile_instrumented = profile_instrumented,
+        **bootstrap_tool_kwargs
     )
 
     _bootstrap_tool_binary(
         name = prefix + "/bin/llvm-nm",
-        platform = platform_name,
         actual = "@llvm-project//llvm:llvm.stripped",
-        fdo_profile = fdo_profile,
-        profile_instrumented = profile_instrumented,
+        **bootstrap_tool_kwargs
     )
 
     _bootstrap_tool_binary(
         name = prefix + "/bin/c++filt",
-        platform = platform_name,
         actual = "@llvm-project//llvm:llvm.stripped",
-        fdo_profile = fdo_profile,
-        profile_instrumented = profile_instrumented,
+        **bootstrap_tool_kwargs
     )
 
     cc_args(
@@ -212,34 +205,26 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, profi
 
     _bootstrap_tool_binary(
         name = prefix + "/bin/ld.lld",
-        platform = platform_name,
         actual = "@llvm-project//llvm:llvm.stripped",
-        fdo_profile = fdo_profile,
-        profile_instrumented = profile_instrumented,
+        **bootstrap_tool_kwargs
     )
 
     _bootstrap_tool_binary(
         name = prefix + "/bin/ld64.lld",
-        platform = platform_name,
         actual = "@llvm-project//llvm:llvm.stripped",
-        fdo_profile = fdo_profile,
-        profile_instrumented = profile_instrumented,
+        **bootstrap_tool_kwargs
     )
 
     _bootstrap_tool_binary(
         name = prefix + "/bin/lld",
-        platform = platform_name,
         actual = "@llvm-project//llvm:llvm.stripped",
-        fdo_profile = fdo_profile,
-        profile_instrumented = profile_instrumented,
+        **bootstrap_tool_kwargs
     )
 
     _bootstrap_tool_binary(
         name = prefix + "/bin/wasm-ld",
-        platform = platform_name,
         actual = "@llvm-project//llvm:llvm.stripped",
-        fdo_profile = fdo_profile,
-        profile_instrumented = profile_instrumented,
+        **bootstrap_tool_kwargs
     )
 
     cc_tool(
@@ -255,10 +240,8 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, profi
 
     _bootstrap_tool_binary(
         name = prefix + "/bin/llvm-ar",
-        platform = platform_name,
         actual = "@llvm-project//llvm:llvm.stripped",
-        fdo_profile = fdo_profile,
-        profile_instrumented = profile_instrumented,
+        **bootstrap_tool_kwargs
     )
 
     cc_tool(
@@ -268,10 +251,8 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, profi
 
     _bootstrap_tool_binary(
         name = prefix + "/bin/llvm-libtool-darwin",
-        platform = platform_name,
         actual = "@llvm-project//llvm:llvm.stripped",
-        fdo_profile = fdo_profile,
-        profile_instrumented = profile_instrumented,
+        **bootstrap_tool_kwargs
     )
 
     cc_tool(
@@ -281,10 +262,8 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, profi
 
     _bootstrap_tool_binary(
         name = prefix + "/bin/llvm-dwp",
-        platform = platform_name,
         actual = "@llvm-project//llvm:llvm.stripped",
-        fdo_profile = fdo_profile,
-        profile_instrumented = profile_instrumented,
+        **bootstrap_tool_kwargs
     )
 
     cc_tool(
@@ -294,10 +273,8 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, profi
 
     _bootstrap_tool_binary(
         name = prefix + "/bin/llvm-objcopy",
-        platform = platform_name,
         actual = "@llvm-project//llvm:llvm.stripped",
-        fdo_profile = fdo_profile,
-        profile_instrumented = profile_instrumented,
+        **bootstrap_tool_kwargs
     )
 
     cc_tool(
@@ -307,10 +284,8 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, profi
 
     _bootstrap_tool_binary(
         name = prefix + "/bin/llvm-strip",
-        platform = platform_name,
         actual = "@llvm-project//llvm:llvm.stripped",
-        fdo_profile = fdo_profile,
-        profile_instrumented = profile_instrumented,
+        **bootstrap_tool_kwargs
     )
 
     cc_tool(

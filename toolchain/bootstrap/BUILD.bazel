@@ -28,21 +28,13 @@ llvm_fdo_profile_data(
         "//platforms/config:linux_aarch64": "//toolchain:instrumented_linux_aarch64/bin/clang++",
     }),
     crt_objects = "//runtimes:crt_objects_directory",
-    data = select({
-        "//platforms/config:linux_x86_64": [
-            "//toolchain:instrumented_linux_x86_64/bin/ld.lld",
-            "//toolchain:instrumented_linux_x86_64/bin/lld",
-            "//toolchain:instrumented_linux_x86_64/bin/wasm-ld",
-        ],
-        "//platforms/config:linux_aarch64": [
-            "//toolchain:instrumented_linux_aarch64/bin/ld.lld",
-            "//toolchain:instrumented_linux_aarch64/bin/lld",
-            "//toolchain:instrumented_linux_aarch64/bin/wasm-ld",
-        ],
-    }),
     kernel_headers = "@kernel_headers//:kernel_headers_directory",
     libc_headers = "//runtimes/glibc:glibc_headers_include_search_directory",
     libc_library_search = "//runtimes/glibc:glibc_library_search_directory",
+    linker = select({
+        "//platforms/config:linux_x86_64": "//toolchain:instrumented_linux_x86_64/bin/ld.lld",
+        "//platforms/config:linux_aarch64": "//toolchain:instrumented_linux_aarch64/bin/ld.lld",
+    }),
     llvm_profdata = "@llvm-project//llvm:llvm-profdata",
     resource_dir = "//runtimes:resource_directory",
     sanitizer_headers = "//sanitizers:sanitizers_headers_include_search_directory",
