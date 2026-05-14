@@ -183,7 +183,6 @@ def declare_compile_probe(ctx, probe_context, check, extra_inputs = [], extra_fl
     ctx.actions.run_shell(
         inputs = depset(
             direct = [source] + extra_inputs,
-            transitive = [probe_context.cc_toolchain.all_files],
         ),
         outputs = [result, log],
         tools = probe_context.cc_toolchain.all_files,
@@ -264,7 +263,6 @@ def declare_link_probe(ctx, probe_context, check, extra_inputs = [], compile_ext
     ctx.actions.run_shell(
         inputs = depset(
             direct = [source] + extra_inputs,
-            transitive = [probe_context.cc_toolchain.all_files],
         ),
         outputs = [result, log],
         tools = probe_context.cc_toolchain.all_files,
