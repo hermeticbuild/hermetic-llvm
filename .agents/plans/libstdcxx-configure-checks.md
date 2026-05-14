@@ -68,7 +68,7 @@ Validation on 2026-05-13: `bazel run //internal_tools:buildifier.check`, `bazel 
 
 Milestone update on 2026-05-13: the audit now extracts direct `GLIBCXX_*` and `GCC_*` macro calls, `AC_REQUIRE`, and `AC_BEFORE` references from `libstdc++-v3/configure.ac`, `libstdc++-v3/acinclude.m4`, and `libstdc++-v3/crossconfig.m4`. The checked-in `runtimes/libstdcxx/config_macro_status.txt` classifies each discovered macro call as modeled, target-derived, future build setting, not needed, or unsupported. Grouped modeled macros have explicit source anchors in `runtimes/libstdcxx/acinclude_checks.bzl` so GCC updates fail visibly instead of silently bypassing the Bazel model.
 
-Milestone update on 2026-05-13: `glibcxx_enable_c99()` and `glibcxx_check_c99_tr1()` no longer policy-define their aggregate C99/TR1 outputs. The Linux GNU model now uses compile or link probes for the C++98 math, complex, stdio, stdlib, and wchar groups; the C++11 stdint, inttypes, math, complex, stdio, stdlib, wchar, ctype, and fenv groups; and the TR1 complex, ctype, fenv, stdint, math, and inttypes groups. Generated `config_h.json` shows the expected Linux GNU C99 and TR1 outputs still evaluate true.
+Milestone update on 2026-05-13: `glibcxx_enable_c99()` and `glibcxx_check_c99_tr1()` no longer policy-define their aggregate C99/TR1 outputs. The Linux GNU model now uses compile or link probes for the C++98 math, complex, stdio, stdlib, and wchar groups; the C++11 stdint, inttypes, math, complex, stdio, stdlib, wchar, ctype, and fenv groups; and the TR1 complex, ctype, fenv, stdint, math, and inttypes groups. Generated `config_h` output showed the expected Linux GNU C99 and TR1 decisions.
 
 Milestone update on 2026-05-13: `config_define_status.txt` now separates `probe-modeled` entries from `policy-modeled` entries. The audit still requires both categories to appear in the Bazel model sources, but future report work can now identify remaining fixed policies without reclassifying probe-backed defines by hand.
 
@@ -161,7 +161,7 @@ The source-structure part is accepted when a maintainer can open the upstream GC
 
 ## Idempotence and Recovery
 
-All edits are additive or mechanical splits except deleting the old monolithic `config_checks.bzl`. If a split produces a behavior change, stop and compare the generated `config_h` summary before continuing. Recovery is to restore `config_checks.bzl` from git and point `config_probe.bzl` back to it, but that should only be needed if the direct split cannot be made green.
+All edits are additive or mechanical splits except deleting the old monolithic `config_checks.bzl`. If a split produces a behavior change, stop and compare the generated `config_h` header before continuing. Recovery is to restore `config_checks.bzl` from git and point `config_probe.bzl` back to it, but that should only be needed if the direct split cannot be made green.
 
 Do not delete unsupported target notes just because they are inactive. If a branch is out of scope, leave it commented with the upstream condition and the reason it is inactive. This preserves the audit trail for later platform work.
 
