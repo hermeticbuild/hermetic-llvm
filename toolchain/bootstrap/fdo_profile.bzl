@@ -67,8 +67,8 @@ def _collect_link_inputs(deps):
             continue
 
         for linker_input in dep[CcInfo].linking_context.linker_inputs.to_list():
-            user_link_flags.extend(_to_list(getattr(linker_input, "user_link_flags", [])))
-            for library in _to_list(getattr(linker_input, "libraries", [])):
+            user_link_flags.extend(linker_input.user_link_flags)
+            for library in linker_input.libraries:
                 library_file = (
                     getattr(library, "pic_static_library", None) or
                     getattr(library, "static_library", None) or
@@ -79,15 +79,6 @@ def _collect_link_inputs(deps):
                     libraries.append(library_file)
 
     return libraries, user_link_flags
-
-def _to_list(value):
-    return value.to_list() if hasattr(value, "to_list") else list(value)
-
-def _merge_env(*envs):
-    merged = {}
-    for env in envs:
-        merged.update(env)
-    return merged
 
 def _llvm_fdo_profile_data_impl(ctx):
     cc_toolchain = find_cc_toolchain(ctx)
@@ -169,7 +160,7 @@ def _llvm_fdo_profile_data_impl(ctx):
     ctx.actions.run(
         executable = ctx.executable._runner,
         arguments = [args],
-        env = _merge_env(compile_env, link_env),
+        env = compile_env | link_env,
         inputs = depset(
             direct = [ctx.file.src] + libraries,
             transitive = [
