@@ -61,108 +61,126 @@ copy_file(
     name = "ctype_base_h",
     src = libstdcxx_ctype_base_h(),
     out = "public_host_headers/bits/ctype_base.h",
+    allow_symlink = True,
 )
 
 copy_file(
     name = "ctype_inline_h",
     src = libstdcxx_ctype_inline_h(),
     out = "public_host_headers/bits/ctype_inline.h",
+    allow_symlink = True,
 )
 
 copy_file(
     name = "os_defines_h",
     src = libstdcxx_os_defines_h(),
     out = "public_host_headers/bits/os_defines.h",
+    allow_symlink = True,
 )
 
 copy_file(
     name = "atomic_word_h",
     src = libstdcxx_atomic_word_h(),
     out = "public_host_headers/bits/atomic_word.h",
+    allow_symlink = True,
 )
 
 copy_file(
     name = "cxxabi_tweaks_h",
     src = libstdcxx_cxxabi_tweaks_h(),
     out = "public_host_headers/bits/cxxabi_tweaks.h",
+    allow_symlink = True,
 )
 
 copy_file(
     name = "cpu_defines_h",
     src = libstdcxx_cpu_defines_h(),
     out = "public_host_headers/bits/cpu_defines.h",
+    allow_symlink = True,
 )
 
 copy_file(
     name = "error_constants_h",
     src = libstdcxx_error_constants_h(),
     out = "public_host_headers/bits/error_constants.h",
+    allow_symlink = True,
 )
 
 copy_file(
     name = "basic_file_h",
     src = "@gcc//:libstdc++-v3/config/io/basic_file_stdio.h",
     out = "public_host_headers/bits/basic_file.h",
+    allow_symlink = True,
 )
 
 copy_file(
     name = "allocator_h",
     src = "@gcc//:libstdc++-v3/config/allocator/new_allocator_base.h",
     out = "public_host_headers/bits/c++allocator.h",
+    allow_symlink = True,
 )
 
 copy_file(
     name = "cstdio_h",
     src = "@gcc//:libstdc++-v3/config/io/c_io_stdio.h",
     out = "public_host_headers/bits/c++io.h",
+    allow_symlink = True,
 )
 
 copy_file(
     name = "c_locale_h",
     src = libstdcxx_c_locale_h(),
     out = "public_host_headers/bits/c++locale.h",
+    allow_symlink = True,
 )
 
 copy_file(
     name = "messages_members_h",
     src = libstdcxx_messages_members_h(),
     out = "public_host_headers/bits/messages_members.h",
+    allow_symlink = True,
 )
 
 copy_file(
     name = "time_members_h",
     src = libstdcxx_time_members_h(),
     out = "public_host_headers/bits/time_members.h",
+    allow_symlink = True,
 )
 
 copy_file(
     name = "precompiled_stdcxx_h",
     src = "@gcc//:libstdc++-v3/include/precompiled/stdc++.h",
     out = "public_host_headers/bits/stdc++.h",
+    allow_symlink = True,
 )
 
 copy_file(
     name = "precompiled_stdtr1cxx_h",
     src = "@gcc//:libstdc++-v3/include/precompiled/stdtr1c++.h",
     out = "public_host_headers/bits/stdtr1c++.h",
+    allow_symlink = True,
 )
 
 copy_file(
     name = "precompiled_extcxx_h",
     src = "@gcc//:libstdc++-v3/include/precompiled/extc++.h",
     out = "public_host_headers/bits/extc++.h",
+    allow_symlink = True,
 )
 
 copy_file(
     name = "bits_opt_random_h",
     src = libstdcxx_bits_opt_random_h(),
     out = "public_host_headers/bits/opt_random.h",
+    allow_symlink = True,
 )
 
 copy_file(
     name = "ext_opt_random_h",
     src = libstdcxx_ext_opt_random_h(),
     out = "public_host_headers/ext/opt_random.h",
+    allow_symlink = True,
 )
 
 libstdcxx_cxxconfig_header(
@@ -228,12 +246,14 @@ copy_file(
     name = "c_locale_internal_h",
     src = libstdcxx_c_locale_internal_h(),
     out = "private_host_headers/bits/c++locale_internal.h",
+    allow_symlink = True,
 )
 
 copy_file(
     name = "compatibility_h",
     src = "@gcc//:libstdc++-v3/config/abi/compatibility.h",
     out = "private_host_headers/bits/compatibility.h",
+    allow_symlink = True,
 )
 
 libstdcxx_largefile_config_header(
