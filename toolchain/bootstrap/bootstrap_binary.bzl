@@ -75,11 +75,10 @@ bootstrap_transition = transition(
         "//command_line_option:fdo_profile",
         "//command_line_option:linkopt",
         "//command_line_option:platforms",
-    ] + SANITIZER_FLAGS + [
         "//toolchain:runtime_stage",
         "//toolchain:source",
         "@llvm-project//llvm:driver-tools",
-    ],
+    ] + SANITIZER_FLAGS,
 )
 
 def _bootstrap_binary_impl(ctx):

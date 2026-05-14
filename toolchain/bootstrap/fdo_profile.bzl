@@ -41,11 +41,10 @@ _profile_generation_transition = transition(
     outputs = [
         "//command_line_option:fdo_profile",
         "//command_line_option:platforms",
-    ] + SANITIZER_FLAGS + [
         "//toolchain:runtime_stage",
         "//toolchain:source",
         "@llvm-project//llvm:driver-tools",
-    ],
+    ] + SANITIZER_FLAGS,
 )
 
 def _merge_compilation_contexts(deps):
