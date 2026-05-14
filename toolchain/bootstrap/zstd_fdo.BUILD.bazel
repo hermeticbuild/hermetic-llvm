@@ -1,0 +1,16 @@
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "sources",
+    srcs = glob([
+        "lib/common/*.c",
+        "lib/compress/*.c",
+        "lib/decompress/*.c",
+        "lib/dictBuilder/*.c",
+    ]),
+)
+
+filegroup(
+    name = "headers",
+    srcs = glob(["lib/**/*.h"]),
+)

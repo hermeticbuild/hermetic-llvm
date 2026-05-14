@@ -355,7 +355,7 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
             exec_os,
             exec_cpu,
             prefix = exec_prefix,
-            fdo_profile = "//toolchain/bootstrap:llvm_fdo_profile",
+            fdo_profile = "//toolchain/bootstrap:llvm_fdo_profdata",
         )
         declare_tool_map(
             exec_os,
