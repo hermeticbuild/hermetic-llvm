@@ -2,17 +2,11 @@ load("@bazel_lib//lib:copy_file.bzl", "COPY_FILE_TOOLCHAINS", "copy_file_action"
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory_bin_action")
 load(":transition_settings.bzl", "LLVM_TOOLS", "SANITIZER_FLAGS", "disable_sanitizers")
 
-_LLVM_TOOL_LTO_FLAGS = [
-    "-flto=thin",
-]
-
-_LLVM_TOOL_COPTS = _LLVM_TOOL_LTO_FLAGS + [
+_LLVM_TOOL_COPTS = [
     "-fno-exceptions",
     "-fno-rtti",
     "-fomit-frame-pointer",
 ]
-
-_LLVM_TOOL_LINKOPTS = _LLVM_TOOL_LTO_FLAGS
 
 def _append_unique(values, extra_values):
     result = list(values)
@@ -21,14 +15,6 @@ def _append_unique(values, extra_values):
             result.append(value)
     return result
 
-def _remove_values(values, removed_values):
-    removed = {value: None for value in removed_values}
-    return [
-        value
-        for value in values
-        if value not in removed
-    ]
-
 def _bootstrap_transition_impl(settings, attr):
     fdo_profile = getattr(attr, "fdo_profile", None)
     profile_instrumented = getattr(attr, "profile_instrumented", False)
@@ -36,22 +22,25 @@ def _bootstrap_transition_impl(settings, attr):
         fail("fdo_profile and profile_instrumented are mutually exclusive")
 
     copts = settings["//command_line_option:copt"]
-    linkopts = settings["//command_line_option:linkopt"]
+    features = settings["//command_line_option:features"]
     needs_llvm_optimization = fdo_profile or profile_instrumented
     transition_settings = {
         # we are compiling final programs, so we want all runtimes.
         "//toolchain:runtime_stage": "complete",
-        "//toolchain:source": "instrumented" if fdo_profile else "stage1" if profile_instrumented else "prebuilt",
+        "//toolchain:source": "prebuilt",
         "//command_line_option:compilation_mode": "opt" if needs_llvm_optimization else settings["//command_line_option:compilation_mode"],
-        "//command_line_option:copt": _append_unique(copts, _LLVM_TOOL_COPTS) if needs_llvm_optimization else _remove_values(copts, _LLVM_TOOL_LTO_FLAGS),
-        "//command_line_option:linkopt": _append_unique(linkopts, _LLVM_TOOL_LINKOPTS) if needs_llvm_optimization else _remove_values(linkopts, _LLVM_TOOL_LTO_FLAGS),
+        "//command_line_option:copt": _append_unique(copts, _LLVM_TOOL_COPTS) if needs_llvm_optimization else copts,
+        "//command_line_option:features": features + ["thin_lto"],
         "//command_line_option:fdo_profile": fdo_profile,
         "@llvm-project//llvm:driver-tools": LLVM_TOOLS,
     }
 
     disable_sanitizers(transition_settings)
 
-    if profile_instrumented:
+    if fdo_profile:
+        transition_settings["//toolchain:source"] = "instrumented"
+    elif profile_instrumented:
+        transition_settings["//toolchain:source"] = "stage1"
         transition_settings["//config:profile"] = True
 
     if attr.platform:
@@ -66,14 +55,14 @@ bootstrap_transition = transition(
     inputs = [
         "//command_line_option:copt",
         "//command_line_option:compilation_mode",
-        "//command_line_option:linkopt",
+        "//command_line_option:features",
         "//command_line_option:platforms",
     ],
     outputs = [
         "//command_line_option:copt",
         "//command_line_option:compilation_mode",
         "//command_line_option:fdo_profile",
-        "//command_line_option:linkopt",
+        "//command_line_option:features",
         "//command_line_option:platforms",
         "//toolchain:runtime_stage",
         "//toolchain:source",
