@@ -178,6 +178,8 @@ def declare_compile_probe(ctx, probe_context, check, extra_inputs = [], extra_fl
     log = ctx.actions.declare_file(stem + ".log")
     template = probe_context.compile_templates[check.language]
 
+    # TODO(corentin): replace this shell runner with a portable probe helper
+    # binary once the command-line substitution contract is stable.
     ctx.actions.run_shell(
         inputs = depset(
             direct = [source] + extra_inputs,
@@ -257,6 +259,8 @@ def declare_link_probe(ctx, probe_context, check, extra_inputs = [], compile_ext
     compile_template = probe_context.compile_templates[check.language]
     link_template = probe_context.link_template
 
+    # TODO(corentin): replace this shell runner with a portable probe helper
+    # binary once the command-line substitution contract is stable.
     ctx.actions.run_shell(
         inputs = depset(
             direct = [source] + extra_inputs,
