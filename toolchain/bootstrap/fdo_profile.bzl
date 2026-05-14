@@ -5,7 +5,7 @@ load("@rules_cc//cc:find_cc_toolchain.bzl", "CC_TOOLCHAIN_TYPE", "find_cc_toolch
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("@rules_cc//cc/private/rules_impl/fdo:fdo_profile.bzl", "FdoProfileInfo")
-load(":transition_settings.bzl", "FDO_EXECUTION_PLATFORMS", "LLVM_TOOLS", "SANITIZER_FLAGS", "disable_sanitizers")
+load(":transition_settings.bzl", "LLVM_TOOLS", "SANITIZER_FLAGS", "disable_sanitizers")
 
 _TRAINING_COPTS = [
     "-O3",
@@ -24,7 +24,6 @@ _TRAINING_LINKOPTS = [
 
 def _profile_generation_transition_impl(settings, attr):
     transition_settings = {
-        "//command_line_option:extra_execution_platforms": FDO_EXECUTION_PLATFORMS,
         "//command_line_option:fdo_profile": None,
         "//command_line_option:platforms": str(attr.platform),
         "//toolchain:runtime_stage": "complete",
@@ -40,7 +39,6 @@ _profile_generation_transition = transition(
     implementation = _profile_generation_transition_impl,
     inputs = [],
     outputs = [
-        "//command_line_option:extra_execution_platforms",
         "//command_line_option:fdo_profile",
         "//command_line_option:platforms",
     ] + SANITIZER_FLAGS + [

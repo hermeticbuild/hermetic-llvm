@@ -62,10 +62,6 @@ SANITIZER_FLAGS = [
     "//config:host_profile",
 ]
 
-FDO_EXECUTION_PLATFORMS = [
-    "@llvm//:rbe_platform",
-]
-
 def disable_sanitizers(settings):
     for flag in SANITIZER_FLAGS:
         settings[flag] = False

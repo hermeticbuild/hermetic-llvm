@@ -1,6 +1,6 @@
 load("@bazel_lib//lib:copy_file.bzl", "COPY_FILE_TOOLCHAINS", "copy_file_action")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory_bin_action")
-load(":transition_settings.bzl", "FDO_EXECUTION_PLATFORMS", "LLVM_TOOLS", "SANITIZER_FLAGS", "disable_sanitizers")
+load(":transition_settings.bzl", "LLVM_TOOLS", "SANITIZER_FLAGS", "disable_sanitizers")
 
 _LLVM_TOOL_LTO_FLAGS = [
     "-flto=thin",
@@ -45,7 +45,6 @@ def _bootstrap_transition_impl(settings, attr):
         "//command_line_option:compilation_mode": "opt" if needs_llvm_optimization else settings["//command_line_option:compilation_mode"],
         "//command_line_option:copt": _append_unique(copts, _LLVM_TOOL_COPTS) if needs_llvm_optimization else _remove_values(copts, _LLVM_TOOL_LTO_FLAGS),
         "//command_line_option:linkopt": _append_unique(linkopts, _LLVM_TOOL_LINKOPTS) if needs_llvm_optimization else _remove_values(linkopts, _LLVM_TOOL_LTO_FLAGS),
-        "//command_line_option:extra_execution_platforms": settings["//command_line_option:extra_execution_platforms"],
         "//command_line_option:fdo_profile": fdo_profile,
         "@llvm-project//llvm:driver-tools": LLVM_TOOLS,
     }
@@ -54,7 +53,6 @@ def _bootstrap_transition_impl(settings, attr):
 
     if profile_instrumented:
         transition_settings["//config:profile"] = True
-        transition_settings["//command_line_option:extra_execution_platforms"] = FDO_EXECUTION_PLATFORMS
 
     if attr.platform:
         transition_settings["//command_line_option:platforms"] = str(attr.platform)
@@ -68,14 +66,12 @@ bootstrap_transition = transition(
     inputs = [
         "//command_line_option:copt",
         "//command_line_option:compilation_mode",
-        "//command_line_option:extra_execution_platforms",
         "//command_line_option:linkopt",
         "//command_line_option:platforms",
     ],
     outputs = [
         "//command_line_option:copt",
         "//command_line_option:compilation_mode",
-        "//command_line_option:extra_execution_platforms",
         "//command_line_option:fdo_profile",
         "//command_line_option:linkopt",
         "//command_line_option:platforms",
