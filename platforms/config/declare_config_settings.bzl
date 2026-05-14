@@ -13,41 +13,18 @@ def declare_config_settings():
             visibility = ["//visibility:public"],
         )
 
-        native.config_setting(
-            name = "{}_{}_prebuilt".format(target_os, target_cpu),
-            constraint_values = [
-                "@platforms//cpu:" + target_cpu,
-                "@platforms//os:" + target_os,
-            ],
-            flag_values = {
-                "//toolchain:source": "prebuilt",
-            },
-            visibility = ["//visibility:public"],
-        )
-
-        native.config_setting(
-            name = "{}_{}_instrumented".format(target_os, target_cpu),
-            constraint_values = [
-                "@platforms//cpu:" + target_cpu,
-                "@platforms//os:" + target_os,
-            ],
-            flag_values = {
-                "//toolchain:source": "instrumented",
-            },
-            visibility = ["//visibility:public"],
-        )
-
-        native.config_setting(
-            name = "{}_{}_stage1".format(target_os, target_cpu),
-            constraint_values = [
-                "@platforms//cpu:" + target_cpu,
-                "@platforms//os:" + target_os,
-            ],
-            flag_values = {
-                "//toolchain:source": "stage1",
-            },
-            visibility = ["//visibility:public"],
-        )
+        for source in ["prebuilt", "stage1", "instrumented"]:
+            native.config_setting(
+                name = "{}_{}_{}".format(target_os, target_cpu, source),
+                constraint_values = [
+                    "@platforms//cpu:" + target_cpu,
+                    "@platforms//os:" + target_os,
+                ],
+                flag_values = {
+                    "//toolchain:source": source,
+                },
+                visibility = ["//visibility:public"],
+            )
 
     declare_config_settings_libc_aware()
 
