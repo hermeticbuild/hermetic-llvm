@@ -9,9 +9,6 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
   workflow_call:
-    secrets:
-      BUILDBUDDY_API_KEY:
-        required: false
 concurrency:
   # Cancel previous actions from the same PR or branch except 'main' branch.
   # See https://docs.github.com/en/actions/using-jobs/using-concurrency and https://docs.github.com/en/actions/learn-github-actions/contexts for more info.
@@ -64,20 +61,14 @@ jobs:
       - name: bazel test //...
         env:
           USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
-          BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
         working-directory: ${{ matrix.folder }}
         shell: bash
         run: |
-          REMOTE_HEADER_ARGS=()
-          if [[ -n "${BUILDBUDDY_API_KEY:-}" ]]; then
-            REMOTE_HEADER_ARGS=(--remote_header="x-buildbuddy-api-key=${BUILDBUDDY_API_KEY}")
-          fi
-
           bazel \
             --bazelrc=$GITHUB_WORKSPACE/.github/workflows/ci.bazelrc \
             --bazelrc=.bazelrc \
             test \
-            "${REMOTE_HEADER_ARGS[@]}" \
+            --remote_header=x-buildbuddy-api-key=4jtaxdhxtyu4ylxdEwI7 \
             //...
 
   test_windows:
@@ -104,17 +95,12 @@ jobs:
         id: bazel_test
         env:
           USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
-          BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
         working-directory: ${{ matrix.folder }}
         shell: bash
         run: |
           EXTRA_ARGS=""
           if [[ "${{ matrix.folder }}" == *"cross_compilation"* ]]; then
             EXTRA_ARGS="--//:test_glibc_versions=none"
-          fi
-          REMOTE_HEADER_ARGS=()
-          if [[ -n "${BUILDBUDDY_API_KEY:-}" ]]; then
-            REMOTE_HEADER_ARGS=(--remote_header="x-buildbuddy-api-key=${BUILDBUDDY_API_KEY}")
           fi
 
           bazel \
@@ -124,7 +110,7 @@ jobs:
             test \
             --repository_cache= \
             --repo_contents_cache= \
-            "${REMOTE_HEADER_ARGS[@]}" \
+            --remote_header=x-buildbuddy-api-key=4jtaxdhxtyu4ylxdEwI7 \
             --jobs=100 \
             $EXTRA_ARGS \
             //...
@@ -154,21 +140,13 @@ jobs:
         id: bazel_test
         env:
           USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
-          BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
         working-directory: ${{ matrix.folder }}
         shell: bash
         run: |
-          EXTRA_ARGS=""
-          REMOTE_HEADER_ARGS=()
-          if [[ -n "${BUILDBUDDY_API_KEY:-}" ]]; then
-            REMOTE_HEADER_ARGS=(--remote_header="x-buildbuddy-api-key=${BUILDBUDDY_API_KEY}")
-          fi
-
           bazel \
             --bazelrc=.bazelrc \
             build \
-            "${REMOTE_HEADER_ARGS[@]}" \
-            $EXTRA_ARGS \
+            --remote_header=x-buildbuddy-api-key=4jtaxdhxtyu4ylxdEwI7 \
             //:main_default
 
   docs:
@@ -178,19 +156,12 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Ensure Gazelle updated
-        env:
-          BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
         shell: bash
         run: |
-          REMOTE_HEADER_ARGS=()
-          if [[ -n "${BUILDBUDDY_API_KEY:-}" ]]; then
-            REMOTE_HEADER_ARGS=(--remote_header="x-buildbuddy-api-key=${BUILDBUDDY_API_KEY}")
-          fi
-
           bazel \
             run \
             --config=remote \
-            "${REMOTE_HEADER_ARGS[@]}" \
+            --remote_header=x-buildbuddy-api-key=4jtaxdhxtyu4ylxdEwI7 \
             //gazelle:gazelle -- -mode=diff
 
       - name: Build release docs
@@ -206,4 +177,8 @@ jobs:
       - uses: actions/checkout@v6
       - name: Verify buildifier formatting
         shell: bash
-        run: bazel run //internal_tools:buildifier.check
+        run: |
+          bazel \
+            run \
+            --remote_header=x-buildbuddy-api-key=4jtaxdhxtyu4ylxdEwI7 \
+            //internal_tools:buildifier.check
