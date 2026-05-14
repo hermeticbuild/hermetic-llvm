@@ -10,7 +10,7 @@ Status meanings are defined in `AGENTS.md`.
 
 ## Modeled
 
-- [x] `GCC_CHECK_TLS` - native GCC TLS probe, modeled in `native_autoconf_checks.bzl`.
+- [x] `GCC_CHECK_TLS` - native GCC TLS probe, modeled in `gcc_config_checks.bzl`.
 - [x] `GCC_CHECK_UNWIND_GETIPINFO` - GCC unwind policy, modeled for Linux GNU.
 - [x] `GCC_LINUX_FUTEX` - Linux futex probe, modeled as a link probe.
 - [x] `GLIBCXX_CHECK_ALIGNAS_CACHELINE` - cacheline alignment compile probe.

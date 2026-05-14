@@ -368,6 +368,6 @@ fi
 def policy_result(policy):
     return struct(
         check = policy,
-        kind = policy.kind,
+        kind = policy.type,
         result = None,
     )

@@ -29,6 +29,12 @@ The implementation must not run `make`, `./configure`, autoconf, Python, or GCC 
 - [x] (2026-05-13) Added `libstdc++-v3/linkage.m4` to the sparse GCC fetch and audit data so math/stdlib helper macros are checked directly.
 - [x] (2026-05-13) Modeled `_GLIBCXX_USE_WCHAR_T` as the upstream wide API declaration probe instead of a fixed policy define.
 - [x] (2026-05-13) Updated the configure report and source-counterpart file headers to document where the Bazel checks were ported from.
+- [x] (2026-05-14) Removed the unused `config_h.json` debug summary so `libstdcxx_config_h` emitted only the header needed by downstream build rules.
+- [x] (2026-05-14) Added local generic autoconf mechanics in `runtimes/libstdcxx/autoconf/checks.bzl`, `autoconf_config.bzl`, `autoconf_hdr.bzl`, and `providers.bzl`.
+- [x] (2026-05-14) Converted check declarations to JSON-style data and made `libstdcxx_config_h.bzl` a thin wrapper that wires `CONFIG_ENTRIES`, target-derived config defines, gthreads probe context, and header rendering.
+- [x] (2026-05-14) Validated the local autoconf split with `bazel build --config remote //runtimes/libstdcxx:config_h` and the autoconf inventory tests.
+- [x] (2026-05-14) Ran the `e2e/rules_cc` libstdc++ dynamic output smoke tests after the local autoconf split.
+- [x] (2026-05-14) Renamed `native_autoconf_checks.bzl` to `gcc_config_checks.bzl` because the file models GCC top-level `config/*.m4` checks plus generic `linkage.m4` helpers, not generic autoconf mechanics.
 
 ## Surprises & Discoveries
 
@@ -60,6 +66,18 @@ The implementation must not run `make`, `./configure`, autoconf, Python, or GCC 
 
   Date/Author: 2026-05-13 / Corentin Kerisit
 
+- Decision: Keep the GCC-source counterpart files close to upstream and move generic autoconf mechanics into a local API under `runtimes/libstdcxx/autoconf`.
+
+  Rationale: `configure_ac_checks.bzl`, `acinclude_checks.bzl`, `crossconfig_checks.bzl`, and `gcc_config_checks.bzl` must stay easy to compare against GCC sources. A local `checks.bzl` plus `autoconf_config.bzl` and `autoconf_hdr.bzl` prepares the code for a future external autoconf ruleset migration without forcing that dependency now.
+
+  Date/Author: 2026-05-14 / Corentin Kerisit
+
+- Decision: Name the GCC top-level check counterpart `gcc_config_checks.bzl`, not `native_autoconf_checks.bzl`.
+
+  Rationale: After adding `checks.bzl`, `autoconf_config.bzl`, and `autoconf_hdr.bzl`, generic autoconf mechanics no longer live in the source-counterpart file. The remaining file models GCC `config/*.m4` macros and generic `libstdc++-v3/linkage.m4` declaration/linkage helpers, so `gcc_config_checks.bzl` describes its role more accurately and matches the earlier rules_cc_autoconf branch shape.
+
+  Date/Author: 2026-05-14 / Corentin Kerisit
+
 ## Outcomes & Retrospective
 
 Milestone update on 2026-05-13: the source fetch and source-counterpart split are implemented directly without a compatibility facade. `config_probe.bzl` imports `configure_ac_checks.bzl`, and the deleted monolithic file is no longer in the build graph.
@@ -76,11 +94,15 @@ Milestone update on 2026-05-13: `AC_SYS_LARGEFILE` was reviewed against `runtime
 
 Milestone update on 2026-05-13: `libstdc++-v3/linkage.m4` is now fetched and audited. Its math and stdlib helper macros are represented by `gcc_check_math_support()` and `gcc_check_stdlib_support()`, including `HAVE_FPCLASS` and `HAVE_QFPCLASS` in the discovered define set. `_GLIBCXX_USE_WCHAR_T` now follows the upstream `GLIBCXX_ENABLE_WCHAR_T` wide API declaration group.
 
+Milestone update on 2026-05-14: local generic autoconf mechanics now live under `runtimes/libstdcxx/autoconf` in `checks.bzl`, `autoconf_config.bzl`, `autoconf_hdr.bzl`, and `providers.bzl`. The GCC-source counterpart files now declare JSON-style checks, while `libstdcxx_config_h.bzl` only wires libstdc++ inputs into the generic executor and header renderer. Validation passed with `bazel build --config remote //runtimes/libstdcxx:config_h //runtimes/libstdcxx:config_h_header`, `bazel test --config remote //runtimes/libstdcxx/autoconf:autoconf_inventory_test //runtimes/libstdcxx/autoconf:config_define_audit_test`, and from `e2e/rules_cc`, `bazel test --config remote //:libstdcxx_main_dynamic_output_test //:libstdcxx_main_dynamic_with_linkopts_output_test`.
+
+Milestone update on 2026-05-14: the GCC-source helper file is now named `gcc_config_checks.bzl`, matching its actual source basis and the earlier rules_cc_autoconf branch shape. Validation passed again with `bazel build --config remote //runtimes/libstdcxx:config_h //runtimes/libstdcxx:config_h_header //runtimes/libstdcxx/autoconf:gcc_config_checks //runtimes/libstdcxx/autoconf:configure_ac_checks`, `bazel test --config remote //runtimes/libstdcxx/autoconf:autoconf_inventory_test //runtimes/libstdcxx/autoconf:config_define_audit_test`, and from `e2e/rules_cc`, `bazel test --config remote //:libstdcxx_main_dynamic_output_test //:libstdcxx_main_dynamic_with_linkopts_output_test`.
+
 ## Context and Orientation
 
 GCC's libstdc++ configuration is spread across several source files. `libstdc++-v3/configure.ac` is the main autoconf script. It decides the top-level order of policy choices and probes. `libstdc++-v3/acinclude.m4` defines most libstdc++-specific macros, such as `GLIBCXX_ENABLE_C99`, `GLIBCXX_CHECK_LFS`, and `GLIBCXX_ENABLE_SYMVERS`. `libstdc++-v3/linkage.m4` defines helper macros for math and stdlib declaration/linkage checks. `libstdc++-v3/configure.host` is a shell file sourced by configure to choose CPU, OS, ABI, header, and source directories from the host triple. `libstdc++-v3/crossconfig.m4` contains hardcoded define choices for non-native or cross builds. GCC also has top-level `config/*.m4` macro files used by libstdc++, for example unwind, futex, CET, and generic compiler/linker helper macros.
 
-In this repository, `3rd_party/gcc/extension/gcc.bzl` defines the sparse source archive for GCC. `3rd_party/gcc/gcc.BUILD.bazel` exports files and builds the translated libstdc++ source targets. `runtimes/libstdcxx/configure.bzl` maps Bazel platform constraints to values that currently mimic parts of `configure.host`. The config.h probe and policy definitions are split across `runtimes/configure/native_autoconf_checks.bzl`, `runtimes/libstdcxx/acinclude_checks.bzl`, `runtimes/libstdcxx/crossconfig_checks.bzl`, and `runtimes/libstdcxx/configure_ac_checks.bzl`. `runtimes/libstdcxx/config_probe.bzl` executes those probes with the Bazel C/C++ toolchain and writes generated `config.h` outputs.
+In this repository, `3rd_party/gcc/extension/gcc.bzl` defines the sparse source archive for GCC. `3rd_party/gcc/gcc.BUILD.bazel` exports files and builds the translated libstdc++ source targets. `runtimes/libstdcxx/configure.bzl` maps Bazel platform constraints to values that currently mimic parts of `configure.host`. The config.h probe and policy definitions are split across `runtimes/libstdcxx/autoconf/gcc_config_checks.bzl`, `runtimes/libstdcxx/autoconf/acinclude_checks.bzl`, `runtimes/libstdcxx/autoconf/crossconfig_checks.bzl`, and `runtimes/libstdcxx/autoconf/configure_ac_checks.bzl`. Generic local autoconf mechanics live in `runtimes/libstdcxx/autoconf/checks.bzl`, `runtimes/libstdcxx/autoconf/autoconf_config.bzl`, and `runtimes/libstdcxx/autoconf/autoconf_hdr.bzl`. `runtimes/libstdcxx/libstdcxx_config_h.bzl` is a thin wrapper that creates a check target and a header target.
 
 An autoconf probe is a small compile, link, preprocess, run, header, function, declaration, or tool check used by configure to decide whether a macro should be defined. In this Bazel port, probes are represented as Starlark data and executed by Bazel actions. A policy is a choice made from configure options, target triples, or current support scope rather than from compiling a snippet.
 
@@ -88,21 +110,23 @@ An autoconf probe is a small compile, link, preprocess, run, header, function, d
 
 First, complete the source basis. The sparse GCC archive must include every upstream file used as a source of truth for the active configure model. `configure.host` and `crossconfig.m4` are already added. The next fetch step is to add the top-level `config/*.m4` files that define macros called directly or indirectly from `configure.ac` and `acinclude.m4`. Do not fetch the entire GCC repository; list only the needed macro files so the sparse checkout remains small.
 
-Second, split the Starlark definitions by upstream counterpart. Create a generic native autoconf module, tentatively `runtimes/configure/native_autoconf_checks.bzl`, for reusable checks that are not libstdc++-specific: header checks, function checks, declaration checks, compiler feature checks, linker feature checks, TLS, iconv, futex, unwind IP info, and related GCC top-level macros. This file must avoid libstdc++ policy names unless the upstream macro itself is GCC-generic. It should export small functions returning check structs, such as `check_headers(...)`, `check_funcs(...)`, and named equivalents of GCC macros where the macro has target policy.
+Second, split the Starlark definitions by upstream counterpart. Create `runtimes/libstdcxx/autoconf/gcc_config_checks.bzl` for GCC top-level `config/*.m4` checks used by libstdc++, plus generic declaration/linkage helpers from `libstdc++-v3/linkage.m4`. This file must avoid libstdc++ policy names unless the upstream macro itself is GCC-generic. It should export small functions returning check data, such as named equivalents of GCC macros where the macro has target policy.
 
 Third, create `runtimes/libstdcxx/acinclude_checks.bzl` as the counterpart of `libstdc++-v3/acinclude.m4`. This file should define functions named after the libstdc++ macros where practical, for example `glibcxx_enable_c99(...)`, `glibcxx_check_c99_tr1(...)`, `glibcxx_check_lfs(...)`, `glibcxx_enable_libstdcxx_time(...)`, and `glibcxx_enable_symvers(...)`. Each function should return structured data: compile checks, link checks, policy defines, string defines, or substitutions. Where a GCC macro mixes active Linux GNU checks with unsupported target branches, active data should be returned for Linux GNU and unsupported branches should be preserved as commented-out blocks with a comment explaining the condition and why it is inactive.
 
 Fourth, create `runtimes/libstdcxx/crossconfig_checks.bzl` as the counterpart of `libstdc++-v3/crossconfig.m4`. For now, Linux GNU cross behavior should be represented only to the extent it applies to the current supported Linux GNU configuration. Branches for newlib, picolibc, Darwin, BSD, MinGW, RTEMS, VxWorks, and others should be porting comments, not active checks, each with a short reason such as "unsupported target family" or "non-GNU libc unsupported for libstdc++ today." This makes future GCC update review possible without changing current support.
 
-Fifth, create `runtimes/libstdcxx/configure_ac_checks.bzl` as the counterpart of `libstdc++-v3/configure.ac`. This file should be the only place that composes the full active `config.h` plan. It should read like configure's control flow: hosted policy, compiler-only checks, variable runtime options, OS checks, native Linux GNU checks, unwind/futex/symvers/ABI checks, filesystem/networking/time/debugging checks, and build-only macros marked not needed. It should call functions from `acinclude_checks.bzl`, `crossconfig_checks.bzl`, and `runtimes/configure/native_autoconf_checks.bzl`. Unsupported configure branches should be visible as commented-out calls with a reason before each block.
+Fifth, create `runtimes/libstdcxx/configure_ac_checks.bzl` as the counterpart of `libstdc++-v3/configure.ac`. This file should be the only place that composes the full active `config.h` plan. It should read like configure's control flow: hosted policy, compiler-only checks, variable runtime options, OS checks, native Linux GNU checks, unwind/futex/symvers/ABI checks, filesystem/networking/time/debugging checks, and build-only macros marked not needed. It should call functions from `acinclude_checks.bzl`, `crossconfig_checks.bzl`, and `runtimes/libstdcxx/autoconf/gcc_config_checks.bzl`. Unsupported configure branches should be visible as commented-out calls with a reason before each block.
 
-Sixth, delete `runtimes/libstdcxx/config_checks.bzl` and update `runtimes/libstdcxx/config_probe.bzl` to import `COMPILE_CHECKS`, `LINK_CHECKS`, and `POLICY_DEFINES` directly from `runtimes/libstdcxx/configure_ac_checks.bzl`. This keeps the source-counterpart split explicit and avoids a stale compatibility layer.
+Sixth, delete `runtimes/libstdcxx/config_checks.bzl` and route generated `config.h` through `runtimes/libstdcxx/autoconf/configure_ac_checks.bzl`. This keeps the source-counterpart split explicit and avoids a stale compatibility layer.
 
 Seventh, strengthen the audit machinery. Add a shell-based audit test, not Python, that extracts macro definitions and uses from the fetched upstream files and compares them against a Starlark-maintained status file or explicit expected list. The first version should track `AC_DEFINE`, `AC_DEFINE_UNQUOTED`, `AC_CHECK_HEADERS`, `AC_CHECK_FUNCS`, `AC_CHECK_DECL`, called `GLIBCXX_*` macros, and called `GCC_*` macros. The test should fail with a clear list of missing symbols or macro calls when GCC changes.
 
 Eighth, update `configure.report.md` after the split. The report should be regenerated or rewritten from the complete source set, including `configure.host`, `crossconfig.m4`, and top-level config macro files. It should stop making claims based on missing files. The checklist should use the same categories as the new modules: active Linux GNU probe, active Linux GNU policy, unsupported target branch, build-only/not needed, and future build setting.
 
 Ninth, fix the correctness issues discovered by the audit. `HAVE_GETIPINFO` must model `_Unwind_GetIPInfo` or GCC's target policy, not `getaddrinfo`. `_GLIBCXX_USE_LFS` must use GCC's full `GLIBCXX_CHECK_LFS` group. C99 and TR1 groups must either become aggregate probes or have explicit hosted-glibc policy justification in the source-counterpart files.
+
+Tenth, decouple generic autoconf mechanics from libstdc++ source structure. `checks.bzl` should provide small JSON-encoded check constructors, `autoconf_config.bzl` should execute compile/link checks and return ordered results, and `autoconf_hdr.bzl` should render the header. `libstdcxx_config_h.bzl` should only wire libstdc++ inputs together. This prepares a later migration to an external autoconf ruleset while keeping GCC-source counterpart files readable.
 
 ## Concrete Steps
 
@@ -127,12 +151,12 @@ Run all commands from `/home/corentin/llvm`.
 
 3. Add the new Starlark modules:
 
-       runtimes/configure/native_autoconf_checks.bzl
-       runtimes/libstdcxx/acinclude_checks.bzl
-       runtimes/libstdcxx/crossconfig_checks.bzl
-       runtimes/libstdcxx/configure_ac_checks.bzl
+       runtimes/libstdcxx/autoconf/gcc_config_checks.bzl
+       runtimes/libstdcxx/autoconf/acinclude_checks.bzl
+       runtimes/libstdcxx/autoconf/crossconfig_checks.bzl
+       runtimes/libstdcxx/autoconf/configure_ac_checks.bzl
 
-   Update `runtimes/libstdcxx/config_probe.bzl` to load from `configure_ac_checks.bzl`; do not keep a compatibility facade.
+   Route `runtimes/libstdcxx/libstdcxx_config_h.bzl` through `configure_ac_checks.bzl`; do not keep a compatibility facade.
 
 4. Run formatting:
 
@@ -140,7 +164,7 @@ Run all commands from `/home/corentin/llvm`.
 
 5. Build generated config outputs:
 
-       bazel build --config remote //runtimes/libstdcxx:config_h
+       bazel build --config remote //runtimes/libstdcxx:config_h //runtimes/libstdcxx:libstdcxx_config_h //runtimes/libstdcxx/autoconf:autoconf_config //runtimes/libstdcxx/autoconf:autoconf_hdr //runtimes/libstdcxx/autoconf:checks //runtimes/libstdcxx/autoconf:configure_ac_checks
 
 6. Run the libstdc++ e2e smoke that proves the runtime still works:
 
@@ -157,11 +181,11 @@ The refactor is accepted when `bazel run //internal_tools:buildifier.check` pass
 
 The audit part is accepted when changing a fetched upstream configure source to add a new `AC_DEFINE`, `AC_CHECK_HEADERS`, `AC_CHECK_FUNCS`, called `GLIBCXX_*`, or called `GCC_*` macro causes `//runtimes/libstdcxx:configure_sources_audit_test` to fail with a readable missing-item message.
 
-The source-structure part is accepted when a maintainer can open the upstream GCC file and the Bazel counterpart side by side and follow the same order: `acinclude.m4` to `acinclude_checks.bzl`, `crossconfig.m4` to `crossconfig_checks.bzl`, top-level `config/*.m4` to `native_autoconf_checks.bzl`, and `configure.ac` to `configure_ac_checks.bzl`.
+The source-structure part is accepted when a maintainer can open the upstream GCC file and the Bazel counterpart side by side and follow the same order: `acinclude.m4` to `acinclude_checks.bzl`, `crossconfig.m4` to `crossconfig_checks.bzl`, top-level `config/*.m4` to `gcc_config_checks.bzl`, and `configure.ac` to `configure_ac_checks.bzl`.
 
 ## Idempotence and Recovery
 
-All edits are additive or mechanical splits except deleting the old monolithic `config_checks.bzl`. If a split produces a behavior change, stop and compare the generated `config_h` header before continuing. Recovery is to restore `config_checks.bzl` from git and point `config_probe.bzl` back to it, but that should only be needed if the direct split cannot be made green.
+All edits are additive or mechanical splits except deleting the old monolithic `config_checks.bzl`. If a split produces a behavior change, stop and compare the generated `config_h` header before continuing. Recovery is to restore the previous `libstdcxx_config_h.bzl` implementation from git and re-run the validation commands, but that should only be needed if the direct split cannot be made green.
 
 Do not delete unsupported target notes just because they are inactive. If a branch is out of scope, leave it commented with the upstream condition and the reason it is inactive. This preserves the audit trail for later platform work.
 

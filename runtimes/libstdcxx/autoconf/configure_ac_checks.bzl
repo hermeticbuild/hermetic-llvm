@@ -41,9 +41,9 @@ load(
     "glibcxx_resource_limits_policy",
     "glibcxx_zoneinfo_policy",
 )
+load(":checks.bzl", "ac_check_headers")
 load(
-    ":native_autoconf_checks.bzl",
-    "ac_check_headers",
+    ":gcc_config_checks.bzl",
     "am_iconv",
     "gcc_check_math_support",
     "gcc_check_stdlib_support",
@@ -178,21 +178,3 @@ def _linux_gnu_entries():
 # active config.h model.
 
 CONFIG_ENTRIES = _linux_gnu_entries()
-
-COMPILE_CHECKS = [
-    entry
-    for entry in CONFIG_ENTRIES
-    if getattr(entry, "flags", None) != None
-]
-
-LINK_CHECKS = [
-    entry
-    for entry in CONFIG_ENTRIES
-    if getattr(entry, "compile_flags", None) != None
-]
-
-POLICY_DEFINES = [
-    entry
-    for entry in CONFIG_ENTRIES
-    if getattr(entry, "kind", None) != None
-]

@@ -2,6 +2,9 @@
 # libstdc++-v3/configure.host. When adding a target or changing one of these
 # fields, compare against configure.host plus configure.ac's *_SRCDIR
 # substitutions for the generated include/source paths.
+
+load("//runtimes/libstdcxx/autoconf:checks.bzl", "policy_define")
+
 _SUPPORTED_TARGETS = {
     "//platforms/config:linux_x86_64_gnu": {
         "abi_baseline_pair": "x86_64-linux-gnu",
@@ -247,6 +250,21 @@ def libstdcxx_use_dual_abi():
 
 def libstdcxx_symver_style():
     return _select_field("symver_style")
+
+def libstdcxx_config_h_policy_defines():
+    return select({
+        Label(config): (
+            ([
+                policy_define("_GLIBCXX_SYMVER"),
+                policy_define("_GLIBCXX_SYMVER_GNU"),
+                policy_define("HAVE_AS_SYMVER_DIRECTIVE"),
+                policy_define("HAVE_SYMVER_SYMBOL_RENAMING_RUNTIME_SUPPORT"),
+                policy_define("HAVE_EXCEPTION_PTR_SINCE_GCC46"),
+            ] if _field_value(values, "symver_style") == "gnu" else []) +
+            ([policy_define("HAVE_ATOMIC_LOCK_POLICY")] if values["atomic_lock_policy"] else [])
+        )
+        for config, values in _SUPPORTED_TARGETS.items()
+    }, no_match_error = _NO_MATCH_ERROR)
 
 # These adapters turn configure.host-style directory fields into the exact
 # config headers and sources consumed by libstdc++-v3/include/Makefile.am and

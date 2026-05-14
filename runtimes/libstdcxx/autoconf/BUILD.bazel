@@ -6,16 +6,20 @@ package(default_visibility = ["//visibility:public"])
 
 exports_files([
     "acinclude_checks.bzl",
+    "autoconf_config.bzl",
+    "autoconf_hdr.bzl",
     "autoconf_inventory.sh",
     "autoconf.README.md",
     "autoconf.checks.md",
     "autoconf.usage.md",
     "cc_configure_probe.bzl",
+    "checks.bzl",
     "config_define_status.txt",
     "config_macro_status.txt",
     "configure_ac_checks.bzl",
     "crossconfig_checks.bzl",
-    "native_autoconf_checks.bzl",
+    "gcc_config_checks.bzl",
+    "providers.bzl",
 ])
 
 _AUTOCONF_AUDIT_DATA = [
@@ -66,10 +70,14 @@ _AUTOCONF_AUDIT_ENV = {
 
 _AUTOCONF_MODEL_DATA = [
     "acinclude_checks.bzl",
+    "autoconf_config.bzl",
+    "autoconf_hdr.bzl",
     "cc_configure_probe.bzl",
+    "checks.bzl",
     "configure_ac_checks.bzl",
     "crossconfig_checks.bzl",
-    "native_autoconf_checks.bzl",
+    "gcc_config_checks.bzl",
+    "providers.bzl",
     "//runtimes/libstdcxx:configure.bzl",
     "//runtimes/libstdcxx:libstdcxx_config_h.bzl",
     "//runtimes/libstdcxx:libstdcxx_cxxconfig_header.bzl",
@@ -80,7 +88,10 @@ _AUTOCONF_MODEL_DATA = [
 
 _AUTOCONF_MODEL_ENV = {
     "ACINCLUDE_CHECKS": "$(rootpath acinclude_checks.bzl)",
+    "AUTOCONF_CONFIG": "$(rootpath autoconf_config.bzl)",
+    "AUTOCONF_HDR": "$(rootpath autoconf_hdr.bzl)",
     "CC_CONFIGURE_PROBE": "$(rootpath cc_configure_probe.bzl)",
+    "CHECKS": "$(rootpath checks.bzl)",
     "CONFIGURE": "$(rootpath //runtimes/libstdcxx:configure.bzl)",
     "CONFIGURE_AC_CHECKS": "$(rootpath configure_ac_checks.bzl)",
     "CROSSCONFIG_CHECKS": "$(rootpath crossconfig_checks.bzl)",
@@ -88,7 +99,8 @@ _AUTOCONF_MODEL_ENV = {
     "GTHR_HEADERS": "$(rootpath //runtimes/libstdcxx:libstdcxx_gthr_headers.bzl)",
     "LARGEFILE_CONFIG_HEADER": "$(rootpath //runtimes/libstdcxx:libstdcxx_largefile_config_header.bzl)",
     "LIBSTDCXX_CONFIG_H": "$(rootpath //runtimes/libstdcxx:libstdcxx_config_h.bzl)",
-    "NATIVE_AUTOCONF_CHECKS": "$(rootpath native_autoconf_checks.bzl)",
+    "GCC_CONFIG_CHECKS": "$(rootpath gcc_config_checks.bzl)",
+    "PROVIDERS": "$(rootpath providers.bzl)",
     "SYMBOLS": "$(rootpath //runtimes/libstdcxx:symbols.bzl)",
 }
 
@@ -134,7 +146,25 @@ sh_binary(
 bzl_library(
     name = "acinclude_checks",
     srcs = ["acinclude_checks.bzl"],
-    deps = [":native_autoconf_checks"],
+    deps = [
+        ":checks",
+        ":gcc_config_checks",
+    ],
+)
+
+bzl_library(
+    name = "autoconf_config",
+    srcs = ["autoconf_config.bzl"],
+    deps = [
+        ":cc_configure_probe",
+        ":providers",
+    ],
+)
+
+bzl_library(
+    name = "autoconf_hdr",
+    srcs = ["autoconf_hdr.bzl"],
+    deps = [":providers"],
 )
 
 bzl_library(
@@ -150,7 +180,10 @@ bzl_library(
 bzl_library(
     name = "crossconfig_checks",
     srcs = ["crossconfig_checks.bzl"],
-    deps = [":native_autoconf_checks"],
+    deps = [
+        ":checks",
+        ":gcc_config_checks",
+    ],
 )
 
 bzl_library(
@@ -158,11 +191,23 @@ bzl_library(
     srcs = ["configure_ac_checks.bzl"],
     deps = [
         ":acinclude_checks",
-        ":native_autoconf_checks",
+        ":checks",
+        ":gcc_config_checks",
     ],
 )
 
 bzl_library(
-    name = "native_autoconf_checks",
-    srcs = ["native_autoconf_checks.bzl"],
+    name = "gcc_config_checks",
+    srcs = ["gcc_config_checks.bzl"],
+    deps = [":checks"],
+)
+
+bzl_library(
+    name = "checks",
+    srcs = ["checks.bzl"],
+)
+
+bzl_library(
+    name = "providers",
+    srcs = ["providers.bzl"],
 )

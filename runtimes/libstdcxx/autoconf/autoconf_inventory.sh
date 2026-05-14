@@ -313,7 +313,10 @@ reviewed_check_arguments() {
 check_status() {
   require_env \
     ACINCLUDE_CHECKS \
+    AUTOCONF_CONFIG \
+    AUTOCONF_HDR \
     CC_CONFIGURE_PROBE \
+    CHECKS \
     CONFIGURE \
     CONFIGURE_AC_CHECKS \
     CROSSCONFIG_CHECKS \
@@ -321,7 +324,8 @@ check_status() {
     GTHR_HEADERS \
     LARGEFILE_CONFIG_HEADER \
     LIBSTDCXX_CONFIG_H \
-    NATIVE_AUTOCONF_CHECKS \
+    GCC_CONFIG_CHECKS \
+    PROVIDERS \
     SYMBOLS
 
   gcc_defines="${tmp}/gcc-defines.txt"
@@ -434,7 +438,10 @@ BEGIN {
   while IFS= read -r define; do
     if ! grep -F -q "${define}" \
       "${ACINCLUDE_CHECKS}" \
+      "${AUTOCONF_CONFIG}" \
+      "${AUTOCONF_HDR}" \
       "${CC_CONFIGURE_PROBE}" \
+      "${CHECKS}" \
       "${CONFIGURE_AC_CHECKS}" \
       "${CONFIGURE}" \
       "${CROSSCONFIG_CHECKS}" \
@@ -442,7 +449,8 @@ BEGIN {
       "${GTHR_HEADERS}" \
       "${LARGEFILE_CONFIG_HEADER}" \
       "${LIBSTDCXX_CONFIG_H}" \
-      "${NATIVE_AUTOCONF_CHECKS}" \
+      "${GCC_CONFIG_CHECKS}" \
+      "${PROVIDERS}" \
       "${SYMBOLS}"; then
       printf '%s\n' "${define}" >> "${missing_models}"
     fi
@@ -459,7 +467,10 @@ BEGIN {
   while IFS= read -r macro; do
     if ! grep -F -i -q "${macro}" \
       "${ACINCLUDE_CHECKS}" \
+      "${AUTOCONF_CONFIG}" \
+      "${AUTOCONF_HDR}" \
       "${CC_CONFIGURE_PROBE}" \
+      "${CHECKS}" \
       "${CONFIGURE_AC_CHECKS}" \
       "${CONFIGURE}" \
       "${CROSSCONFIG_CHECKS}" \
@@ -467,7 +478,8 @@ BEGIN {
       "${GTHR_HEADERS}" \
       "${LARGEFILE_CONFIG_HEADER}" \
       "${LIBSTDCXX_CONFIG_H}" \
-      "${NATIVE_AUTOCONF_CHECKS}" \
+      "${GCC_CONFIG_CHECKS}" \
+      "${PROVIDERS}" \
       "${SYMBOLS}"; then
       printf '%s\n' "${macro}" >> "${missing_macro_models}"
     fi

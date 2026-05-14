@@ -9,11 +9,11 @@ load("//runtimes:defs.bzl", "stub_library")
 load("//toolchain/runtimes:cc_runtime_tool_binary.bzl", "cc_runtime_tool_binary")
 load(
     ":configure.bzl",
-    "libstdcxx_atomic_lock_policy",
     "libstdcxx_atomic_word_h",
     "libstdcxx_bits_opt_random_h",
     "libstdcxx_c_locale_h",
     "libstdcxx_c_locale_internal_h",
+    "libstdcxx_config_h_policy_defines",
     "libstdcxx_cpu_defines_h",
     "libstdcxx_ctype_base_h",
     "libstdcxx_ctype_inline_h",
@@ -26,7 +26,6 @@ load(
     "libstdcxx_inline_version",
     "libstdcxx_messages_members_h",
     "libstdcxx_os_defines_h",
-    "libstdcxx_symver_style",
     "libstdcxx_thread_header_h",
     "libstdcxx_time_members_h",
     "libstdcxx_use_allocator_new",
@@ -42,9 +41,8 @@ package(default_visibility = ["//visibility:public"])
 
 libstdcxx_config_h(
     name = "config_h",
-    atomic_lock_policy = libstdcxx_atomic_lock_policy(),
+    config_defines = libstdcxx_config_h_policy_defines(),
     gthr_headers = ":gthr_headers",
-    symver_style = libstdcxx_symver_style(),
 )
 
 filegroup(
@@ -412,7 +410,8 @@ bzl_library(
     name = "libstdcxx_config_h",
     srcs = ["libstdcxx_config_h.bzl"],
     deps = [
-        "//runtimes/libstdcxx/autoconf:cc_configure_probe",
+        "//runtimes/libstdcxx/autoconf:autoconf_config",
+        "//runtimes/libstdcxx/autoconf:autoconf_hdr",
         "//runtimes/libstdcxx/autoconf:configure_ac_checks",
     ],
 )
@@ -420,6 +419,7 @@ bzl_library(
 bzl_library(
     name = "configure",
     srcs = ["configure.bzl"],
+    deps = ["//runtimes/libstdcxx/autoconf:checks"],
 )
 
 bzl_library(

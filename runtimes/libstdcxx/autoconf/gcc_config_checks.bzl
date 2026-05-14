@@ -18,78 +18,13 @@
 # macros. The check name stays the audit key; defines_on_success records the
 # config.h fan-out for that successful probe.
 
-def compile_check(name, source, language = "c", flags = [], defines_on_success = None):
-    if defines_on_success == None:
-        defines_on_success = [name]
-    return struct(
-        defines_on_success = defines_on_success,
-        flags = flags,
-        language = language,
-        name = name,
-        source = source.strip() + "\n",
-    )
-
-def link_check(name, source, language = "c++", compile_flags = [], link_flags = [], defines_on_success = None):
-    if defines_on_success == None:
-        defines_on_success = [name]
-    return struct(
-        compile_flags = compile_flags,
-        defines_on_success = defines_on_success,
-        language = language,
-        link_flags = link_flags,
-        name = name,
-        source = source.strip() + "\n",
-    )
-
-def policy_define(name, value = "1", defines_on_success = None):
-    if defines_on_success == None:
-        defines_on_success = [name]
-    return struct(
-        defines_on_success = defines_on_success,
-        kind = "define",
-        name = name,
-        value = value,
-    )
-
-def policy_undef(name):
-    return struct(
-        kind = "undef",
-        name = name,
-    )
-
-def policy_string_define(name, value):
-    return struct(
-        kind = "string_define",
-        name = name,
-        value = value,
-    )
-
-def header_check(header):
-    return compile_check(
-        name = "HAVE_" + header.upper().replace("/", "_").replace(".", "_"),
-        source = """
-#include <{header}>
-int main(void) {{ return 0; }}
-""".format(header = header),
-    )
-
-def ac_check_headers(headers):
-    return [header_check(header) for header in headers]
-
-def function_link_check(name, header, expression, language = "c++", compile_flags = [], link_flags = []):
-    return link_check(
-        name = name,
-        language = language,
-        compile_flags = compile_flags,
-        link_flags = link_flags,
-        source = """
-#include <{header}>
-int main() {{
-    {expression};
-    return 0;
-}}
-""".format(header = header, expression = expression),
-    )
+load(
+    ":checks.bzl",
+    "compile_check",
+    "function_link_check",
+    "link_check",
+    "policy_define",
+)
 
 CXX_NO_EXCEPTIONS_FLAGS = ["-fno-exceptions"]
 MATH_LINK_FLAGS = ["-lm"]

@@ -43,9 +43,15 @@ Keep Bazel files shaped like the GCC files they port:
   `libstdc++-v3/acinclude.m4`.
 - `runtimes/libstdcxx/autoconf/crossconfig_checks.bzl` is the counterpart of
   `libstdc++-v3/crossconfig.m4`.
-- `runtimes/libstdcxx/autoconf/native_autoconf_checks.bzl` is the counterpart
-  for reusable native autoconf and GCC top-level `config/*.m4` checks.
-- `libstdc++-v3/linkage.m4` helpers are represented with the reusable native
+- `runtimes/libstdcxx/autoconf/gcc_config_checks.bzl` is the counterpart
+  for GCC top-level `config/*.m4` checks used by libstdc++, plus generic
+  declaration/linkage helpers from `libstdc++-v3/linkage.m4`.
+- `runtimes/libstdcxx/autoconf/checks.bzl`,
+  `runtimes/libstdcxx/autoconf/autoconf_config.bzl`, and
+  `runtimes/libstdcxx/autoconf/autoconf_hdr.bzl` are local generic autoconf
+  mechanics. They should stay free of libstdc++ source-policy decisions so a
+  future external autoconf ruleset migration is a thin adapter change.
+- `libstdc++-v3/linkage.m4` helpers are represented with the GCC config
   checks when they are generic math or stdlib declaration/linkage checks.
 - `runtimes/libstdcxx/configure.bzl`,
   `runtimes/libstdcxx/libstdcxx_cxxconfig_header.bzl`,
@@ -63,9 +69,8 @@ into one Bazel helper, leave an anchor comment listing the upstream macro names.
 Maintain these human-readable tracking files in `runtimes/libstdcxx/autoconf`:
 
 - `autoconf.checks.md`: checklist of check definitions available from GCC
-  sources. This covers native autoconf helpers, GCC top-level `config/*.m4`
-  macros, libstdc++ custom `GLIBCXX_*` macros, and helper macros such as those
-  in `linkage.m4`.
+  sources. This covers GCC top-level `config/*.m4` macros, libstdc++ custom
+  `GLIBCXX_*` macros, and helper macros such as those in `linkage.m4`.
 - `autoconf.usage.md`: checklist of configure usage, in the order
   `configure.ac` uses checks and macros. This file explains which definitions
   are actually reached for the current supported Linux GNU configuration and
@@ -185,7 +190,7 @@ still belongs in the usage checklist and glossary.
 Before committing configure-check changes, run from the repository root:
 
     bazel run //internal_tools:buildifier.check
-    bazel build --config remote //runtimes/libstdcxx:config_h //runtimes/libstdcxx:libstdcxx_config_h //runtimes/libstdcxx/autoconf:cc_configure_probe //runtimes/libstdcxx/autoconf:configure_ac_checks
+    bazel build --config remote //runtimes/libstdcxx:config_h //runtimes/libstdcxx:libstdcxx_config_h //runtimes/libstdcxx/autoconf:autoconf_config //runtimes/libstdcxx/autoconf:autoconf_hdr //runtimes/libstdcxx/autoconf:checks //runtimes/libstdcxx/autoconf:cc_configure_probe //runtimes/libstdcxx/autoconf:configure_ac_checks
     bazel test --config remote //runtimes/libstdcxx/autoconf:autoconf_inventory_test
     bazel test --config remote //runtimes/libstdcxx/autoconf:config_define_audit_test
 

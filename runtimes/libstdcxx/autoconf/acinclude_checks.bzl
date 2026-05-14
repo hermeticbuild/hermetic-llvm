@@ -3,16 +3,19 @@
 # updates can be reviewed by comparing acinclude.m4 against this module.
 
 load(
-    ":native_autoconf_checks.bzl",
-    "CXX_NO_EXCEPTIONS_FLAGS",
-    "MATH_LINK_FLAGS",
-    "PTHREAD_LINK_FLAGS",
+    ":checks.bzl",
     "compile_check",
     "function_link_check",
     "link_check",
     "policy_define",
     "policy_string_define",
     "policy_undef",
+)
+load(
+    ":gcc_config_checks.bzl",
+    "CXX_NO_EXCEPTIONS_FLAGS",
+    "MATH_LINK_FLAGS",
+    "PTHREAD_LINK_FLAGS",
 )
 
 CXX_FILESYSTEM_FLAGS = ["-fno-exceptions"]
@@ -21,7 +24,7 @@ CXX_FILESYSTEM_FLAGS = ["-fno-exceptions"]
 # some acinclude.m4 macros when they share one Bazel probe/policy site:
 #
 # GLIBCXX_CHECK_MATH_SUPPORT and GLIBCXX_CHECK_STDLIB_SUPPORT are delegated to
-# reusable GCC-native checks in native_autoconf_checks.bzl.
+# reusable GCC config checks in gcc_config_checks.bzl.
 # GLIBCXX_CHECK_MATH_DECL and GLIBCXX_CHECK_MATH_DECLS are currently represented
 # by glibcxx_enable_c99() and glibcxx_check_math11_proto().
 # GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_3 is currently represented by
@@ -959,6 +962,7 @@ int main() {
             name = "_GLIBCXX_HAS_GTHREADS",
             language = "c++",
             flags = CXX_NO_EXCEPTIONS_FLAGS,
+            probe_contexts = ["gthreads"],
             source = """
 #define _PTHREADS 1
 #include <bits/gthr.h>
@@ -974,6 +978,7 @@ int main() {
             name = "_GLIBCXX_USE_PTHREAD_RWLOCK_T",
             language = "c++",
             flags = CXX_NO_EXCEPTIONS_FLAGS,
+            probe_contexts = ["gthreads"],
             source = """
 #define _PTHREADS 1
 #include <bits/gthr.h>

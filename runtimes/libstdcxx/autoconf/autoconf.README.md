@@ -20,12 +20,16 @@ classification.
 - `libstdc++-v3/configure.ac` maps to `configure_ac_checks.bzl`.
 - `libstdc++-v3/acinclude.m4` maps to `acinclude_checks.bzl`.
 - `libstdc++-v3/linkage.m4` maps to math and stdlib helpers in
-  `native_autoconf_checks.bzl`.
+  `gcc_config_checks.bzl`.
 - `libstdc++-v3/crossconfig.m4` maps to `crossconfig_checks.bzl`.
-- GCC top-level `config/*.m4` files map to `native_autoconf_checks.bzl`.
+- GCC top-level `config/*.m4` files map to `gcc_config_checks.bzl`.
 - `libstdc++-v3/configure.host` maps to target-derived policy in
   `configure.bzl`, generated header selection in the
   `libstdcxx_*_header.bzl` rule files, and Bazel targets in `BUILD.bazel`.
+- Generic autoconf mechanics live in `checks.bzl`, `autoconf_config.bzl`,
+  `autoconf_hdr.bzl`, and `cc_configure_probe.bzl`. Keep these files free of
+  libstdc++ source-policy decisions; source-counterpart files should only
+  declare checks through that local API.
 
 ## Status Glossary
 
@@ -116,7 +120,7 @@ The Bazel port models the Linux GNU dynamic libstdc++ path.
 `GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_2`, and
 `GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_3` are the math and stdlib support
 groups from `acinclude.m4` and `linkage.m4`. The Bazel port represents these
-as grouped link probes in `native_autoconf_checks.bzl`.
+as grouped link probes in `gcc_config_checks.bzl`.
 
 `GLIBCXX_CHECK_DEV_RANDOM`, `GLIBCXX_CHECK_ARC4RANDOM`,
 `GLIBCXX_CHECK_GETENTROPY`, `GLIBCXX_CHECK_FILESYSTEM_DEPS`,
