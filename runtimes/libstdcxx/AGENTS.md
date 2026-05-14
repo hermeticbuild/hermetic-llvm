@@ -36,29 +36,35 @@ the target family is out of scope or because the feature is out of scope.
 
 Keep Bazel files shaped like the GCC files they port:
 
-- `runtimes/libstdcxx/autoconf/configure_ac_checks.bzl` is the active
+- `runtimes/libstdcxx/configure.ac.bzl` is the active
   counterpart of `libstdc++-v3/configure.ac`. It composes the supported
   configure flow.
-- `runtimes/libstdcxx/autoconf/acinclude_checks.bzl` is the counterpart of
+- `runtimes/libstdcxx/acinclude.m4.bzl` is the counterpart of
   `libstdc++-v3/acinclude.m4`.
-- `runtimes/libstdcxx/autoconf/crossconfig_checks.bzl` is the counterpart of
+- `runtimes/libstdcxx/crossconfig.m4.bzl` is the counterpart of
   `libstdc++-v3/crossconfig.m4`.
-- `runtimes/libstdcxx/autoconf/gcc_config_checks.bzl` is the counterpart
-  for GCC top-level `config/*.m4` checks used by libstdc++, plus generic
-  declaration/linkage helpers from `libstdc++-v3/linkage.m4`.
+- `runtimes/libstdcxx/gcc_config_checks.bzl` is the counterpart
+  for GCC top-level `config/*.m4` checks used by libstdc++.
+- `runtimes/libstdcxx/linkage.m4.bzl` is the counterpart of
+  `libstdc++-v3/linkage.m4`.
 - `runtimes/libstdcxx/autoconf/checks.bzl`,
-  `runtimes/libstdcxx/autoconf/autoconf_config.bzl`, and
-  `runtimes/libstdcxx/autoconf/autoconf_hdr.bzl` are local generic autoconf
-  mechanics. They should stay free of libstdc++ source-policy decisions so a
-  future external autoconf ruleset migration is a thin adapter change.
-- `libstdc++-v3/linkage.m4` helpers are represented with the GCC config
-  checks when they are generic math or stdlib declaration/linkage checks.
-- `runtimes/libstdcxx/configure.bzl`,
+  `runtimes/libstdcxx/autoconf/autoconf_config.bzl`,
+  `runtimes/libstdcxx/autoconf/autoconf_hdr.bzl`,
+  `runtimes/libstdcxx/autoconf/cc_configure_probe.bzl`, and
+  `runtimes/libstdcxx/autoconf/providers.bzl` are local generic
+  autoconf mechanics. They should stay free of libstdc++ source-policy
+  decisions so a future external autoconf ruleset migration is a thin adapter
+  change.
+- `libstdc++-v3/linkage.m4` helpers are represented in
+  `runtimes/libstdcxx/linkage.m4.bzl`, even when they are generic math or
+  stdlib declaration/linkage checks.
+- `runtimes/libstdcxx/target_config.bzl`,
   `runtimes/libstdcxx/libstdcxx_cxxconfig_header.bzl`,
   `runtimes/libstdcxx/libstdcxx_gthr_headers.bzl`,
-  `runtimes/libstdcxx/libstdcxx_largefile_config_header.bzl`, `symbols.bzl`,
-  and `BUILD.bazel` may consume configure-derived policy, but should not hide
-  new configure semantics without updating the inventories.
+  `runtimes/libstdcxx/libstdcxx_largefile_config_header.bzl`,
+  `runtimes/libstdcxx/versioning/version_script.bzl`, and `BUILD.bazel` may
+  consume configure-derived policy, but should not hide new configure semantics
+  without updating the inventories.
 
 Each source-counterpart `.bzl` file should start with a short comment naming
 the GCC file(s) it was ported from. When a group of upstream macros is collapsed
@@ -66,7 +72,7 @@ into one Bazel helper, leave an anchor comment listing the upstream macro names.
 
 ## Required Tracking Files
 
-Maintain these human-readable tracking files in `runtimes/libstdcxx/autoconf`:
+Maintain these human-readable tracking files in `runtimes/libstdcxx/docs`:
 
 - `autoconf.checks.md`: checklist of check definitions available from GCC
   sources. This covers GCC top-level `config/*.m4` macros, libstdc++ custom
@@ -80,25 +86,29 @@ Maintain these human-readable tracking files in `runtimes/libstdcxx/autoconf`:
   produces, and the Bazel status.
 
 The lower-level machine status files, such as `config_define_status.txt` and
-`config_macro_status.txt`, are audit inputs. They should agree with the three
-Markdown files, but they are not a substitute for the glossary.
+`config_macro_status.txt`, also live in `runtimes/libstdcxx/docs` as audit
+inputs. They should agree with the three Markdown files, but they are not a
+substitute for the glossary.
 
 ## Inventory Scripts
 
-The inventory must be scriptable and reproducible. Scripts should live next to
-the autoconf model and be exposed through Bazel tests or runnable targets.
+The inventory must be scriptable and reproducible. Scripts should live in
+`runtimes/libstdcxx/tests` and be exposed through Bazel tests or runnable
+targets.
 
-The current entry point is `autoconf/autoconf_inventory.sh`. Its `inventory` mode
-prints raw discoveries: macro definitions, macro uses, config defines, check
-form counts, and check arguments. Raw discoveries are not checklist entries by
-themselves. Run `bazel run //runtimes/libstdcxx/autoconf:autoconf_inventory -- inventory`
-to inspect that raw queue through Bazel runfiles. The Bazel target
-`//runtimes/libstdcxx/autoconf:config_define_audit_test`
+The current entry point is `runtimes/libstdcxx/tests/autoconf_inventory.sh`.
+Its `inventory` mode prints raw discoveries: macro definitions, macro uses,
+config defines, check form counts, and check arguments. Raw discoveries are not
+checklist entries by themselves. Run
+`bazel run //runtimes/libstdcxx/tests:autoconf_inventory -- inventory` to
+inspect that raw queue through Bazel runfiles. The Bazel target
+`//runtimes/libstdcxx/tests:config_define_audit_test`
 uses `check-status` mode to verify status coverage and modeled-source
-references. The Bazel target `//runtimes/libstdcxx/autoconf:autoconf_inventory_test`
-uses `check-docs` mode to verify that the Markdown checklists and glossary
-mention every status-tracked configure macro and every reviewed concrete
-`AC_ARG_*`, `AC_CHECK_*`, and `AC_COMPUTE_INT` argument.
+references. The Bazel target
+`//runtimes/libstdcxx/tests:autoconf_inventory_test` uses `check-docs` mode to
+verify that the Markdown checklists and glossary mention every status-tracked
+configure macro and every reviewed concrete `AC_ARG_*`, `AC_CHECK_*`, and
+`AC_COMPUTE_INT` argument.
 
 The scripts should read the fetched GCC source files from Bazel runfiles, not
 from an arbitrary local GCC checkout. They should cover at least:
@@ -140,9 +150,11 @@ Follow this sequence for every configure-check change and every GCC update:
    `3rd_party/gcc/extension/gcc.bzl` and export them from
    `3rd_party/gcc/gcc.BUILD.bazel`.
 2. Run the inventory scripts. Treat their output as a review queue, not as a
-   completed checklist. Update `autoconf.checks.md`, `autoconf.usage.md`, and
-   `autoconf.README.md` only for checks that are implemented, target-derived,
-   deliberately deferred, not needed, or explicitly out of scope.
+   completed checklist. Update `runtimes/libstdcxx/docs/autoconf.checks.md`,
+   `runtimes/libstdcxx/docs/autoconf.usage.md`, and
+   `runtimes/libstdcxx/docs/autoconf.README.md` only for checks that are
+   implemented, target-derived, deliberately deferred, not needed, or
+   explicitly out of scope.
 3. Classify every new or changed item before editing probe behavior. Use the
    status vocabulary from this file.
 4. Port active Linux GNU behavior into the source-counterpart `.bzl` file that
@@ -160,9 +172,10 @@ Follow this sequence for every configure-check change and every GCC update:
 8. Do not use Python for configure inventory or probe execution unless this
    policy is explicitly changed. Prefer shell plus standard text tools for the
    audit scripts.
-9. Update `config_define_status.txt` and `config_macro_status.txt` only after
-   the Markdown checklists and glossary explain the semantic status. Do not mark
-   a check `modeled` merely because the inventory found it.
+9. Update `runtimes/libstdcxx/docs/config_define_status.txt` and
+   `runtimes/libstdcxx/docs/config_macro_status.txt` only after the Markdown
+   checklists and glossary explain the semantic status. Do not mark a check
+   `modeled` merely because the inventory found it.
 10. Validate with the package audit tests, generated config targets, and a
     real `e2e/rules_cc` smoke test when behavior changes.
 
@@ -190,9 +203,9 @@ still belongs in the usage checklist and glossary.
 Before committing configure-check changes, run from the repository root:
 
     bazel run //internal_tools:buildifier.check
-    bazel build --config remote //runtimes/libstdcxx:config_h //runtimes/libstdcxx:libstdcxx_config_h //runtimes/libstdcxx/autoconf:autoconf_config //runtimes/libstdcxx/autoconf:autoconf_hdr //runtimes/libstdcxx/autoconf:checks //runtimes/libstdcxx/autoconf:cc_configure_probe //runtimes/libstdcxx/autoconf:configure_ac_checks
-    bazel test --config remote //runtimes/libstdcxx/autoconf:autoconf_inventory_test
-    bazel test --config remote //runtimes/libstdcxx/autoconf:config_define_audit_test
+    bazel build --config remote //runtimes/libstdcxx:config_h //runtimes/libstdcxx:libstdcxx_config_h //runtimes/libstdcxx:target_config //runtimes/libstdcxx/autoconf:autoconf_config //runtimes/libstdcxx/autoconf:autoconf_hdr //runtimes/libstdcxx/autoconf:checks //runtimes/libstdcxx/autoconf:cc_configure_probe //runtimes/libstdcxx:gcc_config_checks //runtimes/libstdcxx:linkage_checks //runtimes/libstdcxx:configure_ac_checks
+    bazel test --config remote //runtimes/libstdcxx/tests:autoconf_inventory_test
+    bazel test --config remote //runtimes/libstdcxx/tests:config_define_audit_test
 
 When the change can affect real runtime behavior, also run from
 `e2e/rules_cc`:

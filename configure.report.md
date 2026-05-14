@@ -6,7 +6,7 @@ This report audits the configuration decisions made by GCC libstdc++'s
 port, not a statement that every item must become a dynamic Bazel probe.
 
 The active libstdc++ autoconf tracking files now live under
-`runtimes/libstdcxx/autoconf`: `autoconf.checks.md`, `autoconf.usage.md`, and
+`runtimes/libstdcxx/docs`: `autoconf.checks.md`, `autoconf.usage.md`, and
 `autoconf.README.md`. Keep those files and this report consistent when
 updating the configure model.
 
@@ -50,7 +50,7 @@ Legend:
   - Source: `AC_CANONICAL_SYSTEM`.
   - Condition: always.
   - Output: `build`, `host`, `target`, aliases and CPU/vendor/OS pieces.
-  - Bazel status: modeled by platform constraints and `configure.bzl` target
+  - Bazel status: modeled by platform constraints and `target_config.bzl` target
     policy.
 
 - Decide whether executable link tests are allowed.
@@ -126,7 +126,7 @@ Legend:
     `os_include_dir`, `atomicity_dir`, `atomic_word_dir`, `cpu_defines_dir`,
     `error_constants_dir`, `abi_tweaks_dir`, `tmake_file`, `atomic_flags`,
     `target_thread_file`, `c_model`, and related host policy.
-  - Bazel status: partially modeled in `runtimes/libstdcxx/configure.bzl`.
+  - Bazel status: partially modeled in `runtimes/libstdcxx/target_config.bzl`.
   - Follow-up: now exported as `@gcc//:libstdc++-v3/configure.host`; fold its
     host cases into the next audit pass instead of relying on prior local
     checkouts.
@@ -300,7 +300,7 @@ Legend:
     `__GCC_HAVE_SYNC_COMPARE_AND_SWAP_*`; RISC-V intentionally errors to keep
     mutex-based ABI compatibility; AMDGCN/NVPTX force yes.
   - Output: `HAVE_ATOMIC_LOCK_POLICY`.
-  - Bazel status: target-derived from `configure.bzl`. Linux GNU x86_64,
+  - Bazel status: target-derived from `target_config.bzl`. Linux GNU x86_64,
     aarch64, and s390x select atomic; RISC-V selects mutex to match GCC's
     explicit ABI-compatibility exception. Unsupported musl and Windows entries
     keep architecture-derived placeholders only because the broader target is
@@ -1098,7 +1098,7 @@ Condition: `GLIBCXX_IS_NATIVE=false`.
   - Outputs: `ATOMICITY_SRCDIR`, `ATOMIC_WORD_SRCDIR`, `ATOMIC_FLAGS`,
     `CPU_DEFINES_SRCDIR`, `OS_INC_SRCDIR`, `ERROR_CONSTANTS_SRCDIR`,
     `ABI_TWEAKS_SRCDIR`, `CPU_OPT_EXT_RANDOM`, `CPU_OPT_BITS_RANDOM`.
-  - Bazel status: mostly modeled in `configure.bzl` and header/source labels.
+  - Bazel status: mostly modeled in `target_config.bzl` and header/source labels.
 
 - `tmake_file` filtering.
   - Condition: files from `configure.host`.
@@ -1130,12 +1130,13 @@ Condition: `GLIBCXX_IS_NATIVE=false`.
 - [x] Fetch or otherwise expose the selected top-level GCC `config/*.m4`
   macros used by libstdc++ configure sources.
 - [x] Split the Bazel configure model into source-counterpart files:
-  `runtimes/libstdcxx/autoconf/native_autoconf_checks.bzl`,
-  `runtimes/libstdcxx/autoconf/acinclude_checks.bzl`,
-  `runtimes/libstdcxx/autoconf/crossconfig_checks.bzl`, and
-  `runtimes/libstdcxx/autoconf/configure_ac_checks.bzl`.
+  `runtimes/libstdcxx/gcc_config_checks.bzl`,
+  `runtimes/libstdcxx/linkage.m4.bzl`,
+  `runtimes/libstdcxx/acinclude.m4.bzl`,
+  `runtimes/libstdcxx/crossconfig.m4.bzl`, and
+  `runtimes/libstdcxx/configure.ac.bzl`.
 - [x] Point the libstdc++ `config.h` rule directly at
-  `configure_ac_checks.bzl` without a compatibility facade.
+  `configure.ac.bzl` without a compatibility facade.
 - [x] Split `config_define_status.txt` statuses into `probe-modeled`,
   `policy-modeled`, `target-derived`, `unsupported`, and `not-needed`.
 - [x] Fix `HAVE_GETIPINFO` to model `_Unwind_GetIPInfo`, not `getaddrinfo`.

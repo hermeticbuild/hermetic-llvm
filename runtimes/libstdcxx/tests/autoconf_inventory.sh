@@ -317,7 +317,6 @@ check_status() {
     AUTOCONF_HDR \
     CC_CONFIGURE_PROBE \
     CHECKS \
-    CONFIGURE \
     CONFIGURE_AC_CHECKS \
     CROSSCONFIG_CHECKS \
     CXXCONFIG_HEADER \
@@ -325,8 +324,10 @@ check_status() {
     LARGEFILE_CONFIG_HEADER \
     LIBSTDCXX_CONFIG_H \
     GCC_CONFIG_CHECKS \
+    LINKAGE_CHECKS \
     PROVIDERS \
-    SYMBOLS
+    TARGET_CONFIG \
+    VERSION_SCRIPT
 
   gcc_defines="${tmp}/gcc-defines.txt"
   gcc_macros="${tmp}/gcc-macros.txt"
@@ -443,15 +444,16 @@ BEGIN {
       "${CC_CONFIGURE_PROBE}" \
       "${CHECKS}" \
       "${CONFIGURE_AC_CHECKS}" \
-      "${CONFIGURE}" \
       "${CROSSCONFIG_CHECKS}" \
       "${CXXCONFIG_HEADER}" \
       "${GTHR_HEADERS}" \
       "${LARGEFILE_CONFIG_HEADER}" \
       "${LIBSTDCXX_CONFIG_H}" \
       "${GCC_CONFIG_CHECKS}" \
+      "${LINKAGE_CHECKS}" \
       "${PROVIDERS}" \
-      "${SYMBOLS}"; then
+      "${TARGET_CONFIG}" \
+      "${VERSION_SCRIPT}"; then
       printf '%s\n' "${define}" >> "${missing_models}"
     fi
   done < "${modeled_defines}"
@@ -472,15 +474,16 @@ BEGIN {
       "${CC_CONFIGURE_PROBE}" \
       "${CHECKS}" \
       "${CONFIGURE_AC_CHECKS}" \
-      "${CONFIGURE}" \
       "${CROSSCONFIG_CHECKS}" \
       "${CXXCONFIG_HEADER}" \
       "${GTHR_HEADERS}" \
       "${LARGEFILE_CONFIG_HEADER}" \
       "${LIBSTDCXX_CONFIG_H}" \
       "${GCC_CONFIG_CHECKS}" \
+      "${LINKAGE_CHECKS}" \
       "${PROVIDERS}" \
-      "${SYMBOLS}"; then
+      "${TARGET_CONFIG}" \
+      "${VERSION_SCRIPT}"; then
       printf '%s\n' "${macro}" >> "${missing_macro_models}"
     fi
   done < "${modeled_macros}"

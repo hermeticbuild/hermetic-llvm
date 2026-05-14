@@ -84,7 +84,7 @@ Status meanings are defined in `AGENTS.md`.
 ## Concrete Header Checks
 
 These are reviewed `AC_CHECK_HEADERS` arguments from the inventory that are
-implemented as `ac_check_headers(...)` entries in `configure_ac_checks.bzl`.
+implemented as `ac_check_headers(...)` entries in `configure.ac.bzl`.
 
 - [x] `arpa/inet.h`
 - [x] `complex.h`
@@ -218,7 +218,7 @@ classification. They are not generic raw inventory entries.
 
 - [x] `GCC_AC_THREAD_HEADER` - selected by target thread model.
 - [x] `GCC_AC_THREAD_MODEL` - selected by target thread model.
-- [x] `GLIBCXX_CHECK_HOST` - represented by `configure.bzl` target policy.
+- [x] `GLIBCXX_CHECK_HOST` - represented by `target_config.bzl` target policy.
 - [x] `GLIBCXX_ENABLE_CHEADERS` - represented by configured header selection.
 - [x] `GLIBCXX_ENABLE_LOCK_POLICY` - represented by target lock policy.
 - [x] `GLIBCXX_ENABLE_THREADS` - represented by target thread policy.

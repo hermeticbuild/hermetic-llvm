@@ -1,14 +1,14 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 load("@bazel_lib//lib:copy_file.bzl", "copy_file")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
-load("@bazel_skylib//rules:write_file.bzl", "write_file")
-load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//runtimes:defs.bzl", "stub_library")
-load("//toolchain/runtimes:cc_runtime_tool_binary.bzl", "cc_runtime_tool_binary")
+load(":libstdcxx_config_h.bzl", "libstdcxx_config_h")
+load(":libstdcxx_cxxconfig_header.bzl", "libstdcxx_cxxconfig_header")
+load(":libstdcxx_gthr_headers.bzl", "libstdcxx_gthr_headers")
+load(":libstdcxx_largefile_config_header.bzl", "libstdcxx_largefile_config_header")
 load(
-    ":configure.bzl",
+    ":target_config.bzl",
     "libstdcxx_atomic_word_h",
     "libstdcxx_bits_opt_random_h",
     "libstdcxx_c_locale_h",
@@ -32,12 +32,16 @@ load(
     "libstdcxx_use_cxx11_abi",
     "libstdcxx_use_dual_abi",
 )
-load(":libstdcxx_config_h.bzl", "libstdcxx_config_h")
-load(":libstdcxx_cxxconfig_header.bzl", "libstdcxx_cxxconfig_header")
-load(":libstdcxx_gthr_headers.bzl", "libstdcxx_gthr_headers")
-load(":libstdcxx_largefile_config_header.bzl", "libstdcxx_largefile_config_header")
 
 package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "acinclude.m4.bzl",
+    "configure.ac.bzl",
+    "crossconfig.m4.bzl",
+    "gcc_config_checks.bzl",
+    "linkage.m4.bzl",
+])
 
 libstdcxx_config_h(
     name = "config_h",
@@ -52,7 +56,7 @@ filegroup(
 )
 
 # Configured public headers mirror libstdc++-v3/include/Makefile.am. The
-# selected source labels come from configure.host fields in :configure.bzl.
+# selected source labels come from configure.host fields in :target_config.bzl.
 copy_file(
     name = "ctype_base_h",
     src = libstdcxx_ctype_base_h(),
@@ -332,93 +336,62 @@ copy_to_directory(
     visibility = ["//visibility:public"],
 )
 
-sh_test(
-    name = "libstdcxx_shared_elf_test",
-    srcs = ["libstdcxx_shared_elf_test.sh"],
-    data = [
-        ":libstdcxx.shared",
-        ":libstdcxx_shared_linker_name",
-        ":libstdcxx_shared_soname",
-        "@llvm//tools:llvm-readelf",
-    ],
-    env = {
-        "LIBSTDCXX_SHARED": "$(rootpath :libstdcxx.shared)",
-        "LIBSTDCXX_SHARED_LINKER_NAME": "$(rootpath :libstdcxx_shared_linker_name)",
-        "LIBSTDCXX_SHARED_SONAME": "$(rootpath :libstdcxx_shared_soname)",
-        "READELF": "$(rootpath @llvm//tools:llvm-readelf)",
-    },
-    target_compatible_with = select({
-        "@platforms//os:linux": [],
-        "//conditions:default": ["@platforms//:incompatible"],
-    }),
-)
-
-write_file(
-    name = "libstdcxx_link_smoke_src",
-    out = "libstdcxx_link_smoke.cc",
-    content = [
-        "#include <stdexcept>",
-        "#include <string>",
-        "#include <vector>",
-        "",
-        "int main() {",
-        "  std::vector<std::string> values;",
-        "  values.emplace_back(\"libstdc++\");",
-        "  if (values.front().size() != 9) throw std::runtime_error(\"bad string\");",
-        "  return 0;",
-        "}",
+bzl_library(
+    name = "acinclude_checks",
+    srcs = ["acinclude.m4.bzl"],
+    deps = [
+        ":gcc_config_checks",
+        ":linkage_checks",
+        "//runtimes/libstdcxx/autoconf:checks",
     ],
 )
 
-cc_binary(
-    name = "libstdcxx_toolchain_dynamic_link_smoke",
-    srcs = [":libstdcxx_link_smoke_src"],
-    linkstatic = False,
-    target_compatible_with = [
-        "@platforms//os:linux",
-        "//constraints/cxxstdlib:libstdcxx",
+bzl_library(
+    name = "crossconfig_checks",
+    srcs = ["crossconfig.m4.bzl"],
+    deps = [
+        ":gcc_config_checks",
+        ":linkage_checks",
+        "//runtimes/libstdcxx/autoconf:checks",
     ],
 )
 
-cc_runtime_tool_binary(
-    name = "libstdcxx-symbols-assembler",
-    srcs = ["libstdcxx_symbols_assembler.c"],
+bzl_library(
+    name = "configure_ac_checks",
+    srcs = ["configure.ac.bzl"],
+    deps = [
+        ":acinclude_checks",
+        ":gcc_config_checks",
+        ":linkage_checks",
+        "//runtimes/libstdcxx/autoconf:checks",
+    ],
 )
 
-sh_test(
-    name = "libstdcxx_symbols_assembler_test",
-    srcs = ["libstdcxx_symbols_assembler_test.sh"],
-    data = [
-        "libstdcxx_symbols_assembler_testdata/append.golden",
-        "libstdcxx_symbols_assembler_testdata/base.ver",
-        "libstdcxx_symbols_assembler_testdata/insert.golden",
-        "libstdcxx_symbols_assembler_testdata/port_append.ver",
-        "libstdcxx_symbols_assembler_testdata/port_insert.ver",
-        ":libstdcxx-symbols-assembler",
-    ],
-    env = {
-        "APPEND_GOLDEN": "$(rootpath libstdcxx_symbols_assembler_testdata/append.golden)",
-        "ASSEMBLER": "$(rootpath :libstdcxx-symbols-assembler)",
-        "BASE": "$(rootpath libstdcxx_symbols_assembler_testdata/base.ver)",
-        "INSERT_GOLDEN": "$(rootpath libstdcxx_symbols_assembler_testdata/insert.golden)",
-        "PORT_APPEND": "$(rootpath libstdcxx_symbols_assembler_testdata/port_append.ver)",
-        "PORT_INSERT": "$(rootpath libstdcxx_symbols_assembler_testdata/port_insert.ver)",
-    },
+bzl_library(
+    name = "gcc_config_checks",
+    srcs = ["gcc_config_checks.bzl"],
+    deps = ["//runtimes/libstdcxx/autoconf:checks"],
+)
+
+bzl_library(
+    name = "linkage_checks",
+    srcs = ["linkage.m4.bzl"],
+    deps = ["//runtimes/libstdcxx/autoconf:checks"],
 )
 
 bzl_library(
     name = "libstdcxx_config_h",
     srcs = ["libstdcxx_config_h.bzl"],
     deps = [
+        ":configure_ac_checks",
         "//runtimes/libstdcxx/autoconf:autoconf_config",
         "//runtimes/libstdcxx/autoconf:autoconf_hdr",
-        "//runtimes/libstdcxx/autoconf:configure_ac_checks",
     ],
 )
 
 bzl_library(
-    name = "configure",
-    srcs = ["configure.bzl"],
+    name = "target_config",
+    srcs = ["target_config.bzl"],
     deps = ["//runtimes/libstdcxx/autoconf:checks"],
 )
 
@@ -435,14 +408,4 @@ bzl_library(
 bzl_library(
     name = "libstdcxx_largefile_config_header",
     srcs = ["libstdcxx_largefile_config_header.bzl"],
-)
-
-bzl_library(
-    name = "symbols",
-    srcs = ["symbols.bzl"],
-    deps = [
-        "@rules_cc//cc:action_names_bzl",
-        "@rules_cc//cc:find_cc_toolchain_bzl",
-        "@rules_cc//cc/common",
-    ],
 )

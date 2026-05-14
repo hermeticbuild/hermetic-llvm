@@ -1,8 +1,12 @@
 # Thin libstdc++ config.h wrapper.
 #
-# GCC-source counterpart files under //runtimes/libstdcxx/autoconf declare the
-# checks. Local autoconf rules execute those checks and render the header.
+# GCC-source counterpart files under //runtimes/libstdcxx declare the checks.
+# Local autoconf rules execute those checks and render the header.
 
+load(
+    "//runtimes/libstdcxx:configure.ac.bzl",
+    "CONFIG_ENTRIES",
+)
 load(
     "//runtimes/libstdcxx/autoconf:autoconf_config.bzl",
     "autoconf_config",
@@ -10,10 +14,6 @@ load(
 load(
     "//runtimes/libstdcxx/autoconf:autoconf_hdr.bzl",
     "autoconf_hdr",
-)
-load(
-    "//runtimes/libstdcxx/autoconf:configure_ac_checks.bzl",
-    "CONFIG_ENTRIES",
 )
 
 def libstdcxx_config_h(

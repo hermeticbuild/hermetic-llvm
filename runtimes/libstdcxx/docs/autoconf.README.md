@@ -17,19 +17,21 @@ classification.
 
 ## Source Map
 
-- `libstdc++-v3/configure.ac` maps to `configure_ac_checks.bzl`.
-- `libstdc++-v3/acinclude.m4` maps to `acinclude_checks.bzl`.
+- `libstdc++-v3/configure.ac` maps to `configure.ac.bzl`.
+- `libstdc++-v3/acinclude.m4` maps to `acinclude.m4.bzl`.
 - `libstdc++-v3/linkage.m4` maps to math and stdlib helpers in
-  `gcc_config_checks.bzl`.
-- `libstdc++-v3/crossconfig.m4` maps to `crossconfig_checks.bzl`.
+  `linkage.m4.bzl`.
+- `libstdc++-v3/crossconfig.m4` maps to `crossconfig.m4.bzl`.
 - GCC top-level `config/*.m4` files map to `gcc_config_checks.bzl`.
 - `libstdc++-v3/configure.host` maps to target-derived policy in
-  `configure.bzl`, generated header selection in the
+  `target_config.bzl`, generated header selection in the
   `libstdcxx_*_header.bzl` rule files, and Bazel targets in `BUILD.bazel`.
-- Generic autoconf mechanics live in `checks.bzl`, `autoconf_config.bzl`,
-  `autoconf_hdr.bzl`, and `cc_configure_probe.bzl`. Keep these files free of
-  libstdc++ source-policy decisions; source-counterpart files should only
-  declare checks through that local API.
+- Generic autoconf mechanics live in the `autoconf/` subpackage:
+  `autoconf/checks.bzl`, `autoconf/autoconf_config.bzl`,
+  `autoconf/autoconf_hdr.bzl`, `autoconf/providers.bzl`, and
+  `autoconf/cc_configure_probe.bzl`. Keep these files free of libstdc++
+  source-policy decisions; source-counterpart files should only declare checks
+  through that local API.
 
 ## Status Glossary
 
@@ -55,7 +57,7 @@ plumbing with explicit labels and source lists, so the macro is `not-needed`.
 
 `GLIBCXX_CHECK_HOST` sources `configure.host` and chooses OS, CPU, ABI,
 atomicity, thread, and header directories from the host triple. Bazel models
-the active Linux GNU result as `target-derived` policy in `configure.bzl`, the
+the active Linux GNU result as `target-derived` policy in `target_config.bzl`, the
 generated-header rule files, and `BUILD.bazel`.
 
 `GLIBCXX_ENABLE_HOSTED`, `GLIBCXX_ENABLE_LONG_LONG`,
@@ -120,7 +122,7 @@ The Bazel port models the Linux GNU dynamic libstdc++ path.
 `GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_2`, and
 `GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_3` are the math and stdlib support
 groups from `acinclude.m4` and `linkage.m4`. The Bazel port represents these
-as grouped link probes in `gcc_config_checks.bzl`.
+as grouped link probes in `linkage.m4.bzl`.
 
 `GLIBCXX_CHECK_DEV_RANDOM`, `GLIBCXX_CHECK_ARC4RANDOM`,
 `GLIBCXX_CHECK_GETENTROPY`, `GLIBCXX_CHECK_FILESYSTEM_DEPS`,
@@ -176,7 +178,7 @@ only while non-GNU libc support is out of scope.
 ## High-Risk Probe Audit
 
 The high-risk modeled groups were reviewed for source-counterpart alignment.
-C99/TR1 and wide-character checks live in `acinclude_checks.bzl` and keep the
+C99/TR1 and wide-character checks live in `acinclude.m4.bzl` and keep the
 upstream C++98/C++11 split. Filesystem checks keep the upstream function and
 member probes, with non-Linux branches inactive. Stdio locking is modeled as
 three independent probes for locking, `fwrite_unlocked`, and glibc FILE
@@ -235,5 +237,5 @@ Important groups are:
 - Windows, Solaris, BSD/macOS, and libbacktrace-only outputs are
   `unsupported-target` or `unsupported-feature`.
 
-Run `bazel test --config remote //runtimes/libstdcxx/autoconf:config_define_audit_test`
+Run `bazel test --config remote //runtimes/libstdcxx/tests:config_define_audit_test`
 to verify the source inventory and status files still agree.

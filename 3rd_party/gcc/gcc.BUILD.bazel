@@ -3,7 +3,7 @@ load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load(
-    "@llvm//runtimes/libstdcxx:configure.bzl",
+    "@llvm//runtimes/libstdcxx:target_config.bzl",
     "libstdcxx_atomicity_h",
     "libstdcxx_c_locale_cc",
     "libstdcxx_codecvt_members_cc",
@@ -15,7 +15,7 @@ load(
     "libstdcxx_numeric_members_cc",
     "libstdcxx_time_members_cc",
 )
-load("@llvm//runtimes/libstdcxx:symbols.bzl", "libstdcxx_symbols_version_script")
+load("@llvm//runtimes/libstdcxx/versioning:version_script.bzl", "libstdcxx_symbols_version_script")
 load("@llvm//toolchain/runtimes:cc_runtime_shared_library.bzl", "cc_runtime_stage1_shared_library")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 
@@ -33,7 +33,7 @@ filegroup(
 # Keep this export list in sync with the sparse archive roots in
 # 3rd_party/gcc/extension/gcc.bzl. The libstdc++ configure inputs are exported
 # for the audit test; the config/include/libsupc++ entries are the files
-# consumed by runtimes/libstdcxx/configure.bzl and the targets below.
+# consumed by runtimes/libstdcxx/target_config.bzl and the targets below.
 exports_files([
     "config/acx.m4",
     "config/cet.m4",

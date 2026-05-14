@@ -2,8 +2,9 @@
 # libstdc++-v3/configure.ac. This file should read like the supported Linux GNU
 # configure flow; unsupported branches stay documented as inactive notes below.
 
+load("//runtimes/libstdcxx/autoconf:checks.bzl", "ac_check_headers")
 load(
-    ":acinclude_checks.bzl",
+    ":acinclude.m4.bzl",
     "glibcxx_abi_policies",
     "glibcxx_check_c99_tr1",
     "glibcxx_check_compiler_features",
@@ -41,15 +42,17 @@ load(
     "glibcxx_resource_limits_policy",
     "glibcxx_zoneinfo_policy",
 )
-load(":checks.bzl", "ac_check_headers")
 load(
     ":gcc_config_checks.bzl",
     "am_iconv",
-    "gcc_check_math_support",
-    "gcc_check_stdlib_support",
     "gcc_check_tls",
     "gcc_check_unwind_getipinfo",
     "gcc_linux_futex",
+)
+load(
+    ":linkage.m4.bzl",
+    "gcc_check_math_support",
+    "gcc_check_stdlib_support",
 )
 
 _HEADER_CHECKS = [
@@ -164,7 +167,7 @@ def _linux_gnu_entries():
 # configure.ac branches intentionally inactive for the current port:
 #
 # Cross without Linux GNU support would call GLIBCXX_CROSSCONFIG from
-# crossconfig.m4. That is documented in crossconfig_checks.bzl but not active.
+# crossconfig.m4. That is documented in crossconfig.m4.bzl but not active.
 #
 # Newlib and picolibc branches define C library shortcuts directly in
 # configure.ac. They remain inactive because this libstdc++ runtime currently

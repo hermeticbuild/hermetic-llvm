@@ -2,14 +2,17 @@
 # libstdc++-v3/crossconfig.m4. Only the Linux GNU-relevant branch is active in
 # this Bazel port; other target branches remain documented as unsupported.
 
-load(":checks.bzl", "policy_define")
+load("//runtimes/libstdcxx/autoconf:checks.bzl", "policy_define")
 load(
     ":gcc_config_checks.bzl",
     "am_iconv",
-    "gcc_check_math_support",
-    "gcc_check_stdlib_support",
     "gcc_check_tls",
     "gcc_linux_futex",
+)
+load(
+    ":linkage.m4.bzl",
+    "gcc_check_math_support",
+    "gcc_check_stdlib_support",
 )
 
 def glibcxx_crossconfig_linux_gnu():
