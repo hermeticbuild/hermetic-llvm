@@ -4,6 +4,7 @@ load("@rules_cc//cc:action_names.bzl", "CPP_COMPILE_ACTION_NAME", "CPP_LINK_EXEC
 load("@rules_cc//cc:find_cc_toolchain.bzl", "CC_TOOLCHAIN_TYPE", "find_cc_toolchain", "use_cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
+load("@rules_cc//cc/private/rules_impl/fdo:fdo_profile.bzl", "FdoProfileInfo")
 load(":transition_settings.bzl", "FDO_EXECUTION_PLATFORMS", "LLVM_TOOLS", "SANITIZER_FLAGS", "disable_sanitizers")
 
 _TRAINING_COPTS = [
@@ -193,7 +194,14 @@ def _llvm_fdo_profile_data_impl(ctx):
         execution_requirements = {"supports-path-mapping": "1"},
     )
 
-    return [DefaultInfo(files = depset([profdata]))]
+    return [
+        DefaultInfo(files = depset([profdata])),
+        FdoProfileInfo(
+            artifact = profdata,
+            proto_profile_artifact = None,
+            memprof_artifact = None,
+        ),
+    ]
 
 llvm_fdo_profile_data = rule(
     implementation = _llvm_fdo_profile_data_impl,

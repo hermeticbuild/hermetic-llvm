@@ -1,5 +1,4 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
-load("@rules_cc//cc:defs.bzl", "fdo_profile")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("//tools:defs.bzl", "TOOLCHAIN_BINARIES")
 load(":bootstrap_binary.bzl", "bootstrap_binary")
@@ -11,7 +10,7 @@ load(":fdo_profile.bzl", "llvm_fdo_profile_data")
     bootstrap_binary(
         name = tool,
         actual = "@llvm-project//llvm",
-        fdo_profile = ":llvm_fdo_profile",
+        fdo_profile = ":llvm_fdo_profdata",
         visibility = ["//visibility:public"],
     )
     for tool in TOOLCHAIN_BINARIES
@@ -51,12 +50,6 @@ llvm_fdo_profile_data(
     deps = ["@llvm_zstd//:zstd"],
 )
 
-fdo_profile(
-    name = "llvm_fdo_profile",
-    profile = ":llvm_fdo_profdata",
-    visibility = ["//visibility:public"],
-)
-
 bzl_library(
     name = "bootstrap_binary",
     srcs = ["bootstrap_binary.bzl"],
@@ -74,10 +67,10 @@ bzl_library(
     visibility = ["//visibility:public"],
     deps = [
         ":transition_settings",
-        "@rules_cc//cc:action_names",
-        "@rules_cc//cc:find_cc_toolchain",
-        "@rules_cc//cc/common:cc_common",
-        "@rules_cc//cc/common:cc_info",
+        "@rules_cc//cc:action_names_bzl",
+        "@rules_cc//cc:find_cc_toolchain_bzl",
+        "@rules_cc//cc/common",
+        "@rules_cc//cc/private/rules_impl/fdo:srcs",
     ],
 )
 
