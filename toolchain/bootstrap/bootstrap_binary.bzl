@@ -46,7 +46,7 @@ def _bootstrap_transition_impl(settings, attr):
         "//command_line_option:copt": _append_unique(copts, _LLVM_TOOL_COPTS) if needs_llvm_optimization else _remove_values(copts, _LLVM_TOOL_LTO_FLAGS),
         "//command_line_option:linkopt": _append_unique(linkopts, _LLVM_TOOL_LINKOPTS) if needs_llvm_optimization else _remove_values(linkopts, _LLVM_TOOL_LTO_FLAGS),
         "//command_line_option:extra_execution_platforms": settings["//command_line_option:extra_execution_platforms"],
-        "//command_line_option:fdo_profile": str(fdo_profile) if fdo_profile else None,
+        "//command_line_option:fdo_profile": fdo_profile,
         "@llvm-project//llvm:driver-tools": LLVM_TOOLS,
     }
 
