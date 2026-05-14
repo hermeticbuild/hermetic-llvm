@@ -410,6 +410,22 @@ LIBSTDCXX_COMPATIBILITY_COPTS = select({
     "//conditions:default": [],
 })
 
+LIBSTDCXX_BUILD_HEADER_DEPS = [
+    # Keep the libstdc++ overlay first. It contains the C compatibility headers
+    # that must wrap the target libc headers during the libstdc++ build.
+    "@llvm//runtimes/libstdcxx:build_headers",
+] + select({
+    "@platforms//os:linux": [
+        "@kernel_headers",
+    ],
+    "//conditions:default": [],
+}) + select({
+    "@llvm//platforms/config:gnu": [
+        "@glibc//:gnu_libc_headers",
+    ],
+    "//conditions:default": [],
+})
+
 # Minimal libiberty config for cp-demangle.c. Recheck libiberty/configure.ac
 # before adding more defines here.
 write_file(
@@ -463,7 +479,7 @@ cc_library(
         ":libsupcxx_unwind_h",
     ],
     copts = LIBSTDCXX_BUILD_COPTS,
-    implementation_deps = ["@llvm//runtimes/libstdcxx:build_headers"],
+    implementation_deps = LIBSTDCXX_BUILD_HEADER_DEPS,
     includes = [
         "libgcc",
         "libstdc++-v3/libsupc++",
@@ -474,7 +490,7 @@ cc_library(
     name = "libsupcxx_atomicity",
     srcs = [":libsupcxx_atomicity_cc"],
     copts = LIBSTDCXX_BUILD_COPTS + ["-fwrapv"],
-    implementation_deps = ["@llvm//runtimes/libstdcxx:build_headers"],
+    implementation_deps = LIBSTDCXX_BUILD_HEADER_DEPS,
 )
 
 cc_library(
@@ -489,7 +505,7 @@ cc_library(
         "-DIN_GLIBCPP_V3",
         "-Wno-error",
     ],
-    implementation_deps = ["@llvm//runtimes/libstdcxx:build_headers"],
+    implementation_deps = LIBSTDCXX_BUILD_HEADER_DEPS,
     includes = [
         "include",
         "libiberty",
@@ -870,9 +886,7 @@ LIBSTDCXX_LIBRARY_HDRS = [
     ":libstdcxx_src_internal_headers",
 ]
 
-LIBSTDCXX_LIBRARY_DEPS = [
-    "@llvm//runtimes/libstdcxx:build_headers",
-]
+LIBSTDCXX_LIBRARY_DEPS = LIBSTDCXX_BUILD_HEADER_DEPS
 
 # The small cc_library split below mirrors GCC's source partitions and per-file
 # build modes: language level, concept checks, parallel mode, char8_t, and

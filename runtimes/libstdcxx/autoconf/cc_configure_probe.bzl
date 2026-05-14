@@ -39,7 +39,7 @@ _SANITIZER_SETTINGS = [
 
 def _cc_configure_probe_transition_impl(_settings, _attr):
     settings = {
-        "//toolchain:runtime_stage": "stage1",
+        "//toolchain:runtime_stage": "stage1_hosted",
         "//command_line_option:copt": [],
         "//command_line_option:cxxopt": [],
         "//command_line_option:conlyopt": [],

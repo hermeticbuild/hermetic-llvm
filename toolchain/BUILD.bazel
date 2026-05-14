@@ -17,6 +17,7 @@ string_setting(
     values = [
         "stage0",  # depend on compiler-only: CRTs, builtins, libc, static libraries.
         "stage1",  # depends on above: libunwind
+        "stage1_hosted",  # stage1 plus target C headers for probes and small build tools.
         # "stage2", # depends on above: libc++abi
         # "stage3", # depends on above: libc++
         "complete",  # depends on above: user programs.
@@ -67,6 +68,14 @@ config_setting(
     name = "runtimes_stage1",
     flag_values = {
         ":runtime_stage": "stage1",
+    },
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "runtimes_stage1_hosted",
+    flag_values = {
+        ":runtime_stage": "stage1_hosted",
     },
     visibility = ["//visibility:public"],
 )

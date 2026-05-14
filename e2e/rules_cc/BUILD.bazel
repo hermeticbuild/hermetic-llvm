@@ -137,6 +137,13 @@ LIBSTDCXX_PLATFORMS = [
     ("linux_s390x_libstdcxx", "@platforms//cpu:s390x", "@llvm//constraints/libc:gnu.2.28"),
 ]
 
+_LIBSTDCXX_E2E_TARGET_COMPATIBLE_WITH = select({
+    # The transition wrappers below build Linux libstdc++ artifacts. Keep them
+    # out of non-Linux //... expansion until libstdc++ supports those targets.
+    "@platforms//os:linux": [],
+    "//conditions:default": ["@platforms//:incompatible"],
+})
+
 [
     platform(
         name = name,
@@ -153,12 +160,14 @@ LIBSTDCXX_PLATFORMS = [
 platform_transition_filegroup(
     name = "libstdcxx_main_dynamic_linux_x86_64",
     srcs = [":libstdcxx_main_dynamic"],
+    target_compatible_with = _LIBSTDCXX_E2E_TARGET_COMPATIBLE_WITH,
     target_platform = ":linux_x86_64_libstdcxx",
 )
 
 platform_transition_filegroup(
     name = "libstdcxx_main_dynamic_with_linkopts_linux_x86_64",
     srcs = [":libstdcxx_main_dynamic_with_linkopts"],
+    target_compatible_with = _LIBSTDCXX_E2E_TARGET_COMPATIBLE_WITH,
     target_platform = ":linux_x86_64_libstdcxx",
 )
 
@@ -166,6 +175,7 @@ platform_transition_filegroup(
     platform_transition_binary(
         name = "libstdcxx_main_dynamic_" + platform_name,
         binary = ":libstdcxx_main_dynamic",
+        target_compatible_with = _LIBSTDCXX_E2E_TARGET_COMPATIBLE_WITH,
         target_platform = ":" + platform_name,
     )
     for platform_name, _, _ in LIBSTDCXX_PLATFORMS

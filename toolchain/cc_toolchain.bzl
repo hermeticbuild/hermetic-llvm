@@ -83,6 +83,7 @@ def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
         args = select({
             "@llvm//toolchain:runtimes_none": ["@llvm//toolchain/runtimes:toolchain_args"],
             "@llvm//toolchain:runtimes_stage1": ["@llvm//toolchain/runtimes:toolchain_args"],
+            "@llvm//toolchain:runtimes_stage1_hosted": ["@llvm//toolchain/runtimes:toolchain_args"],
             "//conditions:default": ["@llvm//toolchain:toolchain_args"],
         }) + [
             # TODO: rules_cc passes extra args to these actions, ideally these would be fixed in rules_cc.
@@ -102,11 +103,13 @@ def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
         known_features = select({
             "@llvm//toolchain:runtimes_none": [name + "_runtimes_only_known_features"],
             "@llvm//toolchain:runtimes_stage1": [name + "_runtimes_only_known_features"],
+            "@llvm//toolchain:runtimes_stage1_hosted": [name + "_runtimes_only_known_features"],
             "//conditions:default": [name + "_known_features"],
         }),
         enabled_features = select({
             "@llvm//toolchain:runtimes_none": [name + "_runtimes_only_enabled_features"],
             "@llvm//toolchain:runtimes_stage1": [name + "_runtimes_only_enabled_features"],
+            "@llvm//toolchain:runtimes_stage1_hosted": [name + "_runtimes_only_enabled_features"],
             "//conditions:default": [name + "_enabled_features"],
         }),
         tool_map = tool_map,
@@ -114,11 +117,13 @@ def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
         static_runtime_lib = select({
             "@llvm//toolchain:runtimes_none": "@llvm//runtimes:none",
             "@llvm//toolchain:runtimes_stage1": "@llvm//runtimes:none",
+            "@llvm//toolchain:runtimes_stage1_hosted": "@llvm//runtimes:none",
             "//conditions:default": "@llvm//runtimes:static_runtime_lib",
         }),
         dynamic_runtime_lib = select({
             "@llvm//toolchain:runtimes_none": "@llvm//runtimes:none",
             "@llvm//toolchain:runtimes_stage1": "@llvm//runtimes:none",
+            "@llvm//toolchain:runtimes_stage1_hosted": "@llvm//runtimes:none",
             "//conditions:default": "@llvm//runtimes:dynamic_runtime_lib",
         }),
         compiler = "clang",

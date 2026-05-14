@@ -24,6 +24,56 @@ cc_args_list(
 )
 
 cc_args_list(
+    name = "linux_hosted_c_toolchain_args",
+    args = select({
+        "//platforms/config:musl": [
+            "//toolchain/args/linux:kernel_headers_include_search_paths",
+            "//toolchain/args/linux:musl_libc_headers_include_search_paths",
+        ],
+        "//platforms/config:gnu": [
+            "//toolchain/args/linux:kernel_headers_include_search_paths",
+            "//toolchain/args/linux:glibc_headers_include_search_paths",
+        ],
+        "//conditions:default": [],
+    }) + select({
+        "//platforms/config:musl": [
+            # TODO: Handle musl dynamic linking.
+            # musl implies static linking for now.
+            "//toolchain/args:static_link_executable",
+        ],
+        "//conditions:default": [],
+    }) + [
+        "//toolchain/args/linux:sanitizer_headers_include_search_paths",
+    ],
+    visibility = ["//toolchain:__subpackages__"],
+)
+
+cc_args_list(
+    name = "windows_hosted_c_toolchain_args",
+    args = [
+        "//toolchain/args/windows:mingw_headers_include_search_paths",
+    ],
+    visibility = ["//toolchain:__subpackages__"],
+)
+
+cc_args_list(
+    name = "stage1_hosted_platform_specific_args",
+    args = select({
+        "@platforms//os:macos": [
+            "//toolchain:macos_toolchain_args",
+        ],
+        "@platforms//os:linux": [
+            ":linux_hosted_c_toolchain_args",
+        ],
+        "@platforms//os:windows": [
+            ":windows_hosted_c_toolchain_args",
+        ],
+        "@platforms//os:none": [],
+    }),
+    visibility = ["//toolchain:__subpackages__"],
+)
+
+cc_args_list(
     name = "platform_specific_args",
     args = select({
         "@platforms//os:macos": [
@@ -36,46 +86,21 @@ cc_args_list(
     visibility = ["//toolchain:__subpackages__"],
 )
 
-# TODO(cerisier): Remove in favor of a common libc only target in //toolchain.
-# TODO(zbarsky): This must match llvm/toolchains/llvm.bzl
 cc_args_list(
-    name = "linux_toolchain_args",
+    name = "staged_platform_specific_args",
     args = select({
-        "//platforms/config:musl": [
-            "//toolchain/args/linux:kernel_headers_include_search_paths",
-            "//toolchain/args/linux:musl_libc_headers_include_search_paths",
+        "//toolchain:runtimes_stage1_hosted": [
+            ":stage1_hosted_platform_specific_args",
         ],
-        "//platforms/config:gnu": [
-            "//toolchain/args/linux:kernel_headers_include_search_paths",
-            "//toolchain/args/linux:glibc_headers_include_search_paths",
+        "//conditions:default": [
+            ":platform_specific_args",
         ],
-        "//conditions:default": [],
-    }),
-    visibility = ["//toolchain:__subpackages__"],
-)
-
-# TODO(cerisier): Remove in favor of a common libc only target in //toolchain.
-# TODO(zbarsky): This must match llvm/toolchains/llvm.bzl
-cc_args_list(
-    name = "windows_toolchain_args",
-    args = [
-        "//toolchain/args/windows:mingw_headers_include_search_paths",
-    ],
-    visibility = ["//toolchain:__subpackages__"],
-)
-
-cc_args_list(
-    name = "hosted_c_platform_specific_args",
-    args = select({
-        "@platforms//os:linux": [":linux_toolchain_args"],
-        "@platforms//os:windows": [":windows_toolchain_args"],
-        "//conditions:default": [],
     }),
     visibility = ["//toolchain:__subpackages__"],
 )
 
 cc_args_list(
-    name = "stage0_toolchain_args",
+    name = "toolchain_args",
     args = [
         # Common default compile flags.
         "//toolchain/args:target_flags",
@@ -88,7 +113,7 @@ cc_args_list(
         ":hermetic_link_flags",
 
         # TODO(cerisier): Explode this into specific args instead
-        ":platform_specific_args",
+        ":staged_platform_specific_args",
 
         # Optional sanitizers
         "//toolchain/runtimes/args:ubsan_flags",
@@ -114,14 +139,7 @@ cc_args_list(
         ":default_startfiles",
         ":default_libs",
     ],
-)
-
-cc_args_list(
-    name = "stage1_toolchain_args",
-    args = [
-        ":stage0_toolchain_args",
-        ":hosted_c_platform_specific_args",
-    ],
+    visibility = ["//visibility:public"],
 )
 
 #TODO(cerisier): Maybe with a _gt_x select we could reuse this everywhere.
@@ -131,6 +149,7 @@ cc_args_list(
     args = select({
         "//toolchain:runtimes_all": [],
         "//toolchain:runtimes_stage1": ["//toolchain:resource_dir"],
+        "//toolchain:runtimes_stage1_hosted": ["//toolchain:resource_dir"],
         "//toolchain:runtimes_none": [],
     }),
 )
@@ -140,6 +159,7 @@ cc_args_list(
     args = select({
         "//toolchain:runtimes_all": [],
         "//toolchain:runtimes_stage1": ["//toolchain:default_startfiles"],
+        "//toolchain:runtimes_stage1_hosted": ["//toolchain:default_startfiles"],
         "//toolchain:runtimes_none": [],
     }),
 )
@@ -149,6 +169,9 @@ cc_args_list(
     args = select({
         "//toolchain:runtimes_all": [],
         "//toolchain:runtimes_stage1": [
+            "//toolchain:rtlib",
+        ],
+        "//toolchain:runtimes_stage1_hosted": [
             "//toolchain:rtlib",
         ],
         "//toolchain:runtimes_none": [],
@@ -163,17 +186,11 @@ cc_args_list(
         "//toolchain:runtimes_stage1": [
             "//toolchain:default_libs",
         ],
+        "//toolchain:runtimes_stage1_hosted": [
+            "//toolchain:default_libs",
+        ],
         "//toolchain:runtimes_none": [],
     }),
-)
-
-cc_args_list(
-    name = "toolchain_args",
-    args = select({
-        "//toolchain:runtimes_stage1": [":stage1_toolchain_args"],
-        "//conditions:default": [":stage0_toolchain_args"],
-    }),
-    visibility = ["//visibility:public"],
 )
 
 bzl_library(

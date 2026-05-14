@@ -209,6 +209,9 @@ cc_args(
         "//toolchain:runtimes_stage1": [
             "-nostdlib++",
         ],
+        "//toolchain:runtimes_stage1_hosted": [
+            "-nostdlib++",
+        ],
         "//toolchain:runtimes_none": [
             "-nostdlib",
         ],
