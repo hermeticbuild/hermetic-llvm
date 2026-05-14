@@ -106,7 +106,7 @@ cc_args_list(
         "//toolchain/args:target_flags",
         "//toolchain/args:no_absolute_paths_for_builtins",
         "//toolchain/args:deterministic_compile_flags",
-        # "//toolchain/args:module_map",
+        "//toolchain/args:module_map",
         "//toolchain/runtimes/args:optimization_flags",
         "//toolchain:sysroot_flags",
         "//toolchain:hermetic_compile_flags",
