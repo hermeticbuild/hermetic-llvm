@@ -444,6 +444,7 @@ copy_file(
     name = "libsupcxx_atomicity_cc",
     src = libstdcxx_atomicity_h(),
     out = "libsupcxx_generated/atomicity.cc",
+    allow_symlink = True,
 )
 
 # GCC installs libgcc/unwind-generic.h as unwind.h for libsupc++ consumers.
@@ -451,6 +452,7 @@ copy_file(
     name = "libsupcxx_unwind_h",
     src = "libgcc/unwind-generic.h",
     out = "libgcc/unwind.h",
+    allow_symlink = True,
 )
 
 # MinGW does not support the alias used by the generic tinfo.cc path here, so
@@ -538,90 +540,105 @@ copy_file(
     name = "libstdcxx_cxx98_cxxlocale_cc",
     src = libstdcxx_c_locale_cc(),
     out = "libstdcxx_generated/c++98/c++locale.cc",
+    allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx98_codecvt_members_cc",
     src = libstdcxx_codecvt_members_cc(),
     out = "libstdcxx_generated/c++98/codecvt_members.cc",
+    allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx98_collate_members_cc",
     src = libstdcxx_collate_members_cc(),
     out = "libstdcxx_generated/c++98/collate_members.cc",
+    allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx98_messages_members_cc",
     src = libstdcxx_messages_members_cc(),
     out = "libstdcxx_generated/c++98/messages_members.cc",
+    allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx98_monetary_members_cc",
     src = libstdcxx_monetary_members_cc(),
     out = "libstdcxx_generated/c++98/monetary_members.cc",
+    allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx98_numeric_members_cc",
     src = libstdcxx_numeric_members_cc(),
     out = "libstdcxx_generated/c++98/numeric_members.cc",
+    allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx98_time_members_cc",
     src = libstdcxx_time_members_cc(),
     out = "libstdcxx_generated/c++98/time_members.cc",
+    allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx98_collate_members_cow_cc",
     src = libstdcxx_collate_members_cc(),
     out = "libstdcxx_generated/c++98/collate_members_cow.cc",
+    allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx98_messages_members_cow_cc",
     src = libstdcxx_messages_members_cc(),
     out = "libstdcxx_generated/c++98/messages_members_cow.cc",
+    allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx98_monetary_members_cow_cc",
     src = libstdcxx_monetary_members_cc(),
     out = "libstdcxx_generated/c++98/monetary_members_cow.cc",
+    allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx98_numeric_members_cow_cc",
     src = libstdcxx_numeric_members_cc(),
     out = "libstdcxx_generated/c++98/numeric_members_cow.cc",
+    allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx11_ctype_configure_char_cc",
     src = libstdcxx_ctype_configure_char_cc(),
     out = "libstdcxx_generated/c++11/ctype_configure_char.cc",
+    allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx11_ctype_members_cc",
     src = libstdcxx_ctype_members_cc(),
     out = "libstdcxx_generated/c++11/ctype_members.cc",
+    allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx11_basic_file_cc",
     src = "libstdc++-v3/config/io/basic_file_stdio.cc",
     out = "libstdcxx_generated/c++11/basic_file.cc",
+    allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx17_string_inst_cc",
     src = "libstdc++-v3/src/c++17/string-inst.cc",
     out = "libstdcxx_generated/c++17/string-inst.cc",
+    allow_symlink = True,
 )
 
 # cow-string-inst.cc reuses string-inst.cc with _GLIBCXX_USE_CXX11_ABI=0.
