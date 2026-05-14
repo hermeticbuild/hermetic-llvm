@@ -61,7 +61,6 @@ def _libstdcxx_symbols_version_script_impl(ctx):
         inputs = [ctx.file.base_version_script] + ctx.files.port_version_scripts,
         outputs = [filtered],
         arguments = [assembler_args],
-        execution_requirements = {"supports-path-mapping": "1"},
         mnemonic = "LibstdcxxSymbolsVersionScriptAssemble",
     )
 
@@ -85,7 +84,6 @@ def _libstdcxx_symbols_version_script_impl(ctx):
         outputs = [output],
         arguments = [preprocessor_args],
         env = env,
-        execution_requirements = {"supports-path-mapping": "1"},
         mnemonic = "LibstdcxxSymbolsVersionScriptPreprocess",
         toolchain = CC_TOOLCHAIN_TYPE,
     )

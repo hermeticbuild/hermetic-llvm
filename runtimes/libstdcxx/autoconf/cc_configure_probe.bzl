@@ -240,7 +240,6 @@ else
     echo false > "$result"
 fi
 """,
-        execution_requirements = {"supports-path-mapping": "1"},
         mnemonic = "CcConfigureCompileProbe",
         toolchain = CC_TOOLCHAIN_TYPE,
     )
@@ -357,7 +356,6 @@ else
     echo false > "$result"
 fi
 """,
-        execution_requirements = {"supports-path-mapping": "1"},
         mnemonic = "CcConfigureLinkProbe",
         toolchain = CC_TOOLCHAIN_TYPE,
     )

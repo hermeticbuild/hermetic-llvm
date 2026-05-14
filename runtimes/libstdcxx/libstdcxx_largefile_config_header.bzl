@@ -13,7 +13,6 @@ config_h="$2"
     grep 'define _LARGE_FILES' "$config_h" || true
 } > "$out"
 """,
-        execution_requirements = {"supports-path-mapping": "1"},
         mnemonic = "LibstdcxxLargefileConfigHeader",
     )
 

@@ -91,7 +91,6 @@ sed -e 's/HAVE_/_GLIBCXX_HAVE_/g' \
     echo "#endif // _GLIBCXX_CXX_CONFIG_H"
 } >> "$out"
         """,
-        execution_requirements = {"supports-path-mapping": "1"},
         mnemonic = "LibstdcxxCxxConfigHeader",
     )
 

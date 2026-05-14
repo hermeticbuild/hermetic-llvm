@@ -77,7 +77,6 @@ shift 3
     echo "#endif"
 } > "$config_h"
 """,
-        execution_requirements = {"supports-path-mapping": "1"},
         mnemonic = "AutoconfHdr",
     )
 

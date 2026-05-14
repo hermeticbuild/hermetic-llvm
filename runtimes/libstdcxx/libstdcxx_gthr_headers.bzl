@@ -60,7 +60,6 @@ sed -e 's/\\(UNUSED\\)/_GLIBCXX_\\1/g' \
     -e 's,^#include "\\(.*\\)",#include <bits/\\1>,g' \
     < "$gthr_default_in" > "$gthr_default_out"
 """,
-        execution_requirements = {"supports-path-mapping": "1"},
         mnemonic = "LibstdcxxGthrHeaders",
     )
 
