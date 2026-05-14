@@ -11,6 +11,12 @@ _TRAINING_FLAGS = [
     "-fdata-sections",
     "-DZSTD_DISABLE_ASM",
     "-DZSTD_MULTITHREAD",
+    "-DZSTD_NOBENCH",
+    "-DZSTD_NODICT",
+    "-DZSTD_NODECOMPRESS",
+    "-DZSTD_NOTRACE",
+    "-UZSTD_LEGACY_SUPPORT",
+    "-DZSTD_LEGACY_SUPPORT=0",
 ]
 
 _LINK_FLAGS = [
@@ -61,6 +67,9 @@ def _add_internal_isystem(args, dirs):
         args.add_all(["-Xclang", "-internal-isystem", "-Xclang"])
         args.add_all([directory], expand_directories = False)
 
+def _c_sources(files):
+    return [file for file in files if file.extension == "c"]
+
 def _llvm_fdo_profile_data_impl(ctx):
     binary_file = ctx.actions.declare_file(ctx.label.name + ".zstd")
     profraw = ctx.actions.declare_file(ctx.label.name + ".profraw")
@@ -71,7 +80,7 @@ def _llvm_fdo_profile_data_impl(ctx):
         fail("expected exactly one target triple, got {}".format(target_triple))
 
     include_dirs = {}
-    for file in ctx.files.zstd_headers + ctx.files.zstd_srcs:
+    for file in ctx.files._zstd_files:
         include_dirs[file.dirname] = None
 
     training_args = ctx.actions.args()
@@ -92,15 +101,13 @@ def _llvm_fdo_profile_data_impl(ctx):
     training_args.add_all(["-I" + include_dir for include_dir in sorted(include_dirs.keys())])
     training_args.add("-x")
     training_args.add("c")
-    training_args.add(ctx.file.src)
-    training_args.add_all(ctx.files.zstd_srcs)
+    training_args.add_all(_c_sources(ctx.files._zstd_files))
 
     ctx.actions.run(
         executable = ctx.attr.clangxx[DefaultInfo].files_to_run,
         arguments = [training_args],
         env = {"LLVM_PROFILE_FILE": profraw.path},
         inputs = depset(
-            direct = [ctx.file.src],
             transitive = [
                 ctx.attr.builtin_headers[DefaultInfo].files,
                 ctx.attr.crt_objects[DefaultInfo].files,
@@ -109,8 +116,7 @@ def _llvm_fdo_profile_data_impl(ctx):
                 ctx.attr.libc_library_search[DefaultInfo].files,
                 ctx.attr.resource_dir[DefaultInfo].files,
                 ctx.attr.sanitizer_headers[DefaultInfo].files,
-                ctx.attr.zstd_headers[DefaultInfo].files,
-                ctx.attr.zstd_srcs[DefaultInfo].files,
+                ctx.attr._zstd_files[DefaultInfo].files,
             ],
         ),
         tools = [ctx.file.linker],
@@ -204,20 +210,12 @@ llvm_fdo_profile_data = rule(
             allow_files = True,
             mandatory = True,
         ),
-        "src": attr.label(
-            allow_single_file = [".c"],
-            mandatory = True,
-        ),
         "target_triple": attr.string_list(
             mandatory = True,
         ),
-        "zstd_headers": attr.label(
-            allow_files = [".h"],
-            mandatory = True,
-        ),
-        "zstd_srcs": attr.label(
-            allow_files = [".c"],
-            mandatory = True,
+        "_zstd_files": attr.label(
+            allow_files = [".c", ".h"],
+            default = Label("@llvm_fdo_zstd//:zstd_compress_files"),
         ),
     },
     cfg = _profile_generation_transition,

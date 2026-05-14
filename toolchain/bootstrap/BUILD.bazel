@@ -18,7 +18,6 @@ load(":fdo_profile.bzl", "llvm_fdo_profile_data")
 
 llvm_fdo_profile_data(
     name = "llvm_fdo_profdata",
-    src = "zstd_training.c",
     builtin_headers = select({
         "//platforms/config:linux_x86_64": "//toolchain:instrumented_linux_x86_64/clang_builtin_headers_include_directory",
         "//platforms/config:linux_aarch64": "//toolchain:instrumented_linux_aarch64/clang_builtin_headers_include_directory",
@@ -44,8 +43,6 @@ llvm_fdo_profile_data(
     }),
     target_triple = LLVM_TARGET_TRIPLE,
     visibility = ["//visibility:public"],
-    zstd_headers = "@llvm_fdo_zstd//:headers",
-    zstd_srcs = "@llvm_fdo_zstd//:sources",
 )
 
 bzl_library(
