@@ -5,9 +5,11 @@ def configure_builder_for_runtimes(builder, runtime_stage, linkmode = "static", 
     # TODO: Expose a build setting to extend those flags.
     builder.set("copt", [])
     builder.set("cxxopt", [])
+    builder.set("conlyopt", [])
     builder.set("linkopt", [])
     builder.set("host_copt", [])
     builder.set("host_cxxopt", [])
+    builder.set("host_conlyopt", [])
     builder.set("host_linkopt", [])
 
     # We are compiling runtimes without any kind of other dependencies.
