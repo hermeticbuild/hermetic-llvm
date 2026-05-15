@@ -1,4 +1,5 @@
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
+load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -15,11 +16,15 @@ cc_args(
     ],
 )
 
+NON_CPP_ACTIONS = [
+    "@rules_cc//cc/toolchains/actions:c_compile_actions",
+    "@rules_cc//cc/toolchains/actions:assembly_actions",
+    "@rules_cc//cc/toolchains/actions:objc_compile",
+]
+
 cc_args(
-    name = "kernel_headers_include_search_paths",
-    actions = [
-        "@rules_cc//cc/toolchains/actions:source_compile_actions",
-    ],
+    name = "kernel_headers_include_search_paths_c",
+    actions = NON_CPP_ACTIONS,
     allowlist_include_directories = [
         "@kernel_headers//:kernel_headers_directory",
     ],
@@ -37,15 +42,43 @@ cc_args(
 )
 
 cc_args(
-    name = "glibc_headers_include_search_paths",
+    name = "kernel_headers_include_search_paths_cpp",
     actions = [
-        "@rules_cc//cc/toolchains/actions:source_compile_actions",
+        "@rules_cc//cc/toolchains/actions:cpp_compile_actions",
+    ],
+    allowlist_include_directories = [
+        "@kernel_headers//:kernel_headers_directory",
+    ],
+    args = [
+        "-stdlib++-isystem",
+        "{kernel_headers_include_search_path}",
+    ],
+    data = [
+        "@kernel_headers//:kernel_headers_directory",
+    ],
+    format = {
+        "kernel_headers_include_search_path": "@kernel_headers//:kernel_headers_directory",
+    },
+)
+
+cc_args_list(
+    name = "kernel_headers_include_search_paths",
+    args = [
+        ":kernel_headers_include_search_paths_c",
+        ":kernel_headers_include_search_paths_cpp",
+    ],
+)
+
+cc_args(
+    name = "glibc_headers_include_search_paths_c",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:c_compile_actions",
+        "@rules_cc//cc/toolchains/actions:assembly_actions",
     ],
     allowlist_include_directories = [
         "//runtimes/glibc:glibc_headers_include_search_directory",
     ],
     args = [
-        # "__GLIBC_MINOR__={d}", version.minor
         "-isystem",
         "{libc_headers_include_search_path}",
     ],
@@ -59,9 +92,38 @@ cc_args(
 )
 
 cc_args(
-    name = "sanitizer_headers_include_search_paths",
+    name = "glibc_headers_include_search_paths_cpp",
     actions = [
-        "@rules_cc//cc/toolchains/actions:source_compile_actions",
+        "@rules_cc//cc/toolchains/actions:cpp_compile_actions",
+    ],
+    allowlist_include_directories = [
+        "//runtimes/glibc:glibc_headers_include_search_directory",
+    ],
+    args = [
+        "-stdlib++-isystem",
+        "{libc_headers_include_search_path}",
+    ],
+    data = [
+        "//runtimes/glibc:glibc_headers_include_search_directory",
+    ],
+    format = {
+        "libc_headers_include_search_path": "//runtimes/glibc:glibc_headers_include_search_directory",
+    },
+)
+
+cc_args_list(
+    name = "glibc_headers_include_search_paths",
+    args = [
+        ":glibc_headers_include_search_paths_c",
+        ":glibc_headers_include_search_paths_cpp",
+    ],
+)
+
+cc_args(
+    name = "sanitizer_headers_include_search_paths_c",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:c_compile_actions",
+        "@rules_cc//cc/toolchains/actions:assembly_actions",
     ],
     allowlist_include_directories = [
         "//sanitizers:sanitizers_headers_include_search_directory",
@@ -80,6 +142,34 @@ cc_args(
     format = {
         "sanitizer_headers_include_search_paths": "//sanitizers:sanitizers_headers_include_search_directory",
     },
+)
+
+cc_args(
+    name = "sanitizer_headers_include_search_paths_cpp",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:cpp_compile_actions",
+    ],
+    allowlist_include_directories = [
+        "//sanitizers:sanitizers_headers_include_search_directory",
+    ],
+    args = [
+        "-stdlib++-isystem",
+        "{sanitizer_headers_include_search_paths}",
+    ],
+    data = [
+        "//sanitizers:sanitizers_headers_include_search_directory",
+    ],
+    format = {
+        "sanitizer_headers_include_search_paths": "//sanitizers:sanitizers_headers_include_search_directory",
+    },
+)
+
+cc_args_list(
+    name = "sanitizer_headers_include_search_paths",
+    args = [
+        ":sanitizer_headers_include_search_paths_c",
+        ":sanitizer_headers_include_search_paths_cpp",
+    ],
 )
 
 cc_args(
