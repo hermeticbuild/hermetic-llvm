@@ -197,10 +197,12 @@ cc_binary(
 )
 ```
 
-Without `linkstatic = False`, Bazel prefers the static C++ runtime path. For
-libstdc++ that would make static libstdc++ the default, which is not what most
-Linux users expect, and this toolchain intentionally supports libstdc++ through
-the dynamic runtime path.
+With Bazel's default dynamic mode, `cc_binary` defaults `linkstatic` to `True`,
+which selects the toolchain's static C++ runtime path. For libstdc++ that would
+make static libstdc++ the default, which is not what most Linux users expect,
+and this toolchain intentionally supports libstdc++ through the dynamic runtime
+path. `--dynamic_mode=off` also forces the static runtime path, even when
+`linkstatic = False`, so it cannot be combined with libstdc++ support.
 
 At the moment, libstdc++ support is limited to Linux glibc targets. Additional
 targets can be added based on demand; musl + libstdc++ is feasible too, even if
