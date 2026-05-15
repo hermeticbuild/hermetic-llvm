@@ -40,6 +40,7 @@ exports_files([
     "configure.ac.bzl",
     "crossconfig.m4.bzl",
     "gcc_config_checks.bzl",
+    "libstdcxx_symbols_version_script.bzl",
     "linkage.m4.bzl",
 ])
 
@@ -461,4 +462,14 @@ bzl_library(
 bzl_library(
     name = "libstdcxx_largefile_config_header",
     srcs = ["libstdcxx_largefile_config_header.bzl"],
+)
+
+bzl_library(
+    name = "libstdcxx_symbols_version_script",
+    srcs = ["libstdcxx_symbols_version_script.bzl"],
+    deps = [
+        "@rules_cc//cc:action_names_bzl",
+        "@rules_cc//cc:find_cc_toolchain_bzl",
+        "@rules_cc//cc/common",
+    ],
 )

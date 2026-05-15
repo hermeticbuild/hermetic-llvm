@@ -67,7 +67,7 @@ _AUTOCONF_MODEL_DATA = [
     "//runtimes/libstdcxx/autoconf:cc_configure_probe.bzl",
     "//runtimes/libstdcxx/autoconf:checks.bzl",
     "//runtimes/libstdcxx/autoconf:providers.bzl",
-    "//runtimes/libstdcxx/versioning:libstdcxx_symbols_version_script.bzl",
+    "//runtimes/libstdcxx:libstdcxx_symbols_version_script.bzl",
 ]
 
 _AUTOCONF_MODEL_ENV = {
@@ -86,7 +86,7 @@ _AUTOCONF_MODEL_ENV = {
     "LINKAGE_CHECKS": "$(rootpath //runtimes/libstdcxx:linkage.m4.bzl)",
     "PROVIDERS": "$(rootpath //runtimes/libstdcxx/autoconf:providers.bzl)",
     "TARGET_CONFIG": "$(rootpath //runtimes/libstdcxx:target_config.bzl)",
-    "VERSION_SCRIPT": "$(rootpath //runtimes/libstdcxx/versioning:libstdcxx_symbols_version_script.bzl)",
+    "VERSION_SCRIPT": "$(rootpath //runtimes/libstdcxx:libstdcxx_symbols_version_script.bzl)",
 }
 
 _AUTOCONF_DOC_DATA = [

@@ -62,7 +62,7 @@ Keep Bazel files shaped like the GCC files they port:
   `runtimes/libstdcxx/libstdcxx_cxxconfig_header.bzl`,
   `runtimes/libstdcxx/libstdcxx_gthr_headers.bzl`,
   `runtimes/libstdcxx/libstdcxx_largefile_config_header.bzl`,
-  `runtimes/libstdcxx/versioning/libstdcxx_symbols_version_script.bzl`, and `BUILD.bazel` may
+  `runtimes/libstdcxx/libstdcxx_symbols_version_script.bzl`, and `BUILD.bazel` may
   consume configure-derived policy, but should not hide new configure semantics
   without updating the inventories.
 
