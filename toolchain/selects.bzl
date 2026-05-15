@@ -63,5 +63,7 @@ def platform_cc_tool_map(exec_os, exec_cpu):
     # See https://github.com/bazelbuild/bazel/issues/27623#issuecomment-3529439585 for more details.
     return select({
         "@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_macos_setting": tool_repo + ":tools_with_libtool",
+        "@llvm//platforms/config:windows_x86_64_msvc": tool_repo + ":tools_for_msvc",
+        "@llvm//platforms/config:windows_aarch64_msvc": tool_repo + ":tools_for_msvc",
         "//conditions:default": tool_repo + ":default_tools",
     })

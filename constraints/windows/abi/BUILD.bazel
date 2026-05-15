@@ -1,20 +1,5 @@
+load(":declare_abis_constraints.bzl", "declare_abis_constraints")
+
 package(default_visibility = ["//visibility:public"])
 
-constraint_setting(
-    name = "abi",
-)
-
-constraint_value(
-    name = "gnu",
-    constraint_setting = ":abi",
-)
-
-constraint_value(
-    name = "gnullvm",
-    constraint_setting = ":abi",
-)
-
-constraint_value(
-    name = "msvc",
-    constraint_setting = ":abi",
-)
+declare_abis_constraints()

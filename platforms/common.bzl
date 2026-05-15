@@ -33,3 +33,8 @@ LIBC_SUPPORTED_TARGETS = [
     ("linux", "riscv64"),
     ("linux", "s390x"),
 ]
+
+WINDOWS_ABI_SUPPORTED_TARGETS = [
+    ("windows", "x86_64"),
+    ("windows", "aarch64"),
+]

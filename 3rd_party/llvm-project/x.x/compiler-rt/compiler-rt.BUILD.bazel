@@ -264,10 +264,8 @@ filter_builtin_sources(
     srcs = [
         "lib/builtins/x86_64/floatdidf.c",
         "lib/builtins/x86_64/floatdisf.c",
-        "lib/builtins/x86_64/floatdixf.c",  # if not ANDROID
         ":builtins_generic_srcs",
         ":builtins_generic_tf_sources",
-        ":builtins_x86_80_bit_sources",
         ":builtins_x86_arch_sources",
     ] + select({
         "@platforms//os:windows": [
@@ -277,6 +275,12 @@ filter_builtin_sources(
             "lib/builtins/x86_64/floatundidf.S",
             "lib/builtins/x86_64/floatundisf.S",
             "lib/builtins/x86_64/floatundixf.S",  # if not ANDROID
+        ],
+    }) + select({
+        "@llvm//constraints/windows/abi:msvc": [],  # error: unknown type name 'xf_float'
+        "//conditions:default": [
+            "lib/builtins/x86_64/floatdixf.c",  # if not ANDROID
+            ":builtins_x86_80_bit_sources",
         ],
     }),
 )
@@ -462,13 +466,23 @@ cc_library(
         "@llvm//platforms/config:gnu": [
             "@glibc//:gnu_libc_headers",
         ],
+        "@platforms//os:windows": [],
         "@platforms//os:macos": [
             # on macOS we implicitly use SDK provided headers
         ],
-        "@platforms//os:windows": [
+        "@platforms//os:none": [],
+    }) + select({
+        "@llvm//constraints/windows/abi:gnu": [
             "@mingw//:mingw_headers",
         ],
-        "@platforms//os:none": [],
+        "@llvm//constraints/windows/abi:gnullvm": [
+            "@mingw//:mingw_headers",
+        ],
+        "@llvm//constraints/windows/abi:msvc": [
+            "@msvc_runtime//:msvc_include",
+            "@windows_sdk//:winsdk_ucrt_include",
+        ],
+        "@llvm//constraints/windows/abi:unconstrained": [],
     }),
     includes = ["lib/builtins"],
     linkstatic = True,
@@ -556,9 +570,13 @@ cc_runtime_stage0_static_library(
 
 CRT_CFLAGS = [
     "-std=c11",
-    "-fPIC",
     "-fno-addrsig",
-]
+] + select({
+    "@platforms//os:windows": [],
+    "//conditions:default": [
+        "-fPIC",
+    ],
+})
 
 CRT_DEFINES = [
     "CRT_HAS_INITFINI_ARRAY",
@@ -2658,10 +2676,20 @@ cc_library(
             "@glibc//:gnu_libc_headers",
         ],
         "@platforms//os:macos": [],
-        "@platforms//os:windows": [
+        "@platforms//os:windows": [],
+        "@platforms//os:none": [],
+    }) + select({
+        "@llvm//constraints/windows/abi:gnu": [
             "@mingw//:mingw_headers",
         ],
-        "@platforms//os:none": [],
+        "@llvm//constraints/windows/abi:gnullvm": [
+            "@mingw//:mingw_headers",
+        ],
+        "@llvm//constraints/windows/abi:msvc": [
+            "@msvc_runtime//:msvc_include",
+            "@windows_sdk//:winsdk_ucrt_include",
+        ],
+        "@llvm//constraints/windows/abi:unconstrained": [],
     }),
     includes = [
         "include",
