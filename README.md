@@ -161,6 +161,51 @@ Behind the scenes, code is compiled with headers for the selected glibc and link
 
 This ensures your program runs on systems with that glibc version or newer without using newer symbols.
 
+### C++ standard library selection
+
+Both libc++ and libstdc++ are supported. libc++ is selected by default.
+
+To select libstdc++ for a Linux glibc target, add the
+`@llvm//constraints/cxxstdlib:libstdcxx` constraint to the target platform.
+
+```starlark
+platform(
+    name = "linux_x86_64_gnu_2_28_libstdcxx",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+        "@llvm//constraints/libc:gnu.2.28",
+        "@llvm//constraints/cxxstdlib:libstdcxx",
+    ],
+)
+```
+
+Then build with that platform:
+
+```sh
+bazel build --platforms=//:linux_x86_64_gnu_2_28_libstdcxx //:app
+```
+
+libstdc++ is currently supported as a dynamic C++ runtime, so C++ binaries
+using it must set `linkstatic = False`:
+
+```starlark
+cc_binary(
+    name = "app",
+    srcs = ["main.cc"],
+    linkstatic = False,
+)
+```
+
+Without `linkstatic = False`, Bazel prefers the static C++ runtime path. For
+libstdc++ that would make static libstdc++ the default, which is not what most
+Linux users expect, and this toolchain intentionally supports libstdc++ through
+the dynamic runtime path.
+
+At the moment, libstdc++ support is limited to Linux glibc targets. Additional
+targets can be added based on demand; musl + libstdc++ is feasible too, even if
+it is an uncommon configuration.
+
 ### ARM (armv7)
 
 armv7 targets default to NEON. Cores without NEON (e.g. Cortex-A7 with
