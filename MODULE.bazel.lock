@@ -278,7 +278,7 @@
   "moduleExtensions": {
     "//3rd_party/gcc/extension:gcc.bzl%gcc": {
       "general": {
-        "bzlTransitiveDigest": "pwkyiRq5qUv/J6PpS3XxY7LaV66sbA+6JgLxXlT5R1Q=",
+        "bzlTransitiveDigest": "XUWTels9SzO7xhmQBqYtaFYFMTjrFMSDFi/Q7hv4f34=",
         "usagesDigest": "5oaUnmwah1O+M09fBeXvm+hF80aKWbzNthIt3AAD/aI=",
         "recordedInputs": [
           "REPO_MAPPING:,bazel_lib bazel_lib+",
@@ -292,6 +292,7 @@
               "includes": [
                 "gcc/BASE-VER",
                 "gcc/DATESTAMP",
+                "gcc/ginclude/unwind-arm-common.h",
                 "config/acx.m4",
                 "config/cet.m4",
                 "config/futex.m4",
@@ -313,6 +314,7 @@
                 "libgcc/gthr-posix.h",
                 "libgcc/gthr-single.h",
                 "libgcc/gthr.h",
+                "libgcc/config/arm/unwind-arm.h",
                 "libgcc/unwind-generic.h",
                 "libgcc/unwind-pe.h",
                 "libiberty/cp-demangle.c",
