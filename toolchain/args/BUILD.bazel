@@ -50,6 +50,9 @@ cc_args(
             "-mabi=lp64d",
         ],
         "//conditions:default": [],
+    }) + select({
+        "//constraints/fpu:vfpv4-d16": ["-mfpu=vfpv4-d16"],
+        "//conditions:default": [],
     }),
 )
 

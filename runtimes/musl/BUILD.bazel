@@ -18,6 +18,7 @@ libc_musl_srcs_filegroup(
             "@platforms//cpu:aarch64": "aarch64",
             "@platforms//cpu:riscv64": "riscv64",
             "@platforms//cpu:s390x": "s390x",
+            "@platforms//cpu:armv7": "arm",
         },
         no_match_error = "Unsupported platform",
     ),

@@ -31,6 +31,7 @@ _SUPPORTED_ARCHS = [
     # "sh",
     # "sparc",
     "x86",
+    "arm",
     "arm64",
 ]
 

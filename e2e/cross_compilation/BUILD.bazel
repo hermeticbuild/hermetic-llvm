@@ -79,6 +79,7 @@ PLATFORMS = [
     "@llvm//platforms:linux_aarch64",
     "@llvm//platforms:linux_riscv64",
     "@llvm//platforms:linux_s390x",
+    "@llvm//platforms:linux_armv7",
     "@llvm//platforms:macos_x86_64",
     "@llvm//platforms:macos_aarch64",
     "@llvm//platforms:windows_amd64",
@@ -91,6 +92,9 @@ PLATFORMS = [
     for libc in LIBCS
 ] + [
     "@llvm//platforms:linux_s390x_{}".format(libc)
+    for libc in LIBCS
+] + [
+    "@llvm//platforms:linux_armv7_{}".format(libc)
     for libc in LIBCS
 ] + [
     # RISC-V needs special LIBC treatment because of the kernel-glibc association we do.
@@ -111,9 +115,33 @@ PLATFORMS = [
     for platform in PLATFORMS
 ]
 
+platform(
+    name = "linux_armv7_musl_vfpv4_d16",
+    constraint_values = [
+        "@platforms//cpu:armv7",
+        "@platforms//os:linux",
+        "@llvm//constraints/libc:musl",
+        "@llvm//constraints/fpu:vfpv4-d16",
+    ],
+)
+
 QEMU_MUSL_PLATFORMS = {
-    "linux_riscv64_musl": "@llvm//platforms:linux_riscv64_musl",
-    "linux_s390x_musl": "@llvm//platforms:linux_s390x_musl",
+    "linux_riscv64_musl": {
+        "target_platform": "@llvm//platforms:linux_riscv64_musl",
+    },
+    "linux_s390x_musl": {
+        "target_platform": "@llvm//platforms:linux_s390x_musl",
+    },
+    "linux_armv7_musl": {
+        "target_platform": "@llvm//platforms:linux_armv7_musl",
+    },
+    # Force qemu to a non-default ARM core that matches the -mfpu=vfpv4-d16
+    # codepath, so the test actually exercises vfpv4-d16 instructions instead
+    # of falling through to NEON.
+    "linux_armv7_musl_vfpv4_d16": {
+        "target_platform": ":linux_armv7_musl_vfpv4_d16",
+        "qemu_cpu": "cortex-a7,neon=off,vfp-d32=off",
+    },
 }
 
 [
@@ -121,9 +149,9 @@ QEMU_MUSL_PLATFORMS = {
         name = "hello_" + platform,
         binary = ":hello",
         tags = ["manual"],
-        target_platform = target_platform,
+        target_platform = cfg["target_platform"],
     )
-    for platform, target_platform in QEMU_MUSL_PLATFORMS.items()
+    for platform, cfg in QEMU_MUSL_PLATFORMS.items()
 ]
 
 [
@@ -134,7 +162,7 @@ QEMU_MUSL_PLATFORMS = {
         env = {
             "BINARY": "$(rootpath :hello_{})".format(platform),
             "EXPECTED_OUTPUT": "Hello, World corentin!",
-        },
+        } | ({"QEMU_CPU": cfg["qemu_cpu"]} if "qemu_cpu" in cfg else {}),
         exec_compatible_with = [
             "@platforms//os:linux",
         ],
@@ -142,5 +170,5 @@ QEMU_MUSL_PLATFORMS = {
             "@platforms//os:linux",
         ],
     )
-    for platform in QEMU_MUSL_PLATFORMS
+    for platform, cfg in QEMU_MUSL_PLATFORMS.items()
 ]

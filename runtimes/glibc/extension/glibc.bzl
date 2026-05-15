@@ -3,6 +3,18 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("//constraints/libc:libc_versions.bzl", "GLIBC_VERSIONS")
 load("//platforms:common.bzl", "LIBC_SUPPORTED_TARGETS")
 
+# glibc's source/header triples do not always match our (os, arch) names.
+# For arches whose canonical glibc triple differs, list the override here.
+_GLIBC_TRIPLE_OVERRIDES = {
+    ("linux", "armv7"): "arm-linux-gnueabihf",
+}
+
+def glibc_triple(target_os, target_arch):
+    return _GLIBC_TRIPLE_OVERRIDES.get(
+        (target_os, target_arch),
+        "{}-{}-gnu".format(target_arch, target_os),
+    )
+
 GLIBC_RELEASE_COMMITS = {
     "2.28": "92d25389c255b0da9b56bc05694f0702cd22921a",  # release/2.28/master
     "2.29": "2417ddb64590b7197d6df15b9df67866561713e0",  # release/2.29/master
@@ -64,7 +76,7 @@ def _glibc_impl(module_ctx):
 
     for version in GLIBC_VERSIONS:
         for (target_os, target_arch) in LIBC_SUPPORTED_TARGETS:
-            target = "{}-{}-gnu".format(target_arch, target_os)
+            target = glibc_triple(target_os, target_arch)
 
             #TODO(cerisier): Share the repository between targets
             http_archive(
