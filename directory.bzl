@@ -51,4 +51,5 @@ _headers_directory = rule(
         "directory": attr.label(),
         "source_directory": attr.label(),
     },
+    cfg = config.none(),
 )
