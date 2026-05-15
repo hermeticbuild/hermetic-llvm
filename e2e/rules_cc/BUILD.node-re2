@@ -1,0 +1,25 @@
+load("@//:node_napi.bzl", "cc_napi_library")
+load("@aspect_rules_js//npm:defs.bzl", "npm_package")
+
+cc_napi_library(
+    name = "build/Release/re2.node",
+    srcs = glob([
+        "lib/*.cc",
+        "lib/*.h",
+    ]),
+    deps = [
+        "@nodejs_nan",
+        "@re2",
+    ],
+)
+
+npm_package(
+    name = "node-re2",
+    srcs = [
+        "package.json",
+        "re2.d.ts",
+        "re2.js",
+        ":build/Release/re2.node",
+    ],
+    visibility = ["//visibility:public"],
+)
