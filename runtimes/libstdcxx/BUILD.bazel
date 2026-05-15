@@ -450,6 +450,16 @@ bzl_library(
 )
 
 bzl_library(
+    name = "libstdcxx_symbols_version_script",
+    srcs = ["libstdcxx_symbols_version_script.bzl"],
+    deps = [
+        "@rules_cc//cc:action_names_bzl",
+        "@rules_cc//cc:find_cc_toolchain_bzl",
+        "@rules_cc//cc/common",
+    ],
+)
+
+bzl_library(
     name = "libstdcxx_cxxconfig_header",
     srcs = ["libstdcxx_cxxconfig_header.bzl"],
 )
@@ -462,14 +472,4 @@ bzl_library(
 bzl_library(
     name = "libstdcxx_largefile_config_header",
     srcs = ["libstdcxx_largefile_config_header.bzl"],
-)
-
-bzl_library(
-    name = "libstdcxx_symbols_version_script",
-    srcs = ["libstdcxx_symbols_version_script.bzl"],
-    deps = [
-        "@rules_cc//cc:action_names_bzl",
-        "@rules_cc//cc:find_cc_toolchain_bzl",
-        "@rules_cc//cc/common",
-    ],
 )
