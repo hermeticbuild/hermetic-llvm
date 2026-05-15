@@ -119,6 +119,10 @@ cc_library(
     implementation_deps = [
         # Order matter. Search path should have C++ headers before any lib C headers.
         "@llvm-project//libcxx:headers",
+        # libcxxabi's cxa_exception.h includes "unwind.h" from libunwind.
+        # On ARM EHABI targets, this pulls in unwind_arm_ehabi.h which declares
+        # __gnu_unwind_frame used by cxa_personality.cpp.
+        "@llvm-project//libunwind:headers",
     ] + select({
         "@platforms//os:macos": [],
         "@platforms//os:windows": [],

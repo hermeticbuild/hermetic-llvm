@@ -3,6 +3,7 @@ def glibc_includes(cpu):
     os_abi_variant = []
     abi_variant = []
     arch_parent = []
+    wordsize = "wordsize-64"
 
     if cpu == "x86_64":
         os_abi_variant = [
@@ -28,6 +29,10 @@ def glibc_includes(cpu):
             "sysdeps/s390/s390-64",
         ]
         cpu = "s390"
+    elif cpu == "armv7":
+        # 32-bit ARM; glibc's sysdeps hierarchy uses "arm" with wordsize-32.
+        wordsize = "wordsize-32"
+        cpu = "arm"
 
     return [
         "include",
@@ -44,7 +49,7 @@ def glibc_includes(cpu):
         "sysdeps/unix/{}".format(cpu),
         "sysdeps/unix",
         "sysdeps/{}".format(cpu),
-        "sysdeps/wordsize-64",
+        "sysdeps/{}".format(wordsize),
         "sysdeps/generic",
         ".",
     ]

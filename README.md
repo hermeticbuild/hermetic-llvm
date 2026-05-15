@@ -125,10 +125,12 @@ If you wish to setup things manually, you will likely require a few flags:
 | **x86_64-linux-gnu ¹**   | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **riscv64-linux-gnu ¹**   | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **s390x-linux-gnu ¹**     | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **armv7-linux-gnueabihf ¹** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **aarch64-linux-musl**   | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **x86_64-linux-musl**    | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **riscv64-linux-musl**    | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **s390x-linux-musl**      | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **armv7-linux-musleabihf** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **aarch64-windows-gnu ²**| ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **x86_64-windows-gnu ²** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **wasm32-unknown-unknown** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -158,6 +160,17 @@ To target a specific version, use:
 Behind the scenes, code is compiled with headers for the selected glibc and linked against compatible stubs.
 
 This ensures your program runs on systems with that glibc version or newer without using newer symbols.
+
+### ARM (armv7)
+
+armv7 targets default to NEON. Cores without NEON (e.g. Cortex-A7 with
+`vfpv4-d16`) can be selected by adding the `@llvm//constraints/fpu:vfpv4-d16`
+constraint to the target platform.
+
+> The FPU constraint lives here for now and will be migrated to
+> [bazel-contrib/platforms_contrib](https://github.com/bazel-contrib/platforms_contrib)
+> once its shape is defined upstream. Tracking issue:
+> [bazel-contrib/platforms_contrib#4](https://github.com/bazel-contrib/platforms_contrib/issues/4).
 
 ### Windows
 

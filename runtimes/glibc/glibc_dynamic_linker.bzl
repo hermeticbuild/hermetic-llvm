@@ -1,6 +1,7 @@
 # Keep aligned with clang/lib/Driver/ToolChains/Linux.cpp from LLVM source code.
 _GLIBC_DYNAMIC_LINKERS = {
     "//platforms/config:linux_aarch64_gnu": "ld-linux-aarch64.so.1",
+    "//platforms/config:linux_armv7_gnu": "ld-linux-armhf.so.3",
     "//platforms/config:linux_riscv64_gnu": "ld-linux-riscv64-lp64d.so.1",
     "//platforms/config:linux_s390x_gnu": "ld64.so.1",
     "//platforms/config:linux_x86_64_gnu": "ld-linux-x86-64.so.2",

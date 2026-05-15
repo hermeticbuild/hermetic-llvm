@@ -35,12 +35,15 @@ def _get_from_archive(mctx):
 
 def _osx_extension_impl(mctx):
     frameworks = []
+    libraries = []
     experimental_include_all_sdk_libs = False
     from_archive = _get_from_archive(mctx)
 
     for module in mctx.modules:
         for frameworks_tag in module.tags.frameworks:
             frameworks.extend(frameworks_tag.names)
+        for libraries_tag in module.tags.libraries:
+            libraries.extend(libraries_tag.names)
         if len(module.tags.experimental_include_all_sdk_libs) > 0:
             experimental_include_all_sdk_libs = True
 
@@ -75,6 +78,9 @@ def _osx_extension_impl(mctx):
             "usr/lib/libpthread.tbd",
             "usr/lib/libSystem*",
         ])
+
+    for library in libraries:
+        includes.append("usr/lib/%s*" % library)
 
     for framework in frameworks:
         includes.append("System/Library/Frameworks/%s.framework/*" % framework)
@@ -185,6 +191,12 @@ _frameworks_tag = tag_class(
     },
 )
 
+_libraries_tag = tag_class(
+    attrs = {
+        "names": attr.string_list(mandatory = True),
+    },
+)
+
 _experimental_include_all_sdk_libs_tag = tag_class(
     doc = "Include most usr/lib/*.tbd from the macOS SDK sysroot instead of only the minimal default set. Some libraries that are symlinks to frameworks are still excluded.",
 )
@@ -204,6 +216,7 @@ osx = module_extension(
     tag_classes = {
         "from_archive": _from_archive_tag,
         "frameworks": _frameworks_tag,
+        "libraries": _libraries_tag,
         "experimental_include_all_sdk_libs": _experimental_include_all_sdk_libs_tag,
     },
 )
