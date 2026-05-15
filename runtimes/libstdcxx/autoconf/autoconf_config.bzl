@@ -4,11 +4,12 @@
 # result metadata for header renderers. It is intentionally generic so the
 # libstdc++ source-counterpart files only declare GCC configure checks.
 
+load("@llvm//toolchain/runtimes:with_cfg_runtimes_common.bzl", "configure_builder_for_runtimes")
+load("@with_cfg.bzl", "with_cfg")
 load(
     ":cc_configure_probe.bzl",
     "cc_configure_probe_context",
     "cc_configure_probe_toolchains",
-    "cc_configure_probe_transition",
     "declare_compile_probe",
     "declare_link_probe",
     "policy_result",
@@ -119,7 +120,7 @@ def _autoconf_config_impl(ctx):
         OutputGroupInfo(autoconf_results = depset(result_files)),
     ]
 
-autoconf_config = rule(
+_autoconf_config = rule(
     implementation = _autoconf_config_impl,
     attrs = {
         "checks": attr.string_list(
@@ -135,7 +136,16 @@ autoconf_config = rule(
             allow_files = True,
         ),
     },
-    cfg = cc_configure_probe_transition,
     fragments = ["cpp"],
     toolchains = cc_configure_probe_toolchains,
 )
+
+_autoconf_config_builder = with_cfg(
+    _autoconf_config,
+    extra_providers = [AutoconfConfigInfo],
+)
+
+autoconf_config, _autoconf_config_internal = configure_builder_for_runtimes(
+    _autoconf_config_builder,
+    "stage1_hosted",
+).build()

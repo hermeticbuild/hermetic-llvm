@@ -6,69 +6,6 @@ load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "CC_TOOLCHAIN_TYPE", "find_cc_toolchain", "use_cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 
-_SANITIZER_SETTINGS = [
-    "//config:asan",
-    "//config:msan",
-    "//config:dfsan",
-    "//config:nsan",
-    "//config:safestack",
-    "//config:rtsan",
-    "//config:tysan",
-    "//config:tsan",
-    "//config:ubsan",
-    "//config:cfi",
-    "//config:lsan",
-    "//config:xray",
-    "//config:fuzzer",
-    "//config:profile",
-    "//config:host_asan",
-    "//config:host_msan",
-    "//config:host_dfsan",
-    "//config:host_nsan",
-    "//config:host_safestack",
-    "//config:host_rtsan",
-    "//config:host_tysan",
-    "//config:host_tsan",
-    "//config:host_ubsan",
-    "//config:host_cfi",
-    "//config:host_lsan",
-    "//config:host_xray",
-    "//config:host_fuzzer",
-    "//config:host_profile",
-]
-
-def _cc_configure_probe_transition_impl(_settings, _attr):
-    settings = {
-        "//toolchain:runtime_stage": "stage1_hosted",
-        "//command_line_option:copt": [],
-        "//command_line_option:cxxopt": [],
-        "//command_line_option:conlyopt": [],
-        "//command_line_option:linkopt": [],
-        "//command_line_option:host_copt": [],
-        "//command_line_option:host_cxxopt": [],
-        "//command_line_option:host_conlyopt": [],
-        "//command_line_option:host_linkopt": [],
-    }
-    for sanitizer in _SANITIZER_SETTINGS:
-        settings[sanitizer] = False
-    return settings
-
-cc_configure_probe_transition = transition(
-    implementation = _cc_configure_probe_transition_impl,
-    inputs = [],
-    outputs = [
-        "//toolchain:runtime_stage",
-        "//command_line_option:copt",
-        "//command_line_option:cxxopt",
-        "//command_line_option:conlyopt",
-        "//command_line_option:linkopt",
-        "//command_line_option:host_copt",
-        "//command_line_option:host_cxxopt",
-        "//command_line_option:host_conlyopt",
-        "//command_line_option:host_linkopt",
-    ] + _SANITIZER_SETTINGS,
-)
-
 cc_configure_probe_toolchains = use_cc_toolchain()
 
 def _compile_template(cc_toolchain, feature_configuration, action_name, source_file, output_file, user_compile_flags):

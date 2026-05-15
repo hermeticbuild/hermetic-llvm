@@ -25,6 +25,8 @@ bzl_library(
     deps = [
         ":cc_configure_probe",
         ":providers",
+        "@llvm//toolchain/runtimes:with_cfg_runtimes_common",
+        "@with_cfg.bzl//:with_cfg",
     ],
 )
 
