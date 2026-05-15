@@ -14,6 +14,7 @@ load(
     "libstdcxx_messages_members_cc",
     "libstdcxx_monetary_members_cc",
     "libstdcxx_numeric_members_cc",
+    "libstdcxx_port_symver_files",
     "libstdcxx_time_members_cc",
 )
 load("@llvm//toolchain/runtimes:cc_runtime_shared_library.bzl", "cc_runtime_stage1_shared_library")
@@ -50,6 +51,8 @@ exports_files([
     "config/unwind_ipinfo.m4",
     "gcc/BASE-VER",
     "gcc/DATESTAMP",
+    "gcc/ginclude/unwind-arm-common.h",
+    "libgcc/config/arm/unwind-arm.h",
     "libgcc/unwind-generic.h",
     "libgcc/unwind-pe.h",
     "include/ansidecl.h",
@@ -70,6 +73,7 @@ exports_files([
     "libstdc++-v3/config/allocator/new_allocator_base.h",
     "libstdc++-v3/config/cpu/aarch64/opt/bits/opt_random.h",
     "libstdc++-v3/config/cpu/aarch64/opt/ext/opt_random.h",
+    "libstdc++-v3/config/cpu/arm/cxxabi_tweaks.h",
     "libstdc++-v3/config/cpu/generic/atomicity_builtins/atomicity.h",
     "libstdc++-v3/config/cpu/generic/atomicity_mutex/atomicity.h",
     "libstdc++-v3/config/cpu/generic/atomic_word.h",
@@ -96,6 +100,7 @@ exports_files([
     "libstdc++-v3/config/os/generic/os_defines.h",
     "libstdc++-v3/config/os/gnu-linux/ctype_base.h",
     "libstdc++-v3/config/os/gnu-linux/ctype_inline.h",
+    "libstdc++-v3/config/os/gnu-linux/arm-eabi-extra.ver",
     "libstdc++-v3/config/os/gnu-linux/os_defines.h",
     "libstdc++-v3/config/os/mingw32-w64/ctype_base.h",
     "libstdc++-v3/config/os/mingw32-w64/ctype_inline.h",
@@ -426,6 +431,11 @@ LIBSTDCXX_BUILD_HEADER_DEPS = [
     "//conditions:default": [],
 })
 
+LIBSTDCXX_ARM_EHABI_HEADERS = select({
+    "@platforms//cpu:armv7": [":libsupcxx_arm_unwind_common_h"],
+    "//conditions:default": [],
+})
+
 # Minimal libiberty config for cp-demangle.c. Recheck libiberty/configure.ac
 # before adding more defines here.
 write_file(
@@ -447,11 +457,25 @@ copy_file(
     allow_symlink = True,
 )
 
-# GCC installs libgcc/unwind-generic.h as unwind.h for libsupc++ consumers.
+# GCC libgcc/Makefile.in installs the config.host-selected unwind_header as
+# unwind.h. ARM Linux uses config/arm/unwind-arm.h instead of the generic
+# Itanium ABI header.
 copy_file(
     name = "libsupcxx_unwind_h",
-    src = "libgcc/unwind-generic.h",
+    src = select({
+        "@platforms//cpu:armv7": "libgcc/config/arm/unwind-arm.h",
+        "//conditions:default": "libgcc/unwind-generic.h",
+    }),
     out = "libgcc/unwind.h",
+    allow_symlink = True,
+)
+
+# libgcc/config/arm/unwind-arm.h includes unwind-arm-common.h from GCC's
+# ginclude directory; install it next to the selected unwind.h header.
+copy_file(
+    name = "libsupcxx_arm_unwind_common_h",
+    src = "gcc/ginclude/unwind-arm-common.h",
+    out = "libgcc/unwind-arm-common.h",
     allow_symlink = True,
 )
 
@@ -479,7 +503,7 @@ cc_library(
         ":libsupcxx_headers",
         ":libsupcxx_private_headers",
         ":libsupcxx_unwind_h",
-    ],
+    ] + LIBSTDCXX_ARM_EHABI_HEADERS,
     copts = LIBSTDCXX_BUILD_COPTS,
     implementation_deps = LIBSTDCXX_BUILD_HEADER_DEPS,
     includes = [
@@ -1097,6 +1121,7 @@ libstdcxx_symbols_version_script(
     name = "libstdcxx_symbols_ver",
     base_version_script = "libstdc++-v3/config/abi/pre/gnu.ver",
     config_h = "@llvm//runtimes/libstdcxx:config_h_header",
+    port_version_scripts = libstdcxx_port_symver_files(),
 )
 
 cc_library(

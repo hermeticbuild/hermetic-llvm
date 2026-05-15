@@ -133,6 +133,7 @@ cc_binary(
 LIBSTDCXX_PLATFORMS = [
     ("linux_x86_64_libstdcxx", "@platforms//cpu:x86_64", "@llvm//constraints/libc:gnu.2.28"),
     ("linux_aarch64_libstdcxx", "@platforms//cpu:aarch64", "@llvm//constraints/libc:gnu.2.28"),
+    ("linux_armv7_libstdcxx", "@platforms//cpu:armv7", "@llvm//constraints/libc:gnu.2.28"),
     ("linux_riscv64_libstdcxx", "@platforms//cpu:riscv64", "@llvm//constraints/libc:gnu.2.33"),
     ("linux_s390x_libstdcxx", "@platforms//cpu:s390x", "@llvm//constraints/libc:gnu.2.28"),
 ]

@@ -11,6 +11,7 @@ GCC_SHA256 = "dc033fdfd79caf199113446af6d082004534437b6ebd276f9732815d86cbe723"
 _GCC_ARCHIVE_INCLUDES = [
     "gcc/BASE-VER",
     "gcc/DATESTAMP",
+    "gcc/ginclude/unwind-arm-common.h",
     "config/acx.m4",
     "config/cet.m4",
     "config/futex.m4",
@@ -32,6 +33,7 @@ _GCC_ARCHIVE_INCLUDES = [
     "libgcc/gthr-posix.h",
     "libgcc/gthr-single.h",
     "libgcc/gthr.h",
+    "libgcc/config/arm/unwind-arm.h",
     "libgcc/unwind-generic.h",
     "libgcc/unwind-pe.h",
     "libiberty/cp-demangle.c",

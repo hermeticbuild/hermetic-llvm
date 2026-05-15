@@ -40,8 +40,10 @@ CXX_FILESYSTEM_FLAGS = ["-fno-exceptions"]
 # GLIBCXX_STRUCT_TM_TM_ZONE, GLIBCXX_CHECK_POLL, GLIBCXX_CHECK_ARC4RANDOM,
 # GLIBCXX_CHECK_GETENTROPY, GLIBCXX_CHECK_DEV_RANDOM, GLIBCXX_CHECK_WRITEV,
 # GLIBCXX_CHECK_S_ISREG_OR_S_IFREG, GLIBCXX_CHECK_SDT_H,
-# GLIBCXX_CHECK_SIZE_T_MANGLING, GLIBCXX_CHECK_LINKER_FEATURES, and
-# GLIBCXX_CHECK_EXCEPTION_PTR_SYMVER are represented by grouped checks below.
+# GLIBCXX_CHECK_LINKER_FEATURES and GLIBCXX_CHECK_EXCEPTION_PTR_SYMVER are
+# represented by grouped checks below. GLIBCXX_CHECK_SIZE_T_MANGLING plus the
+# compatibility size_t/ptrdiff_t checks from GLIBCXX_ENABLE_SYMVERS are
+# target-derived in target_config.bzl.
 # GLIBCXX_ENABLE_EXTERN_TEMPLATE, GLIBCXX_ENABLE_FILESYSTEM_TS,
 # GLIBCXX_ENABLE_LIBSTDCXX_DUAL_ABI, GLIBCXX_ENABLE_LIBSTDCXX_VISIBILITY, and
 # GLIBCXX_DEFAULT_ABI are represented by glibcxx_abi_policies().
@@ -1321,9 +1323,6 @@ def glibcxx_abi_policies():
         policy_define("_GLIBCXX_USE_DUAL_ABI"),
         policy_define("_GLIBCXX_USE_CXX11_ABI"),
         policy_define("_GLIBCXX_FULLY_DYNAMIC_STRING", "0"),
-        policy_define("_GLIBCXX_MANGLE_SIZE_T", "m"),
-        policy_undef("_GLIBCXX_PTRDIFF_T_IS_INT"),
-        policy_undef("_GLIBCXX_SIZE_T_IS_UINT"),
         policy_undef("_GLIBCXX_CONCEPT_CHECKS"),
     ]
 

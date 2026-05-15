@@ -3,7 +3,7 @@
 # fields, compare against configure.host plus configure.ac's *_SRCDIR
 # substitutions for the generated include/source paths.
 
-load("//runtimes/libstdcxx/autoconf:checks.bzl", "policy_define")
+load("//runtimes/libstdcxx/autoconf:checks.bzl", "policy_define", "policy_undef")
 
 _SUPPORTED_TARGETS = {
     "//platforms/config:linux_x86_64_gnu": {
@@ -34,6 +34,27 @@ _SUPPORTED_TARGETS = {
         "host_triple": "aarch64-linux-gnu",
         "locale_dir": "locale/gnu",
         "os_include_dir": "os/gnu-linux",
+        "symver_file": "abi/pre/gnu.ver",
+        "symver_style": "gnu",
+        "thread_header": "gthr-posix.h",
+    },
+    "//platforms/config:linux_armv7_gnu": {
+        "abi_baseline_pair": "armv7-linux-gnueabihf",
+        "abi_tweaks_dir": "cpu/arm",
+        "atomic_lock_policy": True,
+        "atomic_word_dir": "cpu/generic",
+        "atomicity_dir": "cpu/generic/atomicity_builtins",
+        "cpu_defines_dir": "cpu/generic",
+        "cpu_include_dir": "cpu/arm",
+        "cpu_opt_dir": "cpu/generic/opt",
+        "error_constants_dir": "os/generic",
+        "host_triple": "armv7-linux-gnueabihf",
+        "locale_dir": "locale/gnu",
+        "os_include_dir": "os/gnu-linux",
+        "port_symver_files": ["os/gnu-linux/arm-eabi-extra.ver"],
+        "ptrdiff_t_is_int": True,
+        "size_t_is_uint": True,
+        "size_t_mangling": "j",
         "symver_file": "abi/pre/gnu.ver",
         "symver_style": "gnu",
         "thread_header": "gthr-posix.h",
@@ -98,6 +119,27 @@ _SUPPORTED_TARGETS = {
         "host_triple": "aarch64-linux-musl",
         "locale_dir": "locale/generic",
         "os_include_dir": "os/generic",
+        "symver_file": "abi/pre/gnu.ver",
+        "symver_style": "gnu",
+        "thread_header": "gthr-posix.h",
+    },
+    "//platforms/config:linux_armv7_musl": {
+        "abi_baseline_pair": "armv7-linux-musleabihf",
+        "abi_tweaks_dir": "cpu/arm",
+        "atomic_lock_policy": True,
+        "atomic_word_dir": "cpu/generic",
+        "atomicity_dir": "cpu/generic/atomicity_builtins",
+        "cpu_defines_dir": "cpu/generic",
+        "cpu_include_dir": "cpu/arm",
+        "cpu_opt_dir": "cpu/generic/opt",
+        "error_constants_dir": "os/generic",
+        "host_triple": "armv7-linux-musleabihf",
+        "locale_dir": "locale/generic",
+        "os_include_dir": "os/generic",
+        "port_symver_files": ["os/gnu-linux/arm-eabi-extra.ver"],
+        "ptrdiff_t_is_int": True,
+        "size_t_is_uint": True,
+        "size_t_mangling": "j",
         "symver_file": "abi/pre/gnu.ver",
         "symver_style": "gnu",
         "thread_header": "gthr-posix.h",
@@ -169,6 +211,10 @@ _DEFAULT_POLICY_FIELDS = {
     "extern_template": 1,
     "have_attribute_visibility": 1,
     "inline_version": 0,
+    "port_symver_files": [],
+    "ptrdiff_t_is_int": False,
+    "size_t_is_uint": False,
+    "size_t_mangling": "m",
     "symver_file": "abi/pre/none.ver",
     "symver_style": "none",
     "use_allocator_new": 1,
@@ -181,6 +227,8 @@ _NO_MATCH_ERROR = "Unsupported libstdc++ target platform"
 def _field_value(values, field):
     if field in values:
         return values[field]
+    if field == "cpu_opt_dir":
+        return "{}/opt".format(values["cpu_include_dir"])
     if field in _DEFAULT_POLICY_FIELDS:
         return _DEFAULT_POLICY_FIELDS[field]
     fail("Unknown libstdc++ target field: {}".format(field))
@@ -261,7 +309,18 @@ def libstdcxx_config_h_policy_defines():
                 policy_define("HAVE_SYMVER_SYMBOL_RENAMING_RUNTIME_SUPPORT"),
                 policy_define("HAVE_EXCEPTION_PTR_SINCE_GCC46"),
             ] if _field_value(values, "symver_style") == "gnu" else []) +
-            ([policy_define("HAVE_ATOMIC_LOCK_POLICY")] if values["atomic_lock_policy"] else [])
+            ([policy_define("HAVE_ATOMIC_LOCK_POLICY")] if values["atomic_lock_policy"] else []) +
+            [policy_define("_GLIBCXX_MANGLE_SIZE_T", _field_value(values, "size_t_mangling"))] +
+            ([
+                policy_define("_GLIBCXX_PTRDIFF_T_IS_INT"),
+            ] if _field_value(values, "ptrdiff_t_is_int") else [
+                policy_undef("_GLIBCXX_PTRDIFF_T_IS_INT"),
+            ]) +
+            ([
+                policy_define("_GLIBCXX_SIZE_T_IS_UINT"),
+            ] if _field_value(values, "size_t_is_uint") else [
+                policy_undef("_GLIBCXX_SIZE_T_IS_UINT"),
+            ])
         )
         for config, values in _SUPPORTED_TARGETS.items()
     }, no_match_error = _NO_MATCH_ERROR)
@@ -271,19 +330,28 @@ def libstdcxx_config_h_policy_defines():
 # libstdc++-v3/src/*/Makefile.am.
 def _gcc_config_header_label(field, basename):
     return select({
-        Label(config): "@gcc//:libstdc++-v3/config/{}/{}".format(values[field], basename)
+        Label(config): "@gcc//:libstdc++-v3/config/{}/{}".format(_field_value(values, field), basename)
         for config, values in _SUPPORTED_TARGETS.items()
     }, no_match_error = _NO_MATCH_ERROR)
 
 def _gcc_config_source_label(field, basename):
     return select({
-        Label(config): "@gcc//:libstdc++-v3/config/{}/{}".format(values[field], basename)
+        Label(config): "@gcc//:libstdc++-v3/config/{}/{}".format(_field_value(values, field), basename)
         for config, values in _SUPPORTED_TARGETS.items()
     }, no_match_error = _NO_MATCH_ERROR)
 
 def _gcc_config_path_label(field):
     return select({
         Label(config): "@gcc//:libstdc++-v3/config/{}".format(_field_value(values, field))
+        for config, values in _SUPPORTED_TARGETS.items()
+    }, no_match_error = _NO_MATCH_ERROR)
+
+def _gcc_config_path_labels(field):
+    return select({
+        Label(config): [
+            "@gcc//:libstdc++-v3/config/{}".format(path)
+            for path in _field_value(values, field)
+        ]
         for config, values in _SUPPORTED_TARGETS.items()
     }, no_match_error = _NO_MATCH_ERROR)
 
@@ -318,10 +386,10 @@ def libstdcxx_error_constants_h():
     return _gcc_config_header_label("error_constants_dir", "error_constants.h")
 
 def libstdcxx_bits_opt_random_h():
-    return _gcc_config_header_label("cpu_include_dir", "opt/bits/opt_random.h")
+    return _gcc_config_header_label("cpu_opt_dir", "bits/opt_random.h")
 
 def libstdcxx_ext_opt_random_h():
-    return _gcc_config_header_label("cpu_include_dir", "opt/ext/opt_random.h")
+    return _gcc_config_header_label("cpu_opt_dir", "ext/opt_random.h")
 
 def libstdcxx_c_locale_h():
     return _gcc_config_header_label("locale_dir", "c_locale.h")
@@ -367,3 +435,6 @@ def libstdcxx_thread_header_h():
 
 def libstdcxx_symver_file():
     return _gcc_config_path_label("symver_file")
+
+def libstdcxx_port_symver_files():
+    return _gcc_config_path_labels("port_symver_files")

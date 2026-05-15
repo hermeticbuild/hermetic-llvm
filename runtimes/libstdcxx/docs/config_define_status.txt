@@ -153,12 +153,12 @@ _GLIBCXX_HAS_GTHREADS probe-modeled
 _GLIBCXX_HOSTED policy-modeled
 _GLIBCXX_LONG_DOUBLE_ALT128_COMPAT intentionally-defaulted
 _GLIBCXX_LONG_DOUBLE_COMPAT intentionally-defaulted
-_GLIBCXX_MANGLE_SIZE_T policy-modeled
+_GLIBCXX_MANGLE_SIZE_T target-derived
 _GLIBCXX_NO_C99_ROUNDING_FUNCS policy-modeled
 _GLIBCXX_NO_SLEEP policy-modeled
-_GLIBCXX_PTRDIFF_T_IS_INT policy-modeled
+_GLIBCXX_PTRDIFF_T_IS_INT target-derived
 _GLIBCXX_RES_LIMITS policy-modeled
-_GLIBCXX_SIZE_T_IS_UINT policy-modeled
+_GLIBCXX_SIZE_T_IS_UINT target-derived
 _GLIBCXX_STATIC_TZDATA policy-modeled
 _GLIBCXX_STDIO_EOF policy-modeled
 _GLIBCXX_STDIO_SEEK_CUR policy-modeled
