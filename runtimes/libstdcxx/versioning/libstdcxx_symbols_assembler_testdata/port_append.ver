@@ -1,4 +1,0 @@
-# Appended to version file.
-GLIBCXX_APPEND {
-    appended_symbol;
-};

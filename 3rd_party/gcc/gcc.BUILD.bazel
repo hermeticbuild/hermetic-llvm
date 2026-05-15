@@ -15,7 +15,7 @@ load(
     "libstdcxx_numeric_members_cc",
     "libstdcxx_time_members_cc",
 )
-load("@llvm//runtimes/libstdcxx/versioning:version_script.bzl", "libstdcxx_symbols_version_script")
+load("@llvm//runtimes/libstdcxx/versioning:libstdcxx_symbols_version_script.bzl", "libstdcxx_symbols_version_script")
 load("@llvm//toolchain/runtimes:cc_runtime_shared_library.bzl", "cc_runtime_stage1_shared_library")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 

@@ -188,7 +188,10 @@ successful compile/link probe. Gthreads probes compile against the generated
 `bits/gthr.h` overlay so they see the same staged header context as the
 runtime build. Linker, symbol-version, and ABI policy remains target-selected
 for Linux GNU and tied to the generated version script and `libstdc++.so.6`
-soname.
+soname. The version-script assembly intentionally mirrors the shell recipe in
+`libstdc++-v3/src/Makefile.am`; the final `CC -E -P -include config.h`
+preprocessor pass still uses the Bazel C++ toolchain API so target flags and
+tool inputs remain modeled.
 
 ## Configure Plumbing Replaced By Bazel
 
