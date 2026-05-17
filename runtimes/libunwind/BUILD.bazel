@@ -1,4 +1,6 @@
+load("@bazel_lib//lib:copy_file.bzl", "copy_file")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("//runtimes:defs.bzl", "stub_library")
 
 alias(
@@ -13,8 +15,11 @@ alias(
     visibility = ["//visibility:public"],
 )
 
-stub_library(
-    name = "unwind",
+copy_file(
+    name = "libunwind_static_archive",
+    src = ":libunwind.static",
+    out = "static/libunwind.a",
+    allow_symlink = True,
     visibility = ["//visibility:public"],
 )
 
@@ -31,12 +36,50 @@ config_setting(
 )
 
 copy_to_directory(
-    name = "libunwind_library_search_directory",
+    name = "libunwind_static_library_search_directory",
     srcs = [
-        ":unwind",
+        ":libunwind_static_archive",
     ] + select({
         ":stub_libgcc_s": [":gcc_s"],
         "//conditions:default": [],
     }),
+    replace_prefixes = {
+        "static": "",
+    },
+    visibility = ["//visibility:public"],
+)
+
+copy_file(
+    name = "libunwind_shared_soname",
+    src = ":libunwind.shared",
+    out = "dynamic/libunwind.so.1",
+    allow_symlink = True,
+    visibility = ["//visibility:public"],
+)
+
+write_file(
+    name = "libunwind_shared_linker_script",
+    out = "dynamic/libunwind.so",
+    content = ["GROUP ( libunwind.so.1 )"],
+)
+
+copy_to_directory(
+    name = "libunwind_dynamic_library_search_directory",
+    srcs = [
+        ":libunwind_shared_linker_script",
+        ":libunwind_shared_soname",
+    ] + select({
+        ":stub_libgcc_s": [":gcc_s"],
+        "//conditions:default": [],
+    }),
+    replace_prefixes = {
+        "dynamic": "",
+    },
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "libunwind_library_search_directory",
+    actual = ":libunwind_dynamic_library_search_directory",
     visibility = ["//visibility:public"],
 )

@@ -105,11 +105,15 @@ cc_library(
 
 cc_runtime_stage0_shared_library(
     name = "musl_libc.shared",
+    additional_linker_inputs = ["//runtimes/compiler-rt:clang_rt.builtins.static"],
     user_link_flags = [
         "-Wl,-e,_dlstart",
         # should it be "now"?
         "-Wl,-z,now",
         "-Wl,-soname,libc.so",
+        "-Wl,--whole-archive",
+        "$(location //runtimes/compiler-rt:clang_rt.builtins.static)",
+        "-Wl,--no-whole-archive",
     ],
     visibility = ["//visibility:public"],
     deps = [
@@ -229,7 +233,7 @@ MUSL_LIBS = [
 ]
 
 copy_to_directory(
-    name = "musl_library_search_directory",
+    name = "musl_static_library_search_directory",
     srcs = [
         ":musl_libc.a",
     ] + [
@@ -239,6 +243,26 @@ copy_to_directory(
     replace_prefixes = {
         "stubs": "",
     },
+    visibility = ["//visibility:public"],
+)
+
+copy_to_directory(
+    name = "musl_dynamic_library_search_directory",
+    srcs = [
+        ":musl_libc.so",
+    ] + [
+        ":musl_lib{}_stub".format(lib)
+        for lib in MUSL_LIBS
+    ],
+    replace_prefixes = {
+        "stubs": "",
+    },
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "musl_library_search_directory",
+    actual = ":musl_dynamic_library_search_directory",
     visibility = ["//visibility:public"],
 )
 

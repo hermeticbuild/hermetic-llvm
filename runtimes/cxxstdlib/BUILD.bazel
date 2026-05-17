@@ -54,12 +54,26 @@ alias(
 )
 
 alias(
-    name = "library_search_directory",
+    name = "static_library_search_directory",
     actual = select({
-        ":libstdcxx_linux": "//runtimes/libstdcxx:libstdcxx_library_search_directory",
+        ":libstdcxx_linux": "//runtimes/libstdcxx:libstdcxx_static_library_search_directory",
         ":libstdcxx_windows": ":libstdcxx_windows_unsupported",
-        "//conditions:default": "//runtimes/libcxx:libcxx_library_search_directory",
+        "//conditions:default": "//runtimes/libcxx:libcxx_static_library_search_directory",
     }),
+)
+
+alias(
+    name = "dynamic_library_search_directory",
+    actual = select({
+        ":libstdcxx_linux": "//runtimes/libstdcxx:libstdcxx_dynamic_library_search_directory",
+        ":libstdcxx_windows": ":libstdcxx_windows_unsupported",
+        "//conditions:default": "//runtimes/libcxx:libcxx_dynamic_library_search_directory",
+    }),
+)
+
+alias(
+    name = "library_search_directory",
+    actual = ":dynamic_library_search_directory",
 )
 
 alias(
@@ -67,10 +81,9 @@ alias(
     actual = "//runtimes/libstdcxx:libstdcxx_shared_soname",
 )
 
-genrule(
+alias(
     name = "libstdcxx_static_runtime_lib",
-    outs = ["unsupported/libstdc++.a"],
-    cmd = "echo 'libstdc++ is only supported as a dynamic C++ runtime; static libstdc++ is intentionally unsupported.' >&2; exit 1",
+    actual = "//runtimes/libstdcxx:libstdcxx.static",
 )
 
 genrule(
