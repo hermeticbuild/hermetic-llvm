@@ -1,5 +1,6 @@
 load("@bazel_lib//lib:copy_file.bzl", "copy_file")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
 
 alias(
     name = "libcxx.static",
@@ -39,10 +40,10 @@ copy_file(
     allow_symlink = True,
 )
 
-genrule(
+write_file(
     name = "libcxx_static_linker_script",
-    outs = ["static/libc++.a"],
-    cmd = "printf '%s\n' 'GROUP ( libc++_archive.a libc++abi.a )' > $@",
+    out = "static/libc++.a",
+    content = ["GROUP ( libc++_archive.a libc++abi.a )"],
 )
 
 copy_file(
@@ -59,10 +60,10 @@ copy_file(
     allow_symlink = True,
 )
 
-genrule(
+write_file(
     name = "libcxx_shared_linker_script",
-    outs = ["dynamic/libc++.so"],
-    cmd = "printf '%s\n' 'GROUP ( libc++.so.1 libc++abi.so.1 )' > $@",
+    out = "dynamic/libc++.so",
+    content = ["GROUP ( libc++.so.1 libc++abi.so.1 )"],
 )
 
 copy_to_directory(

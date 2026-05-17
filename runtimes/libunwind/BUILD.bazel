@@ -1,5 +1,6 @@
 load("@bazel_lib//lib:copy_file.bzl", "copy_file")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("//runtimes:defs.bzl", "stub_library")
 
 alias(
@@ -56,10 +57,10 @@ copy_file(
     visibility = ["//visibility:public"],
 )
 
-genrule(
+write_file(
     name = "libunwind_shared_linker_script",
-    outs = ["dynamic/libunwind.so"],
-    cmd = "printf '%s\n' 'GROUP ( libunwind.so.1 )' > $@",
+    out = "dynamic/libunwind.so",
+    content = ["GROUP ( libunwind.so.1 )"],
 )
 
 copy_to_directory(
