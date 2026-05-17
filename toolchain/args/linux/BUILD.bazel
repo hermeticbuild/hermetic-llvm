@@ -1,4 +1,6 @@
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
+load("@rules_cc//cc/toolchains:feature_constraint.bzl", "cc_feature_constraint")
+load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -111,6 +113,16 @@ cc_args(
 
 ###
 
+cc_feature_constraint(
+    name = "static_libc_link_enabled",
+    all_of = ["//toolchain/features:static_linking_mode"],
+)
+
+cc_feature_constraint(
+    name = "dynamic_libc_link_enabled",
+    all_of = ["//toolchain/features:dynamic_linking_mode"],
+)
+
 cc_args(
     name = "musl_libc_headers_include_search_paths",
     actions = [
@@ -130,9 +142,9 @@ cc_args(
 
 #TODO: Factorize this and gnu
 cc_args(
-    name = "default_libs_musl",
+    name = "default_libs_musl_static",
     actions = [
-        "@rules_cc//cc/toolchains/actions:link_actions",
+        "@rules_cc//cc/toolchains/actions:link_executable_actions",
     ],
     args = [
         # We need to support copts like -lc -ldl etc...
@@ -149,11 +161,80 @@ cc_args(
         "-Wl,--pop-state",
     ],
     data = [
-        "//runtimes/musl:musl_library_search_directory",
+        "//runtimes/musl:musl_static_library_search_directory",
     ],
     format = {
-        "libc_library_search_path": "//runtimes/musl:musl_library_search_directory",
+        "libc_library_search_path": "//runtimes/musl:musl_static_library_search_directory",
     },
+    requires_any_of = [":static_libc_link_enabled"],
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+#TODO: Factorize this and gnu
+cc_args(
+    name = "default_libs_musl_dynamic_executable",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:link_executable_actions",
+    ],
+    args = [
+        # We need to support copts like -lc -ldl etc...
+        "-L{libc_library_search_path}",
+
+        # In prevention of when all of those can be shared libraries.
+        "-Wl,--push-state",
+        "-Wl,--as-needed",
+
+        # Since libunwind is linked dynamically, these are only compatibility
+        # search entries. musl provides the symbols from libc.so.
+        "-lpthread",
+        "-ldl",
+        "-Wl,--pop-state",
+    ],
+    data = [
+        "//runtimes/musl:musl_dynamic_library_search_directory",
+    ],
+    format = {
+        "libc_library_search_path": "//runtimes/musl:musl_dynamic_library_search_directory",
+    },
+    requires_any_of = [":dynamic_libc_link_enabled"],
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+cc_args(
+    name = "default_libs_musl_dynamic_library",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:dynamic_library_link_actions",
+    ],
+    args = [
+        # We need to support copts like -lc -ldl etc...
+        "-L{libc_library_search_path}",
+
+        # In prevention of when all of those can be shared libraries.
+        "-Wl,--push-state",
+        "-Wl,--as-needed",
+
+        # Since libunwind is linked dynamically, these are only compatibility
+        # search entries. musl provides the symbols from libc.so.
+        "-lpthread",
+        "-ldl",
+        "-Wl,--pop-state",
+    ],
+    data = [
+        "//runtimes/musl:musl_dynamic_library_search_directory",
+    ],
+    format = {
+        "libc_library_search_path": "//runtimes/musl:musl_dynamic_library_search_directory",
+    },
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+cc_args_list(
+    name = "default_libs_musl",
+    args = [
+        ":default_libs_musl_static",
+        ":default_libs_musl_dynamic_executable",
+        ":default_libs_musl_dynamic_library",
+    ],
     target_compatible_with = ["@platforms//os:linux"],
 )
 

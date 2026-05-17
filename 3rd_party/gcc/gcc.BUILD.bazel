@@ -18,6 +18,7 @@ load(
     "libstdcxx_time_members_cc",
 )
 load("@llvm//toolchain/runtimes:cc_runtime_shared_library.bzl", "cc_runtime_stage1_shared_library")
+load("@llvm//toolchain/runtimes:cc_runtime_static_library.bzl", "cc_runtime_stage0_static_library")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 
 package(default_visibility = ["//visibility:public"])
@@ -1151,6 +1152,12 @@ cc_library(
     }),
 )
 
+cc_runtime_stage0_static_library(
+    name = "libstdcxx.static",
+    visibility = ["//visibility:public"],
+    deps = [":libstdcxx"],
+)
+
 # The shared library version and linker flags should stay aligned with GCC's
 # libstdc++-v3/acinclude.m4 shared library and symbol-version settings.
 cc_runtime_stage1_shared_library(
@@ -1207,6 +1214,18 @@ cc_library(
     copts = LIBSTDCXX_LIBRARY_COPTS + ["-std=gnu++17"],
     implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
     includes = LIBSTDCXX_LIBRARY_INCLUDES,
+)
+
+cc_runtime_stage0_static_library(
+    name = "libstdcxxfs.static",
+    visibility = ["//visibility:public"],
+    deps = [":libstdcxxfs"],
+)
+
+cc_runtime_stage0_static_library(
+    name = "libsupcxx.static",
+    visibility = ["//visibility:public"],
+    deps = [":libsupcxx"],
 )
 
 # Header search directory layout mirrors libstdc++-v3/include/Makefile.am:

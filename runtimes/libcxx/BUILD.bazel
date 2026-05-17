@@ -1,5 +1,5 @@
+load("@bazel_lib//lib:copy_file.bzl", "copy_file")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
-load("//runtimes:defs.bzl", "stub_library")
 
 alias(
     name = "libcxx.static",
@@ -25,20 +25,75 @@ alias(
     visibility = ["//visibility:public"],
 )
 
-stub_library(
-    name = "c++",
+copy_file(
+    name = "libcxx_static_archive",
+    src = ":libcxx.static",
+    out = "static/libc++_archive.a",
+    allow_symlink = True,
 )
 
-stub_library(
-    name = "c++abi",
+copy_file(
+    name = "libcxxabi_static_archive",
+    src = ":libcxxabi.static",
+    out = "static/libc++abi.a",
+    allow_symlink = True,
+)
+
+genrule(
+    name = "libcxx_static_linker_script",
+    outs = ["static/libc++.a"],
+    cmd = "printf '%s\n' 'GROUP ( libc++_archive.a libc++abi.a )' > $@",
+)
+
+copy_file(
+    name = "libcxx_shared_soname",
+    src = ":libcxx.shared",
+    out = "dynamic/libc++.so.1",
+    allow_symlink = True,
+)
+
+copy_file(
+    name = "libcxxabi_shared_soname",
+    src = ":libcxxabi.shared",
+    out = "dynamic/libc++abi.so.1",
+    allow_symlink = True,
+)
+
+genrule(
+    name = "libcxx_shared_linker_script",
+    outs = ["dynamic/libc++.so"],
+    cmd = "printf '%s\n' 'GROUP ( libc++.so.1 libc++abi.so.1 )' > $@",
 )
 
 copy_to_directory(
-    name = "libcxx_library_search_directory",
+    name = "libcxx_static_library_search_directory",
     srcs = [
-        ":c++",
-        ":c++abi",
+        ":libcxx_static_archive",
+        ":libcxx_static_linker_script",
+        ":libcxxabi_static_archive",
     ],
+    replace_prefixes = {
+        "static": "",
+    },
+    visibility = ["//visibility:public"],
+)
+
+copy_to_directory(
+    name = "libcxx_dynamic_library_search_directory",
+    srcs = [
+        ":libcxx_shared_linker_script",
+        ":libcxx_shared_soname",
+        ":libcxxabi_shared_soname",
+    ],
+    replace_prefixes = {
+        "dynamic": "",
+    },
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "libcxx_library_search_directory",
+    actual = ":libcxx_dynamic_library_search_directory",
     visibility = ["//visibility:public"],
 )
 

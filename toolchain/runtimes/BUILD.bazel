@@ -27,19 +27,13 @@ cc_args_list(
     name = "linux_hosted_c_toolchain_args",
     args = select({
         "//platforms/config:musl": [
+            "//toolchain/args:static_link_executable",
             "//toolchain/args/linux:kernel_headers_include_search_paths",
             "//toolchain/args/linux:musl_libc_headers_include_search_paths",
         ],
         "//platforms/config:gnu": [
             "//toolchain/args/linux:kernel_headers_include_search_paths",
             "//toolchain/args/linux:glibc_headers_include_search_paths",
-        ],
-        "//conditions:default": [],
-    }) + select({
-        "//platforms/config:musl": [
-            # TODO: Handle musl dynamic linking.
-            # musl implies static linking for now.
-            "//toolchain/args:static_link_executable",
         ],
         "//conditions:default": [],
     }) + [

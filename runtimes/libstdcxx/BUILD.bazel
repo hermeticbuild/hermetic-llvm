@@ -324,8 +324,47 @@ alias(
 )
 
 alias(
+    name = "libstdcxx.static",
+    actual = "@gcc//:libstdcxx.static",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "libstdcxxfs.static",
+    actual = "@gcc//:libstdcxxfs.static",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "libsupcxx.static",
+    actual = "@gcc//:libsupcxx.static",
+    visibility = ["//visibility:public"],
+)
+
+alias(
     name = "libstdcxx_shared_soname",
     actual = ":libstdcxx.shared",
+)
+
+copy_file(
+    name = "libstdcxx_static_archive",
+    src = ":libstdcxx.static",
+    out = "static/libstdc++.a",
+    allow_symlink = True,
+)
+
+copy_file(
+    name = "libstdcxxfs_static_archive",
+    src = ":libstdcxxfs.static",
+    out = "static/libstdc++fs.a",
+    allow_symlink = True,
+)
+
+copy_file(
+    name = "libsupcxx_static_archive",
+    src = ":libsupcxx.static",
+    out = "static/libsupc++.a",
+    allow_symlink = True,
 )
 
 copy_file(
@@ -348,12 +387,31 @@ stub_library(
 )
 
 copy_to_directory(
-    name = "libstdcxx_library_search_directory",
+    name = "libstdcxx_static_library_search_directory",
     srcs = [
-        ":stdc++",
+        ":libstdcxx_static_archive",
+        ":libstdcxxfs_static_archive",
+        ":libsupcxx_static_archive",
+    ],
+    replace_prefixes = {
+        "static": "",
+    },
+    visibility = ["//visibility:public"],
+)
+
+copy_to_directory(
+    name = "libstdcxx_dynamic_library_search_directory",
+    srcs = [
+        ":libstdcxx_shared_linker_name",
         ":stdc++fs",
         ":supc++",
     ],
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "libstdcxx_library_search_directory",
+    actual = ":libstdcxx_dynamic_library_search_directory",
     visibility = ["//visibility:public"],
 )
 

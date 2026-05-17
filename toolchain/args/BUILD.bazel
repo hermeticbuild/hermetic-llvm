@@ -1,9 +1,31 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
+load("@rules_cc//cc/toolchains:feature_constraint.bzl", "cc_feature_constraint")
 load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
 load("//toolchain/args:llvm_target_triple.bzl", "LLVM_TARGET_TRIPLE")
 
 package(default_visibility = ["//visibility:public"])
+
+cc_feature_constraint(
+    name = "static_cpp_runtime_link_enabled",
+    all_of = [
+        "//toolchain/features:static_link_cpp_runtimes",
+        "//toolchain/features:static_linking_mode",
+    ],
+)
+
+cc_feature_constraint(
+    name = "dynamic_cpp_runtime_link_enabled",
+    all_of = [
+        "//toolchain/features:static_link_cpp_runtimes",
+        "//toolchain/features:dynamic_linking_mode",
+    ],
+)
+
+cc_feature_constraint(
+    name = "static_executable_link_enabled",
+    all_of = ["//toolchain/features:static_linking_mode"],
+)
 
 # COMMON RESET FLAGS
 # --no-default-config
@@ -165,6 +187,7 @@ cc_args(
         "//constraints/pie:on": ["-static-pie"],
         "//constraints/pie:off": ["-static"],
     }),
+    requires_any_of = [":static_executable_link_enabled"],
 )
 
 cc_args(
@@ -864,20 +887,19 @@ cc_args(
 )
 
 cc_args(
-    # We provide the libc++ and libunwind ourselves through static_runtime_libs
-    # and dynamic_runtime_libs.
     name = "stdlib",
     actions = [
         "@rules_cc//cc/toolchains/actions:link_actions",
     ],
-    args = [
-        # will prevent clang to choose which libc++ to link against
-        "-nostdlib++",
-    ],
+    args = select({
+        "//runtimes/cxxstdlib:libstdcxx_linux": ["-stdlib=libstdc++"],
+        "//runtimes/cxxstdlib:libstdcxx_windows": ["-stdlib=libstdc++"],
+        "//conditions:default": ["-stdlib=libc++"],
+    }),
 )
 
 cc_args(
-    name = "unwindlib_none",
+    name = "unwindlib_libunwind",
     actions = [
         "@rules_cc//cc/toolchains/actions:link_actions",
     ],
@@ -885,14 +907,12 @@ cc_args(
         # The clang driver forces -ISystem and doesn't claim the arg, which
         # would result in a warning when targeting macOS.
         "@platforms//os:macos": [],
-        # Will prevent clang from choosing which libunwind to link against.
-        "//conditions:default": ["--unwindlib=none"],
+        "//conditions:default": ["--unwindlib=libunwind"],
     }),
 )
 
-# Those are stubs since we link against static_runtime_libs / dynamic_runtime_libs.
 cc_args(
-    name = "cxxstdlib_library_search_paths",
+    name = "cxxstdlib_static_library_search_paths",
     actions = [
         "@rules_cc//cc/toolchains/actions:link_actions",
     ],
@@ -900,16 +920,41 @@ cc_args(
         "-L{cxxstdlib_library_search_path}",
     ],
     data = [
-        "//runtimes/cxxstdlib:library_search_directory",
+        "//runtimes/cxxstdlib:static_library_search_directory",
     ],
     format = {
-        "cxxstdlib_library_search_path": "//runtimes/cxxstdlib:library_search_directory",
+        "cxxstdlib_library_search_path": "//runtimes/cxxstdlib:static_library_search_directory",
     },
+    requires_any_of = [":static_cpp_runtime_link_enabled"],
 )
 
-# Those are stubs since we link against static_runtime_libs / dynamic_runtime_libs.
 cc_args(
-    name = "libunwind_library_search_paths",
+    name = "cxxstdlib_dynamic_library_search_paths",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    args = [
+        "-L{cxxstdlib_library_search_path}",
+    ],
+    data = [
+        "//runtimes/cxxstdlib:dynamic_library_search_directory",
+    ],
+    format = {
+        "cxxstdlib_library_search_path": "//runtimes/cxxstdlib:dynamic_library_search_directory",
+    },
+    requires_any_of = [":dynamic_cpp_runtime_link_enabled"],
+)
+
+cc_args_list(
+    name = "cxxstdlib_library_search_paths",
+    args = [
+        ":cxxstdlib_static_library_search_paths",
+        ":cxxstdlib_dynamic_library_search_paths",
+    ],
+)
+
+cc_args(
+    name = "libunwind_static_library_search_paths",
     actions = [
         "@rules_cc//cc/toolchains/actions:link_actions",
     ],
@@ -917,11 +962,37 @@ cc_args(
         "-L{libunwind_library_search_path}",
     ],
     data = [
-        "//runtimes/libunwind:libunwind_library_search_directory",
+        "//runtimes/libunwind:libunwind_static_library_search_directory",
     ],
     format = {
-        "libunwind_library_search_path": "//runtimes/libunwind:libunwind_library_search_directory",
+        "libunwind_library_search_path": "//runtimes/libunwind:libunwind_static_library_search_directory",
     },
+    requires_any_of = [":static_cpp_runtime_link_enabled"],
+)
+
+cc_args(
+    name = "libunwind_dynamic_library_search_paths",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    args = [
+        "-L{libunwind_library_search_path}",
+    ],
+    data = [
+        "//runtimes/libunwind:libunwind_dynamic_library_search_directory",
+    ],
+    format = {
+        "libunwind_library_search_path": "//runtimes/libunwind:libunwind_dynamic_library_search_directory",
+    },
+    requires_any_of = [":dynamic_cpp_runtime_link_enabled"],
+)
+
+cc_args_list(
+    name = "libunwind_library_search_paths",
+    args = [
+        ":libunwind_static_library_search_paths",
+        ":libunwind_dynamic_library_search_paths",
+    ],
 )
 
 cc_args(
