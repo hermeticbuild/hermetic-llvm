@@ -4,6 +4,14 @@ load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
 
 package(default_visibility = ["//visibility:public"])
 
+_GNU_SPLIT_PTHREAD_DL_LINK_ARGS = [
+    "-Wl,--push-state",
+    "-Wl,--as-needed",
+    "-lpthread",
+    "-ldl",
+    "-Wl,--pop-state",
+]
+
 # Extracted from rules_cc unix_cc_configure.bzl
 # TODO(cerisier): Extract those into proper semantic args list.
 cc_args(
@@ -90,19 +98,24 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:link_actions",
     ],
     args = [
-        # We need to support copts like -lc -ldl etc...
+        # Expose the hermetic libc directory to the driver and to user-supplied
+        # linkopts like -lc or -ldl.
         "-L{libc_library_search_path}",
-
-        # In prevention of when all of those can be shared libraries.
-        "-Wl,--push-state",
-        "-Wl,--as-needed",
-
-        # Since libunwind is linked statically, we need to link pthread as well.
-        "-lpthread",
-        # Since libunwind is linked statically, we need to link dl as well.
-        "-ldl",
-        "-Wl,--pop-state",
-    ],
+    ] + select({
+        # Before glibc 2.34, libpthread and libdl are separate libraries. The
+        # Clang driver only adds -lc, but our GNU libc++/libunwind runtimes can
+        # leave pthread/dl references for the final link.
+        "//constraints/libc:gnu.2.28": _GNU_SPLIT_PTHREAD_DL_LINK_ARGS,
+        "//constraints/libc:gnu.2.29": _GNU_SPLIT_PTHREAD_DL_LINK_ARGS,
+        "//constraints/libc:gnu.2.30": _GNU_SPLIT_PTHREAD_DL_LINK_ARGS,
+        "//constraints/libc:gnu.2.31": _GNU_SPLIT_PTHREAD_DL_LINK_ARGS,
+        "//constraints/libc:gnu.2.32": _GNU_SPLIT_PTHREAD_DL_LINK_ARGS,
+        "//constraints/libc:gnu.2.33": _GNU_SPLIT_PTHREAD_DL_LINK_ARGS,
+        # Custom Linux platforms without an explicit libc constraint are routed
+        # to GNU. Treat them as pre-2.34 to keep old-glibc runtimes linkable.
+        "//constraints/libc:unconstrained": _GNU_SPLIT_PTHREAD_DL_LINK_ARGS,
+        "//conditions:default": [],
+    }),
     data = [
         "//runtimes/glibc:glibc_library_search_directory",
     ],
@@ -147,18 +160,9 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:link_executable_actions",
     ],
     args = [
-        # We need to support copts like -lc -ldl etc...
+        # Expose the hermetic libc directory to the driver and to user-supplied
+        # linkopts like -lc or -ldl.
         "-L{libc_library_search_path}",
-
-        # In prevention of when all of those can be shared libraries.
-        "-Wl,--push-state",
-        "-Wl,--as-needed",
-
-        # Since libunwind is linked statically, we need to link pthread as well.
-        "-lpthread",
-        # Since libunwind is linked statically, we need to link dl as well.
-        "-ldl",
-        "-Wl,--pop-state",
     ],
     data = [
         "//runtimes/musl:musl_static_library_search_directory",
@@ -177,18 +181,9 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:link_executable_actions",
     ],
     args = [
-        # We need to support copts like -lc -ldl etc...
+        # Expose the hermetic libc directory to the driver and to user-supplied
+        # linkopts like -lc or -ldl.
         "-L{libc_library_search_path}",
-
-        # In prevention of when all of those can be shared libraries.
-        "-Wl,--push-state",
-        "-Wl,--as-needed",
-
-        # Since libunwind is linked dynamically, these are only compatibility
-        # search entries. musl provides the symbols from libc.so.
-        "-lpthread",
-        "-ldl",
-        "-Wl,--pop-state",
     ],
     data = [
         "//runtimes/musl:musl_dynamic_library_search_directory",
@@ -206,18 +201,9 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:dynamic_library_link_actions",
     ],
     args = [
-        # We need to support copts like -lc -ldl etc...
+        # Expose the hermetic libc directory to the driver and to user-supplied
+        # linkopts like -lc or -ldl.
         "-L{libc_library_search_path}",
-
-        # In prevention of when all of those can be shared libraries.
-        "-Wl,--push-state",
-        "-Wl,--as-needed",
-
-        # Since libunwind is linked dynamically, these are only compatibility
-        # search entries. musl provides the symbols from libc.so.
-        "-lpthread",
-        "-ldl",
-        "-Wl,--pop-state",
     ],
     data = [
         "//runtimes/musl:musl_dynamic_library_search_directory",
