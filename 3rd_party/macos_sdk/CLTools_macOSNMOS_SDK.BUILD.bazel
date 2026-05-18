@@ -5,3 +5,9 @@ headers_directory(
     path = ".",
     visibility = ["//visibility:public"],
 )
+
+filegroup(
+    name = "sysroot_files",
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

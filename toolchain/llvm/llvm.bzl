@@ -175,6 +175,7 @@ def declare_llvm_targets(*, suffix = ""):
             "bin/lld" + suffix,
             "bin/wasm-ld" + suffix,
         ],
+        visibility = ["//visibility:public"],
     )
 
     cc_tool(
