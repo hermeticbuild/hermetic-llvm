@@ -1,6 +1,8 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load("//toolchain/args:llvm_target_triple.bzl", "LLVM_TARGET_TRIPLE")
 load("//tools:defs.bzl", "TOOLCHAIN_BINARIES")
 load(":bootstrap_binary.bzl", "bootstrap_binary")
+load(":fdo_profile.bzl", "llvm_fdo_profile_data")
 
 # bootstrap toolchains are declared top level
 
@@ -8,19 +10,66 @@ load(":bootstrap_binary.bzl", "bootstrap_binary")
     bootstrap_binary(
         name = tool,
         actual = "@llvm-project//llvm",
+        fdo_profile = ":llvm_fdo_profdata",
         visibility = ["//visibility:public"],
     )
     for tool in TOOLCHAIN_BINARIES
 ]
+
+llvm_fdo_profile_data(
+    name = "llvm_fdo_profdata",
+    builtin_headers = select({
+        "//platforms/config:linux_x86_64": "//toolchain:instrumented_linux_x86_64/clang_builtin_headers_include_directory",
+        "//platforms/config:linux_aarch64": "//toolchain:instrumented_linux_aarch64/clang_builtin_headers_include_directory",
+    }),
+    clangxx = select({
+        "//platforms/config:linux_x86_64": "//toolchain:instrumented_linux_x86_64/bin/clang++",
+        "//platforms/config:linux_aarch64": "//toolchain:instrumented_linux_aarch64/bin/clang++",
+    }),
+    crt_objects = "//runtimes:crt_objects_directory",
+    kernel_headers = "@kernel_headers//:kernel_headers_directory",
+    libc_headers = "//runtimes/glibc:glibc_headers_include_search_directory",
+    libc_library_search = "//runtimes/glibc:glibc_library_search_directory",
+    linker = select({
+        "//platforms/config:linux_x86_64": "//toolchain:instrumented_linux_x86_64/bin/ld.lld",
+        "//platforms/config:linux_aarch64": "//toolchain:instrumented_linux_aarch64/bin/ld.lld",
+    }),
+    llvm_profdata = "@llvm-project//llvm:llvm-profdata",
+    resource_dir = "//runtimes:resource_directory",
+    sanitizer_headers = "//sanitizers:sanitizers_headers_include_search_directory",
+    target_compatible_with = select({
+        "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+    target_triple = LLVM_TARGET_TRIPLE,
+    visibility = ["//visibility:public"],
+)
 
 bzl_library(
     name = "bootstrap_binary",
     srcs = ["bootstrap_binary.bzl"],
     visibility = ["//visibility:public"],
     deps = [
+        ":transition_settings",
         "@bazel_lib//lib:copy_file",
         "@bazel_lib//lib:copy_to_directory",
     ],
+)
+
+bzl_library(
+    name = "fdo_profile",
+    srcs = ["fdo_profile.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":transition_settings",
+        "@rules_cc//cc/private/rules_impl/fdo:srcs",
+    ],
+)
+
+bzl_library(
+    name = "transition_settings",
+    srcs = ["transition_settings.bzl"],
+    visibility = ["//visibility:public"],
 )
 
 bzl_library(

@@ -12,6 +12,7 @@ def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
             "@llvm//toolchain/features:archive_param_file",
             "@llvm//toolchain/features:prefer_pic_for_opt_binaries",
             "@llvm//toolchain/features:parse_headers",
+            "@llvm//toolchain/features:fdo_optimize",
         ] + select({
             "@platforms//os:linux": [
                 "@rules_cc//cc/toolchains/args/thin_lto:feature",
@@ -35,6 +36,7 @@ def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
             #"@rules_cc//cc/toolchains/args/layering_check:use_module_maps",
             "@llvm//toolchain/features:archive_param_file",
             "@llvm//toolchain/features:prefer_pic_for_opt_binaries",
+            "@llvm//toolchain/features:fdo_optimize",
             # Always last (contains user_compile_flags and user_link_flags who should apply last).
             "@llvm//toolchain/features/legacy:experimental_replace_legacy_action_config_features",
         ],
