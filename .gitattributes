@@ -5,4 +5,4 @@ gazelle export-ignore
 internal_tools export-ignore
 e2e export-ignore
 examples export-ignore
-
+tests export-ignore

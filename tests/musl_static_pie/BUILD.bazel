@@ -1,0 +1,52 @@
+load("@bazel_lib//lib:transitions.bzl", "platform_transition_binary")
+load("@llvm//toolchain:selects.bzl", "platform_llvm_binary")
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+
+alias(
+    name = "llvm-readelf",
+    actual = platform_llvm_binary("llvm-readelf"),
+)
+
+cc_binary(
+    name = "hello",
+    srcs = ["main.c"],
+)
+
+platform_transition_binary(
+    name = "hello_x86_64_musl",
+    binary = ":hello",
+    target_platform = "@llvm//platforms:linux_x86_64_musl",
+)
+
+platform_transition_binary(
+    name = "hello_aarch64_musl",
+    binary = ":hello",
+    target_platform = "@llvm//platforms:linux_aarch64_musl",
+)
+
+sh_test(
+    name = "x86_64_static_pie_test",
+    srcs = ["verify_static_pie.sh"],
+    args = [
+        "$(rootpath :llvm-readelf)",
+        "$(rootpath :hello_x86_64_musl)",
+    ],
+    data = [
+        ":hello_x86_64_musl",
+        ":llvm-readelf",
+    ],
+)
+
+sh_test(
+    name = "aarch64_static_pie_test",
+    srcs = ["verify_static_pie.sh"],
+    args = [
+        "$(rootpath :llvm-readelf)",
+        "$(rootpath :hello_aarch64_musl)",
+    ],
+    data = [
+        ":hello_aarch64_musl",
+        ":llvm-readelf",
+    ],
+)
