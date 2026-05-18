@@ -1,4 +1,9 @@
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load(
+    ":linker_contracts.bzl",
+    "linker_contract_bundle",
+)
 
 cc_binary(
     name = "header-parser",
@@ -9,5 +14,111 @@ cc_binary(
 cc_binary(
     name = "static-library-validator",
     srcs = ["static_library_validator.cc"],
+    visibility = ["//visibility:public"],
+)
+
+linker_contract_bundle(
+    name = "linker_contract_executable_macos_aarch64",
+    tree_inputs = {
+        "//runtimes/compiler-rt:clang_rt.builtins.static": "libclang_rt.builtins.a",
+        "//runtimes/libunwind:libunwind_library_search_directory": "libunwind_library_search_directory",
+        "@macos_sdk//sysroot": "sysroot",
+    },
+    target_compatible_with = [
+        "@platforms//os:macos",
+        "@platforms//cpu:aarch64",
+    ],
+)
+
+linker_contract_bundle(
+    name = "linker_contract_executable_linux_x86_64",
+    tree_inputs = {
+        "//runtimes:crt_objects_directory": "crt_objects_directory",
+        "//runtimes:resource_directory": "resource_directory",
+        "//runtimes/glibc:glibc_library_search_directory": "glibc_library_search_directory",
+    },
+    target_compatible_with = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
+linker_contract_bundle(
+    name = "linker_contract_executable_linux_aarch64",
+    tree_inputs = {
+        "//runtimes:crt_objects_directory": "crt_objects_directory",
+        "//runtimes:resource_directory": "resource_directory",
+        "//runtimes/glibc:glibc_library_search_directory": "glibc_library_search_directory",
+    },
+    target_compatible_with = [
+        "@platforms//os:linux",
+        "@platforms//cpu:aarch64",
+    ],
+)
+
+alias(
+    name = "linker-contract-executable",
+    actual = select({
+        "//platforms/config:macos_aarch64": ":linker_contract_executable_macos_aarch64_manifest",
+        "//platforms/config:linux_x86_64_gnu": ":linker_contract_executable_linux_x86_64_manifest",
+        "//platforms/config:linux_aarch64_gnu": ":linker_contract_executable_linux_aarch64_manifest",
+    }),
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "linker-contract-executable-tree",
+    actual = select({
+        "//platforms/config:macos_aarch64": ":linker_contract_executable_macos_aarch64_tree",
+        "//platforms/config:linux_x86_64_gnu": ":linker_contract_executable_linux_x86_64_tree",
+        "//platforms/config:linux_aarch64_gnu": ":linker_contract_executable_linux_aarch64_tree",
+    }),
+    visibility = ["//visibility:public"],
+)
+
+genrule(
+    name = "linker_wrapper_config",
+    outs = ["linker_wrapper_config.cc"],
+    cmd = "\n".join([
+        "cat > $@ <<'CONFIG'",
+        "#include \"tools/internal/linker_wrapper_config.h\"",
+        "",
+        "namespace llvm_toolchain {",
+        "",
+        "const char* kLinkerWrapperClangRlocation = \"$(rlocationpath //tools:clang++)\";",
+        "const char* kLinkerWrapperContractManifestRlocation = \"$(rlocationpath :linker-contract-executable)\";",
+        "const char* kLinkerWrapperContractTreeRlocation = \"$(rlocationpath :linker-contract-executable-tree)\";",
+        "",
+        "}  // namespace llvm_toolchain",
+        "CONFIG",
+    ]),
+    tools = [
+        "//tools:clang++",
+        ":linker-contract-executable",
+        ":linker-contract-executable-tree",
+    ],
+)
+
+cc_library(
+    name = "linker_wrapper_config_header",
+    hdrs = ["linker_wrapper_config.h"],
+    visibility = ["//visibility:private"],
+)
+
+cc_binary(
+    name = "linker-wrapper",
+    srcs = [
+        "linker_wrapper.cc",
+        ":linker_wrapper_config",
+    ],
+    data = [
+        "//tools:clang++",
+        ":linker-contract-executable",
+        ":linker-contract-executable-tree",
+    ],
+    deps = [
+        ":linker_wrapper_config_header",
+        "@bazel_tools//tools/cpp/runfiles",
+    ],
     visibility = ["//visibility:public"],
 )

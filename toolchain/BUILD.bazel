@@ -365,6 +365,12 @@ cc_artifact_name_pattern(
     visibility = ["//visibility:public"],
 )
 
+alias(
+    name = "linker_wrapper",
+    actual = "//tools/internal:linker-wrapper",
+    visibility = ["//visibility:public"],
+)
+
 cc_action_type_set(
     name = "cpp_compile_actions_without_header_parsing",
     # See https://github.com/bazelbuild/rules_cc/blob/6dd2ef1fefbca004da449578c00d8ffb91a459ca/cc/toolchains/actions/BUILD#L224
