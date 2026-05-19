@@ -1,0 +1,37 @@
+load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load("@bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
+load("//prebuilt/libclang:libclang_release.bzl", "libclang_release")
+
+# Platforms for which we produce a libclang tarball. Linux-only in v1.
+_LIBCLANG_PLATFORMS = [
+    "//platforms:linux_amd64_musl",
+    "//platforms:linux_arm64_musl",
+]
+
+exports_files(["libclang.BUILD.bazel"])
+
+libclang_release(name = "libclang_release")
+
+[
+    platform_transition_filegroup(
+        name = "for_" + platform.split(":")[1],
+        srcs = [":libclang_release"],
+        target_platform = platform,
+    )
+    for platform in _LIBCLANG_PLATFORMS
+]
+
+filegroup(
+    name = "for_all_platforms",
+    srcs = ["for_" + platform.split(":")[1] for platform in _LIBCLANG_PLATFORMS],
+)
+
+bzl_library(
+    name = "libclang_release",
+    srcs = ["libclang_release.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//prebuilt:mtree",
+        "@tar.bzl//tar",
+    ],
+)

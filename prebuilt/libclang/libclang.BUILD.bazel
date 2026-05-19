@@ -1,0 +1,12 @@
+# BUILD file for the unpacked libclang prebuilt tarball.
+# Exposes a single public `libclang` file label that downstream
+# bindgen / clang-sys consumers reference via $(execpath ...)
+# for LIBCLANG_PATH.
+
+exports_files(["lib/libclang.so"])
+
+filegroup(
+    name = "libclang",
+    srcs = ["lib/libclang.so"],
+    visibility = ["//visibility:public"],
+)

@@ -3,6 +3,7 @@ load("//platforms:common.bzl", "SUPPORTED_EXECS", "SUPPORTED_TARGETS")
 _BUILD_TEMPLATE = """\
 load("@llvm//toolchain:declare_toolchains.bzl", "declare_toolchains")
 load("@llvm//toolchain/bootstrap:declare_toolchains.bzl", declare_bootstrap_toolchains = "declare_toolchains")
+load("@llvm_config//:version.bzl", "LLVM_VERSION")
 
 _EXECS = [
     {execs}
@@ -14,6 +15,19 @@ _TARGETS = [
 
 declare_toolchains(execs = _EXECS, targets = _TARGETS)
 declare_bootstrap_toolchains(execs = _EXECS, targets = _TARGETS)
+
+# Canonical label for downstream bindgen / clang-sys consumers wiring
+# LIBCLANG_PATH. The libclang tarball is fetched lazily by the http_archive
+# in the root MODULE.bazel — consumers that never reference this alias
+# pay no download / analysis cost. Linux-only initially.
+alias(
+    name = "libclang",
+    actual = select({{
+        "@llvm//platforms/config:linux_x86_64": "@libclang-toolchain-" + LLVM_VERSION + "-linux-amd64//:libclang",
+        "@llvm//platforms/config:linux_aarch64": "@libclang-toolchain-" + LLVM_VERSION + "-linux-arm64//:libclang",
+    }}),
+    visibility = ["//visibility:public"],
+)
 """
 
 def _toolchains_repository_impl(rctx):
