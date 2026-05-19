@@ -32,6 +32,12 @@ load(":musl_header_generation_tests.bzl", "musl_header_generation_tests")
 
 _VALIDATE_STATIC_LIBRARY_COMPATIBLE = validate_static_library_compatible()
 
+_SANITIZER_ASLR_NO_REMOTE_TAGS = [
+    # TODO(https://github.com/hermeticbuild/hermetic-llvm/issues/566): Remove this
+    # no-remote tag once BuildBuddy tolerates sanitizer runtimes disabling ASLR.
+    "no-remote",
+]
+
 musl_header_generation_tests(name = "musl_header_generation_tests")
 
 cc_library(
@@ -330,6 +336,7 @@ exec_test(
     data = [":msan_fail"],
     env = {"BINARY": "$(rootpath :msan_fail)"},
     rule = sh_test,
+    tags = _SANITIZER_ASLR_NO_REMOTE_TAGS,
     target_compatible_with = select({
         "@platforms//os:linux": [],
         "//conditions:default": ["@platforms//:incompatible"],
@@ -354,6 +361,7 @@ exec_test(
         "DFSAN_OPTIONS": "warn_unimplemented=1",
     },
     rule = sh_test,
+    tags = _SANITIZER_ASLR_NO_REMOTE_TAGS,
     target_compatible_with = select({
         "@platforms//os:linux": [],
         "//conditions:default": ["@platforms//:incompatible"],
@@ -443,6 +451,7 @@ exec_test(
     data = [":tysan_fail"],
     env = {"BINARY": "$(rootpath :tysan_fail)"},
     rule = sh_test,
+    tags = _SANITIZER_ASLR_NO_REMOTE_TAGS,
     target_compatible_with = select({
         "@platforms//os:linux": [],
         "//conditions:default": ["@platforms//:incompatible"],
@@ -464,6 +473,7 @@ exec_test(
     data = [":tsan_fail"],
     env = {"BINARY": "$(rootpath :tsan_fail)"},
     rule = sh_test,
+    tags = _SANITIZER_ASLR_NO_REMOTE_TAGS,
     target_compatible_with = select({
         # firecracker + docker on arm64 is too restrictive.
         "@llvm//platforms/config:linux_x86_64": [],
