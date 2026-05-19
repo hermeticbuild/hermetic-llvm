@@ -22,19 +22,19 @@ rbe_platform_repository(
     name = "rbe_platform",
 )
 
-LLVM_VERSION = "22.1.4"
+LLVM_VERSION = "22.1.5"
 
-PREBUILT_LLVM_VERSION = "22.1.4"
+PREBUILT_LLVM_VERSION = "22.1.5"
 
 PREBUILT_LLVM_SUFFIX = "-1"
 
 LLVM_TOOLCHAIN_MINIMAL_SHA256 = {
-    "darwin-amd64": "662d7902d00b0b9e80a7f0330098e6ad81693c8f7b5434f6e36db947964e44e4",
-    "darwin-arm64": "38e06dbfbdbcedbb7bbfc3984a1ef54b5517daa1e8bacc9d1a1bd2ed6c02a282",
-    "linux-amd64-musl": "379f4a009e873c7dc0a9ef2593dab44d3da48ee5c4f05db1382f8cd18779d26d",
-    "linux-arm64-musl": "9ddfbca0cd3fdb90b5c8d6bd35729d4769aca39659892ad5e1b1fb83dd272634",
-    "windows-amd64": "ec573e76ed2d68c04c6a6416eb5d68a66f2c546d78977b4372e3325a452d13c8",
-    "windows-arm64": "4793d79460643653ff12bdf9696614c0aa238b0b8b8327e4239929c25c571f7e",
+    "darwin-amd64": "d1c5ceb570e84a896bd80d222d7052959128eb5897ae19ae5dd66ad3628e98da",
+    "darwin-arm64": "5d9082b43979187916bfc3870be6d5a318061b727188e6d7786ec16e439697e2",
+    "linux-amd64-musl": "151373844c7dd9d82521fb7090000cb7a24da787b21f613deeba713103dfa281",
+    "linux-arm64-musl": "167f8873cce843d1ff16a366e46aea35d91bcf579acb818b853e2a0bff34849e",
+    "windows-amd64": "3dd4e6339f3f065b70cee88e59306641db57cbbfdf90494a4aa97fdeb261f611",
+    "windows-arm64": "2a8b769c00b3ef1ebc43884328148dcab53f42b10af8b7d1c3b27dc9fa53cba9",
 }
 
 [
