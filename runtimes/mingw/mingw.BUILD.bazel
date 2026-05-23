@@ -160,7 +160,6 @@ cc_runtime_stage0_library(
         "mingw-w64-libraries/winpthreads/include/**",
     ]) + [
         "mingw-w64-headers/crt/_mingw.h",
-        "mingw-w64-headers/crt/sdks/_mingw_ddk.h",
     ],
     # user code should always get mingw headers as -isystem
     # but it seems mingw itself includes as <...>
@@ -211,22 +210,10 @@ headers_directory(
     visibility = ["//visibility:public"],
 )
 
-write_file(
-    name = "gen_mingw_ddk.h",
-    out = "mingw-w64-headers/crt/sdks/_mingw_ddk.h",
-    content = [
-        "#ifndef _MINGW_DDK_H_",
-        "#define _MINGW_DDK_H_",
-        "",
-        "#endif /* _MINGW_DDK_H_ */",
-    ],
-)
-
 directory(
     name = "mingw_generated_headers_directory",
     srcs = [
         "mingw-w64-headers/crt/_mingw.h",
-        "mingw-w64-headers/crt/sdks/_mingw_ddk.h",
     ],
     visibility = ["//visibility:public"],
 )

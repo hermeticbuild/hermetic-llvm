@@ -8,10 +8,10 @@ def _mingw_extension_impl(module_ctx):
         name = "mingw",
         # Technically sourceforge is the project's recommended primary download location, but they serve
         # an HTML page to Go-based downloader so they're incompatible with Buildbuddy's remote downloader...
-        # https://sourceforge.net/projects/mingw-w64/files/mingw-w64/mingw-w64-release/mingw-w64-v13.0.0.tar.bz2
-        urls = ["https://github.com/mingw-w64/mingw-w64/archive/refs/tags/v13.0.0.tar.gz"],
-        integrity = "sha256-GpEEczE6MpMWAl+kVjFg3q43iITkuO5XPR0DrABrLmE=",
-        strip_prefix = "mingw-w64-13.0.0",
+        # https://sourceforge.net/projects/mingw-w64/files/mingw-w64/mingw-w64-release/mingw-w64-v14.0.0.tar.bz2
+        urls = ["https://github.com/mingw-w64/mingw-w64/archive/refs/tags/v14.0.0.tar.gz"],
+        integrity = "sha256-1xzGRM1aN8M38nGfPgx52J6NjV+54pUqYtP6I2I9wTc=",
+        strip_prefix = "mingw-w64-14.0.0",
         build_file = "//runtimes/mingw:mingw.BUILD.bazel",
     )
 
