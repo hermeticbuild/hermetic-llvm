@@ -30,15 +30,23 @@ _toolchains_repository = repository_rule(
 def _format_platform_list(platforms):
     return ",\n    ".join([repr(platform) for platform in platforms])
 
+def _validate_platform_pair(kind, platform, supported):
+    if platform not in supported:
+        fail("Unsupported {} platform {}".format(kind, platform))
+
 def _toolchain_impl(mctx):
     execs = []
     targets = []
 
     for module in mctx.modules:
         for exec in module.tags.exec:
-            execs.append((exec.os, exec.arch))
+            platform = (exec.os, exec.arch)
+            _validate_platform_pair("exec", platform, SUPPORTED_EXECS)
+            execs.append(platform)
         for target in module.tags.target:
-            targets.append((target.os, target.arch))
+            platform = (target.os, target.arch)
+            _validate_platform_pair("target", platform, SUPPORTED_TARGETS)
+            targets.append(platform)
 
     if not execs:
         execs = SUPPORTED_EXECS
@@ -60,7 +68,7 @@ def _toolchain_impl(mctx):
         root_module_direct_dev_deps = [],
     )
 
-_platform_tag = tag_class(
+_exec_platform_tag = tag_class(
     attrs = {
         "os": attr.string(
             mandatory = True,
@@ -73,11 +81,34 @@ _platform_tag = tag_class(
     },
 )
 
+_target_platform_tag = tag_class(
+    attrs = {
+        "os": attr.string(
+            mandatory = True,
+            values = ["linux", "macos", "windows", "none"],
+        ),
+        "arch": attr.string(
+            mandatory = True,
+            values = [
+                "x86_64",
+                "aarch64",
+                "riscv64",
+                "s390x",
+                "armv7",
+                "bpfeb",
+                "bpfel",
+                "wasm32",
+                "wasm64",
+            ],
+        ),
+    },
+)
+
 toolchain = module_extension(
     implementation = _toolchain_impl,
     doc = "Generates LLVM toolchains for the requested target/exec platform pairs.",
     tag_classes = {
-        "target": _platform_tag,
-        "exec": _platform_tag,
+        "target": _target_platform_tag,
+        "exec": _exec_platform_tag,
     },
 )

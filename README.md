@@ -133,6 +133,8 @@ If you wish to setup things manually, you will likely require a few flags:
 | **armv7-linux-musleabihf** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **aarch64-windows-gnu ²**| ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **x86_64-windows-gnu ²** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **bpfeb** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **bpfel** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **wasm32-unknown-unknown** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **wasm64-unknown-unknown** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 

@@ -17,8 +17,10 @@ cc_args(
     actions = [
         "@rules_cc//cc/toolchains/actions:compile_actions",
     ],
-    args = [
-        "-fstack-protector",
+    args = select({
+        "@platforms//os:none": [],
+        "//conditions:default": ["-fstack-protector"],
+    }) + [
         # All warnings are enabled.
         "-Wall",
         # Enable a few more warnings that aren't part of -Wall.

@@ -14,6 +14,8 @@ LLVM_TARGET_TRIPLE = select({
     "@llvm//platforms/config:macos_aarch64": ["aarch64-apple-darwin"],
     "@llvm//platforms/config:windows_x86_64": ["x86_64-w64-windows-gnu"],
     "@llvm//platforms/config:windows_aarch64": ["aarch64-w64-windows-gnu"],
+    "@llvm//platforms/config:none_bpfeb": ["bpfeb"],
+    "@llvm//platforms/config:none_bpfel": ["bpfel"],
     "@llvm//platforms/config:none_wasm32": ["wasm32-unknown-unknown"],
     "@llvm//platforms/config:none_wasm64": ["wasm64-unknown-unknown"],
 }, no_match_error = "Unsupported platform")

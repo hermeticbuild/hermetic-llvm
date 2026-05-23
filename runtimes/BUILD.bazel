@@ -170,9 +170,13 @@ alias(
 
 copy_to_resource_directory(
     name = "resource_directory",
-    srcs = {
-        "//runtimes/compiler-rt:clang_rt.builtins.static": "libclang_rt.builtins",
-    } | select({
+    srcs = select({
+        "//platforms/config:none_bpfeb": {},
+        "//platforms/config:none_bpfel": {},
+        "//conditions:default": {
+            "//runtimes/compiler-rt:clang_rt.builtins.static": "libclang_rt.builtins",
+        },
+    }) | select({
         "//config:fuzzer_enabled": {
             "//runtimes/compiler-rt:clang_rt.fuzzer.static": "libclang_rt.fuzzer",
             "//runtimes/compiler-rt:clang_rt.fuzzer_no_main.static": "libclang_rt.fuzzer_no_main",
