@@ -276,69 +276,6 @@
   },
   "selectedYankedVersions": {},
   "moduleExtensions": {
-    "//3rd_party/gcc/extension:gcc.bzl%gcc": {
-      "general": {
-        "bzlTransitiveDigest": "XUWTels9SzO7xhmQBqYtaFYFMTjrFMSDFi/Q7hv4f34=",
-        "usagesDigest": "5oaUnmwah1O+M09fBeXvm+hF80aKWbzNthIt3AAD/aI=",
-        "recordedInputs": [
-          "REPO_MAPPING:,bazel_lib bazel_lib+",
-          "REPO_MAPPING:,bazel_tools bazel_tools"
-        ],
-        "generatedRepoSpecs": {
-          "gcc": {
-            "repoRuleId": "@@//:http_bsdtar_archive.bzl%http_bsdtar_archive",
-            "attributes": {
-              "build_file": "@@//3rd_party/gcc:gcc.BUILD.bazel",
-              "includes": [
-                "gcc/BASE-VER",
-                "gcc/DATESTAMP",
-                "gcc/ginclude/unwind-arm-common.h",
-                "config/acx.m4",
-                "config/cet.m4",
-                "config/futex.m4",
-                "config/gc++filt.m4",
-                "config/gthr.m4",
-                "config/hwcaps.m4",
-                "config/iconv.m4",
-                "config/lthostflags.m4",
-                "config/multi.m4",
-                "config/no-executables.m4",
-                "config/tls.m4",
-                "config/toolexeclibdir.m4",
-                "config/unwind_ipinfo.m4",
-                "include/ansidecl.h",
-                "include/demangle.h",
-                "include/dyn-string.h",
-                "include/getopt.h",
-                "include/libiberty.h",
-                "libgcc/gthr-posix.h",
-                "libgcc/gthr-single.h",
-                "libgcc/gthr.h",
-                "libgcc/config/arm/unwind-arm.h",
-                "libgcc/unwind-generic.h",
-                "libgcc/unwind-pe.h",
-                "libiberty/cp-demangle.c",
-                "libiberty/cp-demangle.h",
-                "libstdc++-v3/acinclude.m4",
-                "libstdc++-v3/config/**",
-                "libstdc++-v3/configure.ac",
-                "libstdc++-v3/configure.host",
-                "libstdc++-v3/crossconfig.m4",
-                "libstdc++-v3/linkage.m4",
-                "libstdc++-v3/include/**",
-                "libstdc++-v3/libsupc++/**",
-                "libstdc++-v3/src/**"
-              ],
-              "sha256": "dc033fdfd79caf199113446af6d082004534437b6ebd276f9732815d86cbe723",
-              "strip_prefix": "gcc-2bfd402f8569511901ec8fe7628f57471e6d240a",
-              "urls": [
-                "https://github.com/gcc-mirror/gcc/archive/2bfd402f8569511901ec8fe7628f57471e6d240a.tar.gz"
-              ]
-            }
-          }
-        }
-      }
-    },
     "@@pybind11_bazel+//:internal_configure.bzl%internal_configure_extension": {
       "general": {
         "bzlTransitiveDigest": "b+RP7Sgl8KN0VHamrgTqzGLuYPcQ/Mo4ptNkkHUIIlA=",

@@ -1,3 +1,4 @@
+load("@bazel_features//:features.bzl", "bazel_features")
 load("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")
 load("//:http_bsdtar_archive.bzl", "http_bsdtar_archive")
 
@@ -71,21 +72,31 @@ def _gcc_impl(module_ctx):
 
     path = root_path or dependency_path
 
+    metadata_kwargs = {}
+
     if path != None:
         new_local_repository(
             name = "gcc",
             build_file = "//3rd_party/gcc:gcc.BUILD.bazel",
             path = path,
         )
-        return
+    else:
+        http_bsdtar_archive(
+            name = "gcc",
+            build_file = "//3rd_party/gcc:gcc.BUILD.bazel",
+            includes = _GCC_ARCHIVE_INCLUDES,
+            sha256 = GCC_SHA256,
+            strip_prefix = "gcc-{}".format(GCC_COMMIT),
+            urls = ["https://github.com/gcc-mirror/gcc/archive/{}.tar.gz".format(GCC_COMMIT)],
+        )
 
-    http_bsdtar_archive(
-        name = "gcc",
-        build_file = "//3rd_party/gcc:gcc.BUILD.bazel",
-        includes = _GCC_ARCHIVE_INCLUDES,
-        sha256 = GCC_SHA256,
-        strip_prefix = "gcc-{}".format(GCC_COMMIT),
-        urls = ["https://github.com/gcc-mirror/gcc/archive/{}.tar.gz".format(GCC_COMMIT)],
+        if bazel_features.external_deps.extension_metadata_has_reproducible:
+            metadata_kwargs["reproducible"] = True
+
+    return module_ctx.extension_metadata(
+        root_module_direct_deps = ["gcc"],
+        root_module_direct_dev_deps = [],
+        **metadata_kwargs
     )
 
 gcc = module_extension(

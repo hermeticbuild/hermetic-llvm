@@ -6,6 +6,7 @@ bzl_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:http_bsdtar_archive",
+        "@bazel_features//:features",
         "@bazel_tools//tools/build_defs/repo:local.bzl",
     ],
 )
