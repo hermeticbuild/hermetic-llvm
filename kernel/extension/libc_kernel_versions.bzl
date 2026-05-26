@@ -27,6 +27,7 @@ LIBC_KERNEL_VERSIONS = {
     "gnu.2.40": "6.12.28",
     "gnu.2.41": "6.14.6",
     "gnu.2.42": "6.16.12",
+    "gnu.2.43": "6.18.15",
     "musl": "6.16.12",  # Latest for musl always
 }
 

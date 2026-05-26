@@ -33,6 +33,14 @@ GLIBC_RELEASE_COMMITS = {
     "2.42": "8aaf4b732d7650c2db3beb4dc8bb70eab5b022c3",  # release/2.42/master
 }
 
+GLIBC_RELEASE_URLS = {
+    "2.43": ["https://ftp.gnu.org/gnu/glibc/glibc-2.43.tar.xz"],
+}
+
+GLIBC_RELEASE_STRIP_PREFIXES = {
+    "2.43": "glibc-2.43",
+}
+
 GLIBC_RELEASE_INTEGRITY = {
     "2.28": "f4cf37f12e0c3a81485ea8743dc41dbcec31ae326b22d6265e724c7ee753529e",
     "2.29": "39cb3f84e92fe829f0b5d96d08437d18e90d17a23021119a7235e17d6bb25245",
@@ -49,7 +57,22 @@ GLIBC_RELEASE_INTEGRITY = {
     "2.40": "80d4e3a0846423a536a14da79d7b527a84b0f73df3f1d5beadf63c8d16fc2429",
     "2.41": "ae2ef9d50a04e5f4e7eece46455a21bf4e4e69518ed31496fdb4c0895f7e18fd",
     "2.42": "0a1427b902e6fe666508162d92d5be3eaff4d410fe66f3426ccaa9848ed90f05",
+    "2.43": "d9c86c6b5dbddb43a3e08270c5844fc5177d19442cf5b8df4be7c07cd5fa3831",
 }
+
+def _glibc_release_urls(version):
+    urls = GLIBC_RELEASE_URLS.get(version)
+    if urls:
+        return urls
+
+    return ["https://github.com/bminor/glibc/archive/{}.tar.gz".format(GLIBC_RELEASE_COMMITS[version])]
+
+def _glibc_release_strip_prefix(version):
+    strip_prefix = GLIBC_RELEASE_STRIP_PREFIXES.get(version)
+    if strip_prefix:
+        return strip_prefix
+
+    return "glibc-{}".format(GLIBC_RELEASE_COMMITS[version])
 
 def _glibc_trampoline_repository_impl(repository_ctx):
     repository_ctx.template("BUILD.bazel", repository_ctx.attr._build_file)
@@ -81,9 +104,9 @@ def _glibc_impl(module_ctx):
             #TODO(cerisier): Share the repository between targets
             http_archive(
                 name = "glibc_%s.%s" % (target, version),
-                urls = ["https://github.com/bminor/glibc/archive/{}.tar.gz".format(GLIBC_RELEASE_COMMITS.get(version))],
-                strip_prefix = "glibc-{}".format(GLIBC_RELEASE_COMMITS.get(version)),
-                sha256 = GLIBC_RELEASE_INTEGRITY.get(version),
+                urls = _glibc_release_urls(version),
+                strip_prefix = _glibc_release_strip_prefix(version),
+                sha256 = GLIBC_RELEASE_INTEGRITY[version],
                 build_file = "//3rd_party/libc/glibc:glibc.BUILD.bazel",
                 patches = [
                     # This file is generated when compiling the glibc.

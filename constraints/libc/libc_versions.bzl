@@ -14,6 +14,7 @@ GLIBC_VERSIONS = [
     "2.40",
     "2.41",
     "2.42",
+    "2.43",
 ]
 
 GLIBCS = ["gnu.{}".format(glibc) for glibc in GLIBC_VERSIONS]

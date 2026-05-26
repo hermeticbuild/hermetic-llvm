@@ -1,4 +1,1044 @@
 {
+    "7.0.10": {
+        "20260526": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/7.0.10-20260526/7.0.10-20260526.tar.zst",
+            "sha256": "f027d0f1afc4ba4c3a4193e10fd50e9e55647d9c73c993c042a415b8ca52b770"
+        },
+        "alpha": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/7.0.10-20260526/7.0.10-alpha.tar.zst",
+            "sha256": "59c8149f83180f9630001cd2fd77e6d4d947bf04e3bfb0b981852e06f1243573"
+        },
+        "arc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/7.0.10-20260526/7.0.10-arc.tar.zst",
+            "sha256": "fe034d7144544220fb2661d9c5114e72a64e5d372d8e07a80a801fafb44fcacf"
+        },
+        "arm": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/7.0.10-20260526/7.0.10-arm.tar.zst",
+            "sha256": "c6179feef5ce07ca22396ec1f33db84af2b9afbc63e7cb28501eadf0c2c56d22"
+        },
+        "arm64": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/7.0.10-20260526/7.0.10-arm64.tar.zst",
+            "sha256": "ebf4d3ccb01997e3037e032856d27ffd3c8c3fc34713ebb0c9f9ab54aa457d8f"
+        },
+        "csky": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/7.0.10-20260526/7.0.10-csky.tar.zst",
+            "sha256": "ff6adf535df3613dd836a9c7d304c2fbea9397772c7ce335f9b6101a1714431a"
+        },
+        "loongarch": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/7.0.10-20260526/7.0.10-loongarch.tar.zst",
+            "sha256": "4bcaf2d8f83368fd7ce2f2b89ec3fcc4a3662071618cf32bb429c1f17af40ca3"
+        },
+        "m68k": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/7.0.10-20260526/7.0.10-m68k.tar.zst",
+            "sha256": "b1028ad1ccb48dc3a8253adca8e104d571e66aae1210ab21f2296007e49d9f6a"
+        },
+        "mips": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/7.0.10-20260526/7.0.10-mips.tar.zst",
+            "sha256": "a6134c65cc4b3413e43fb7ab999fbe42110933a540a5f8e37bbb4f99850fd2bd"
+        },
+        "openrisc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/7.0.10-20260526/7.0.10-openrisc.tar.zst",
+            "sha256": "8dc6c99342d72193fcff1003ba680405db52a8483d72678d5761bc0f54ad4cf5"
+        },
+        "powerpc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/7.0.10-20260526/7.0.10-powerpc.tar.zst",
+            "sha256": "409af6200546794b5d6055ecc2e175035a1516d672fa609c0c023b4d90880871"
+        },
+        "riscv": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/7.0.10-20260526/7.0.10-riscv.tar.zst",
+            "sha256": "45ef506433a6f9a48a6c2b0255bce933e0f7b87be28a0c8c2afebc6d9014c88e"
+        },
+        "s390": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/7.0.10-20260526/7.0.10-s390.tar.zst",
+            "sha256": "231dad6f6f02ce772a4f0bca95bf9b393b03727742fff3a32451fccb2a6172ae"
+        },
+        "sh": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/7.0.10-20260526/7.0.10-sh.tar.zst",
+            "sha256": "90ad77d8c5217fff4494be1a1febe86fa276ec54695375646809c3dd168febeb"
+        },
+        "sparc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/7.0.10-20260526/7.0.10-sparc.tar.zst",
+            "sha256": "0339ec1cb7488d6d062b3661ea7d92f246a0ba9ffaa331b2a667748b8bf3ae34"
+        },
+        "x86": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/7.0.10-20260526/7.0.10-x86.tar.zst",
+            "sha256": "0c55f71aa8614c4f5066d2d870c16c5c34228910878294e23f1ab4f64c120ba0"
+        }
+    },
+    "6.19.14": {
+        "20260526": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.19.14-20260526/6.19.14-20260526.tar.zst",
+            "sha256": "da3a1d52615a2b8a4b008ef19170346bf41d7b54801f06a11b082fffdb2089e6"
+        },
+        "alpha": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.19.14-20260526/6.19.14-alpha.tar.zst",
+            "sha256": "ff5bb233c8678a82c1eb6baea4966369e0ea02dc22204ded48121cd74d0c0489"
+        },
+        "arc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.19.14-20260526/6.19.14-arc.tar.zst",
+            "sha256": "f5d3783a9d895649ea8b8f3d0b2799a473b0d34b2e634b3d3c31887394028bb4"
+        },
+        "arm": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.19.14-20260526/6.19.14-arm.tar.zst",
+            "sha256": "c4649a2b92f4be18ad8189ff6dd3e2aa6c11d67654760d17696ca72ff90f0a3e"
+        },
+        "arm64": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.19.14-20260526/6.19.14-arm64.tar.zst",
+            "sha256": "1bdc659576d1c75b84f71e7060b06a2241abf4ea828068d57dc7b36e74b94db9"
+        },
+        "csky": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.19.14-20260526/6.19.14-csky.tar.zst",
+            "sha256": "500a3dac52e0faf198f156948b404f4ea071a8ae4167b8bbf59cd4f079952789"
+        },
+        "loongarch": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.19.14-20260526/6.19.14-loongarch.tar.zst",
+            "sha256": "1ef95cdf01deb69ce33adc408555bc7061ae4327f50692df2fd44417cf079df4"
+        },
+        "m68k": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.19.14-20260526/6.19.14-m68k.tar.zst",
+            "sha256": "4abc29cac6b093fd6daddd8970d8593f5ddd6f5d1a0d2664addfcfaacd0cf12b"
+        },
+        "mips": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.19.14-20260526/6.19.14-mips.tar.zst",
+            "sha256": "55a2ad6e3ff291fe92d1c346b5782df28f2c5875a6a22ed52314fe2d32043c62"
+        },
+        "openrisc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.19.14-20260526/6.19.14-openrisc.tar.zst",
+            "sha256": "b57ce8a2e490dcce8565fd5ae17f873be824769280d41ee10c1fb3de1ab77ad5"
+        },
+        "powerpc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.19.14-20260526/6.19.14-powerpc.tar.zst",
+            "sha256": "cd84015bc1edcdd94086efb0224460c6e1c861c102bc21f949ad62b46bd62cc3"
+        },
+        "riscv": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.19.14-20260526/6.19.14-riscv.tar.zst",
+            "sha256": "608c86a9ecd7d500e5a712ea2eeb76fe7ad9aa2aba39ce289e17b884b57d627f"
+        },
+        "s390": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.19.14-20260526/6.19.14-s390.tar.zst",
+            "sha256": "d970a625f9ceda79e4706a36724bffc482270637f4fc5baea6f55d9fc884f822"
+        },
+        "sh": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.19.14-20260526/6.19.14-sh.tar.zst",
+            "sha256": "85b4e8910125762b2fdb116e6d37b4bea7603054fec550f6dcb21292477f1d0a"
+        },
+        "sparc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.19.14-20260526/6.19.14-sparc.tar.zst",
+            "sha256": "0419191b01ed2d9b91c90ab13d9fa38968db8543fe558f50e4fd3f6c68187501"
+        },
+        "x86": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.19.14-20260526/6.19.14-x86.tar.zst",
+            "sha256": "c4da09496f4641cef72ffa615f6abefc5131b451991249b2200fc36d35c8ee17"
+        }
+    },
+    "6.18.33": {
+        "20260526": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.18.33-20260526/6.18.33-20260526.tar.zst",
+            "sha256": "303892d1c955725053407a832b8fed99a29699509639951b98dc7a11415b09bb"
+        },
+        "alpha": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.18.33-20260526/6.18.33-alpha.tar.zst",
+            "sha256": "578ec6a0dfa9003a2c7aea3fb04d38e658043fb78a8b9920c7ae7a7d91ab355a"
+        },
+        "arc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.18.33-20260526/6.18.33-arc.tar.zst",
+            "sha256": "c808d9cbb0ea01afd7a55c8d6566ebd716d85e0d204e02ff13052063fa8a3bb6"
+        },
+        "arm": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.18.33-20260526/6.18.33-arm.tar.zst",
+            "sha256": "647ab0e5157fe78c483b035f55c10ecfe9308aae01a4bd0b3df9013cdacc7703"
+        },
+        "arm64": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.18.33-20260526/6.18.33-arm64.tar.zst",
+            "sha256": "b00c090507fe0ace68f322894822fc27379fc872f10eaa71525adcc18a6c56c9"
+        },
+        "csky": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.18.33-20260526/6.18.33-csky.tar.zst",
+            "sha256": "dc34891e8da3a3bbdf2dbe981155855de6d4935ec1db6758e56d8e42e4965b7b"
+        },
+        "loongarch": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.18.33-20260526/6.18.33-loongarch.tar.zst",
+            "sha256": "50f4a90f555d7ea246e72f9a80b928f473eb7196a9114bcdbb9920afb4e624ef"
+        },
+        "m68k": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.18.33-20260526/6.18.33-m68k.tar.zst",
+            "sha256": "0df624936b09274f6289681b6668ec42a9679c25cff7a3b80dc524343305ea48"
+        },
+        "mips": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.18.33-20260526/6.18.33-mips.tar.zst",
+            "sha256": "905f3e4d073f509f25bc62cb1bbff72ee1722dc492784ab378132b955f527734"
+        },
+        "openrisc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.18.33-20260526/6.18.33-openrisc.tar.zst",
+            "sha256": "6eb0b91b2979ee6954b75080aa74965c9745739f06d5dd8911ce40238e2e2029"
+        },
+        "powerpc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.18.33-20260526/6.18.33-powerpc.tar.zst",
+            "sha256": "a63eaffb1615924ec7fbc11e2d2c616ff39d05a80260d128e568f5e310db2078"
+        },
+        "riscv": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.18.33-20260526/6.18.33-riscv.tar.zst",
+            "sha256": "6cd758b6a7632430336c4cc87520bf2d7191f7ad1f9192a3247c8bc63e25defd"
+        },
+        "s390": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.18.33-20260526/6.18.33-s390.tar.zst",
+            "sha256": "02bbd0f71c0e5d04ef04c491d77a227dbc4c0b00cd65335b80917f89b176faee"
+        },
+        "sh": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.18.33-20260526/6.18.33-sh.tar.zst",
+            "sha256": "89d93fe1d8ad5d51048a92c28ec21c28e36a7bc821e9d6ab08bca03a11ef440e"
+        },
+        "sparc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.18.33-20260526/6.18.33-sparc.tar.zst",
+            "sha256": "06583c050d8938cb393c9185320ee6285627e83dfa85e3bf32bcab2ff4516884"
+        },
+        "x86": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.18.33-20260526/6.18.33-x86.tar.zst",
+            "sha256": "5eb6a13698e9fd4656b8eebbdd3e9fd4c3b6161093f0a6286c5bc5b8cdd0d9f5"
+        }
+    },
+    "6.12.91": {
+        "20260526": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.12.91-20260526/6.12.91-20260526.tar.zst",
+            "sha256": "5b505743e8bbd056b4f2401ed07aa69e59f38742962974cc6a10aa51d9021d9a"
+        },
+        "alpha": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.12.91-20260526/6.12.91-alpha.tar.zst",
+            "sha256": "b1cc1ae417bdc7e16258a320c4a1d04ca950156a11b31aba15e32a3261f87845"
+        },
+        "arc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.12.91-20260526/6.12.91-arc.tar.zst",
+            "sha256": "281d4c59c96b93ad59ae808980e4a3f4ffbb7f3d835ac3e577dbafcd710466f7"
+        },
+        "arm": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.12.91-20260526/6.12.91-arm.tar.zst",
+            "sha256": "a1810e52317df8b31cfa93fae9afa76158cc0f31579af928293f2c10fd952149"
+        },
+        "arm64": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.12.91-20260526/6.12.91-arm64.tar.zst",
+            "sha256": "079b7b974dd586eb599204d4662cdaa888bea60845e1ba24e848e8b587f7f498"
+        },
+        "csky": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.12.91-20260526/6.12.91-csky.tar.zst",
+            "sha256": "ea4d52ba4fb3568b4fcf62f08d6a437b10b04d2ff7030c4afb9bd0f170153c67"
+        },
+        "loongarch": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.12.91-20260526/6.12.91-loongarch.tar.zst",
+            "sha256": "f15495547798bd23ab5dbccd1aac60e51aeda2223bf18a6b49265ba570a7748b"
+        },
+        "m68k": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.12.91-20260526/6.12.91-m68k.tar.zst",
+            "sha256": "2172f02f85f2097fdf5862a4d74f2b4998ae0ddc692116ade8cc0dfaff6a3d21"
+        },
+        "mips": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.12.91-20260526/6.12.91-mips.tar.zst",
+            "sha256": "18b7cd1b45f88b15dcc5f9d9705c0eca0da02da1a847a7e78b13b778884b69fc"
+        },
+        "openrisc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.12.91-20260526/6.12.91-openrisc.tar.zst",
+            "sha256": "324d8296bc713bf51268a6a041a1c2758b8b0bf7a77ee40f9391b2f7598986ed"
+        },
+        "powerpc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.12.91-20260526/6.12.91-powerpc.tar.zst",
+            "sha256": "c73ee40a201d37019d88b4097b322973cbc0a836d3c398d0a487dc0a0314ee72"
+        },
+        "riscv": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.12.91-20260526/6.12.91-riscv.tar.zst",
+            "sha256": "ee5f52c108f6ac06f4f3b68289cae296a27954b152b506ee6bb2b7280ff1c674"
+        },
+        "s390": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.12.91-20260526/6.12.91-s390.tar.zst",
+            "sha256": "5e75ed0db6811c902e64573ea932c542e973dae317c09ff2ede4dab303418fb2"
+        },
+        "sh": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.12.91-20260526/6.12.91-sh.tar.zst",
+            "sha256": "98ca414203fca1df29a5f913831497ddcb05b9cd3c1a872310b600e1f1ed70ac"
+        },
+        "sparc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.12.91-20260526/6.12.91-sparc.tar.zst",
+            "sha256": "90a0106edd33fe9dba920e052962c74a8940918fdacbc0b6344c25901596e249"
+        },
+        "x86": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.12.91-20260526/6.12.91-x86.tar.zst",
+            "sha256": "63b002df0dfe2e35d294b66d1df9f2b2feb4c2aacb4b9fc426c2708641d4b0e8"
+        }
+    },
+    "6.6.141": {
+        "20260526": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.6.141-20260526/6.6.141-20260526.tar.zst",
+            "sha256": "de9c8a2cfd47debd8294c0199b409d2188aa2a0138377adb3b6d7bfd0c312374"
+        },
+        "alpha": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.6.141-20260526/6.6.141-alpha.tar.zst",
+            "sha256": "bdf460b5c5c55bbb7173e428ae946f0f8bd7581f08ddad78d1169ebad08732d9"
+        },
+        "arc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.6.141-20260526/6.6.141-arc.tar.zst",
+            "sha256": "cc8eba5ff3351b634a8f08b394ed21540f2bf3e21460c488114fde1699484ab8"
+        },
+        "arm": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.6.141-20260526/6.6.141-arm.tar.zst",
+            "sha256": "a7cf952b0206184d444862b98dd67f6c638422cad5985a9ea22ad376ddd63470"
+        },
+        "arm64": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.6.141-20260526/6.6.141-arm64.tar.zst",
+            "sha256": "45ff0ed162d7adb2b8a4dbfa889745343cbd30401e931863aa4eedb60a189953"
+        },
+        "csky": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.6.141-20260526/6.6.141-csky.tar.zst",
+            "sha256": "a7c90a5d40e0df3717c15e2a035d290146672f9d1c70d5a096f739dd48103f16"
+        },
+        "loongarch": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.6.141-20260526/6.6.141-loongarch.tar.zst",
+            "sha256": "b695c24e1bdaf403c462c6dd170951d129ab375c880e4cdeffdd4a84151b8011"
+        },
+        "m68k": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.6.141-20260526/6.6.141-m68k.tar.zst",
+            "sha256": "f2fa97cadb07ab57a4d1514dc4d41005ca4a14b92a811e2487cf0e6f3bbd6594"
+        },
+        "mips": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.6.141-20260526/6.6.141-mips.tar.zst",
+            "sha256": "24bfc4c21df83d0571466d736071de10d4c8dbd0d1debe320db258927a5e5fbd"
+        },
+        "openrisc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.6.141-20260526/6.6.141-openrisc.tar.zst",
+            "sha256": "718e10e0ee5f7496840beb7c679726c6756453c8c7a3919572cacb8aab47aa58"
+        },
+        "powerpc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.6.141-20260526/6.6.141-powerpc.tar.zst",
+            "sha256": "70df8f8dd3df98b3fe427533077068bb84fd7ce8c0a8b15aacb195e30ede2992"
+        },
+        "riscv": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.6.141-20260526/6.6.141-riscv.tar.zst",
+            "sha256": "be35a521df29d57c306b720ca7996efeb8015185c5acb4613f8b4f6d9e2e85bd"
+        },
+        "s390": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.6.141-20260526/6.6.141-s390.tar.zst",
+            "sha256": "6a046545cb14bbe73b1591644d69985fed820b3a1d07711aeecdf510ba4497ad"
+        },
+        "sh": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.6.141-20260526/6.6.141-sh.tar.zst",
+            "sha256": "d4099392bb5a5fc4ad26e172512dd97899fa47fc15a8d2fd4959156bd6e8ae2d"
+        },
+        "sparc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.6.141-20260526/6.6.141-sparc.tar.zst",
+            "sha256": "05ec5cf5e2ee24feb215b774d6d5beee6aed16958ae9fdddd4ca80a7e16f42cb"
+        },
+        "x86": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.6.141-20260526/6.6.141-x86.tar.zst",
+            "sha256": "49eb2a527706dee306e1a7078ba98814bc729dad520c0c7ca8f51d5e4ecf5245"
+        }
+    },
+    "6.1.174": {
+        "20260526": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.1.174-20260526/6.1.174-20260526.tar.zst",
+            "sha256": "53c10f2d46dfd9ce21fda56b0266750331bec983c2a11cfee4f625417a2db2b7"
+        },
+        "alpha": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.1.174-20260526/6.1.174-alpha.tar.zst",
+            "sha256": "2cef1cf8d169d1e0c44f735d6486be6f139a3e7032751ec175fd91ebf1cb873c"
+        },
+        "arc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.1.174-20260526/6.1.174-arc.tar.zst",
+            "sha256": "f6f62b6763d6f7bcd2f49362d07f76e70624cf8c6cb8d55dbabffd922d2af5df"
+        },
+        "arm": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.1.174-20260526/6.1.174-arm.tar.zst",
+            "sha256": "b63004f19bd7f57bce218ee715944345c472d0680376b5d5a89b0b1b60bd78b3"
+        },
+        "arm64": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.1.174-20260526/6.1.174-arm64.tar.zst",
+            "sha256": "5082cf234b0ec2180ea91fbc79a37bb127a8a753e2d88f4ec58d05428dad5fd3"
+        },
+        "csky": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.1.174-20260526/6.1.174-csky.tar.zst",
+            "sha256": "3b933b71b4405d9653b4017f93ca3d695e4add914c38b81368b441877dce84e6"
+        },
+        "loongarch": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.1.174-20260526/6.1.174-loongarch.tar.zst",
+            "sha256": "957c2820ab0509b3e7384fc27681e4f151041cfcc570a6f70011bfbc4e0f3b8e"
+        },
+        "m68k": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.1.174-20260526/6.1.174-m68k.tar.zst",
+            "sha256": "474cc5dfbe1f5ea1bb86022a701d76a4d8c8a8dbf343bfac6df8ba8528e81ea7"
+        },
+        "mips": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.1.174-20260526/6.1.174-mips.tar.zst",
+            "sha256": "746efddb209732601228becc001ee1e32ea64a5bf127f055c4e11a5e3242b420"
+        },
+        "openrisc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.1.174-20260526/6.1.174-openrisc.tar.zst",
+            "sha256": "7c7f705a81468abcfb9eb094c0a1d4807eaf8981adc69f2e887b0b346c047521"
+        },
+        "powerpc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.1.174-20260526/6.1.174-powerpc.tar.zst",
+            "sha256": "9897de8d445d7446a59b739576ed7d5774e1412aaee86e9fba29322a2c6a983b"
+        },
+        "riscv": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.1.174-20260526/6.1.174-riscv.tar.zst",
+            "sha256": "e149ec8a236c3990d70a6c0fc923db23721df5699f827b9aefc5dc662489eed1"
+        },
+        "s390": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.1.174-20260526/6.1.174-s390.tar.zst",
+            "sha256": "2bf0725e2bcdf7aa6281d3642314136c51f5b6cfaacec2f40e5b34d9aefd3240"
+        },
+        "sh": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.1.174-20260526/6.1.174-sh.tar.zst",
+            "sha256": "fa6f8c861d7a1a6d6389dcfb6ee6a3ea07fdbf106700598b03d1bf0f342a137a"
+        },
+        "sparc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.1.174-20260526/6.1.174-sparc.tar.zst",
+            "sha256": "47923c06ff25b6e0f41f24e37e00de87bfd2373b509190ce1b444cc6db0cfd6f"
+        },
+        "x86": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.1.174-20260526/6.1.174-x86.tar.zst",
+            "sha256": "659544f56d81e50d1cc709699757ce710e9638d6d834f44648aacbbbae8393bc"
+        }
+    },
+    "5.15.208": {
+        "20260526": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.15.208-20260526/5.15.208-20260526.tar.zst",
+            "sha256": "134f61569d7e73a7a09df5f7a18ff1bc8c663a5ffdb566f088c2475adcb72d62"
+        },
+        "alpha": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.15.208-20260526/5.15.208-alpha.tar.zst",
+            "sha256": "cee1f93b5fcf0de57f47f9e72801e7459924a623cc6b85b6cc6ded92754ead6c"
+        },
+        "arc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.15.208-20260526/5.15.208-arc.tar.zst",
+            "sha256": "34aedfba8cd5cbcd2f7fc9dbd9e7e16763f77ff2ce6cfd4af4fd800c1abb7265"
+        },
+        "arm": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.15.208-20260526/5.15.208-arm.tar.zst",
+            "sha256": "fba5719ddeb856c52919ca27c80f42455cabe1be0dde45bd7234c6cc4c30cc0c"
+        },
+        "arm64": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.15.208-20260526/5.15.208-arm64.tar.zst",
+            "sha256": "b01d8735b543481e475defa965b2c000fdff70a2ae944ca779a3d2af762397cb"
+        },
+        "csky": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.15.208-20260526/5.15.208-csky.tar.zst",
+            "sha256": "ae9a6a42bf6c3bff88aea98289c83582c05b72804dc5a3b2a57eb7270592ba33"
+        },
+        "m68k": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.15.208-20260526/5.15.208-m68k.tar.zst",
+            "sha256": "888e6216c6a5822cd0959bbc9ccabe4cdf58a9de1c4dc431f5e6bafc0ccb7b62"
+        },
+        "mips": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.15.208-20260526/5.15.208-mips.tar.zst",
+            "sha256": "cace23ee6fcde9bbcd1d6e6738c0e5ffd5386838af3d96d55a5855a5bf5df1dc"
+        },
+        "openrisc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.15.208-20260526/5.15.208-openrisc.tar.zst",
+            "sha256": "6a28463cdf2d0678c688d99a5e56a260be0e2155e770d5e8af2a3b7db7e2d0d3"
+        },
+        "powerpc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.15.208-20260526/5.15.208-powerpc.tar.zst",
+            "sha256": "4d3e567a4a592fd286eacf36e0afafbfa87f87dadd86179db045a4714f3784f4"
+        },
+        "riscv": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.15.208-20260526/5.15.208-riscv.tar.zst",
+            "sha256": "c9b77e3a349bc8551f60052f47f00c7c758728b5888958e239be4f005232444e"
+        },
+        "s390": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.15.208-20260526/5.15.208-s390.tar.zst",
+            "sha256": "150c9e425e57701573fe1004e881be3353b951ea9efc53a8ec77bbf688f4447d"
+        },
+        "sh": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.15.208-20260526/5.15.208-sh.tar.zst",
+            "sha256": "892d5d24afaa5fcb48cb93f69eb1d96df5da74ed7ff91e99b27e6a286c89fb12"
+        },
+        "sparc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.15.208-20260526/5.15.208-sparc.tar.zst",
+            "sha256": "b16b564cdc3004cc992762b8e61c4c9e53c086523474d8113704a8634eef4e03"
+        },
+        "x86": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.15.208-20260526/5.15.208-x86.tar.zst",
+            "sha256": "b09fbbce7b29ed2e32dd29a6c1b01b6501944ecca7b702c1aaf748a57b033cf5"
+        }
+    },
+    "5.10.257": {
+        "20260526": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.10.257-20260526/5.10.257-20260526.tar.zst",
+            "sha256": "e20b1207ca5ec3534713b5d9f1fdf11c26b54f85f492493a04319a9e21f6c140"
+        },
+        "alpha": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.10.257-20260526/5.10.257-alpha.tar.zst",
+            "sha256": "12bf0ae3b95dbad98e1f01244b652ac626d2df6aef3efb2242de291c42b4fe53"
+        },
+        "arc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.10.257-20260526/5.10.257-arc.tar.zst",
+            "sha256": "883fbd01903746c4821390c4b156b8f2bb6c3c822d0a5f9efef3c38630c55d3c"
+        },
+        "arm": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.10.257-20260526/5.10.257-arm.tar.zst",
+            "sha256": "3e197ba457a97eb2385df104203118d073b752e310f3c6c39763a480261e069b"
+        },
+        "arm64": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.10.257-20260526/5.10.257-arm64.tar.zst",
+            "sha256": "7fd2fb80c1c698760ec18f75f3479808b9be8f6b9ea5d01ea0e03dad422e395f"
+        },
+        "csky": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.10.257-20260526/5.10.257-csky.tar.zst",
+            "sha256": "3af8421cde8ef29573a53ff2d7e6e330a601f94cbc7083716260b4f446b3aa24"
+        },
+        "m68k": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.10.257-20260526/5.10.257-m68k.tar.zst",
+            "sha256": "017b2b29596d6ddae503dc204e01ce31527dbdf2ab61bdad7da28d5c1b8055ff"
+        },
+        "mips": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.10.257-20260526/5.10.257-mips.tar.zst",
+            "sha256": "bdc551299d2d89f74ec62ae563a82f23d5893c93decdc6b207963b320f86616b"
+        },
+        "openrisc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.10.257-20260526/5.10.257-openrisc.tar.zst",
+            "sha256": "62fe7bff8e5a0bc2641b23622807565f3d792cf34193afd0234d3d9002a8127b"
+        },
+        "powerpc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.10.257-20260526/5.10.257-powerpc.tar.zst",
+            "sha256": "873f7ba8654813c0f20959c2577f41672212df1bf716eeafe98585ef97eaeab6"
+        },
+        "riscv": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.10.257-20260526/5.10.257-riscv.tar.zst",
+            "sha256": "885215566a6cb0a519987482eca5fed27b71153154caafdf92d757d1660ad041"
+        },
+        "s390": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.10.257-20260526/5.10.257-s390.tar.zst",
+            "sha256": "53d03ed15ed6c97c26331a7c2d61713c23e9d719f01b8ce7ba20791e214e7569"
+        },
+        "sh": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.10.257-20260526/5.10.257-sh.tar.zst",
+            "sha256": "ea3f7c4c9a243a737e17d9397124c8bbfde8e0efd9be313662907453842aa809"
+        },
+        "sparc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.10.257-20260526/5.10.257-sparc.tar.zst",
+            "sha256": "3b9c91305fa3372e3c3a9b158266630cb346be542eff18ad764527963cc1396e"
+        },
+        "x86": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.10.257-20260526/5.10.257-x86.tar.zst",
+            "sha256": "31f10fdd3cd002d7ac6b032c5c6cf6759319c35eefca61d2aa224352fc21fe4c"
+        }
+    },
+    "6.19.5": {
+        "20260228": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.19.5-20260228/6.19.5-20260228.tar.zst",
+            "sha256": "313fead1ada1474f94e6b6801c3ad9153687981c9c83bab9a3e6f20108f7600f"
+        },
+        "alpha": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.19.5-20260228/6.19.5-alpha.tar.zst",
+            "sha256": "df202e4e71c511da058bf9cd237cb229174a962344b85cda50bd30ebb839b4bf"
+        },
+        "arc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.19.5-20260228/6.19.5-arc.tar.zst",
+            "sha256": "e2f22999c698b4154fef4d97f9aad320369750fb7a3aedca52f5488120dd087d"
+        },
+        "arm": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.19.5-20260228/6.19.5-arm.tar.zst",
+            "sha256": "5281a8ca684fe5027411860e46a61bf7a88d5624691c1c19835240e6643cbefb"
+        },
+        "arm64": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.19.5-20260228/6.19.5-arm64.tar.zst",
+            "sha256": "96451cb5ddb52189f65d8498b6137edcd878878d4c259ae612808a54777e11cb"
+        },
+        "csky": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.19.5-20260228/6.19.5-csky.tar.zst",
+            "sha256": "15d8ec1104d0c7e0b6faddd4eddced90fc0645993678946d21edec6b82107049"
+        },
+        "loongarch": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.19.5-20260228/6.19.5-loongarch.tar.zst",
+            "sha256": "45614e66698f0209391ecba25bed346a1904df56e1f860511ccff3f6b6b9f49c"
+        },
+        "m68k": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.19.5-20260228/6.19.5-m68k.tar.zst",
+            "sha256": "be78e40039f3b84090a86143582ec01bf0c2558cb169ba324a26a10975d5bb07"
+        },
+        "mips": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.19.5-20260228/6.19.5-mips.tar.zst",
+            "sha256": "7fd694143d21de74a295c69e78f8e798fb35b487b28e18bf36aa11e33ad97be4"
+        },
+        "openrisc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.19.5-20260228/6.19.5-openrisc.tar.zst",
+            "sha256": "4856b2ed37b3c78571776ca9f77ecec520bb7040ab16ae6fab24bb50fa1e0fce"
+        },
+        "powerpc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.19.5-20260228/6.19.5-powerpc.tar.zst",
+            "sha256": "8bb0fcb33171a0541ad42101f33328e52e94f0a1a8905c88a76cbcbda88d6780"
+        },
+        "riscv": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.19.5-20260228/6.19.5-riscv.tar.zst",
+            "sha256": "8c881fe9bece2ef67a500000535fdabb2ede3c5f65f1365addb41d3a5aaca606"
+        },
+        "s390": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.19.5-20260228/6.19.5-s390.tar.zst",
+            "sha256": "6e45a3a795b829999daaedeb7a23e01fbd846f52b08cb8be8c725fdce0d85c27"
+        },
+        "sh": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.19.5-20260228/6.19.5-sh.tar.zst",
+            "sha256": "5ee9384805ce5dbe3ee9251db02cd071e82483b45a297bc00c7052b8e38ea8e2"
+        },
+        "sparc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.19.5-20260228/6.19.5-sparc.tar.zst",
+            "sha256": "ab47d4692c3ab109794d08bc077b3befc96a034cd742c1156795a01f076104af"
+        },
+        "x86": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.19.5-20260228/6.19.5-x86.tar.zst",
+            "sha256": "f770fc2d2b83dc73e2ce38a46f70910c2731825bfb9bac9c283e491954aedb5f"
+        }
+    },
+    "6.18.15": {
+        "20260228": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.18.15-20260228/6.18.15-20260228.tar.zst",
+            "sha256": "12002cb84c91bf75851c3966d4c4c46e8860537e895db5cf59f4ae4abd2ae199"
+        },
+        "alpha": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.18.15-20260228/6.18.15-alpha.tar.zst",
+            "sha256": "3a82cf8920a56675b4e980f989325c7de77572b46f52400fda0abd0febb43fdf"
+        },
+        "arc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.18.15-20260228/6.18.15-arc.tar.zst",
+            "sha256": "d7f33294d1fe1e5b9448d1018ccd48a9bf0b5a5a95b61ab1c40ada32828e0805"
+        },
+        "arm": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.18.15-20260228/6.18.15-arm.tar.zst",
+            "sha256": "caa140b30fca40e92567fb997dd1e84df40de95949140a862355184e0ffcbf32"
+        },
+        "arm64": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.18.15-20260228/6.18.15-arm64.tar.zst",
+            "sha256": "3bdacdcb64c3e2e93d93a767b922a5256bac26376e6c3ff1a8cf3b87bb1c5e69"
+        },
+        "csky": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.18.15-20260228/6.18.15-csky.tar.zst",
+            "sha256": "508ea4cd8b9b2a9ee0d09f31e8f463e91a0fbb06c64237128a9102b7af4c3deb"
+        },
+        "loongarch": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.18.15-20260228/6.18.15-loongarch.tar.zst",
+            "sha256": "ad7abc8c74a7454e3dc0d2510781294e438e0283c7d1d120661fe1b63474a63d"
+        },
+        "m68k": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.18.15-20260228/6.18.15-m68k.tar.zst",
+            "sha256": "df29ac3f71935680d4c37e9f05b73bb71821a2bd9928bbeabd176450d22d105b"
+        },
+        "mips": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.18.15-20260228/6.18.15-mips.tar.zst",
+            "sha256": "9215045dab4e460954219d9e25bc8d49e4d5e00e6d34a42b74063b7c686dc412"
+        },
+        "openrisc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.18.15-20260228/6.18.15-openrisc.tar.zst",
+            "sha256": "6c681afd2085cfa411b51bf6bbd133b5955a7f7bf07a019758407e97c661a730"
+        },
+        "powerpc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.18.15-20260228/6.18.15-powerpc.tar.zst",
+            "sha256": "e5174c6fd6660d2d492e10cf0f56d996e455a7fea8c6db928cece5e8fff3d636"
+        },
+        "riscv": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.18.15-20260228/6.18.15-riscv.tar.zst",
+            "sha256": "9ac0d935e613dad7527aa5d826997a59f776b235b3eb6a91a3615632423be90a"
+        },
+        "s390": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.18.15-20260228/6.18.15-s390.tar.zst",
+            "sha256": "df854cc2003779fc646adbda2c2233cef675bcc5c845a70c5f045d6163a7a606"
+        },
+        "sh": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.18.15-20260228/6.18.15-sh.tar.zst",
+            "sha256": "5e0019ff2ab86eef11e1dbc3f7332857cb4e6ffa9507099890f83be592ad8558"
+        },
+        "sparc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.18.15-20260228/6.18.15-sparc.tar.zst",
+            "sha256": "33b7266d4984554ba56ef8dd56c6939710fb0238e48bf22b56b69b823a9a87e8"
+        },
+        "x86": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.18.15-20260228/6.18.15-x86.tar.zst",
+            "sha256": "1e36b54ddcd3857d2f49be63f10008b7dae668345ae4a65284c5282afbb06b0c"
+        }
+    },
+    "6.17.13": {
+        "20260228": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.17.13-20260228/6.17.13-20260228.tar.zst",
+            "sha256": "dc7c9d2fb5c6b60c109036be03a913b45e1c1467592d5ae52707ad6d08034567"
+        },
+        "alpha": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.17.13-20260228/6.17.13-alpha.tar.zst",
+            "sha256": "2317fb502850f3b7455b1b23128a8da617a9d4a849f30f562f71c842a7386aa9"
+        },
+        "arc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.17.13-20260228/6.17.13-arc.tar.zst",
+            "sha256": "c152983d22b3467a92c353ba321394a9e3d4cb5721204f795c3ad9663bdf3372"
+        },
+        "arm": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.17.13-20260228/6.17.13-arm.tar.zst",
+            "sha256": "a8b81e2c9ae30579eda8ca281cccc028e1de9d69ae743368e43bccacd052bd3f"
+        },
+        "arm64": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.17.13-20260228/6.17.13-arm64.tar.zst",
+            "sha256": "a2a510bf3bb4e3adfdd7b9fee31fe1937e883fd88eea7bdaa6915dceb76f959f"
+        },
+        "csky": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.17.13-20260228/6.17.13-csky.tar.zst",
+            "sha256": "72d3eade74f3b7e0e2e9cd9759079b2ddcb3ecb689ad8fc19e916f733c548326"
+        },
+        "loongarch": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.17.13-20260228/6.17.13-loongarch.tar.zst",
+            "sha256": "b98b7d7e5b3ea4ac66b035b0be28b84106653198f3921ea15b6763e4ac2edbdf"
+        },
+        "m68k": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.17.13-20260228/6.17.13-m68k.tar.zst",
+            "sha256": "b004a9702176b3ae4a46af63462c203df20f8bbc455dea3a393bc3394673f324"
+        },
+        "mips": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.17.13-20260228/6.17.13-mips.tar.zst",
+            "sha256": "39cea5d5a4aec62eb6bbcbc9271471ef9182ef34e546c76a258ae48826a58bb5"
+        },
+        "openrisc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.17.13-20260228/6.17.13-openrisc.tar.zst",
+            "sha256": "0458d947bd4ce17059ac8905bd9232b9b19fcbbd95433b41580b0809b2ce9232"
+        },
+        "powerpc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.17.13-20260228/6.17.13-powerpc.tar.zst",
+            "sha256": "9a8333048ccc417219afe556fa36e076d15f90e20f6ffc9e88c4738882e58a18"
+        },
+        "riscv": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.17.13-20260228/6.17.13-riscv.tar.zst",
+            "sha256": "c995da93f1468e48e2397f8286a39b78331a1534b9f44e587b36ca44f3a80584"
+        },
+        "s390": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.17.13-20260228/6.17.13-s390.tar.zst",
+            "sha256": "b369240da49b7c94f7cd2510f014973b75d3c774eec6bc73c206375746e990bf"
+        },
+        "sh": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.17.13-20260228/6.17.13-sh.tar.zst",
+            "sha256": "8150432ac122fe98a8479f6bb787ac77dabe83471c4fb441626118a18ae95e98"
+        },
+        "sparc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.17.13-20260228/6.17.13-sparc.tar.zst",
+            "sha256": "98ac73159f7507c5f4fb8b6f2158ac1bc920378cca9ab1fa70667e59c1ef86f0"
+        },
+        "x86": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.17.13-20260228/6.17.13-x86.tar.zst",
+            "sha256": "2bb80502d70cadabd1efa0e0cd7ff826873fd787ab593f6394d6ada57248780a"
+        }
+    },
+    "6.12.74": {
+        "20260228": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.12.74-20260228/6.12.74-20260228.tar.zst",
+            "sha256": "984cd3cc57aceecacbe40c3ba16362cb2e50de0f480fc9122650ae0dd86ef077"
+        },
+        "alpha": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.12.74-20260228/6.12.74-alpha.tar.zst",
+            "sha256": "aa6812eacda6dbacf587717baa26422f262cc95458749c8ff1ffe28ea401b2f5"
+        },
+        "arc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.12.74-20260228/6.12.74-arc.tar.zst",
+            "sha256": "76b44313fa4670391190443f445a83830a6c9428d2ab387d1ee44d7296e91962"
+        },
+        "arm": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.12.74-20260228/6.12.74-arm.tar.zst",
+            "sha256": "75fb5c65eac81f8402b3411462c175c68f377ed0124d5dcbb37699ddbb4e5e5f"
+        },
+        "arm64": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.12.74-20260228/6.12.74-arm64.tar.zst",
+            "sha256": "f7974009611c0f405bcfa530cf9d04a567c00b980ef67f21024a95f6979cd83f"
+        },
+        "csky": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.12.74-20260228/6.12.74-csky.tar.zst",
+            "sha256": "a67a3a9d3fa24a5675804d946c2ac342b9b66d70acc0615d226d3ff4dccea07f"
+        },
+        "loongarch": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.12.74-20260228/6.12.74-loongarch.tar.zst",
+            "sha256": "5d385d02c32d43bf425eb259fa2080c85a9bcf2d727d17e6d59204ff38490653"
+        },
+        "m68k": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.12.74-20260228/6.12.74-m68k.tar.zst",
+            "sha256": "f8f4aee1e6f5b9e454dd6982be90f311d1eb4dfd15f225ea4e9245105bec43a1"
+        },
+        "mips": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.12.74-20260228/6.12.74-mips.tar.zst",
+            "sha256": "a0ee59420c657329c73f7374dffce4e051077a79e8a36b95019512552fab28ce"
+        },
+        "openrisc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.12.74-20260228/6.12.74-openrisc.tar.zst",
+            "sha256": "10aaecdb37202646a77220c0965a94997128c23249aa36d65e3d6f08a6a07cbd"
+        },
+        "powerpc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.12.74-20260228/6.12.74-powerpc.tar.zst",
+            "sha256": "f8946340de97e0562498642a7140cab8134c6a9490de4c57e3c8799efb1c40d7"
+        },
+        "riscv": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.12.74-20260228/6.12.74-riscv.tar.zst",
+            "sha256": "38c6f1cde9a0bbdbb4fcf4cdd429395caaabfc16d44fefebdff3e217ccc8800f"
+        },
+        "s390": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.12.74-20260228/6.12.74-s390.tar.zst",
+            "sha256": "8f364c06d3e40a2167d2be5d505ad7eacbb1fdb5e4eebb63d1a2a635dcd99d42"
+        },
+        "sh": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.12.74-20260228/6.12.74-sh.tar.zst",
+            "sha256": "4b2884b88ce1a97be2d36383b888387b7559d0e6583608e6afc1b29d9ffd360d"
+        },
+        "sparc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.12.74-20260228/6.12.74-sparc.tar.zst",
+            "sha256": "15ab7be13155e718b9734f9774d8d24cc10b60d85369869e79798351b7dfc556"
+        },
+        "x86": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.12.74-20260228/6.12.74-x86.tar.zst",
+            "sha256": "69e27275f1a90daf74772f72b09d345f1de6cfa30e5b13db9f08dc6d1ac8e3c7"
+        }
+    },
+    "6.6.127": {
+        "20260228": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.6.127-20260228/6.6.127-20260228.tar.zst",
+            "sha256": "24eee0e155ac675792d568b7a3728d4d2440f91244028f5778d8bf96e8e2ebe5"
+        },
+        "alpha": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.6.127-20260228/6.6.127-alpha.tar.zst",
+            "sha256": "0f0e3c7d28c31820fa62b7753da8534b54c6337f030d9fd69d975932c0bf4dc6"
+        },
+        "arc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.6.127-20260228/6.6.127-arc.tar.zst",
+            "sha256": "ee2d7cd4c65c4e50525df9db12b5df7a2d09647f5f4b3bd529fc7e5e640f93d2"
+        },
+        "arm": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.6.127-20260228/6.6.127-arm.tar.zst",
+            "sha256": "5e412634dd062911915ee104c019e967af1aa30dc862dc1fbb9a9db3b20c378b"
+        },
+        "arm64": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.6.127-20260228/6.6.127-arm64.tar.zst",
+            "sha256": "5ffdf3ce9d934d1a064957bf37e69fe84f24dfe82f8fd8c97c2753a60475f04e"
+        },
+        "csky": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.6.127-20260228/6.6.127-csky.tar.zst",
+            "sha256": "7580f3a55e25d6a756b6beb4ed684dec05507c297c7c048964792761e5f02e02"
+        },
+        "loongarch": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.6.127-20260228/6.6.127-loongarch.tar.zst",
+            "sha256": "60a1f85f862795659c1e544cc7ab004af0939c066c0356334f5f40067766ae58"
+        },
+        "m68k": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.6.127-20260228/6.6.127-m68k.tar.zst",
+            "sha256": "30dcd14c60b060dfe21e7fb484068ac01083ecfd28059910c931866686ec59d4"
+        },
+        "mips": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.6.127-20260228/6.6.127-mips.tar.zst",
+            "sha256": "e80c7f687d0ec66e2b82ea2d0015b551ef8809420bab8418c9aae932a5904072"
+        },
+        "openrisc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.6.127-20260228/6.6.127-openrisc.tar.zst",
+            "sha256": "84f35004499b5a7e9d24fd513499c9c9fb2d89ae328ca8353f74d351a3820e37"
+        },
+        "powerpc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.6.127-20260228/6.6.127-powerpc.tar.zst",
+            "sha256": "57fa823a59f8f88306273c5c3d5e486c0fe32474bc4afa01bb9a92da9aab7aa8"
+        },
+        "riscv": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.6.127-20260228/6.6.127-riscv.tar.zst",
+            "sha256": "c4bb7a37ce5167a67b706fbfafb7f99b78afdd48497d086eafe5805deb3b3b69"
+        },
+        "s390": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.6.127-20260228/6.6.127-s390.tar.zst",
+            "sha256": "03d6985932e889fa0261916bc86f6c189208300a8589e967d5d1899a28c45ea3"
+        },
+        "sh": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.6.127-20260228/6.6.127-sh.tar.zst",
+            "sha256": "9d7cdabaf929b92eb107b617b1ce16d0543cfd1e26db4386826bea7b35d19646"
+        },
+        "sparc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.6.127-20260228/6.6.127-sparc.tar.zst",
+            "sha256": "980e34df14551a97cc6b4678292666c3e60b8eca31333f2f3f373f17df5919d7"
+        },
+        "x86": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.6.127-20260228/6.6.127-x86.tar.zst",
+            "sha256": "f98e69ec28ce643a709af7fcd29e6ebfb19d2e09b3f9ab6ec1a1f727db085c2f"
+        }
+    },
+    "6.1.164": {
+        "20260228": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.1.164-20260228/6.1.164-20260228.tar.zst",
+            "sha256": "cc8d952b5cda208131dfbcd6133a38e30534d38ee34974b4976db43470651520"
+        },
+        "alpha": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.1.164-20260228/6.1.164-alpha.tar.zst",
+            "sha256": "793ecb456f12549644679c42cfc37453eb341d82f687926690a7e92ea56f9738"
+        },
+        "arc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.1.164-20260228/6.1.164-arc.tar.zst",
+            "sha256": "8e4b0b3177d98e468eb5b15aa00690c872cefc6c2f41429739f7b889d6569a17"
+        },
+        "arm": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.1.164-20260228/6.1.164-arm.tar.zst",
+            "sha256": "240f26d5298da3bdb0e4d8d1160fd815fbe417cc6882c44e84d5ac23f7da8535"
+        },
+        "arm64": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.1.164-20260228/6.1.164-arm64.tar.zst",
+            "sha256": "b06a3c0fc209dd5a74de24549b660b9f8f4a93c4304c69a56670c46eb9abce6f"
+        },
+        "csky": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.1.164-20260228/6.1.164-csky.tar.zst",
+            "sha256": "d21a970bb3b1afd9d77cba0da45096afb3af68154323ef86597c8effe85d958b"
+        },
+        "loongarch": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.1.164-20260228/6.1.164-loongarch.tar.zst",
+            "sha256": "ca0a32948cfb64365fb23b2cb318b3089f1fcfa1ea5752e05e1f8769dd408fe3"
+        },
+        "m68k": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.1.164-20260228/6.1.164-m68k.tar.zst",
+            "sha256": "c789a270359c750f4450285d3afa6218d955fc9da6ada7e025345b6d5e558fb0"
+        },
+        "mips": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.1.164-20260228/6.1.164-mips.tar.zst",
+            "sha256": "516a3e0c3906014f2b7e4f7525dc0746bf7e1157ae60f3156e047d4d106a7c4c"
+        },
+        "openrisc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.1.164-20260228/6.1.164-openrisc.tar.zst",
+            "sha256": "91deef4c8ae64b2b3fd0843f03a39e8768db8fb8fa1ee34c35a72b54c94cbead"
+        },
+        "powerpc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.1.164-20260228/6.1.164-powerpc.tar.zst",
+            "sha256": "77fc2fc5faba6d7e3535de58d3d8cc57e18168b3bdb6143c603b92d8a36704c1"
+        },
+        "riscv": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.1.164-20260228/6.1.164-riscv.tar.zst",
+            "sha256": "9165777c8310d43e26f53de3b8e1bda9b2e5fcd1c75bd8dd52ca1f65499fc329"
+        },
+        "s390": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.1.164-20260228/6.1.164-s390.tar.zst",
+            "sha256": "2d371ba07201caa14e1198621ec34837c20a211cf8367e9b4e144124f3680024"
+        },
+        "sh": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.1.164-20260228/6.1.164-sh.tar.zst",
+            "sha256": "dc0d40148bd4791030fc1e44d52ca667db0a0f83986fefbee9e13297ad2357b3"
+        },
+        "sparc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.1.164-20260228/6.1.164-sparc.tar.zst",
+            "sha256": "ebf471dac4c588d1bae11af2059a5640edc839103826a99d3502bd6992079898"
+        },
+        "x86": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/6.1.164-20260228/6.1.164-x86.tar.zst",
+            "sha256": "1ad06ad6bd99e9b611455b5db88ba50ad773faffaf596e1bb640aa1d3cf9a5c5"
+        }
+    },
+    "5.15.201": {
+        "20260228": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.15.201-20260228/5.15.201-20260228.tar.zst",
+            "sha256": "a6d66257130578e41568152a50af88e8d72b5b56f9dd2ccf7471b42ccee657b6"
+        },
+        "alpha": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.15.201-20260228/5.15.201-alpha.tar.zst",
+            "sha256": "8484d3230ed8bbb17135a9d073fd7af5a9dd4f6ddac082c87380f2ecd3860ef5"
+        },
+        "arc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.15.201-20260228/5.15.201-arc.tar.zst",
+            "sha256": "6daddb0f4592e91898ed4b034ad3c101145caed397d5ab1299fe7bf8bbfd61b6"
+        },
+        "arm": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.15.201-20260228/5.15.201-arm.tar.zst",
+            "sha256": "db262bb77885d0783b113428097819dac2d8606bb4f540115274073485aca760"
+        },
+        "arm64": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.15.201-20260228/5.15.201-arm64.tar.zst",
+            "sha256": "2686fdb08ff4c8836913a35851cba1a5c438ebd820af32de6b420bbda865ee4d"
+        },
+        "csky": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.15.201-20260228/5.15.201-csky.tar.zst",
+            "sha256": "8e29368237e1eb37282bc8b5ce7edf10868b11225f48c1ff4cf2198c90a539ac"
+        },
+        "m68k": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.15.201-20260228/5.15.201-m68k.tar.zst",
+            "sha256": "348f90e34133ca01ec80ebc6ffbb71146e4c16712227d95ebd99334f6deb3165"
+        },
+        "mips": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.15.201-20260228/5.15.201-mips.tar.zst",
+            "sha256": "80097c89e8452fa6edb29e058461c866dc3f5403e3e82fea4bc4f71d63c51550"
+        },
+        "openrisc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.15.201-20260228/5.15.201-openrisc.tar.zst",
+            "sha256": "7e2e533816ceedba030cc7162fde8c3839d413c87857da87a48e61bd5dcd2ac1"
+        },
+        "powerpc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.15.201-20260228/5.15.201-powerpc.tar.zst",
+            "sha256": "3cfda2de40db2d748989f4350b3d6af2d640b50daf0c6d52c0376a5aab60aa34"
+        },
+        "riscv": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.15.201-20260228/5.15.201-riscv.tar.zst",
+            "sha256": "0357cc79665a6c3f0eb80ec60cfebe1b3f3b2f6cfedd48e0d2d4bb68074bfbb8"
+        },
+        "s390": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.15.201-20260228/5.15.201-s390.tar.zst",
+            "sha256": "877603f0a92473ab3b84d15bacea12787231c3b4be7deb44207056f72a594848"
+        },
+        "sh": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.15.201-20260228/5.15.201-sh.tar.zst",
+            "sha256": "f54ac8138ee41797e5d31041d267c82fa4ce69772e5051b76aea5eb891f3b328"
+        },
+        "sparc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.15.201-20260228/5.15.201-sparc.tar.zst",
+            "sha256": "f46fd0e792a549497fd3f4043ef8be040bdb03d4842c5ebcac5f39bd1a9e1176"
+        },
+        "x86": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.15.201-20260228/5.15.201-x86.tar.zst",
+            "sha256": "10b720b0fbaf09eb5c03c52494e2369985873a3b33891d547dc4c21d496c82e2"
+        }
+    },
+    "5.10.251": {
+        "20260228": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.10.251-20260228/5.10.251-20260228.tar.zst",
+            "sha256": "5398a6f28d415a5a9f0f0708801589df0a9ca82cf8b4e50402948a241b99df17"
+        },
+        "alpha": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.10.251-20260228/5.10.251-alpha.tar.zst",
+            "sha256": "ba1b1532bd747b9a61c4d8c5e9f1c89b0a41563f7f3fd550163caee96cd0db3a"
+        },
+        "arc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.10.251-20260228/5.10.251-arc.tar.zst",
+            "sha256": "8cf4549ce1f9ec07ecf47c73f88e7c49da9513d4842494af7faa75eb0ba18baa"
+        },
+        "arm": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.10.251-20260228/5.10.251-arm.tar.zst",
+            "sha256": "b8f0a025975228643d8e8913d41729f73888ca87f617324c1e1c6dd4008298b5"
+        },
+        "arm64": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.10.251-20260228/5.10.251-arm64.tar.zst",
+            "sha256": "0de9a6ad83355eaa758959ce2e045c2d3bc3dbc6324f175c4646bf13a9650599"
+        },
+        "csky": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.10.251-20260228/5.10.251-csky.tar.zst",
+            "sha256": "69eb3684f5719a71d20ff5d31b3aef2e2019ced402d806b4cc6d6c911bba808d"
+        },
+        "m68k": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.10.251-20260228/5.10.251-m68k.tar.zst",
+            "sha256": "bdadc25ce819ae1c95246bcc68fea2bfe0ae0f8b77a2adaf2bbeca737eb58786"
+        },
+        "mips": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.10.251-20260228/5.10.251-mips.tar.zst",
+            "sha256": "ac9b7db4fb22b017a004aeb6c2eb36233f9b352890b4d22a2eb97f782d009235"
+        },
+        "openrisc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.10.251-20260228/5.10.251-openrisc.tar.zst",
+            "sha256": "7303739b83af93dfee6ee0b1ec6a34dcbc9c8675909f2c4143f76e7ce8fec928"
+        },
+        "powerpc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.10.251-20260228/5.10.251-powerpc.tar.zst",
+            "sha256": "6aff5606df5004c30e0fb266e42724cee8d2b3cae097a6f51b40905c2c80317d"
+        },
+        "riscv": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.10.251-20260228/5.10.251-riscv.tar.zst",
+            "sha256": "639d6cb2ef6e4565b8e5823d666f946b1218eaaa7df249164a17235fb98019e1"
+        },
+        "s390": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.10.251-20260228/5.10.251-s390.tar.zst",
+            "sha256": "3bbbda222c39b2934710748d8ccc0b1a40e6de24f9403f59ab03169ba6b0b87e"
+        },
+        "sh": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.10.251-20260228/5.10.251-sh.tar.zst",
+            "sha256": "26b9d47a899853757e90d3364d5a16e185a8d7d7abcd243565d5d7cc97ee8d66"
+        },
+        "sparc": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.10.251-20260228/5.10.251-sparc.tar.zst",
+            "sha256": "7940730057681c47d4d05f43919198ce01f57a61f4ef146d0f2aa70f952fb832"
+        },
+        "x86": {
+            "url": "https://github.com/cerisier/kernel-headers/releases/download/5.10.251-20260228/5.10.251-x86.tar.zst",
+            "sha256": "82035bfabc8594a05cf3bfe0d94cbeea0a56dde65dcac52e34efee98518e2735"
+        }
+    },
     "6.16.12": {
         "20251210": {
             "url": "https://github.com/cerisier/kernel-headers/releases/download/6.16.12-20251210/6.16.12-20251210.tar.zst",
