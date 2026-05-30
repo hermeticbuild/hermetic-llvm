@@ -27,6 +27,7 @@ bzl_library(
         "//constraints/kernel/linux:linux_kernel_versions",
         "//constraints/libc:libc_versions",
         "//platforms:common",
+        "@kernel_headers//:linux_kernel_version_map",
     ],
 )
 
