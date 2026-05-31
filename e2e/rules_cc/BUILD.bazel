@@ -275,7 +275,10 @@ cc_binary(
 cc_binary(
     name = "main_dsym",
     srcs = ["main.cc"],
-    features = ["generate_dsym_file"],
+    features = [
+        "generate_dsym_file",
+        "strip_debug_symbols",
+    ],
     target_compatible_with = select({
         "@platforms//os:macos": [],
         "//conditions:default": ["@platforms//:incompatible"],

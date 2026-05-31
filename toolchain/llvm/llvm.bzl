@@ -31,6 +31,11 @@ def declare_llvm_targets(*, suffix = ""):
         srcs = ["bin/dsymutil" + suffix],
     )
 
+    native.filegroup(
+        name = "strip_file",
+        srcs = ["bin/llvm-strip" + suffix],
+    )
+
     cc_args(
         name = "header_parser_args",
         actions = [
@@ -179,14 +184,17 @@ def declare_llvm_targets(*, suffix = ""):
         data = [
             ":clangxx_file",
             ":dsymutil_file",
+            ":strip_file",
         ],
         env = {
             "LLVM_CLANGXX": "{clangxx}",
             "LLVM_DSYMUTIL": "{dsymutil}",
+            "LLVM_STRIP": "{strip}",
         },
         format = {
             "clangxx": ":clangxx_file",
             "dsymutil": ":dsymutil_file",
+            "strip": ":strip_file",
         },
         visibility = ["//visibility:public"],
     )
@@ -228,6 +236,7 @@ def declare_llvm_targets(*, suffix = ""):
         data = [
             ":clangxx_file",
             ":dsymutil_file",
+            ":strip_file",
             "bin/ld.lld" + suffix,
             "bin/ld64.lld" + suffix,
             "bin/lld" + suffix,

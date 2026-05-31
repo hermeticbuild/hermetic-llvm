@@ -203,14 +203,17 @@ def declare_tool_map(exec_os, exec_cpu):
         data = [
             prefix + "/bin/clang++",
             prefix + "/bin/dsymutil",
+            prefix + "/bin/llvm-strip",
         ],
         env = {
             "LLVM_CLANGXX": "{clangxx}",
             "LLVM_DSYMUTIL": "{dsymutil}",
+            "LLVM_STRIP": "{strip}",
         },
         format = {
             "clangxx": prefix + "/bin/clang++",
             "dsymutil": prefix + "/bin/dsymutil",
+            "strip": prefix + "/bin/llvm-strip",
         },
     )
 
@@ -255,6 +258,7 @@ def declare_tool_map(exec_os, exec_cpu):
         data = [
             prefix + "/bin/clang++",
             prefix + "/bin/dsymutil",
+            prefix + "/bin/llvm-strip",
             prefix + "/bin/ld.lld",
             prefix + "/bin/ld64.lld",
             prefix + "/bin/lld",
