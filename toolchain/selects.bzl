@@ -54,6 +54,12 @@ def static_library_validator_arg(exec_os, exec_cpu):
     # a singleton tool and this per-toolchain args target can be cleaned up.
     return _tool_repo(exec_os, exec_cpu) + ":static_library_validator_args"
 
+def link_wrapper_arg(exec_os, exec_cpu):
+    return select({
+        "@llvm//toolchain:macos_complete": [_tool_repo(exec_os, exec_cpu) + ":link_wrapper_args"],
+        "//conditions:default": [],
+    })
+
 def platform_cc_tool_map(exec_os, exec_cpu):
     tool_repo = _tool_repo(exec_os, exec_cpu)
 
@@ -62,6 +68,8 @@ def platform_cc_tool_map(exec_os, exec_cpu):
     # point at further aliases that use `select`, those will resolve according to the exec platform.
     # See https://github.com/bazelbuild/bazel/issues/27623#issuecomment-3529439585 for more details.
     return select({
+        "@llvm//toolchain:macos_complete_with_libtool": tool_repo + ":tools_with_dsym_and_libtool",
+        "@llvm//toolchain:macos_complete": tool_repo + ":tools_with_dsym",
         "@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_macos_setting": tool_repo + ":tools_with_libtool",
         "//conditions:default": tool_repo + ":default_tools",
     })

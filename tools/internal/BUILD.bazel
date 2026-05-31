@@ -1,4 +1,5 @@
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("//toolchain:exec_stage0_binary.bzl", "exec_stage1_hosted_binary")
 
 cc_binary(
     name = "header-parser",
@@ -9,5 +10,12 @@ cc_binary(
 cc_binary(
     name = "static-library-validator",
     srcs = ["static_library_validator.cc"],
+    visibility = ["//visibility:public"],
+)
+
+exec_stage1_hosted_binary(
+    name = "link-wrapper",
+    srcs = ["link_wrapper.c"],
+    features = ["-generate_dsym_file"],
     visibility = ["//visibility:public"],
 )

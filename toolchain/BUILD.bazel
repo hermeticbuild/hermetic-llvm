@@ -89,6 +89,29 @@ config_setting(
 )
 
 config_setting(
+    name = "macos_complete",
+    constraint_values = [
+        "@platforms//os:macos",
+    ],
+    flag_values = {
+        ":runtime_stage": "complete",
+    },
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "macos_complete_with_libtool",
+    constraint_values = [
+        "@platforms//os:macos",
+    ],
+    flag_values = {
+        ":runtime_stage": "complete",
+        "@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_macos": "true",
+    },
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
     name = "prebuilt_toolchain",
     flag_values = {
         ":source": "prebuilt",

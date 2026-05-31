@@ -17,6 +17,11 @@ def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
                 "@rules_cc//cc/toolchains/args/thin_lto:feature",
             ],
             "//conditions:default": [],
+        }) + select({
+            "@llvm//toolchain:macos_complete": [
+                "@llvm//toolchain/features:generate_dsym_file",
+            ],
+            "//conditions:default": [],
         }) + [
             # Those features are enabled internally by --compilation_mode flags family.
             # We add them to the list of known_features but not in the list of enabled_features.

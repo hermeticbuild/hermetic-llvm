@@ -156,6 +156,39 @@ cc_feature(
     feature_name = "parse_headers",
 )
 
+cc_args(
+    name = "generate_dsym_file_compile_args",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:compile_actions",
+    ],
+    args = ["-g"],
+)
+
+cc_args(
+    name = "generate_dsym_file_link_args",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    env = {
+        "LLVM_DSYM_PATH": "{dsym_path}",
+        "LLVM_LINK_OUTPUT": "{output_execpath}",
+    },
+    format = {
+        "dsym_path": "@rules_cc//cc/toolchains/variables:dsym_path",
+        "output_execpath": "@rules_cc//cc/toolchains/variables:output_execpath",
+    },
+    requires_not_none = "@rules_cc//cc/toolchains/variables:dsym_path",
+)
+
+cc_feature(
+    name = "generate_dsym_file",
+    args = [
+        ":generate_dsym_file_compile_args",
+        ":generate_dsym_file_link_args",
+    ],
+    overrides = "@rules_cc//cc/toolchains/features/legacy:generate_dsym_file",
+)
+
 # TODO: Remove after https://github.com/bazelbuild/rules_cc/pull/385
 cc_feature(
     name = "coverage_stub",

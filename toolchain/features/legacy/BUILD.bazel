@@ -1,6 +1,7 @@
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 load("@rules_cc//cc/toolchains:feature.bzl", "cc_feature")
 load("@rules_cc//cc/toolchains:feature_set.bzl", "cc_feature_set")
+load("@rules_cc//cc/toolchains:nested_args.bzl", "cc_nested_args")
 
 cc_args(
     name = "legacy_default_cxx_compile_flags",
@@ -53,6 +54,31 @@ cc_feature(
     visibility = ["//visibility:public"],
 )
 
+cc_nested_args(
+    name = "strip_debug_symbols_when_no_dsym",
+    args = ["-Wl,-S"],
+    requires_none = "@rules_cc//cc/toolchains/variables:dsym_path",
+)
+
+cc_args(
+    name = "strip_debug_symbols_args",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    nested = [
+        ":strip_debug_symbols_when_no_dsym",
+    ],
+    requires_not_none = "@rules_cc//cc/toolchains/variables:strip_debug_symbols",
+)
+
+cc_feature(
+    name = "strip_debug_symbols",
+    args = [
+        ":strip_debug_symbols_args",
+    ],
+    overrides = "@rules_cc//cc/toolchains/features/legacy:strip_debug_symbols",
+)
+
 cc_feature(
     name = "no_legacy_features",
     feature_name = "no_legacy_features",
@@ -87,7 +113,7 @@ cc_feature_set(
         "@rules_cc//cc/toolchains/args/random_seed:feature",
         "@rules_cc//cc/toolchains/args/runtime_library_search_directories:feature",
         "@rules_cc//cc/toolchains/args/shared_flag:feature",
-        "@rules_cc//cc/toolchains/args/strip_debug_symbols:feature",
+        ":strip_debug_symbols",
         "@rules_cc//cc/toolchains/args/strip_flags:feature",
         "@rules_cc//cc/toolchains/args/objc_arc_flags:feature",
         # Inlined below as it isn't visible and also has an issue upstream.

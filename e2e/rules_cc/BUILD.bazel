@@ -272,6 +272,36 @@ cc_binary(
     }),
 )
 
+cc_binary(
+    name = "main_dsym",
+    srcs = ["main.cc"],
+    features = ["generate_dsym_file"],
+    target_compatible_with = select({
+        "@platforms//os:macos": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)
+
+filegroup(
+    name = "main_dsym_bundle",
+    srcs = [":main_dsym"],
+    output_group = "dsyms",
+)
+
+sh_test(
+    name = "dsym_output_test",
+    srcs = ["dsym_output_test.sh"],
+    data = [":main_dsym_bundle"],
+    env = {
+        "DSYM_BUNDLE": "$(rootpath :main_dsym_bundle)",
+        "DWARF_FILE": "main_dsym",
+    },
+    target_compatible_with = select({
+        "@platforms//os:macos": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)
+
 # TODO(zbarsky): Turn more of this into a macro once we have more sanitizers?
 ubsan_cc_binary(
     name = "ubsan_fail",

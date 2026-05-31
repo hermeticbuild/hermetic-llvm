@@ -26,6 +26,11 @@ def declare_llvm_targets(*, suffix = ""):
         srcs = ["bin/clang++" + suffix],
     )
 
+    native.filegroup(
+        name = "dsymutil_file",
+        srcs = ["bin/dsymutil" + suffix],
+    )
+
     cc_args(
         name = "header_parser_args",
         actions = [
@@ -130,6 +135,10 @@ def declare_llvm_targets(*, suffix = ""):
         "@rules_cc//cc/toolchains/actions:strip": ":llvm-strip",
     } | _VALIDATE_STATIC_LIBRARY_TOOL
 
+    COMMON_TOOLS_WITH_DSYM = COMMON_TOOLS | {
+        "@rules_cc//cc/toolchains/actions:link_actions": ":link-wrapper",
+    }
+
     cc_tool_map(
         name = "default_tools",
         tools = COMMON_TOOLS | {
@@ -142,6 +151,42 @@ def declare_llvm_targets(*, suffix = ""):
         name = "tools_with_libtool",
         tools = COMMON_TOOLS | {
             "@rules_cc//cc/toolchains/actions:ar_actions": ":llvm-libtool-darwin",
+        },
+        visibility = ["//visibility:public"],
+    )
+
+    cc_tool_map(
+        name = "tools_with_dsym",
+        tools = COMMON_TOOLS_WITH_DSYM | {
+            "@rules_cc//cc/toolchains/actions:ar_actions": ":llvm-ar",
+        },
+        visibility = ["//visibility:public"],
+    )
+
+    cc_tool_map(
+        name = "tools_with_dsym_and_libtool",
+        tools = COMMON_TOOLS_WITH_DSYM | {
+            "@rules_cc//cc/toolchains/actions:ar_actions": ":llvm-libtool-darwin",
+        },
+        visibility = ["//visibility:public"],
+    )
+
+    cc_args(
+        name = "link_wrapper_args",
+        actions = [
+            "@rules_cc//cc/toolchains/actions:link_actions",
+        ],
+        data = [
+            ":clangxx_file",
+            ":dsymutil_file",
+        ],
+        env = {
+            "LLVM_CLANGXX": "{clangxx}",
+            "LLVM_DSYMUTIL": "{dsymutil}",
+        },
+        format = {
+            "clangxx": ":clangxx_file",
+            "dsymutil": ":dsymutil_file",
         },
         visibility = ["//visibility:public"],
     )
@@ -170,6 +215,19 @@ def declare_llvm_targets(*, suffix = ""):
         name = "lld",
         src = "bin/clang++" + suffix,
         data = [
+            "bin/ld.lld" + suffix,
+            "bin/ld64.lld" + suffix,
+            "bin/lld" + suffix,
+            "bin/wasm-ld" + suffix,
+        ],
+    )
+
+    cc_tool(
+        name = "link-wrapper",
+        src = "@llvm//tools/internal:link-wrapper",
+        data = [
+            ":clangxx_file",
+            ":dsymutil_file",
             "bin/ld.lld" + suffix,
             "bin/ld64.lld" + suffix,
             "bin/lld" + suffix,

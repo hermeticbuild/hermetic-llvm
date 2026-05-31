@@ -38,6 +38,10 @@ def declare_tool_map(exec_os, exec_cpu):
         "@rules_cc//cc/toolchains/actions:strip": prefix + "/llvm-strip",
     } | _validate_static_library_tool(prefix)
 
+    COMMON_TOOLS_WITH_DSYM = COMMON_TOOLS | {
+        "@rules_cc//cc/toolchains/actions:link_actions": prefix + "/link-wrapper",
+    }
+
     cc_tool_map(
         name = prefix + "/default_tools",
         tools = COMMON_TOOLS | {
@@ -48,6 +52,20 @@ def declare_tool_map(exec_os, exec_cpu):
     cc_tool_map(
         name = prefix + "/tools_with_libtool",
         tools = COMMON_TOOLS | {
+            "@rules_cc//cc/toolchains/actions:ar_actions": prefix + "/llvm-libtool-darwin",
+        },
+    )
+
+    cc_tool_map(
+        name = prefix + "/tools_with_dsym",
+        tools = COMMON_TOOLS_WITH_DSYM | {
+            "@rules_cc//cc/toolchains/actions:ar_actions": prefix + "/llvm-ar",
+        },
+    )
+
+    cc_tool_map(
+        name = prefix + "/tools_with_dsym_and_libtool",
+        tools = COMMON_TOOLS_WITH_DSYM | {
             "@rules_cc//cc/toolchains/actions:ar_actions": prefix + "/llvm-libtool-darwin",
         },
     )
@@ -143,6 +161,12 @@ def declare_tool_map(exec_os, exec_cpu):
         actual = "@llvm-project//llvm:llvm.stripped",
     )
 
+    bootstrap_binary(
+        name = prefix + "/bin/dsymutil",
+        platform = prefix + "_platform",
+        actual = "@llvm-project//llvm:llvm.stripped",
+    )
+
     cc_args(
         name = prefix + "/static-library-validator-args",
         actions = [
@@ -169,6 +193,25 @@ def declare_tool_map(exec_os, exec_cpu):
             prefix + "/bin/c++filt",
             prefix + "/bin/llvm-nm",
         ],
+    )
+
+    cc_args(
+        name = prefix + "/link-wrapper-args",
+        actions = [
+            "@rules_cc//cc/toolchains/actions:link_actions",
+        ],
+        data = [
+            prefix + "/bin/clang++",
+            prefix + "/bin/dsymutil",
+        ],
+        env = {
+            "LLVM_CLANGXX": "{clangxx}",
+            "LLVM_DSYMUTIL": "{dsymutil}",
+        },
+        format = {
+            "clangxx": prefix + "/bin/clang++",
+            "dsymutil": prefix + "/bin/dsymutil",
+        },
     )
 
     bootstrap_binary(
@@ -199,6 +242,19 @@ def declare_tool_map(exec_os, exec_cpu):
         name = prefix + "/lld",
         src = prefix + "/bin/clang++",
         data = [
+            prefix + "/bin/ld.lld",
+            prefix + "/bin/ld64.lld",
+            prefix + "/bin/lld",
+            prefix + "/bin/wasm-ld",
+        ],
+    )
+
+    cc_tool(
+        name = prefix + "/link-wrapper",
+        src = "@llvm//tools/internal:link-wrapper",
+        data = [
+            prefix + "/bin/clang++",
+            prefix + "/bin/dsymutil",
             prefix + "/bin/ld.lld",
             prefix + "/bin/ld64.lld",
             prefix + "/bin/lld",
@@ -299,13 +355,20 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
         cc_toolchain(
             name = cc_toolchain_name,
             tool_map = select({
+                "@llvm//toolchain:macos_complete_with_libtool": ":{}_{}/tools_with_dsym_and_libtool".format(exec_os, exec_cpu),
+                "@llvm//toolchain:macos_complete": ":{}_{}/tools_with_dsym".format(exec_os, exec_cpu),
                 "@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_macos_setting": ":{}_{}/tools_with_libtool".format(exec_os, exec_cpu),
                 "//conditions:default": ":{}_{}/default_tools".format(exec_os, exec_cpu),
             }),
             extra_args = [
                 ":{}_{}/header-parser-args".format(exec_os, exec_cpu),
                 ":{}_{}/static-library-validator-args".format(exec_os, exec_cpu),
-            ],
+            ] + select({
+                "@llvm//toolchain:macos_complete": [
+                    ":{}_{}/link-wrapper-args".format(exec_os, exec_cpu),
+                ],
+                "//conditions:default": [],
+            }),
         )
 
         for (target_os, target_cpu) in targets:

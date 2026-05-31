@@ -7,3 +7,9 @@ _exec_stage0_binary_builder = with_cfg(
 )
 
 exec_stage0_binary, _exec_stage0_binary_internal = configure_builder_for_runtimes(_exec_stage0_binary_builder, "stage0").build()
+
+_exec_stage1_hosted_binary_builder = with_cfg(
+    cc_binary,
+)
+
+exec_stage1_hosted_binary, _exec_stage1_hosted_binary_internal = configure_builder_for_runtimes(_exec_stage1_hosted_binary_builder, "stage1_hosted").build()
