@@ -286,9 +286,15 @@ cc_binary(
 )
 
 filegroup(
-    name = "main_dsym_bundle",
+    name = "main_dsym_bundle_",
     srcs = [":main_dsym"],
     output_group = "dsyms",
+)
+
+platform_transition_filegroup(
+    name = "main_dsym_bundle",
+    srcs = [":main_dsym_bundle_"],
+    target_platform = "@llvm//platforms:macos_aarch64",
 )
 
 sh_test(
@@ -299,10 +305,6 @@ sh_test(
         "DSYM_BUNDLE": "$(rootpath :main_dsym_bundle)",
         "DWARF_FILE": "main_dsym",
     },
-    target_compatible_with = select({
-        "@platforms//os:macos": [],
-        "//conditions:default": ["@platforms//:incompatible"],
-    }),
 )
 
 # TODO(zbarsky): Turn more of this into a macro once we have more sanitizers?
