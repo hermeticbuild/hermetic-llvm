@@ -1,4 +1,9 @@
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load(
+    ":linker_contracts.bzl",
+    "linker_contract_from_cc_toolchain",
+)
 
 cc_binary(
     name = "header-parser",
@@ -9,5 +14,134 @@ cc_binary(
 cc_binary(
     name = "static-library-validator",
     srcs = ["static_library_validator.cc"],
+    visibility = ["//visibility:public"],
+)
+
+linker_contract_from_cc_toolchain(
+    name = "linker_contract",
+    out = "linker_contract.txt",
+)
+
+alias(
+    name = "linker_backend_tool",
+    actual = select({
+        "//platforms/config:macos_aarch64": "//tools:ld64.lld",
+        "//platforms/config:linux_x86_64": "//tools:ld.lld",
+        "//platforms/config:linux_aarch64": "//tools:ld.lld",
+    }),
+    visibility = ["//visibility:private"],
+)
+
+genrule(
+    name = "linker_wrapper_config",
+    outs = ["linker_wrapper_config.cc"],
+    cmd = "\n".join([
+        "LINKER_BACKEND_BASENAME=$$(basename $(location :linker_backend_tool))",
+        "cat > $@ <<CONFIG",
+        "#include \"tools/internal/linker_wrapper_config.h\"",
+        "",
+        "namespace llvm {",
+        "",
+        "const char* kLinkerWrapperLinkerToolRlocation = \"$(rlocationpath //tools:clang++)\";",
+        "const char* kLinkerWrapperLinkerBackendBasename = \"$${LINKER_BACKEND_BASENAME}\";",
+        "const char* kLinkerWrapperContractRlocation = \"$(rlocationpath :linker_contract)\";",
+        "const char* kLinkerWrapperLibcxxSearchDirectoryRlocation = \"$(rlocationpath //runtimes/libcxx:libcxx_library_search_directory)\";",
+        "const char* kLinkerWrapperLibunwindSearchDirectoryRlocation = \"$(rlocationpath //runtimes/libunwind:libunwind_library_search_directory)\";",
+        "",
+        "}  // namespace llvm",
+        "CONFIG",
+    ]),
+    tools = [
+        "//runtimes/libcxx:libcxx_library_search_directory",
+        "//runtimes/libunwind:libunwind_library_search_directory",
+        "//tools:clang++",
+        ":linker_backend_tool",
+        ":linker_contract",
+    ],
+)
+
+cc_library(
+    name = "linker_wrapper_config_header",
+    hdrs = ["linker_wrapper_config.h"],
+    visibility = ["//visibility:private"],
+)
+
+cc_binary(
+    name = "linker-wrapper-macos-aarch64",
+    srcs = [
+        "linker_wrapper.cc",
+        ":linker_wrapper_config",
+    ],
+    data = [
+        "//runtimes:resource_directory",
+        "//runtimes/libcxx:libcxx_library_search_directory",
+        "//runtimes/libunwind:libunwind_library_search_directory",
+        "//tools:clang++",
+        "@macos_sdk//sysroot:sysroot_files",
+        "@compiler-rt//:clang_rt.builtins.static",
+        ":linker_contract",
+    ],
+    deps = [
+        ":linker_wrapper_config_header",
+        "@bazel_tools//tools/cpp/runfiles",
+    ],
+    target_compatible_with = [
+        "@platforms//os:macos",
+        "@platforms//cpu:aarch64",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+cc_binary(
+    name = "linker-wrapper-linux-x86_64",
+    srcs = [
+        "linker_wrapper.cc",
+        ":linker_wrapper_config",
+    ],
+    data = [
+        "//runtimes:crt_objects_directory",
+        "//runtimes/libcxx:libcxx_library_search_directory",
+        "//runtimes/libunwind:libunwind_library_search_directory",
+        "//runtimes/glibc:glibc_library_search_directory",
+        "//runtimes:resource_directory",
+        "//tools:clang++",
+        "@compiler-rt//:clang_rt.builtins.static",
+        ":linker_contract",
+    ],
+    deps = [
+        ":linker_wrapper_config_header",
+        "@bazel_tools//tools/cpp/runfiles",
+    ],
+    target_compatible_with = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+cc_binary(
+    name = "linker-wrapper-linux-aarch64",
+    srcs = [
+        "linker_wrapper.cc",
+        ":linker_wrapper_config",
+    ],
+    data = [
+        "//runtimes:crt_objects_directory",
+        "//runtimes/libcxx:libcxx_library_search_directory",
+        "//runtimes/libunwind:libunwind_library_search_directory",
+        "//runtimes/glibc:glibc_library_search_directory",
+        "//runtimes:resource_directory",
+        "//tools:clang++",
+        "@compiler-rt//:clang_rt.builtins.static",
+        ":linker_contract",
+    ],
+    deps = [
+        ":linker_wrapper_config_header",
+        "@bazel_tools//tools/cpp/runfiles",
+    ],
+    target_compatible_with = [
+        "@platforms//os:linux",
+        "@platforms//cpu:aarch64",
+    ],
     visibility = ["//visibility:public"],
 )

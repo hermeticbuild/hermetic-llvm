@@ -204,6 +204,7 @@ def declare_tool_map(exec_os, exec_cpu):
             prefix + "/bin/lld",
             prefix + "/bin/wasm-ld",
         ],
+        visibility = ["//visibility:public"],
     )
 
     bootstrap_binary(
