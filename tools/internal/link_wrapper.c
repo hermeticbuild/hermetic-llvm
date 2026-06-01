@@ -5,6 +5,7 @@
 
 #ifdef _WIN32
 #include <process.h>
+#include <windows.h>
 #else
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -116,6 +117,36 @@ static int create_temp_response_file(char **temp_path, FILE **out) {
     *temp_path = NULL;
     *out = NULL;
 
+#ifdef _WIN32
+    const char *tmpdir = temp_dir();
+    if (strlen(tmpdir) >= MAX_PATH) {
+        return error("temporary directory path is too long");
+    }
+
+    char path_buffer[MAX_PATH];
+    if (GetTempFileNameA(tmpdir, "lwp", 0, path_buffer) == 0) {
+        fprintf(stderr, "link-wrapper: failed to create temporary response file path: %lu\n", GetLastError());
+        return 127;
+    }
+
+    FILE *file = fopen(path_buffer, "w");
+    if (file == NULL) {
+        fprintf(stderr, "link-wrapper: failed to create response file %s: %s\n", path_buffer, strerror(errno));
+        remove(path_buffer);
+        return 127;
+    }
+
+    char *path = dup_string(path_buffer);
+    if (path == NULL) {
+        fclose(file);
+        remove(path_buffer);
+        return error("failed to allocate response file path");
+    }
+
+    *temp_path = path;
+    *out = file;
+    return 0;
+#else
     const char *tmpdir = temp_dir();
     int needed = snprintf(NULL, 0, "%s/link-wrapper-params.XXXXXX", tmpdir);
     if (needed < 0) {
@@ -129,21 +160,6 @@ static int create_temp_response_file(char **temp_path, FILE **out) {
 
     snprintf(path, (size_t)needed + 1, "%s/link-wrapper-params.XXXXXX", tmpdir);
 
-#ifdef _WIN32
-    errno_t temp_status = _mktemp_s(path, (size_t)needed + 1);
-    if (temp_status != 0) {
-        fprintf(stderr, "link-wrapper: failed to create temporary response file path: %s\n", strerror(temp_status));
-        free(path);
-        return 127;
-    }
-
-    FILE *file = fopen(path, "w");
-    if (file == NULL) {
-        fprintf(stderr, "link-wrapper: failed to create response file %s: %s\n", path, strerror(errno));
-        free(path);
-        return 127;
-    }
-#else
     int fd = mkstemp(path);
     if (fd == -1) {
         fprintf(stderr, "link-wrapper: failed to create response file %s: %s\n", path, strerror(errno));
