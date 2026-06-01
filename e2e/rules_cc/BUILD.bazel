@@ -1,3 +1,4 @@
+load("@bazel_features//:features.bzl", "bazel_features")
 load("@bazel_lib//lib:transitions.bzl", "platform_transition_binary", "platform_transition_filegroup")
 load("@llvm//:defs.bzl", "exec_test")
 load("@platforms//host:constraints.bzl", "HOST_CONSTRAINTS")
@@ -31,6 +32,17 @@ load(":bazel_version.bzl", "validate_static_library_compatible")
 load(":musl_header_generation_tests.bzl", "musl_header_generation_tests")
 
 _VALIDATE_STATIC_LIBRARY_COMPATIBLE = validate_static_library_compatible()
+
+_DSYM_OUTPUT_TEST_BAZEL9_COMPATIBLE = bazel_features.cc.supports_starlarkified_toolchains
+
+_DSYM_OUTPUT_TEST_COMPATIBLE = [] if _DSYM_OUTPUT_TEST_BAZEL9_COMPATIBLE else ["@platforms//:incompatible"]
+
+_DSYM_OUTPUT_TEST_DATA = [":main_dsym_bundle"] if _DSYM_OUTPUT_TEST_BAZEL9_COMPATIBLE else []
+
+_DSYM_OUTPUT_TEST_ENV = {
+    "DSYM_BUNDLE": "$(rootpath :main_dsym_bundle)",
+    "DWARF_FILE": "main_dsym",
+} if _DSYM_OUTPUT_TEST_BAZEL9_COMPATIBLE else {}
 
 musl_header_generation_tests(name = "musl_header_generation_tests")
 
@@ -300,11 +312,9 @@ platform_transition_filegroup(
 sh_test(
     name = "dsym_output_test",
     srcs = ["dsym_output_test.sh"],
-    data = [":main_dsym_bundle"],
-    env = {
-        "DSYM_BUNDLE": "$(rootpath :main_dsym_bundle)",
-        "DWARF_FILE": "main_dsym",
-    },
+    data = _DSYM_OUTPUT_TEST_DATA,
+    env = _DSYM_OUTPUT_TEST_ENV,
+    target_compatible_with = _DSYM_OUTPUT_TEST_COMPATIBLE,
 )
 
 # TODO(zbarsky): Turn more of this into a macro once we have more sanitizers?
