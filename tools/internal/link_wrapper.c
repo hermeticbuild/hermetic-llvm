@@ -13,6 +13,37 @@
 
 #define STRIP_DEBUG_SYMBOLS_ARG "LLVM_STRIP_DEBUG_SYMBOLS"
 
+typedef struct {
+    char **clang_args;
+    size_t clang_arg_count;
+    size_t clang_arg_capacity;
+    int strip_debug_symbols;
+} parsed_args;
+
+static int error(const char *message) {
+    fprintf(stderr, "link-wrapper: %s\n", message);
+    return 127;
+}
+
+static int error_errno(const char *prefix, const char *path) {
+    if (path != NULL) {
+        fprintf(stderr, "link-wrapper: %s %s: %s\n", prefix, path, strerror(errno));
+    } else {
+        fprintf(stderr, "link-wrapper: %s: %s\n", prefix, strerror(errno));
+    }
+    return 127;
+}
+
+static char *dup_string(const char *value) {
+    size_t len = strlen(value);
+    char *copy = (char *)malloc(len + 1);
+    if (copy == NULL) {
+        return NULL;
+    }
+    memcpy(copy, value, len + 1);
+    return copy;
+}
+
 static int run_process(char *const args[]) {
 #ifdef _WIN32
     int status = _spawnv(_P_WAIT, args[0], (const char *const *)args);
@@ -35,16 +66,16 @@ static int run_process(char *const args[]) {
     }
 
     int status = 0;
-    do {
-        if (waitpid(pid, &status, 0) == -1) {
-            if (errno == EINTR) {
-                continue;
-            }
-            fprintf(stderr, "link-wrapper: failed to wait for %s: %s\n", args[0], strerror(errno));
-            return 127;
+    while (1) {
+        if (waitpid(pid, &status, 0) != -1) {
+            break;
         }
-        break;
-    } while (1);
+        if (errno == EINTR) {
+            continue;
+        }
+        fprintf(stderr, "link-wrapper: failed to wait for %s: %s\n", args[0], strerror(errno));
+        return 127;
+    }
 
     if (WIFEXITED(status)) {
         return WEXITSTATUS(status);
@@ -63,38 +94,6 @@ static const char *required_env(const char *name) {
         exit(127);
     }
     return value;
-}
-
-static int is_strip_debug_symbols_arg(const char *arg) {
-    return strcmp(arg, STRIP_DEBUG_SYMBOLS_ARG) == 0;
-}
-
-static int line_is_strip_debug_symbols_arg(const char *line) {
-    const char *start = line;
-    while (*start == ' ' || *start == '\t') {
-        ++start;
-    }
-
-    size_t len = strlen(start);
-    while (len > 0 &&
-           (start[len - 1] == '\n' || start[len - 1] == '\r' ||
-            start[len - 1] == ' ' || start[len - 1] == '\t')) {
-        --len;
-    }
-
-    if (len == strlen(STRIP_DEBUG_SYMBOLS_ARG) &&
-        strncmp(start, STRIP_DEBUG_SYMBOLS_ARG, len) == 0) {
-        return 1;
-    }
-
-    if (len == strlen(STRIP_DEBUG_SYMBOLS_ARG) + 2 &&
-        ((start[0] == '\'' && start[len - 1] == '\'') ||
-         (start[0] == '"' && start[len - 1] == '"')) &&
-        strncmp(start + 1, STRIP_DEBUG_SYMBOLS_ARG, len - 2) == 0) {
-        return 1;
-    }
-
-    return 0;
 }
 
 static const char *temp_dir(void) {
@@ -118,17 +117,17 @@ static int create_temp_response_file(char **temp_path, FILE **out) {
     *out = NULL;
 
     const char *tmpdir = temp_dir();
-    int needed = snprintf(NULL, 0, "%s/link-wrapper.XXXXXX", tmpdir);
+    int needed = snprintf(NULL, 0, "%s/link-wrapper-params.XXXXXX", tmpdir);
     if (needed < 0) {
-        return 127;
+        return error("failed to format response file path");
     }
 
     char *path = (char *)malloc((size_t)needed + 1);
     if (path == NULL) {
-        return 127;
+        return error("failed to allocate response file path");
     }
 
-    snprintf(path, (size_t)needed + 1, "%s/link-wrapper.XXXXXX", tmpdir);
+    snprintf(path, (size_t)needed + 1, "%s/link-wrapper-params.XXXXXX", tmpdir);
 
 #ifdef _WIN32
     errno_t temp_status = _mktemp_s(path, (size_t)needed + 1);
@@ -167,175 +166,287 @@ static int create_temp_response_file(char **temp_path, FILE **out) {
     return 0;
 }
 
-static int filter_response_file(const char *response_path, char **filtered_path, int *strip_debug_symbols) {
-    *filtered_path = NULL;
+static void parsed_args_init(parsed_args *args) {
+    args->clang_args = NULL;
+    args->clang_arg_count = 0;
+    args->clang_arg_capacity = 0;
+    args->strip_debug_symbols = 0;
+}
 
-    FILE *in = fopen(response_path, "r");
-    if (in == NULL) {
-        fprintf(stderr, "link-wrapper: failed to open response file %s: %s\n", response_path, strerror(errno));
-        return 127;
+static void parsed_args_destroy(parsed_args *args) {
+    for (size_t i = 0; i < args->clang_arg_count; ++i) {
+        free(args->clang_args[i]);
     }
+    free(args->clang_args);
+}
 
-    int found = 0;
-    char line[8192];
-    while (fgets(line, sizeof(line), in) != NULL) {
-        if (line_is_strip_debug_symbols_arg(line)) {
-            found = 1;
-            *strip_debug_symbols = 1;
-            break;
+static int parsed_args_add(parsed_args *args, const char *arg) {
+    if (args->clang_arg_count == args->clang_arg_capacity) {
+        size_t next_capacity = args->clang_arg_capacity == 0 ? 16 : args->clang_arg_capacity * 2;
+        char **next_args = (char **)realloc(args->clang_args, next_capacity * sizeof(char *));
+        if (next_args == NULL) {
+            return error("failed to allocate clang argv");
         }
+        args->clang_args = next_args;
+        args->clang_arg_capacity = next_capacity;
     }
 
-    if (ferror(in)) {
-        fprintf(stderr, "link-wrapper: failed to read response file %s: %s\n", response_path, strerror(errno));
-        fclose(in);
-        return 127;
+    char *copy = dup_string(arg);
+    if (copy == NULL) {
+        return error("failed to allocate clang arg");
     }
-
-    if (!found) {
-        fclose(in);
-        return 0;
-    }
-
-    rewind(in);
-    clearerr(in);
-
-    char *temp_path = NULL;
-    FILE *out = NULL;
-    if (create_temp_response_file(&temp_path, &out) != 0) {
-        fclose(in);
-        return 127;
-    }
-
-    while (fgets(line, sizeof(line), in) != NULL) {
-        if (line_is_strip_debug_symbols_arg(line)) {
-            continue;
-        }
-        if (fputs(line, out) == EOF) {
-            fprintf(stderr, "link-wrapper: failed to write response file %s: %s\n", temp_path, strerror(errno));
-            fclose(out);
-            fclose(in);
-            remove(temp_path);
-            free(temp_path);
-            return 127;
-        }
-    }
-
-    if (ferror(in)) {
-        fprintf(stderr, "link-wrapper: failed to read response file %s: %s\n", response_path, strerror(errno));
-        fclose(out);
-        fclose(in);
-        remove(temp_path);
-        free(temp_path);
-        return 127;
-    }
-
-    if (fclose(out) != 0) {
-        fprintf(stderr, "link-wrapper: failed to close response file %s: %s\n", temp_path, strerror(errno));
-        fclose(in);
-        remove(temp_path);
-        free(temp_path);
-        return 127;
-    }
-    fclose(in);
-
-    *filtered_path = temp_path;
+    args->clang_args[args->clang_arg_count++] = copy;
     return 0;
 }
 
-static void cleanup_temp_files(char **paths, int count) {
-    for (int i = 0; i < count; ++i) {
-        if (paths[i] != NULL) {
-            remove(paths[i]);
-            free(paths[i]);
+static int read_line(FILE *file, char **line, size_t *capacity) {
+    if (*line == NULL) {
+        *capacity = 256;
+        *line = (char *)malloc(*capacity);
+        if (*line == NULL) {
+            return -1;
         }
     }
+
+    size_t len = 0;
+    int ch = 0;
+    while ((ch = fgetc(file)) != EOF) {
+        if (ch == '\n') {
+            break;
+        }
+        if (len + 1 >= *capacity) {
+            size_t next_capacity = *capacity * 2;
+            char *next_line = (char *)realloc(*line, next_capacity);
+            if (next_line == NULL) {
+                return -1;
+            }
+            *line = next_line;
+            *capacity = next_capacity;
+        }
+        (*line)[len++] = (char)ch;
+    }
+
+    if (ferror(file)) {
+        return -1;
+    }
+    if (len == 0 && ch == EOF) {
+        return 0;
+    }
+
+    (*line)[len] = '\0';
+    return 1;
+}
+
+static char *unescape_arg(const char *arg) {
+    size_t len = strlen(arg);
+    char *result = (char *)malloc(len + 1);
+    if (result == NULL) {
+        return NULL;
+    }
+
+    size_t out = 0;
+    for (size_t i = 0; i < len; ++i) {
+        char ch = arg[i];
+
+        if (ch == '\\' && i + 1 < len) {
+            result[out++] = arg[++i];
+            continue;
+        }
+
+        if (ch == '"' || ch == '\'') {
+            char quote = ch;
+            ++i;
+            while (i != len && arg[i] != quote) {
+                if (arg[i] == '\\' && i + 1 < len) {
+                    ++i;
+                }
+                result[out++] = arg[i++];
+            }
+            if (i == len) {
+                break;
+            }
+            continue;
+        }
+
+        result[out++] = ch;
+    }
+
+    result[out] = '\0';
+    return result;
+}
+
+static int process_argument(const char *arg, parsed_args *args);
+
+static int process_response_file(const char *arg, parsed_args *args, int *handled) {
+    *handled = 0;
+
+    FILE *file = fopen(arg + 1, "r");
+    if (file == NULL) {
+        return 0;
+    }
+    *handled = 1;
+
+    char *line = NULL;
+    size_t capacity = 0;
+    int line_status = 0;
+    while ((line_status = read_line(file, &line, &capacity)) == 1) {
+        char *unescaped = unescape_arg(line);
+        if (unescaped == NULL) {
+            free(line);
+            fclose(file);
+            return error("failed to allocate response file arg");
+        }
+
+        int status = process_argument(unescaped, args);
+        free(unescaped);
+        if (status != 0) {
+            free(line);
+            fclose(file);
+            return status;
+        }
+    }
+
+    free(line);
+    if (line_status == -1) {
+        int saved_errno = errno;
+        fclose(file);
+        errno = saved_errno;
+        return error_errno("failed to read response file", arg + 1);
+    }
+
+    if (fclose(file) != 0) {
+        return error_errno("failed to close response file", arg + 1);
+    }
+    return 0;
+}
+
+static int process_argument(const char *arg, parsed_args *args) {
+    if (arg[0] == '@' && arg[1] != '\0') {
+        int handled = 0;
+        int status = process_response_file(arg, args, &handled);
+        if (status != 0) {
+            return status;
+        }
+        if (handled) {
+            return 0;
+        }
+    }
+
+    if (strcmp(arg, STRIP_DEBUG_SYMBOLS_ARG) == 0) {
+        args->strip_debug_symbols = 1;
+        return 0;
+    }
+
+    return parsed_args_add(args, arg);
+}
+
+static int parse_args(int argc, char **argv, parsed_args *args) {
+    for (int i = 1; i < argc; ++i) {
+        int status = process_argument(argv[i], args);
+        if (status != 0) {
+            return status;
+        }
+    }
+    return 0;
+}
+
+static int write_response_file(const parsed_args *args, char **response_path) {
+    *response_path = NULL;
+
+    FILE *file = NULL;
+    int status = create_temp_response_file(response_path, &file);
+    if (status != 0) {
+        return status;
+    }
+
+    for (size_t i = 0; i < args->clang_arg_count; ++i) {
+        const char *arg = args->clang_args[i];
+        if (fputc('"', file) == EOF) {
+            status = error_errno("failed to write response file", *response_path);
+            goto fail;
+        }
+        for (const char *ch = arg; *ch != '\0'; ++ch) {
+            if (*ch == '"' || *ch == '\\') {
+                if (fputc('\\', file) == EOF) {
+                    status = error_errno("failed to write response file", *response_path);
+                    goto fail;
+                }
+            }
+            if (fputc(*ch, file) == EOF) {
+                status = error_errno("failed to write response file", *response_path);
+                goto fail;
+            }
+        }
+        if (fputs("\"\n", file) == EOF) {
+            status = error_errno("failed to write response file", *response_path);
+            goto fail;
+        }
+    }
+
+    if (fclose(file) != 0) {
+        file = NULL;
+        status = error_errno("failed to close response file", *response_path);
+        goto fail;
+    }
+
+    return 0;
+
+fail:
+    if (file != NULL) {
+        fclose(file);
+    }
+    remove(*response_path);
+    free(*response_path);
+    *response_path = NULL;
+    return status;
 }
 
 int main(int argc, char **argv) {
     const char *clangxx = required_env("LLVM_CLANGXX");
-    int strip_debug_symbols = 0;
 
-    char **clang_args = (char **)calloc((size_t)argc + 1, sizeof(char *));
-    if (clang_args == NULL) {
-        fprintf(stderr, "link-wrapper: failed to allocate clang argv\n");
-        return 127;
-    }
-    char **allocated_args = (char **)calloc((size_t)argc + 1, sizeof(char *));
-    char **temp_paths = (char **)calloc((size_t)argc + 1, sizeof(char *));
-    if (allocated_args == NULL || temp_paths == NULL) {
-        fprintf(stderr, "link-wrapper: failed to allocate response file bookkeeping\n");
-        free(clang_args);
-        free(allocated_args);
-        free(temp_paths);
-        return 127;
-    }
-
-    clang_args[0] = (char *)clangxx;
-    int clang_argc = 1;
-    int allocated_arg_count = 0;
-    int temp_path_count = 0;
-    for (int i = 1; i < argc; ++i) {
-        if (is_strip_debug_symbols_arg(argv[i])) {
-            strip_debug_symbols = 1;
-            continue;
-        }
-
-        if (argv[i][0] == '@' && argv[i][1] != '\0') {
-            char *filtered_path = NULL;
-            int filter_status = filter_response_file(argv[i] + 1, &filtered_path, &strip_debug_symbols);
-            if (filter_status != 0) {
-                cleanup_temp_files(temp_paths, temp_path_count);
-                for (int j = 0; j < allocated_arg_count; ++j) {
-                    free(allocated_args[j]);
-                }
-                free(clang_args);
-                free(allocated_args);
-                free(temp_paths);
-                return filter_status;
-            }
-
-            if (filtered_path != NULL) {
-                size_t response_arg_len = strlen(filtered_path) + 2;
-                char *response_arg = (char *)malloc(response_arg_len);
-                if (response_arg == NULL) {
-                    fprintf(stderr, "link-wrapper: failed to allocate response file argument\n");
-                    free(filtered_path);
-                    cleanup_temp_files(temp_paths, temp_path_count);
-                    for (int j = 0; j < allocated_arg_count; ++j) {
-                        free(allocated_args[j]);
-                    }
-                    free(clang_args);
-                    free(allocated_args);
-                    free(temp_paths);
-                    return 127;
-                }
-                snprintf(response_arg, response_arg_len, "@%s", filtered_path);
-                allocated_args[allocated_arg_count++] = response_arg;
-                temp_paths[temp_path_count++] = filtered_path;
-                clang_args[clang_argc++] = response_arg;
-                continue;
-            }
-        }
-
-        clang_args[clang_argc++] = argv[i];
-    }
-    clang_args[clang_argc] = NULL;
-
-    int status = run_process(clang_args);
-    cleanup_temp_files(temp_paths, temp_path_count);
-    for (int i = 0; i < allocated_arg_count; ++i) {
-        free(allocated_args[i]);
-    }
-    free(clang_args);
-    free(allocated_args);
-    free(temp_paths);
+    parsed_args args;
+    parsed_args_init(&args);
+    int status = parse_args(argc, argv, &args);
     if (status != 0) {
+        parsed_args_destroy(&args);
+        return status;
+    }
+
+    char *response_path = NULL;
+    status = write_response_file(&args, &response_path);
+    if (status != 0) {
+        parsed_args_destroy(&args);
+        return status;
+    }
+
+    size_t response_arg_len = strlen(response_path) + 2;
+    char *response_arg = (char *)malloc(response_arg_len);
+    if (response_arg == NULL) {
+        remove(response_path);
+        free(response_path);
+        parsed_args_destroy(&args);
+        return error("failed to allocate response file argument");
+    }
+    snprintf(response_arg, response_arg_len, "@%s", response_path);
+
+    char *clang_args[] = {
+        (char *)clangxx,
+        response_arg,
+        NULL,
+    };
+
+    status = run_process(clang_args);
+    remove(response_path);
+    free(response_arg);
+    free(response_path);
+    if (status != 0) {
+        parsed_args_destroy(&args);
         return status;
     }
 
     const char *dsym_path = getenv("LLVM_DSYM_PATH");
     if (dsym_path == NULL || dsym_path[0] == '\0') {
+        parsed_args_destroy(&args);
         return 0;
     }
 
@@ -351,7 +462,8 @@ int main(int argc, char **argv) {
     };
 
     status = run_process(dsym_args);
-    if (status != 0 || !strip_debug_symbols) {
+    if (status != 0 || !args.strip_debug_symbols) {
+        parsed_args_destroy(&args);
         return status;
     }
 
@@ -363,5 +475,6 @@ int main(int argc, char **argv) {
         NULL,
     };
 
+    parsed_args_destroy(&args);
     return run_process(strip_args);
 }
