@@ -426,16 +426,6 @@ bzl_library(
 )
 
 bzl_library(
-    name = "exec_stage0_binary",
-    srcs = ["exec_stage0_binary.bzl"],
-    deps = [
-        "@llvm//toolchain/runtimes:with_cfg_runtimes_common",
-        "@rules_cc//cc:core_rules",
-        "@with_cfg.bzl//:with_cfg",
-    ],
-)
-
-bzl_library(
     name = "selects",
     srcs = ["selects.bzl"],
 )

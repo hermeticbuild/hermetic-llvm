@@ -205,6 +205,17 @@ bzl_library(
 )
 
 bzl_library(
+    name = "cc_runtime_binary",
+    srcs = ["cc_runtime_binary.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@llvm//toolchain/runtimes:with_cfg_runtimes_common",
+        "@rules_cc//cc:core_rules",
+        "@with_cfg.bzl//:with_cfg",
+    ],
+)
+
+bzl_library(
     name = "cc_runtime_shared_library",
     srcs = ["cc_runtime_shared_library.bzl"],
     visibility = ["//visibility:public"],
