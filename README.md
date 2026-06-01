@@ -349,6 +349,7 @@ See https://github.com/hermeticbuild/hermetic-llvm/milestone/1
 - [JetBrains](https://github.com/JetBrains/intellij-community)
 - [Nativelink](https://github.com/TraceMachina/nativelink)
 - [formatjs](https://github.com/formatjs/formatjs)
+- [Etsy](https://etsy.com)
 
 ## Prior art
 
