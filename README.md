@@ -80,15 +80,10 @@ bazel query 'kind(toolchain, @llvm//toolchain:all)'
 ### Cgo compatibility
 To make the vanilla Go compiler work with a fully hermetic toolchain, we had to send some patches upstream. Only versions of Go >= 1.27 are supported out of the box.
 
-To use this toolchain with earlier versions of Go, the compiler must be built from source with our patches. Luckily we have a patch to `rules_go` to allow doing that as part of your build graph.
+To use this toolchain with earlier versions of Go, the compiler must be built from source with our patches. Luckily `rules_go` supports this.
 
 ```
-archive_override(
-    module_name = "rules_go",
-    integrity = "sha256-8ezQcDyHHp/+xa9NbUJO/3/kDEFFmJaV4pb1fd99m74=",
-    strip_prefix = "rules_go-62d798d48ae153e048a7f9c43ba68cfa1ea10924",
-    url = "https://github.com/bazel-contrib/rules_go/archive/62d798d48ae153e048a7f9c43ba68cfa1ea10924.tar.gz",
-)
+bazel_dep(name = "rules_go", version = "0.61.0")
 
 go_sdk = use_extension("@io_bazel_rules_go//go:extensions.bzl", "go_sdk")
 go_sdk.from_file(

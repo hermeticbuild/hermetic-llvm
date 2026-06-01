@@ -37,9 +37,6 @@ common:cc --@rules_python//python/config_settings:bootstrap_impl=script
 
 common:bootstrap   --@llvm//toolchain:source=bootstrapped
 
-# Bootstrap Go compilers from source with our patch.
-common:wasm --@rules_go//go/toolchain:source=bootstrapped
-
 common:prebuilt  -c opt
 common:prebuilt  --strip=always
 common:prebuilt  --stripopt=--strip-all
