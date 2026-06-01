@@ -13,14 +13,6 @@
 
 #define STRIP_DEBUG_SYMBOLS_ARG "LLVM_STRIP_DEBUG_SYMBOLS"
 
-static long current_pid(void) {
-#ifdef _WIN32
-    return (long)_getpid();
-#else
-    return (long)getpid();
-#endif
-}
-
 static int run_process(char *const args[]) {
 #ifdef _WIN32
     int status = _spawnv(_P_WAIT, args[0], (const char *const *)args);
@@ -105,19 +97,74 @@ static int line_is_strip_debug_symbols_arg(const char *line) {
     return 0;
 }
 
-static char *make_filtered_response_path(const char *response_path) {
-    int needed = snprintf(NULL, 0, "%s.link-wrapper.%ld", response_path, current_pid());
+static const char *temp_dir(void) {
+    const char *tmpdir = getenv("TMPDIR");
+    if (tmpdir != NULL && tmpdir[0] != '\0') {
+        return tmpdir;
+    }
+#ifdef _WIN32
+    tmpdir = getenv("TEMP");
+    if (tmpdir != NULL && tmpdir[0] != '\0') {
+        return tmpdir;
+    }
+    return ".";
+#else
+    return "/tmp";
+#endif
+}
+
+static int create_temp_response_file(char **temp_path, FILE **out) {
+    *temp_path = NULL;
+    *out = NULL;
+
+    const char *tmpdir = temp_dir();
+    int needed = snprintf(NULL, 0, "%s/link-wrapper.XXXXXX", tmpdir);
     if (needed < 0) {
-        return NULL;
+        return 127;
     }
 
     char *path = (char *)malloc((size_t)needed + 1);
     if (path == NULL) {
-        return NULL;
+        return 127;
     }
 
-    snprintf(path, (size_t)needed + 1, "%s.link-wrapper.%ld", response_path, current_pid());
-    return path;
+    snprintf(path, (size_t)needed + 1, "%s/link-wrapper.XXXXXX", tmpdir);
+
+#ifdef _WIN32
+    errno_t temp_status = _mktemp_s(path, (size_t)needed + 1);
+    if (temp_status != 0) {
+        fprintf(stderr, "link-wrapper: failed to create temporary response file path: %s\n", strerror(temp_status));
+        free(path);
+        return 127;
+    }
+
+    FILE *file = fopen(path, "w");
+    if (file == NULL) {
+        fprintf(stderr, "link-wrapper: failed to create response file %s: %s\n", path, strerror(errno));
+        free(path);
+        return 127;
+    }
+#else
+    int fd = mkstemp(path);
+    if (fd == -1) {
+        fprintf(stderr, "link-wrapper: failed to create response file %s: %s\n", path, strerror(errno));
+        free(path);
+        return 127;
+    }
+
+    FILE *file = fdopen(fd, "w");
+    if (file == NULL) {
+        fprintf(stderr, "link-wrapper: failed to open response file %s: %s\n", path, strerror(errno));
+        close(fd);
+        remove(path);
+        free(path);
+        return 127;
+    }
+#endif
+
+    *temp_path = path;
+    *out = file;
+    return 0;
 }
 
 static int filter_response_file(const char *response_path, char **filtered_path, int *strip_debug_symbols) {
@@ -153,17 +200,9 @@ static int filter_response_file(const char *response_path, char **filtered_path,
     rewind(in);
     clearerr(in);
 
-    char *temp_path = make_filtered_response_path(response_path);
-    if (temp_path == NULL) {
-        fprintf(stderr, "link-wrapper: failed to allocate filtered response path\n");
-        fclose(in);
-        return 127;
-    }
-
-    FILE *out = fopen(temp_path, "w");
-    if (out == NULL) {
-        fprintf(stderr, "link-wrapper: failed to create response file %s: %s\n", temp_path, strerror(errno));
-        free(temp_path);
+    char *temp_path = NULL;
+    FILE *out = NULL;
+    if (create_temp_response_file(&temp_path, &out) != 0) {
         fclose(in);
         return 127;
     }
