@@ -4,6 +4,14 @@ load("@rules_cc//cc/toolchains:feature_set.bzl", "cc_feature_set")
 
 package(default_visibility = ["//visibility:public"])
 
+_DSYM_COMPILE_ACTIONS = [
+    "@rules_cc//cc/toolchains/actions:c_compile",
+    "@rules_cc//cc/toolchains/actions:cpp_compile",
+    "@rules_cc//cc/toolchains/actions:objc_compile",
+    "@rules_cc//cc/toolchains/actions:objcpp_compile",
+    "@rules_cc//cc/toolchains/actions:objc_executable",
+]
+
 # [x] opt
 # [x] dbg
 # [] fastbuild
@@ -158,9 +166,7 @@ cc_feature(
 
 cc_args(
     name = "generate_dsym_file_compile_args",
-    actions = [
-        "@rules_cc//cc/toolchains/actions:compile_actions",
-    ],
+    actions = _DSYM_COMPILE_ACTIONS,
     args = ["-g"],
 )
 
