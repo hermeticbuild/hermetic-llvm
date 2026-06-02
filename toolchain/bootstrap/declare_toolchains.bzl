@@ -384,7 +384,7 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
             tool_map = select({
                 "@llvm//toolchain:macos_complete_with_libtool": ":{}_{}/tools_with_dsym_and_libtool".format(exec_os, exec_cpu),
                 "@llvm//toolchain:macos_complete": ":{}_{}/tools_with_dsym".format(exec_os, exec_cpu),
-                "@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_macos_setting": ":{}_{}/tools_with_libtool_for_runtime".format(exec_os, exec_cpu),
+                "@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_apple_setting": ":{}_{}/tools_with_libtool_for_runtime".format(exec_os, exec_cpu),
                 "//conditions:default": ":{}_{}/default_tools_for_runtime".format(exec_os, exec_cpu),
             }),
             extra_args = [

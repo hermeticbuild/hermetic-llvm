@@ -59,6 +59,6 @@ def platform_cc_tool_map(exec_os, exec_cpu):
     return select({
         "@llvm//toolchain:macos_complete_with_libtool": tool_repo + ":tools_with_dsym_and_libtool",
         "@llvm//toolchain:macos_complete": tool_repo + ":tools_with_dsym",
-        "@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_macos_setting": tool_repo + ":tools_with_libtool_for_runtime",
+        "@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_apple_setting": tool_repo + ":tools_with_libtool_for_runtime",
         "//conditions:default": tool_repo + ":default_tools_for_runtime",
     })

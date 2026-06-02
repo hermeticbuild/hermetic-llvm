@@ -723,21 +723,21 @@ cc_static_library(
     deps = [":comm_symbol_defs"],
 )
 
-sh_test(
+cc_test(
     name = "duplicate_static_library_validator_test",
     size = "large",
-    srcs = ["duplicate_static_library_failure_test.sh"],
+    srcs = ["duplicate_static_library_failure_test.cc"],
     data = [
+        ".bazelrc",
         "BUILD.bazel",
         "duplicate_symbol_a.cc",
         "duplicate_symbol_b.cc",
     ],
     env_inherit = ["PATH"],
+    exec_compatible_with = HOST_CONSTRAINTS,
     tags = ["local"],
-    target_compatible_with = _VALIDATE_STATIC_LIBRARY_COMPATIBLE + select({
-        "@platforms//os:windows": ["@platforms//:incompatible"],
-        "//conditions:default": [],
-    }),
+    target_compatible_with = _VALIDATE_STATIC_LIBRARY_COMPATIBLE,
+    deps = ["@bazel_tools//tools/cpp/runfiles"],
 )
 
 #######################################################
