@@ -14,14 +14,7 @@ bazel_dep(name = "bazel_lib", version = "3.0.0")
 ###############################################################################
 bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "rules_shell", version = "0.6.1")
-bazel_dep(name = "rules_cc", version = "0.2.18")
-single_version_override(
-    module_name = "rules_cc",
-    patch_strip = 1,
-    patches = ["//:rules_cc_rules_rs_allowlist.patch"],
-    version = "0.2.18",
-)
-
+bazel_dep(name = "rules_cc", version = "0.2.19")
 bazel_dep(name = "libmagic", version = "5.46.bcr.4")
 single_version_override(
     module_name = "libmagic",
