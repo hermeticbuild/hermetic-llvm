@@ -1,15 +1,14 @@
-load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("//toolchain/runtimes:cc_runtime_binary.bzl", "cc_runtime_stage1_hosted_binary")
 
-cc_binary(
+cc_runtime_stage1_hosted_binary(
     name = "header-parser",
-    srcs = ["header_parser.cc"],
+    srcs = ["header_parser.c"],
     visibility = ["//visibility:public"],
 )
 
-cc_binary(
+cc_runtime_stage1_hosted_binary(
     name = "static-library-validator",
-    srcs = ["static_library_validator.cc"],
+    srcs = ["static_library_validator.c"],
     visibility = ["//visibility:public"],
 )
 

@@ -22,17 +22,6 @@ def platform_extra_binary(binary):
         "@llvm//platforms/config:windows_x86_64": "@toolchain-extra-prebuilts-windows-amd64//:%s" % binary,
     })
 
-def platform_extra_binary_files(binary):
-    return select({
-        "@llvm//platforms/config:macos_x86_64": ["@toolchain-extra-prebuilts-darwin-amd64//:%s" % binary],
-        "@llvm//platforms/config:macos_aarch64": ["@toolchain-extra-prebuilts-darwin-arm64//:%s" % binary],
-        "@llvm//platforms/config:linux_x86_64": ["@toolchain-extra-prebuilts-linux-amd64//:%s" % binary],
-        "@llvm//platforms/config:linux_aarch64": ["@toolchain-extra-prebuilts-linux-arm64//:%s" % binary],
-        # TODO(zbarsky): should we suffix these with `.exe` in the dist?
-        "@llvm//platforms/config:windows_aarch64": ["@toolchain-extra-prebuilts-windows-arm64//:%s" % binary],
-        "@llvm//platforms/config:windows_x86_64": ["@toolchain-extra-prebuilts-windows-amd64//:%s" % binary],
-    })
-
 def _tool_repo(exec_os, exec_cpu):
     os_part = "darwin" if exec_os == "macos" else exec_os
     cpu_part = "amd64" if exec_cpu == "x86_64" else "arm64"
@@ -70,6 +59,6 @@ def platform_cc_tool_map(exec_os, exec_cpu):
     return select({
         "@llvm//toolchain:macos_complete_with_libtool": tool_repo + ":tools_with_dsym_and_libtool",
         "@llvm//toolchain:macos_complete": tool_repo + ":tools_with_dsym",
-        "@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_apple_setting": tool_repo + ":tools_with_libtool",
-        "//conditions:default": tool_repo + ":default_tools",
+        "@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_macos_setting": tool_repo + ":tools_with_libtool_for_runtime",
+        "//conditions:default": tool_repo + ":default_tools_for_runtime",
     })

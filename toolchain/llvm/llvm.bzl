@@ -4,7 +4,6 @@ load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 load("@rules_cc//cc/toolchains:tool.bzl", "cc_tool")
 load("@rules_cc//cc/toolchains:tool_map.bzl", "cc_tool_map")
 load("//:directory.bzl", "headers_directory")
-load("//toolchain:selects.bzl", "platform_extra_binary", "platform_extra_binary_files")
 
 _VALIDATE_STATIC_LIBRARY_TOOL = {
     "@rules_cc//cc/toolchains/actions:validate_static_library": ":static_library_validator",
@@ -55,7 +54,7 @@ def declare_llvm_targets(*, suffix = ""):
 
     cc_tool(
         name = "header_parser",
-        src = platform_extra_binary("bin/header-parser"),
+        src = "@llvm//tools/internal:header-parser",
         data = [
             ":builtin_resource_dir",
             ":clangxx_file",
@@ -121,40 +120,73 @@ def declare_llvm_targets(*, suffix = ""):
 
     cc_tool(
         name = "static_library_validator",
-        src = platform_extra_binary("bin/static-library-validator"),
+        src = "@llvm//tools/internal:static-library-validator",
         data = [
             ":cxxfilt_file",
             ":llvm_nm_file",
         ],
     )
 
-    COMMON_TOOLS = {
+    BASE_TOOLS = {
         "@rules_cc//cc/toolchains/actions:assembly_actions": ":clang",
         "@rules_cc//cc/toolchains/actions:c_compile": ":clang",
         "@rules_cc//cc/toolchains/actions:objc_compile": ":clang",
         "@llvm//toolchain:cpp_compile_actions_without_header_parsing": ":clang++",
-        "@rules_cc//cc/toolchains/actions:cpp_header_parsing": ":header_parser",
         "@rules_cc//cc/toolchains/actions:link_actions": ":lld",
         "@rules_cc//cc/toolchains/actions:objcopy_embed_data": ":llvm-objcopy",
         "@rules_cc//cc/toolchains/actions:dwp": ":llvm-dwp",
         "@rules_cc//cc/toolchains/actions:strip": ":llvm-strip",
-    } | _VALIDATE_STATIC_LIBRARY_TOOL
-
-    COMMON_TOOLS_WITH_DSYM = COMMON_TOOLS | {
-        "@rules_cc//cc/toolchains/actions:link_actions": ":link-wrapper",
     }
+
+    COMPLETE_ONLY_TOOLS = {
+        "@rules_cc//cc/toolchains/actions:cpp_header_parsing": ":header_parser",
+    } | _VALIDATE_STATIC_LIBRARY_TOOL
 
     cc_tool_map(
         name = "default_tools",
-        tools = COMMON_TOOLS | {
+        tools = BASE_TOOLS | COMPLETE_ONLY_TOOLS | {
             "@rules_cc//cc/toolchains/actions:ar_actions": ":llvm-ar",
         },
         visibility = ["//visibility:public"],
     )
 
     cc_tool_map(
+        name = "staged_default_tools",
+        tools = BASE_TOOLS | {
+            "@rules_cc//cc/toolchains/actions:ar_actions": ":llvm-ar",
+        },
+        visibility = ["//visibility:public"],
+    )
+
+    cc_tool_map(
+        name = "staged_tools_with_libtool",
+        tools = BASE_TOOLS | {
+            "@rules_cc//cc/toolchains/actions:ar_actions": ":llvm-libtool-darwin",
+        },
+        visibility = ["//visibility:public"],
+    )
+
+    native.alias(
+        name = "default_tools_for_runtime",
+        actual = select({
+            "@llvm//toolchain:runtimes_all": ":default_tools",
+            "//conditions:default": ":staged_default_tools",
+        }),
+        visibility = ["//visibility:public"],
+    )
+
+    native.alias(
+        name = "tools_with_libtool_for_runtime",
+        actual = select({
+            "@llvm//toolchain:runtimes_all": ":tools_with_libtool",
+            "//conditions:default": ":staged_tools_with_libtool",
+        }),
+        visibility = ["//visibility:public"],
+    )
+
+    cc_tool_map(
         name = "tools_with_libtool",
-        tools = COMMON_TOOLS | {
+        tools = BASE_TOOLS | COMPLETE_ONLY_TOOLS | {
             "@rules_cc//cc/toolchains/actions:ar_actions": ":llvm-libtool-darwin",
         },
         visibility = ["//visibility:public"],
@@ -162,7 +194,8 @@ def declare_llvm_targets(*, suffix = ""):
 
     cc_tool_map(
         name = "tools_with_dsym",
-        tools = COMMON_TOOLS_WITH_DSYM | {
+        tools = BASE_TOOLS | COMPLETE_ONLY_TOOLS | {
+            "@rules_cc//cc/toolchains/actions:link_actions": ":link-wrapper",
             "@rules_cc//cc/toolchains/actions:ar_actions": ":llvm-ar",
         },
         visibility = ["//visibility:public"],
@@ -170,7 +203,8 @@ def declare_llvm_targets(*, suffix = ""):
 
     cc_tool_map(
         name = "tools_with_dsym_and_libtool",
-        tools = COMMON_TOOLS_WITH_DSYM | {
+        tools = BASE_TOOLS | COMPLETE_ONLY_TOOLS | {
+            "@rules_cc//cc/toolchains/actions:link_actions": ":link-wrapper",
             "@rules_cc//cc/toolchains/actions:ar_actions": ":llvm-libtool-darwin",
         },
         visibility = ["//visibility:public"],
@@ -272,7 +306,12 @@ def declare_llvm_targets(*, suffix = ""):
         # directly. This hangs validator files off strip because strip is an
         # exec-configured tool already included in rules_cc 0.2.18's legacy
         # file groups.
-        data = platform_extra_binary_files("bin/static-library-validator") + [
+        data = select({
+            "@llvm//toolchain:runtimes_all": [
+                "@llvm//tools/internal:static-library-validator",
+            ],
+            "//conditions:default": [],
+        }) + [
             ":cxxfilt_file",
             ":llvm_nm_file",
         ],

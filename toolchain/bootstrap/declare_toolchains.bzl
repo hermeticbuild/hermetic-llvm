@@ -26,48 +26,79 @@ def declare_tool_map(exec_os, exec_cpu):
         ],
     )
 
-    COMMON_TOOLS = {
+    BASE_TOOLS = {
         "@rules_cc//cc/toolchains/actions:assembly_actions": prefix + "/clang",
         "@rules_cc//cc/toolchains/actions:c_compile": prefix + "/clang",
         "@rules_cc//cc/toolchains/actions:objc_compile": prefix + "/clang",
         "@llvm//toolchain:cpp_compile_actions_without_header_parsing": prefix + "/clang++",
-        "@rules_cc//cc/toolchains/actions:cpp_header_parsing": prefix + "/header-parser",
         "@rules_cc//cc/toolchains/actions:dwp": prefix + "/llvm-dwp",
         "@rules_cc//cc/toolchains/actions:link_actions": prefix + "/lld",
         "@rules_cc//cc/toolchains/actions:objcopy_embed_data": prefix + "/llvm-objcopy",
         "@rules_cc//cc/toolchains/actions:strip": prefix + "/llvm-strip",
-    } | _validate_static_library_tool(prefix)
-
-    COMMON_TOOLS_WITH_DSYM = COMMON_TOOLS | {
-        "@rules_cc//cc/toolchains/actions:link_actions": prefix + "/link-wrapper",
     }
+
+    COMPLETE_ONLY_TOOLS = {
+        "@rules_cc//cc/toolchains/actions:cpp_header_parsing": prefix + "/header-parser",
+    } | _validate_static_library_tool(prefix)
 
     cc_tool_map(
         name = prefix + "/default_tools",
-        tools = COMMON_TOOLS | {
+        tools = BASE_TOOLS | COMPLETE_ONLY_TOOLS | {
             "@rules_cc//cc/toolchains/actions:ar_actions": prefix + "/llvm-ar",
         },
     )
 
     cc_tool_map(
         name = prefix + "/tools_with_libtool",
-        tools = COMMON_TOOLS | {
+        tools = BASE_TOOLS | COMPLETE_ONLY_TOOLS | {
             "@rules_cc//cc/toolchains/actions:ar_actions": prefix + "/llvm-libtool-darwin",
         },
     )
 
     cc_tool_map(
         name = prefix + "/tools_with_dsym",
-        tools = COMMON_TOOLS_WITH_DSYM | {
+        tools = BASE_TOOLS | COMPLETE_ONLY_TOOLS | {
+            "@rules_cc//cc/toolchains/actions:link_actions": prefix + "/link-wrapper",
             "@rules_cc//cc/toolchains/actions:ar_actions": prefix + "/llvm-ar",
         },
     )
 
     cc_tool_map(
         name = prefix + "/tools_with_dsym_and_libtool",
-        tools = COMMON_TOOLS_WITH_DSYM | {
+        tools = BASE_TOOLS | COMPLETE_ONLY_TOOLS | {
+            "@rules_cc//cc/toolchains/actions:link_actions": prefix + "/link-wrapper",
             "@rules_cc//cc/toolchains/actions:ar_actions": prefix + "/llvm-libtool-darwin",
         },
+    )
+
+    cc_tool_map(
+        name = prefix + "/staged_default_tools",
+        tools = BASE_TOOLS | {
+            "@rules_cc//cc/toolchains/actions:ar_actions": prefix + "/llvm-ar",
+        },
+    )
+
+    cc_tool_map(
+        name = prefix + "/staged_tools_with_libtool",
+        tools = BASE_TOOLS | {
+            "@rules_cc//cc/toolchains/actions:ar_actions": prefix + "/llvm-libtool-darwin",
+        },
+    )
+
+    native.alias(
+        name = prefix + "/default_tools_for_runtime",
+        actual = select({
+            "@llvm//toolchain:runtimes_all": prefix + "/default_tools",
+            "//conditions:default": prefix + "/staged_default_tools",
+        }),
+    )
+
+    native.alias(
+        name = prefix + "/tools_with_libtool_for_runtime",
+        actual = select({
+            "@llvm//toolchain:runtimes_all": prefix + "/tools_with_libtool",
+            "//conditions:default": prefix + "/staged_tools_with_libtool",
+        }),
     )
 
     bootstrap_binary(
@@ -112,12 +143,6 @@ def declare_tool_map(exec_os, exec_cpu):
         capabilities = ["@rules_cc//cc/toolchains/capabilities:supports_pic"],
     )
 
-    bootstrap_binary(
-        name = prefix + "/bin/header-parser",
-        platform = prefix + "_platform",
-        actual = "@llvm//tools/internal:header-parser",
-    )
-
     cc_args(
         name = prefix + "/header-parser-args",
         actions = [
@@ -136,17 +161,11 @@ def declare_tool_map(exec_os, exec_cpu):
 
     cc_tool(
         name = prefix + "/header-parser",
-        src = prefix + "/bin/header-parser",
+        src = "@llvm//tools/internal:header-parser",
         data = [
             prefix + "/clang_builtin_headers_include_directory",
             prefix + "/bin/clang++",
         ],
-    )
-
-    bootstrap_binary(
-        name = prefix + "/bin/static-library-validator",
-        platform = prefix + "_platform",
-        actual = "@llvm//tools/internal:static-library-validator",
     )
 
     bootstrap_binary(
@@ -188,7 +207,7 @@ def declare_tool_map(exec_os, exec_cpu):
 
     cc_tool(
         name = prefix + "/static-library-validator",
-        src = prefix + "/bin/static-library-validator",
+        src = "@llvm//tools/internal:static-library-validator",
         data = [
             prefix + "/bin/c++filt",
             prefix + "/bin/llvm-nm",
@@ -324,8 +343,12 @@ def declare_tool_map(exec_os, exec_cpu):
         # directly. This hangs validator files off strip because strip is an
         # exec-configured tool already included in rules_cc 0.2.18's legacy
         # file groups.
-        data = [
-            prefix + "/bin/static-library-validator",
+        data = select({
+            "@llvm//toolchain:runtimes_all": [
+                "@llvm//tools/internal:static-library-validator",
+            ],
+            "//conditions:default": [],
+        }) + [
             prefix + "/bin/c++filt",
             prefix + "/bin/llvm-nm",
         ],
@@ -361,8 +384,8 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
             tool_map = select({
                 "@llvm//toolchain:macos_complete_with_libtool": ":{}_{}/tools_with_dsym_and_libtool".format(exec_os, exec_cpu),
                 "@llvm//toolchain:macos_complete": ":{}_{}/tools_with_dsym".format(exec_os, exec_cpu),
-                "@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_apple_setting": ":{}_{}/tools_with_libtool".format(exec_os, exec_cpu),
-                "//conditions:default": ":{}_{}/default_tools".format(exec_os, exec_cpu),
+                "@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_macos_setting": ":{}_{}/tools_with_libtool_for_runtime".format(exec_os, exec_cpu),
+                "//conditions:default": ":{}_{}/default_tools_for_runtime".format(exec_os, exec_cpu),
             }),
             extra_args = [
                 ":{}_{}/header-parser-args".format(exec_os, exec_cpu),

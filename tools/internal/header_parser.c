@@ -7,7 +7,7 @@
 
 int main(int argc, char **argv) {
   const char *path = getenv("PARSE_HEADER");
-  if (path == nullptr || path[0] == '\0') {
+  if (path == NULL || path[0] == '\0') {
     fprintf(stderr, "header_parser: required env var PARSE_HEADER is not set\n");
     exit(2);
   }
@@ -25,12 +25,12 @@ int main(int argc, char **argv) {
   }
 
   const char *clang_path = getenv("LLVM_CLANGXX");
-  if (clang_path == nullptr || clang_path[0] == '\0') {
+  if (clang_path == NULL || clang_path[0] == '\0') {
     fprintf(stderr, "header_parser: required env var LLVM_CLANGXX is not set\n");
     exit(2);
   }
 
-  argv[0] = const_cast<char *>(clang_path);
+  argv[0] = (char *)clang_path;
   execv(clang_path, argv);
   fprintf(stderr, "header_parser: execv failed: %s\n", strerror(errno));
   return 2;
