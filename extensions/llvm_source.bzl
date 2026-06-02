@@ -47,6 +47,13 @@ _LLVM_22_SOURCE_PATCHES = _DEFAULT_SOURCE_PATCHES + [
     "//3rd_party/llvm-project/22.x/patches:lldb-windows-host.patch",
     "//3rd_party/llvm-project/22.x/patches:lldb-windows-plugins.patch",
     "//3rd_party/llvm-project/22.x/patches:lldb-windows-driver.patch",
+    "//3rd_party/llvm-project/22.x/patches:lldb-apple-support-repo-name.patch",
+    "//3rd_party/llvm-project/22.x/patches:lldb-sbapi-dwarf-enums-no-python.patch",
+    "//3rd_party/llvm-project/22.x/patches:lldb-windows-host-followup.patch",
+    "//3rd_party/llvm-project/22.x/patches:lldb-windows-layering.patch",
+    "//3rd_party/llvm-project/22.x/patches:lldb-windows-linkopts-by-compiler.patch",
+    "//3rd_party/llvm-project/22.x/patches:lldb-windows-plugin-sources-and-psapi.patch",
+    "//3rd_party/llvm-project/22.x/patches:lldb-windows-driver-static-link.patch",
 ]
 
 _LLVM_PATCHES_BY_MAJOR = {

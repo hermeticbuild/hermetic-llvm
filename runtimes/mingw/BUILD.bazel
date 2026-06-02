@@ -231,6 +231,20 @@ run_binary(
     tool = "@llvm//tools:llvm-ar",
 )
 
+run_binary(
+    name = "libpathcch",
+    srcs = [
+        "@mingw//:import_lib_api-ms-win-core-path-l1-1-0",
+    ],
+    outs = ["libpathcch.a"],
+    args = [
+        "qcsDL",
+        "$(location :libpathcch.a)",
+        "$(location @mingw//:import_lib_api-ms-win-core-path-l1-1-0)",
+    ],
+    tool = "@llvm//tools:llvm-ar",
+)
+
 cc_runtime_stage0_library(
     name = "ws2_32_extra",
     srcs = ["@mingw//:ws2_32_srcs"],
@@ -372,6 +386,7 @@ copy_to_directory(
     name = "mingw_import_libraries_directory",
     srcs = [
         ":libkernel32.a",
+        ":libpathcch.a",
         ":libsynchronization.a",
         ":libws2_32.a",
         "@mingw//:mingw_import_libraries_common",

@@ -1,0 +1,43 @@
+diff --git a/utils/bazel/llvm-project-overlay/lldb/BUILD.bazel b/utils/bazel/llvm-project-overlay/lldb/BUILD.bazel
+index 817f414..0c010f9 100644
+--- a/utils/bazel/llvm-project-overlay/lldb/BUILD.bazel
++++ b/utils/bazel/llvm-project-overlay/lldb/BUILD.bazel
+@@ -655,18 +655,21 @@ cc_library(
+             "-lversion",
+             "-ldbghelp",
+             "-lpathcch",
++            "-lpsapi",
+         ],
+         "//llvm:is_windows_clang_cl": [
+             "rpcrt4.lib",
+             "version.lib",
+             "dbghelp.lib",
+             "pathcch.lib",
++            "psapi.lib",
+         ],
+         "//llvm:is_windows_msvc": [
+             "rpcrt4.lib",
+             "version.lib",
+             "dbghelp.lib",
+             "pathcch.lib",
++            "psapi.lib",
+         ],
+         "//conditions:default": [],
+     }) + select({
+diff --git a/utils/bazel/llvm-project-overlay/lldb/source/Plugins/BUILD.bazel b/utils/bazel/llvm-project-overlay/lldb/source/Plugins/BUILD.bazel
+index 1906cc5..87da49d 100644
+--- a/utils/bazel/llvm-project-overlay/lldb/source/Plugins/BUILD.bazel
++++ b/utils/bazel/llvm-project-overlay/lldb/source/Plugins/BUILD.bazel
+@@ -2334,7 +2334,11 @@ _WINDOWS_LOAD_PLUGINS = "\n".join(["LLDB_PLUGIN({})".format(x) for x in DEFAULT_
+ 
+ cc_library(
+     name = "PluginProcessWindowsCommon",
+-    srcs = glob(["Process/Windows/Common/*.cpp"]),
++    srcs = glob(["Process/Windows/Common/*.cpp"]) + select({
++        "@platforms//cpu:x86_64": glob(["Process/Windows/Common/x64/*.cpp"]),
++        "@platforms//cpu:aarch64": glob(["Process/Windows/Common/arm64/*.cpp"]),
++        "//conditions:default": [],
++    }),
+     hdrs = glob([
+         "Process/Windows/Common/*.h",
+         "Process/Windows/Common/**/*.h",

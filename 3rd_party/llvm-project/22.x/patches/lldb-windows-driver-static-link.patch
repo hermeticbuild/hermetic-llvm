@@ -1,0 +1,32 @@
+diff --git a/utils/bazel/llvm-project-overlay/lldb/BUILD.bazel b/utils/bazel/llvm-project-overlay/lldb/BUILD.bazel
+index 0c010f9..835a30b 100644
+--- a/utils/bazel/llvm-project-overlay/lldb/BUILD.bazel
++++ b/utils/bazel/llvm-project-overlay/lldb/BUILD.bazel
+@@ -967,17 +967,24 @@ cc_binary(
+         "tools/driver/*.cpp",
+         "tools/driver/*.h",
+     ]),
++    defines = select({
++        "@platforms//os:windows": ["LLDB_IN_LIBLLDB"],
++        "//conditions:default": [],
++    }),
+     deps = [
+         ":APIHeaders",
+         ":HostHeaders",
+         ":UtilityHeaders",
+-        ":liblldb.wrapper",
+         ":lldb_options_inc_gen",
+         "//llvm:Option",
+         "//llvm:Support",
+     ] + select({
+-        "@platforms//os:windows": [":Host"],
+-        "//conditions:default": [],
++        "@platforms//os:windows": [
++            ":API",
++            ":Host",
++            ":Interpreter",
++        ],
++        "//conditions:default": [":liblldb.wrapper"],
+     }),
+ )
+ 

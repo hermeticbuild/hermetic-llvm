@@ -1,0 +1,27 @@
+diff --git a/utils/bazel/llvm-project-overlay/lldb/BUILD.bazel b/utils/bazel/llvm-project-overlay/lldb/BUILD.bazel
+index 667b5c0..817f414 100644
+--- a/utils/bazel/llvm-project-overlay/lldb/BUILD.bazel
++++ b/utils/bazel/llvm-project-overlay/lldb/BUILD.bazel
+@@ -648,7 +648,21 @@ cc_library(
+             "-Wl,-framework,CoreServices",
+             "-Wl,-framework,Security",
+         ],
+-        "@platforms//os:windows": [
++        "//conditions:default": [],
++    }) + select({
++        "//llvm:is_windows_clang_mingw": [
++            "-lrpcrt4",
++            "-lversion",
++            "-ldbghelp",
++            "-lpathcch",
++        ],
++        "//llvm:is_windows_clang_cl": [
++            "rpcrt4.lib",
++            "version.lib",
++            "dbghelp.lib",
++            "pathcch.lib",
++        ],
++        "//llvm:is_windows_msvc": [
+             "rpcrt4.lib",
+             "version.lib",
+             "dbghelp.lib",
