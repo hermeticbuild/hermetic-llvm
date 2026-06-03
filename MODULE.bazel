@@ -22,7 +22,7 @@ rbe_platform_repository(
     name = "rbe_platform",
 )
 
-LLVM_VERSION = "22.1.6"
+LLVM_VERSION = "22.1.7"
 
 PREBUILT_LLVM_VERSION = "22.1.6"
 
