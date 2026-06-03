@@ -1,9 +1,8 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 load(
-    ":macos_minimum_os_flag.bzl",
-    "MACOS_MINIMUM_OS_VERSIONS",
-    "macos_minimum_os_flag",
+    ":macos_minimum_os_version_info.bzl",
+    "macos_minimum_os_version_info",
 )
 
 #TODO(cerisier): Replace with official rules_cc cc_sysroot
@@ -25,19 +24,9 @@ cc_sysroot(
 
 #TODO(cerisier): Fix with new cc_args BuildSettingInfo formatter once it is ready.
 #                See https://github.com/hermeticbuild/hermetic-llvm/issues/302
-macos_minimum_os_flag(
-    name = "macos_minimum_os_flag",
+macos_minimum_os_version_info(
+    name = "macos_minimum_os_version_info",
 )
-
-[
-    config_setting(
-        name = "macos_minimum_os_{}".format(version.replace(".", "_")),
-        flag_values = {
-            ":macos_minimum_os_flag": version,
-        },
-    )
-    for version in MACOS_MINIMUM_OS_VERSIONS
-]
 
 cc_args(
     name = "macos_minimum_os_flags",
@@ -45,17 +34,8 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:compile_actions",
         "@rules_cc//cc/toolchains/actions:link_actions",
     ],
-    args = select({
-        ":macos_minimum_os_{}".format(version.replace(".", "_")): [
-            "-mmacosx-version-min={}".format(version),
-        ]
-        for version in MACOS_MINIMUM_OS_VERSIONS
-    } | {
-        "//conditions:default": [
-            # Keep current default behavior when the Apple minimum OS is not specified.
-            "-mmacosx-version-min=14.0",
-        ],
-    }),
+    args = ["-mmacosx-version-min={VERSION}"],
+    toolchains = [":macos_minimum_os_version_info"],
 )
 
 cc_args(
