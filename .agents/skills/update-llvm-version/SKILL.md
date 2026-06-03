@@ -1,6 +1,6 @@
 ---
 name: update-llvm-version
-description: 'Update a minor or patch LLVM version in this repository. Use when bumping LLVM_VERSION, creating llvm-<version>-<suffix> prebuilt branches, watching the LLVM Prebuilt Release workflow, collecting release SHA256 values, updating MODULE.bazel, and opening the stacked update-llvm-<version> pull request.'
+description: 'Update a minor or patch LLVM version in this repository. Use when bumping LLVM_VERSION, creating llvm-<version>-<suffix> prebuilt branches, watching the LLVM Prebuilt Release workflow, collecting release SHA256 values, updating MODULE.bazel and prebuilt metadata, and opening the stacked update-llvm-<version> pull request.'
 argument-hint: 'Target LLVM version, optionally with prebuilt suffix number'
 ---
 
@@ -24,9 +24,9 @@ argument-hint: 'Target LLVM version, optionally with prebuilt suffix number'
 This workflow has two phases:
 
 1. Build and publish prebuilts from a branch named llvm-<version>-<suffix>.
-2. Consume those prebuilts from a branch named update-llvm-<version> by updating MODULE.bazel and opening a PR.
+2. Consume those prebuilts from a branch named update-llvm-<version> by updating MODULE.bazel, the prebuilt metadata extension, and opening a PR.
 
-The first branch must keep PREBUILT_LLVM_VERSION unchanged. The second branch switches PREBUILT_LLVM_VERSION and LLVM_TOOLCHAIN_MINIMAL_SHA256 to the newly published release.
+The first branch must keep PREBUILT_LLVM_VERSION unchanged. The second branch switches PREBUILT_LLVM_VERSION and the llvm-toolchain-minimal sha256 table to the newly published release.
 Pushes, release inspection, and PR creation should be performed automatically unless the user overrides that behavior.
 Do not run local builds unless the user explicitly asks. Default verification is the LLVM Prebuilt Release workflow plus the final PR CI.
 
@@ -69,17 +69,18 @@ Do not run local builds unless the user explicitly asks. Default verification is
    - Expected tag: llvm-<version>-<suffix>.
    - Expected assets: six llvm-toolchain-minimal-<version>-<target>.tar.zst archives plus SHA256.txt.
 4. Retrieve the SHA256 values for all minimal toolchain artifacts from the release.
-   - Use SHA256.txt as the source of truth when updating LLVM_TOOLCHAIN_MINIMAL_SHA256.
-5. Edit MODULE.bazel:
-   - Replace every value in LLVM_TOOLCHAIN_MINIMAL_SHA256 with the published values.
+   - Use SHA256.txt as the source of truth when updating extensions/llvm_toolchain_minimal.bzl.
+5. Edit extensions/llvm_toolchain_minimal.bzl:
+   - Add or replace the new version entry in _LLVM_TOOLCHAIN_MINIMAL_SHA256 with the published values.
+6. Edit MODULE.bazel:
    - Set PREBUILT_LLVM_VERSION to the new version.
    - Set PREBUILT_LLVM_SUFFIX to -<suffix>.
    - Keep LLVM_VERSION at the new version.
-6. Edit toolchain/selects.bzl:
+7. Edit toolchain/selects.bzl:
    - Set LLVM_VERSION to the new version.
-7. Commit and push update-llvm-<version>.
-8. Open a PR from update-llvm-<version> to main.
-9. Make it explicit in the PR body or branch strategy that the PR intentionally includes the commits from the prior llvm-* branch when the branch is stacked that way.
+8. Commit and push update-llvm-<version>.
+9. Open a PR from update-llvm-<version> to main.
+10. Make it explicit in the PR body or branch strategy that the PR intentionally includes the commits from the prior llvm-* branch when the branch is stacked that way.
 
 ## Suggested Commands
 
@@ -114,7 +115,7 @@ gh pr create --base main --head update-llvm-<version> --fill
 - Failure handling:
    Keep iterating on the llvm-* branch only for obvious workflow, syntax, config, or similarly low-risk fixes. Escalate with analysis and plan when the cause is not obvious or the fix is risky.
 - Branch base for the PR branch:
-   Always branch update-llvm-<version> from llvm-<version>-<suffix> so the final PR contains both the prebuilt-generation preparation and the final MODULE.bazel update.
+   Always branch update-llvm-<version> from llvm-<version>-<suffix> so the final PR contains both the prebuilt-generation preparation and the final metadata update.
 - Remote actions:
    Push branches, inspect GitHub runs and releases, and create the PR automatically unless the user explicitly asks to pause before remote changes.
 
@@ -125,7 +126,7 @@ gh pr create --base main --head update-llvm-<version> --fill
 - The release contains SHA256.txt and all six minimal toolchain archives.
 - PREBUILT_LLVM_VERSION matches the published prebuilt version.
 - PREBUILT_LLVM_SUFFIX matches the chosen suffix.
-- LLVM_TOOLCHAIN_MINIMAL_SHA256 matches the published release checksums exactly.
+- extensions/llvm_toolchain_minimal.bzl matches the published release checksums exactly.
 - The update-llvm-<version> branch is pushed.
 - A PR targeting main exists for the final branch.
 

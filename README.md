@@ -275,6 +275,24 @@ Then:
 load("@llvm_config//:version.bzl", "LLVM_VERSION", "llvm_vars")
 ```
 
+### Prebuilt compiler repositories
+
+The default toolchain uses per-exec-platform `llvm-toolchain-minimal` repositories. If another module needs direct access to one of those prebuilt compiler repos, import the same extension:
+
+```starlark
+LLVM_PREBUILT_VERSION = "22.1.6"
+
+llvm_toolchain_minimal = use_extension("@llvm//extensions:llvm_toolchain_minimal.bzl", "llvm_toolchain_minimal")
+llvm_toolchain_minimal.release(
+    llvm_version = LLVM_PREBUILT_VERSION,
+    suffix = "-1",
+)
+use_repo(
+    llvm_toolchain_minimal,
+    "llvm-toolchain-minimal-%s-linux-amd64" % LLVM_PREBUILT_VERSION,
+)
+```
+
 # Additional LLVM targets
 
 This module exposes LLVM and runtime projects as first-class Bazel packages, so you can depend on them directly.
