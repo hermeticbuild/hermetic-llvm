@@ -1,3 +1,5 @@
+load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
+
 def _macos_minimum_os_flag_impl(ctx):
     value = ctx.fragments.apple.macos_minimum_os_flag
     if value == None:
@@ -5,7 +7,7 @@ def _macos_minimum_os_flag_impl(ctx):
     else:
         value = str(value)
 
-    return [config_common.FeatureFlagInfo(value = value)]
+    return [BuildSettingInfo(value = value)]
 
 macos_minimum_os_flag = rule(
     implementation = _macos_minimum_os_flag_impl,
