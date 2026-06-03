@@ -1,14 +1,11 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
+load("@rules_cc//cc/toolchains/args:sysroot.bzl", "cc_sysroot")
 load(
     ":macos_minimum_os_flag.bzl",
     "MACOS_MINIMUM_OS_VERSIONS",
     "macos_minimum_os_flag",
 )
-
-#TODO(cerisier): Replace with official rules_cc cc_sysroot
-# once https://github.com/bazelbuild/rules_cc/pull/607 is merged
-load(":sysroot.bzl", "cc_sysroot")
 
 package(default_visibility = ["//visibility:public"])
 
