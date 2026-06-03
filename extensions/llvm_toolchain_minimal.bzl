@@ -117,9 +117,15 @@ def _llvm_toolchain_minimal_impl(module_ctx):
     if bazel_features.external_deps.extension_metadata_has_reproducible:
         metadata_kwargs["reproducible"] = True
 
+    root_direct_deps = sorted(root_repos.keys())
+    root_direct_dev_deps = []
+    if not module_ctx.root_module_has_non_dev_dependency:
+        root_direct_dev_deps = root_direct_deps
+        root_direct_deps = []
+
     return module_ctx.extension_metadata(
-        root_module_direct_deps = sorted(root_repos.keys()),
-        root_module_direct_dev_deps = [],
+        root_module_direct_deps = root_direct_deps,
+        root_module_direct_dev_deps = root_direct_dev_deps,
         **metadata_kwargs
     )
 
