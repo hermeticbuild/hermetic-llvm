@@ -210,29 +210,6 @@ def declare_llvm_targets(*, suffix = ""):
         visibility = ["//visibility:public"],
     )
 
-    cc_args(
-        name = "link_wrapper_args",
-        actions = [
-            "@rules_cc//cc/toolchains/actions:link_actions",
-        ],
-        data = [
-            ":clangxx_file",
-            ":dsymutil_file",
-            ":strip_file",
-        ],
-        env = {
-            "LLVM_CLANGXX": "{clangxx}",
-            "LLVM_DSYMUTIL": "{dsymutil}",
-            "LLVM_STRIP": "{strip}",
-        },
-        format = {
-            "clangxx": ":clangxx_file",
-            "dsymutil": ":dsymutil_file",
-            "strip": ":strip_file",
-        },
-        visibility = ["//visibility:public"],
-    )
-
     cc_tool(
         name = "clang",
         src = "bin/clang" + suffix,
@@ -276,6 +253,16 @@ def declare_llvm_targets(*, suffix = ""):
             "bin/lld" + suffix,
             "bin/wasm-ld" + suffix,
         ],
+        env = {
+            "LLVM_CLANGXX": "{clangxx}",
+            "LLVM_DSYMUTIL": "{dsymutil}",
+            "LLVM_STRIP": "{strip}",
+        },
+        format = {
+            "clangxx": ":clangxx_file",
+            "dsymutil": ":dsymutil_file",
+            "strip": ":strip_file",
+        },
     )
 
     cc_tool(

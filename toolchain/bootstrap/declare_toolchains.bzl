@@ -214,28 +214,6 @@ def declare_tool_map(exec_os, exec_cpu):
         ],
     )
 
-    cc_args(
-        name = prefix + "/link-wrapper-args",
-        actions = [
-            "@rules_cc//cc/toolchains/actions:link_actions",
-        ],
-        data = [
-            prefix + "/bin/clang++",
-            prefix + "/bin/dsymutil",
-            prefix + "/bin/llvm-strip",
-        ],
-        env = {
-            "LLVM_CLANGXX": "{clangxx}",
-            "LLVM_DSYMUTIL": "{dsymutil}",
-            "LLVM_STRIP": "{strip}",
-        },
-        format = {
-            "clangxx": prefix + "/bin/clang++",
-            "dsymutil": prefix + "/bin/dsymutil",
-            "strip": prefix + "/bin/llvm-strip",
-        },
-    )
-
     bootstrap_binary(
         name = prefix + "/bin/ld.lld",
         platform = prefix + "_platform",
@@ -283,6 +261,16 @@ def declare_tool_map(exec_os, exec_cpu):
             prefix + "/bin/lld",
             prefix + "/bin/wasm-ld",
         ],
+        env = {
+            "LLVM_CLANGXX": "{clangxx}",
+            "LLVM_DSYMUTIL": "{dsymutil}",
+            "LLVM_STRIP": "{strip}",
+        },
+        format = {
+            "clangxx": prefix + "/bin/clang++",
+            "dsymutil": prefix + "/bin/dsymutil",
+            "strip": prefix + "/bin/llvm-strip",
+        },
     )
 
     bootstrap_binary(
@@ -390,12 +378,7 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
             extra_args = [
                 ":{}_{}/header-parser-args".format(exec_os, exec_cpu),
                 ":{}_{}/static-library-validator-args".format(exec_os, exec_cpu),
-            ] + select({
-                "@llvm//toolchain:macos_complete": [
-                    ":{}_{}/link-wrapper-args".format(exec_os, exec_cpu),
-                ],
-                "//conditions:default": [],
-            }),
+            ],
         )
 
         for (target_os, target_cpu) in targets:

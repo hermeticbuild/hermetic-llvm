@@ -1,5 +1,5 @@
 load("//platforms:common.bzl", "SUPPORTED_EXECS", "SUPPORTED_TARGETS")
-load("//toolchain:selects.bzl", "header_parser_arg", "link_wrapper_arg", "platform_cc_tool_map", "platform_module_map", "resource_dir_arg", "static_library_validator_arg")
+load("//toolchain:selects.bzl", "header_parser_arg", "platform_cc_tool_map", "platform_module_map", "resource_dir_arg", "static_library_validator_arg")
 load(":cc_toolchain.bzl", "cc_toolchain")
 
 def declare_toolchains(*, execs = SUPPORTED_EXECS, targets = SUPPORTED_TARGETS):
@@ -23,7 +23,7 @@ def declare_toolchains(*, execs = SUPPORTED_EXECS, targets = SUPPORTED_TARGETS):
                 resource_dir_arg(exec_os, exec_cpu),
                 header_parser_arg(exec_os, exec_cpu),
                 static_library_validator_arg(exec_os, exec_cpu),
-            ] + link_wrapper_arg(exec_os, exec_cpu),
+            ],
         )
 
         for (target_os, target_cpu) in targets:

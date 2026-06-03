@@ -43,12 +43,6 @@ def static_library_validator_arg(exec_os, exec_cpu):
     # a singleton tool and this per-toolchain args target can be cleaned up.
     return _tool_repo(exec_os, exec_cpu) + ":static_library_validator_args"
 
-def link_wrapper_arg(exec_os, exec_cpu):
-    return select({
-        "@llvm//toolchain:macos_complete": [_tool_repo(exec_os, exec_cpu) + ":link_wrapper_args"],
-        "//conditions:default": [],
-    })
-
 def platform_cc_tool_map(exec_os, exec_cpu):
     tool_repo = _tool_repo(exec_os, exec_cpu)
 
