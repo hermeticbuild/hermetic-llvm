@@ -72,11 +72,29 @@ def _release_sha256(llvm_version, suffix):
 
     return release_key, sha256
 
-def _release_repo_specs(release):
-    release_key, sha256 = _release_sha256(release.llvm_version, release.suffix)
+def _root_release_suffixes(module_ctx):
+    suffixes = {}
+    for module in module_ctx.modules:
+        if not module.is_root:
+            continue
+        for release in module.tags.release:
+            previous = suffixes.get(release.llvm_version)
+            if previous != None and previous != release.suffix:
+                fail("Root module requested multiple llvm-toolchain-minimal releases for LLVM {}: {} and {}".format(
+                    release.llvm_version,
+                    _release_key(release.llvm_version, previous),
+                    _release_key(release.llvm_version, release.suffix),
+                ))
+            suffixes[release.llvm_version] = release.suffix
+    return suffixes
+
+def _release_repo_specs(release, root_suffixes):
+    suffix = root_suffixes.get(release.llvm_version, release.suffix)
+    release_key, sha256 = _release_sha256(release.llvm_version, suffix)
     return {
         _repo_name(release.llvm_version, target): struct(
             build_file = _build_file(target),
+            release_key = release_key,
             sha256 = sha256[target],
             urls = [_url(release_key, release.llvm_version, target)],
         )
@@ -89,10 +107,11 @@ def _same_repo_spec(left, right):
 def _llvm_toolchain_minimal_impl(module_ctx):
     repo_specs = {}
     root_repos = {}
+    root_suffixes = _root_release_suffixes(module_ctx)
 
     for module in module_ctx.modules:
         for release in module.tags.release:
-            release_specs = _release_repo_specs(release)
+            release_specs = _release_repo_specs(release, root_suffixes)
             if module.is_root:
                 for repo_name in release_specs.keys():
                     root_repos[repo_name] = True
@@ -101,7 +120,11 @@ def _llvm_toolchain_minimal_impl(module_ctx):
                 previous = repo_specs.get(repo_name)
                 if previous != None:
                     if not _same_repo_spec(previous, spec):
-                        fail("Conflicting declarations for repository {}".format(repo_name))
+                        fail("Conflicting llvm-toolchain-minimal release requests: {} and {} both map to repository {}. Choose one release suffix in the root module.".format(
+                            previous.release_key,
+                            spec.release_key,
+                            repo_name,
+                        ))
                     continue
                 repo_specs[repo_name] = spec
 
