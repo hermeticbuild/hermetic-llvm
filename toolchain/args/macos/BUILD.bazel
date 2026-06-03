@@ -32,8 +32,8 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:compile_actions",
         "@rules_cc//cc/toolchains/actions:link_actions",
     ],
-    args = ["-mmacosx-version-min={macos_minimum_os_flag}"],
-    format = {"min_os_flag": ":macos_minimum_os_flag"},
+    args = ["-mmacosx-version-min={version}"],
+    format = {"version": ":macos_minimum_os_flag"},
 )
 
 cc_args(
