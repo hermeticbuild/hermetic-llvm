@@ -1,6 +1,5 @@
 load("@bazel_features//:features.bzl", "bazel_features")
 load("@llvm_config//:version.bzl", "LLVM_VERSION_MAJOR")
-load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 load("@rules_cc//cc/toolchains:tool.bzl", "cc_tool")
 load("@rules_cc//cc/toolchains:tool_map.bzl", "cc_tool_map")
 load("//platforms:common.bzl", "SUPPORTED_TARGETS")
@@ -143,12 +142,11 @@ def declare_tool_map(exec_os, exec_cpu):
         capabilities = ["@rules_cc//cc/toolchains/capabilities:supports_pic"],
     )
 
-    cc_args(
-        name = prefix + "/header-parser-args",
-        actions = [
-            "@rules_cc//cc/toolchains/actions:cpp_header_parsing",
-        ],
+    cc_tool(
+        name = prefix + "/header-parser",
+        src = "@llvm//tools/internal:header-parser",
         data = [
+            prefix + "/clang_builtin_headers_include_directory",
             prefix + "/bin/clang++",
         ],
         env = {
@@ -157,15 +155,6 @@ def declare_tool_map(exec_os, exec_cpu):
         format = {
             "clangxx": prefix + "/bin/clang++",
         },
-    )
-
-    cc_tool(
-        name = prefix + "/header-parser",
-        src = "@llvm//tools/internal:header-parser",
-        data = [
-            prefix + "/clang_builtin_headers_include_directory",
-            prefix + "/bin/clang++",
-        ],
     )
 
     bootstrap_binary(
@@ -186,11 +175,9 @@ def declare_tool_map(exec_os, exec_cpu):
         actual = "@llvm-project//llvm:llvm.stripped",
     )
 
-    cc_args(
-        name = prefix + "/static-library-validator-args",
-        actions = [
-            "@rules_cc//cc/toolchains/actions:validate_static_library",
-        ],
+    cc_tool(
+        name = prefix + "/static-library-validator",
+        src = "@llvm//tools/internal:static-library-validator",
         data = [
             prefix + "/bin/c++filt",
             prefix + "/bin/llvm-nm",
@@ -203,15 +190,6 @@ def declare_tool_map(exec_os, exec_cpu):
             "cxxfilt": prefix + "/bin/c++filt",
             "llvm_nm": prefix + "/bin/llvm-nm",
         },
-    )
-
-    cc_tool(
-        name = prefix + "/static-library-validator",
-        src = "@llvm//tools/internal:static-library-validator",
-        data = [
-            prefix + "/bin/c++filt",
-            prefix + "/bin/llvm-nm",
-        ],
     )
 
     bootstrap_binary(
@@ -375,10 +353,6 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
                 "@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_apple_setting": ":{}_{}/tools_with_libtool_for_runtime".format(exec_os, exec_cpu),
                 "//conditions:default": ":{}_{}/default_tools_for_runtime".format(exec_os, exec_cpu),
             }),
-            extra_args = [
-                ":{}_{}/header-parser-args".format(exec_os, exec_cpu),
-                ":{}_{}/static-library-validator-args".format(exec_os, exec_cpu),
-            ],
         )
 
         for (target_os, target_cpu) in targets:

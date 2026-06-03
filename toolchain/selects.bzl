@@ -33,16 +33,6 @@ def platform_module_map(exec_os, exec_cpu):
 def resource_dir_arg(exec_os, exec_cpu):
     return _tool_repo(exec_os, exec_cpu) + ":compile_resource_dir"
 
-def header_parser_arg(exec_os, exec_cpu):
-    # Once rules_cc supports `env` on `cc_tool`, header-parser can become a singleton
-    # tool and this per-toolchain args target can be cleaned up.
-    return _tool_repo(exec_os, exec_cpu) + ":header_parser_args"
-
-def static_library_validator_arg(exec_os, exec_cpu):
-    # Once rules_cc supports `env` on `cc_tool`, static-library-validator can become
-    # a singleton tool and this per-toolchain args target can be cleaned up.
-    return _tool_repo(exec_os, exec_cpu) + ":static_library_validator_args"
-
 def platform_cc_tool_map(exec_os, exec_cpu):
     tool_repo = _tool_repo(exec_os, exec_cpu)
 

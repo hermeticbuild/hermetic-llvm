@@ -35,12 +35,11 @@ def declare_llvm_targets(*, suffix = ""):
         srcs = ["bin/llvm-strip" + suffix],
     )
 
-    cc_args(
-        name = "header_parser_args",
-        actions = [
-            "@rules_cc//cc/toolchains/actions:cpp_header_parsing",
-        ],
+    cc_tool(
+        name = "header_parser",
+        src = "@llvm//tools/internal:header-parser",
         data = [
+            ":builtin_resource_dir",
             ":clangxx_file",
         ],
         env = {
@@ -49,16 +48,6 @@ def declare_llvm_targets(*, suffix = ""):
         format = {
             "clangxx": ":clangxx_file",
         },
-        visibility = ["//visibility:public"],
-    )
-
-    cc_tool(
-        name = "header_parser",
-        src = "@llvm//tools/internal:header-parser",
-        data = [
-            ":builtin_resource_dir",
-            ":clangxx_file",
-        ],
         allowlist_include_directories = [":builtin_resource_dir"],
     )
 
@@ -88,43 +77,21 @@ def declare_llvm_targets(*, suffix = ""):
         visibility = ["//visibility:public"],
     )
 
-    native.filegroup(
-        name = "cxxfilt_file",
-        srcs = ["bin/c++filt" + suffix],
-    )
-
-    native.filegroup(
-        name = "llvm_nm_file",
-        srcs = ["bin/llvm-nm" + suffix],
-    )
-
-    cc_args(
-        name = "static_library_validator_args",
-        actions = [
-            "@rules_cc//cc/toolchains/actions:validate_static_library",
-        ],
+    cc_tool(
+        name = "static_library_validator",
+        src = "@llvm//tools/internal:static-library-validator",
         data = [
-            ":cxxfilt_file",
-            ":llvm_nm_file",
+            "bin/c++filt" + suffix,
+            "bin/llvm-nm" + suffix,
         ],
         env = {
             "LLVM_CXXFILT": "{cxxfilt}",
             "LLVM_NM": "{llvm_nm}",
         },
         format = {
-            "cxxfilt": ":cxxfilt_file",
-            "llvm_nm": ":llvm_nm_file",
+            "cxxfilt": "bin/c++filt" + suffix,
+            "llvm_nm": "bin/llvm-nm" + suffix,
         },
-        visibility = ["//visibility:public"],
-    )
-
-    cc_tool(
-        name = "static_library_validator",
-        src = "@llvm//tools/internal:static-library-validator",
-        data = [
-            ":cxxfilt_file",
-            ":llvm_nm_file",
-        ],
     )
 
     BASE_TOOLS = {
@@ -299,8 +266,8 @@ def declare_llvm_targets(*, suffix = ""):
             ],
             "//conditions:default": [],
         }) + [
-            ":cxxfilt_file",
-            ":llvm_nm_file",
+            "bin/c++filt" + suffix,
+            "bin/llvm-nm" + suffix,
         ],
     )
 
