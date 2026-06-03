@@ -1,8 +1,8 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 load(
-    ":macos_minimum_os_version_info.bzl",
-    "macos_minimum_os_version_info",
+    ":macos_minimum_os_flag.bzl",
+    "macos_minimum_os_flag",
 )
 
 #TODO(cerisier): Replace with official rules_cc cc_sysroot
@@ -22,8 +22,8 @@ cc_sysroot(
     sysroot = "@macos_sdk//sysroot",
 )
 
-macos_minimum_os_version_info(
-    name = "macos_minimum_os_version_info",
+macos_minimum_os_flag(
+    name = "macos_minimum_os_flag",
 )
 
 cc_args(
@@ -32,8 +32,8 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:compile_actions",
         "@rules_cc//cc/toolchains/actions:link_actions",
     ],
-    args = ["-mmacosx-version-min={VERSION}"],
-    toolchains = [":macos_minimum_os_version_info"],
+    args = ["-mmacosx-version-min={macos_minimum_os_flag}"],
+    format = {"min_os_flag": ":macos_minimum_os_flag"},
 )
 
 cc_args(
