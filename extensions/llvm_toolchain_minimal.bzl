@@ -12,8 +12,8 @@ _TARGETS = [
     "windows-arm64",
 ]
 
-_LLVM_TOOLCHAIN_MINIMAL_SHA256 = {
-    "22.1.6": {
+_LLVM_TOOLCHAIN_MINIMAL_RELEASES = {
+    "llvm-22.1.6-1": {
         "darwin-amd64": "cc79ad7858a02589b334643b38b7112cb2ca7a7546dfefca3feee244f58c209e",
         "darwin-arm64": "da43c29334d92d232f7951ce7be23cf5958f9388fa02ba75a87600a5900b2d52",
         "linux-amd64-musl": "19ecc9a5a3eedd00d7a46e35b292a908ec4eba4f33a40d2566e9a1d2cce31d85",
@@ -32,10 +32,16 @@ def _repo_name(llvm_version, target):
         target = _repo_target(target),
     )
 
-def _url(llvm_version, suffix, target):
-    return "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-{llvm_version}{suffix}/llvm-toolchain-minimal-{llvm_version}-{target}.tar.zst".format(
+def _release_key(llvm_version, suffix):
+    return "llvm-{llvm_version}{suffix}".format(
         llvm_version = llvm_version,
         suffix = suffix,
+    )
+
+def _url(release_key, llvm_version, target):
+    return "https://github.com/hermeticbuild/hermetic-llvm/releases/download/{release_key}/llvm-toolchain-minimal-{llvm_version}-{target}.tar.zst".format(
+        release_key = release_key,
+        llvm_version = llvm_version,
         target = target,
     )
 
@@ -44,34 +50,35 @@ def _build_file(target):
         return Label("//toolchain/llvm:llvm_release_windows.BUILD.bazel")
     return Label("//toolchain/llvm:llvm_release.BUILD.bazel")
 
-def _version_sha256(llvm_version):
-    sha256 = _LLVM_TOOLCHAIN_MINIMAL_SHA256.get(llvm_version)
+def _release_sha256(llvm_version, suffix):
+    release_key = _release_key(llvm_version, suffix)
+    sha256 = _LLVM_TOOLCHAIN_MINIMAL_RELEASES.get(release_key)
     if sha256 == None:
-        fail("No llvm-toolchain-minimal prebuilts declared for LLVM {}".format(llvm_version))
+        fail("No llvm-toolchain-minimal prebuilts declared for {}".format(release_key))
 
     missing = [target for target in _TARGETS if target not in sha256]
     if missing:
-        fail("LLVM {} is missing llvm-toolchain-minimal sha256 values for {}".format(
-            llvm_version,
+        fail("{} is missing llvm-toolchain-minimal sha256 values for {}".format(
+            release_key,
             ", ".join(missing),
         ))
 
     extra = [target for target in sha256.keys() if target not in _TARGETS]
     if extra:
-        fail("LLVM {} has unknown llvm-toolchain-minimal sha256 targets {}".format(
-            llvm_version,
+        fail("{} has unknown llvm-toolchain-minimal sha256 targets {}".format(
+            release_key,
             ", ".join(extra),
         ))
 
-    return sha256
+    return release_key, sha256
 
 def _release_repo_specs(release):
-    sha256 = _version_sha256(release.llvm_version)
+    release_key, sha256 = _release_sha256(release.llvm_version, release.suffix)
     return {
         _repo_name(release.llvm_version, target): struct(
             build_file = _build_file(target),
             sha256 = sha256[target],
-            urls = [_url(release.llvm_version, release.suffix, target)],
+            urls = [_url(release_key, release.llvm_version, target)],
         )
         for target in _TARGETS
     }

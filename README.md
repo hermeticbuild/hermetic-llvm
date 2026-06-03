@@ -277,7 +277,7 @@ load("@llvm_config//:version.bzl", "LLVM_VERSION", "llvm_vars")
 
 ### Prebuilt compiler repositories
 
-The default toolchain uses per-exec-platform `llvm-toolchain-minimal` repositories. If another module needs direct access to one of those prebuilt compiler repos, import the same extension:
+The default toolchain uses per-exec-platform `llvm-toolchain-minimal` repositories. If another module needs direct access to those prebuilt compiler repos, import the same extension and the generated repositories for the selected release. The `suffix` is part of the concrete release tag, so keep it in sync with the sha256 entry.
 
 ```starlark
 LLVM_PREBUILT_VERSION = "22.1.6"
@@ -289,7 +289,12 @@ llvm_toolchain_minimal.release(
 )
 use_repo(
     llvm_toolchain_minimal,
+    "llvm-toolchain-minimal-%s-darwin-amd64" % LLVM_PREBUILT_VERSION,
+    "llvm-toolchain-minimal-%s-darwin-arm64" % LLVM_PREBUILT_VERSION,
     "llvm-toolchain-minimal-%s-linux-amd64" % LLVM_PREBUILT_VERSION,
+    "llvm-toolchain-minimal-%s-linux-arm64" % LLVM_PREBUILT_VERSION,
+    "llvm-toolchain-minimal-%s-windows-amd64" % LLVM_PREBUILT_VERSION,
+    "llvm-toolchain-minimal-%s-windows-arm64" % LLVM_PREBUILT_VERSION,
 )
 ```
 

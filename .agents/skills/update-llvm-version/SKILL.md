@@ -71,7 +71,7 @@ Do not run local builds unless the user explicitly asks. Default verification is
 4. Retrieve the SHA256 values for all minimal toolchain artifacts from the release.
    - Use SHA256.txt as the source of truth when updating extensions/llvm_toolchain_minimal.bzl.
 5. Edit extensions/llvm_toolchain_minimal.bzl:
-   - Add or replace the new version entry in _LLVM_TOOLCHAIN_MINIMAL_SHA256 with the published values.
+   - Add or replace the new `llvm-<version><suffix>` entry in _LLVM_TOOLCHAIN_MINIMAL_RELEASES with the published values.
 6. Edit MODULE.bazel:
    - Set PREBUILT_LLVM_VERSION to the new version.
    - Set PREBUILT_LLVM_SUFFIX to -<suffix>.
