@@ -30,6 +30,14 @@ cc_feature(
     feature_name = "prefer_pic_for_opt_binaries",
 )
 
+# Allow external repositories to get included with -isystem instead of -I.
+# in order to silence warnings from external headers.
+cc_feature(
+    name = "external_include_paths",
+    args = ["@rules_cc//cc/toolchains/args/external_include_paths:external_include_paths"],
+    feature_name = "external_include_paths",
+)
+
 cc_args(
     name = "opt_link_flags",
     actions = [
