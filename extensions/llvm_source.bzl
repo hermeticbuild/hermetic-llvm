@@ -13,6 +13,7 @@ _DEFAULT_SOURCE_PATCHES = [
     "//3rd_party/llvm-project/x.x/patches:llvm-bzl-library.patch",
     "//3rd_party/llvm-project/x.x/patches:llvm-cov-multicall.patch",
     "//3rd_party/llvm-project/x.x/patches:llvm-readtapi-multicall.patch",
+    "//3rd_party/llvm-project/x.x/patches:llvm-install-name-tool-output.patch",
     "//3rd_party/llvm-project/x.x/patches:llvm-driver-tool-order.patch",
     "//3rd_party/llvm-project/x.x/patches:llvm-driver-best-tool-match.patch",
     "//3rd_party/llvm-project/x.x/patches:llvm-dsymutil-corefoundation.patch",
