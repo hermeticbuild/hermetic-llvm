@@ -1,0 +1,65 @@
+diff --git a/lldb/source/Host/common/OptionParser.cpp b/lldb/source/Host/common/OptionParser.cpp
+index 0274fdc..a38a395 100644
+--- a/lldb/source/Host/common/OptionParser.cpp
++++ b/lldb/source/Host/common/OptionParser.cpp
+@@ -18,7 +18,7 @@ using namespace lldb_private;
+ void OptionParser::Prepare(std::unique_lock<std::mutex> &lock) {
+   static std::mutex g_mutex;
+   lock = std::unique_lock<std::mutex>(g_mutex);
+-#ifdef __GLIBC__
++#if defined(__GLIBC__) || defined(__MINGW32__)
+   optind = 0;
+ #else
+   optreset = 1;
+diff --git a/utils/bazel/llvm-project-overlay/lldb/BUILD.bazel b/utils/bazel/llvm-project-overlay/lldb/BUILD.bazel
+index b9f1d7b..ef883d6 100644
+--- a/utils/bazel/llvm-project-overlay/lldb/BUILD.bazel
++++ b/utils/bazel/llvm-project-overlay/lldb/BUILD.bazel
+@@ -586,9 +586,12 @@ objc_library(
+ 
+ cc_library(
+     name = "Host",
+-    srcs = glob([
+-        "source/Host/common/**/*.cpp",
+-    ]) + select({
++    srcs = glob(
++        [
++            "source/Host/common/**/*.cpp",
++        ],
++        exclude = ["source/Host/common/Editline.cpp"],
++    ) + select({
+         "@platforms//os:linux": glob(
+             [
+                 "source/Host/posix/**/*.cpp",
+@@ -607,11 +610,17 @@ cc_library(
+         ]) + [
+             "source/Host/posix/ConnectionFileDescriptorPosix.cpp",
+         ],
++    }) + select({
++        ":libedit_enabled": ["source/Host/common/Editline.cpp"],
++        "//conditions:default": [],
+     }),
+-    hdrs = [":ConfigHeader"] + glob([
+-        "include/lldb/Host/*.h",
+-        "include/lldb/Host/common/*.h",
+-    ]) + select({
++    hdrs = [":ConfigHeader"] + glob(
++        [
++            "include/lldb/Host/*.h",
++            "include/lldb/Host/common/*.h",
++        ],
++        exclude = ["include/lldb/Host/Editline.h"],
++    ) + select({
+         "@platforms//os:macos": glob([
+             "include/lldb/Host/macosx/*.h",
+             "include/lldb/Host/posix/*.h",
+@@ -625,6 +634,9 @@ cc_library(
+             "include/lldb/Host/windows/*.h",
+             "include/lldb/Host/windows/**/*.h",
+         ]),
++    }) + select({
++        ":libedit_enabled": ["include/lldb/Host/Editline.h"],
++        "//conditions:default": [],
+     }),
+     features = ["-layering_check"],  # histedit.h breaks this.
+     includes = ["include"],

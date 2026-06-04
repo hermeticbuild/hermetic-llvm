@@ -1,0 +1,40 @@
+--- a/utils/bazel/llvm-project-overlay/lldb/BUILD.bazel
++++ b/utils/bazel/llvm-project-overlay/lldb/BUILD.bazel
+@@ -550,6 +550,11 @@
+                 "source/Host/posix/**/*.cpp",
+             ],
+         ),
++        "@platforms//os:windows": glob([
++            "source/Host/windows/**/*.cpp",
++        ]) + [
++            "source/Host/posix/ConnectionFileDescriptorPosix.cpp",
++        ],
+     }),
+     hdrs = [":ConfigHeader"] + glob([
+         "include/lldb/Host/*.h",
+@@ -561,7 +566,12 @@
+         ]),
+         "@platforms//os:linux": glob([
+             "include/lldb/Host/linux/*.h",
++            "include/lldb/Host/posix/*.h",
++        ]),
++        "@platforms//os:windows": glob([
+             "include/lldb/Host/posix/*.h",
++            "include/lldb/Host/windows/*.h",
++            "include/lldb/Host/windows/**/*.h",
+         ]),
+     }),
+     features = ["-layering_check"],  # histedit.h breaks this.
+@@ -573,6 +583,12 @@
+             "-lxml2",
+             "-Wl,-framework,CoreServices",
+             "-Wl,-framework,Security",
++        ],
++        "@platforms//os:windows": [
++            "rpcrt4.lib",
++            "version.lib",
++            "dbghelp.lib",
++            "pathcch.lib",
+         ],
+         "//conditions:default": [],
+     }) + select({

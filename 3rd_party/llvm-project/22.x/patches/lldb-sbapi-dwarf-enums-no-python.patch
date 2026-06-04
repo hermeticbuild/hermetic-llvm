@@ -1,0 +1,75 @@
+--- a/utils/bazel/llvm-project-overlay/lldb/BUILD.bazel
++++ b/utils/bazel/llvm-project-overlay/lldb/BUILD.bazel
+@@ -7,7 +7,6 @@
+ load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
+ load("@apple_support//rules:apple_genrule.bzl", "apple_genrule")
+ load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_import", "cc_library", "objc_library")
+-load("@rules_python//python:defs.bzl", "py_binary")
+ load("//:vars.bzl", "LLVM_VERSION_MAJOR", "LLVM_VERSION_MINOR", "LLVM_VERSION_PATCH", "LLVM_VERSION_SUFFIX", "PACKAGE_VERSION")
+ load("//lldb/source/Plugins:plugin_config.bzl", "DEFAULT_PLUGINS", "DEFAULT_SCRIPT_PLUGINS", "OBJCPP_COPTS", "WINDOWS_EXCLUDED_PLUGINS")
+ 
+@@ -217,17 +216,57 @@
+     ],
+ )
+ 
+-py_binary(
+-    name = "generate-sbapi-dwarf-enum",
+-    srcs = ["scripts/generate-sbapi-dwarf-enum.py"],
+-)
+-
+ genrule(
+     name = "lldb-sbapi-dwarf-enums",
+     srcs = ["//llvm:include/llvm/BinaryFormat/Dwarf.def"],
+     outs = ["include/lldb/API/SBLanguages.h"],
+-    cmd = "$(location :generate-sbapi-dwarf-enum) $(location //llvm:include/llvm/BinaryFormat/Dwarf.def) --output $@",
+-    tools = [":generate-sbapi-dwarf-enum"],
++    cmd = """
++cat > $@ <<'EOF'
++//===-- SBLanguages.h -----------------------------------------*- C++ -*-===//
++//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// See https://llvm.org/LICENSE.txt for license information.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++//
++//===----------------------------------------------------------------------===//
++
++#ifndef LLDB_API_SBLANGUAGE_H
++#define LLDB_API_SBLANGUAGE_H
++
++#include <cstdint>
++
++namespace lldb {
++/// Used by \\ref SBExpressionOptions.
++/// These enumerations use the same language enumerations as the DWARF
++/// specification for ease of use and consistency.
++enum SBSourceLanguageName : uint16_t {
++EOF
++
++awk '
++/^[[:space:]]*HANDLE_DW_LNAME/ {
++  line = $$0
++  sub(/^[[:space:]]*HANDLE_DW_LNAME\\(/, "", line)
++  split(line, parts, ",")
++  value = parts[1]
++  name = parts[2]
++  comment = parts[3]
++  gsub(/^[[:space:]]*/, "", value)
++  gsub(/^[[:space:]]*/, "", name)
++  sub(/^[[:space:]]*"/, "", comment)
++  sub(/".*/, "", comment)
++  printf("  /// %s.\\n", comment)
++  printf("  eLanguageName%s = %s,\\n", name, value)
++}
++' $(location //llvm:include/llvm/BinaryFormat/Dwarf.def) >> $@
++
++cat >> $@ <<'EOF'
++};
++
++} // namespace lldb
++
++#endif
++EOF
++""",
+ )
+ 
+ cc_library(

@@ -1,0 +1,106 @@
+From c3cc751eee03f6355e2b9cd3c3a97ac3de179187 Mon Sep 17 00:00:00 2001
+From: David Young <davidayoung@meta.com>
+Date: Tue, 2 Jun 2026 11:14:56 -0700
+Subject: [PATCH 3/4] [lldb][bazel] Add Windows plugin support
+
+Add Windows-specific plugin configuration to the LLDB Bazel overlay.
+
+plugin_config.bzl: Added WINDOWS_EXCLUDED_PLUGINS list for plugins that
+cannot compile on Windows (GNUstepObjCRuntime has source compat issues,
+ScriptedProcess requires Python).
+
+Plugins/BUILD.bazel:
+- PluginProcessWindowsCommon: New target for Process/Windows/Common/*.cpp
+  (Windows native debugging support).
+- plugins_config_gen: Added @platforms//os:windows branch that uses
+  _WINDOWS_LOAD_PLUGINS (filtered plugin list) and sets
+  @LLDB_PROCESS_WINDOWS_PLUGIN@ to LLDB_PLUGIN(ProcessWindowsCommon).
+---
+ .../lldb/source/Plugins/BUILD.bazel           | 33 +++++++++++++++++--
+ .../lldb/source/Plugins/plugin_config.bzl     |  7 ++++
+ 2 files changed, 38 insertions(+), 2 deletions(-)
+
+diff --git a/utils/bazel/llvm-project-overlay/lldb/source/Plugins/BUILD.bazel b/utils/bazel/llvm-project-overlay/lldb/source/Plugins/BUILD.bazel
+index e25918b9b77de..365b4a73f9c3f 100644
+--- a/utils/bazel/llvm-project-overlay/lldb/source/Plugins/BUILD.bazel
++++ b/utils/bazel/llvm-project-overlay/lldb/source/Plugins/BUILD.bazel
+@@ -4,7 +4,7 @@
+ load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
+ load("@rules_cc//cc:defs.bzl", "cc_library", "objc_library")
+ load("//mlir:tblgen.bzl", "gentbl_cc_library")
+-load(":plugin_config.bzl", "DEFAULT_PLUGINS", "DEFAULT_SCRIPT_PLUGINS", "OBJCPP_COPTS")
++load(":plugin_config.bzl", "DEFAULT_PLUGINS", "DEFAULT_SCRIPT_PLUGINS", "OBJCPP_COPTS", "WINDOWS_EXCLUDED_PLUGINS")
+ 
+ package(
+     default_visibility = ["//visibility:public"],
+@@ -2422,21 +2422,50 @@ cc_library(
+ _DEFAULT_LOAD_PLUGINS = "\n".join(["LLDB_PLUGIN({})".format(x) for x in DEFAULT_PLUGINS]) + \
+                         "\n" + "\n".join(["LLDB_SCRIPT_PLUGIN({})".format(x) for x in DEFAULT_SCRIPT_PLUGINS])
+ 
++_WINDOWS_LOAD_PLUGINS = "\n".join(["LLDB_PLUGIN({})".format(x) for x in DEFAULT_PLUGINS if x not in WINDOWS_EXCLUDED_PLUGINS]) + \
++                         "\n" + "\n".join(["LLDB_SCRIPT_PLUGIN({})".format(x) for x in DEFAULT_SCRIPT_PLUGINS if x not in WINDOWS_EXCLUDED_PLUGINS])
++
++cc_library(
++    name = "PluginProcessWindowsCommon",
++    srcs = glob(["Process/Windows/Common/*.cpp"]),
++    hdrs = glob([
++        "Process/Windows/Common/*.h",
++        "Process/Windows/Common/**/*.h",
++    ]),
++    includes = [".."],
++    target_compatible_with = ["@platforms//os:windows"],
++    deps = [
++        ":PluginDynamicLoaderWindowsDYLD",
++        "//lldb:Breakpoint",
++        "//lldb:Core",
++        "//lldb:Headers",
++        "//lldb:Host",
++        "//lldb:Target",
++        "//lldb:Utility",
++        "//llvm:Support",
++    ],
++)
++
+ expand_template(
+     name = "plugins_config_gen",
+     out = "Plugins.def",
+     substitutions = {
+-        "@LLDB_PROCESS_WINDOWS_PLUGIN@": "",
+         "@LLDB_PROCESS_GDB_PLUGIN@": "LLDB_PLUGIN(ProcessGDBRemote)",
+     } | select({
+         "@platforms//os:macos": {
++            "@LLDB_PROCESS_WINDOWS_PLUGIN@": "",
+             "@LLDB_ENUM_PLUGINS@": _DEFAULT_LOAD_PLUGINS + """
+ LLDB_PLUGIN(ProcessMacOSXKernel)
+ LLDB_PLUGIN(SymbolLocatorDebugSymbols)
+ LLDB_PLUGIN(SymbolVendorMacOSX)
+ """,
+         },
++        "@platforms//os:windows": {
++            "@LLDB_PROCESS_WINDOWS_PLUGIN@": "LLDB_PLUGIN(ProcessWindowsCommon)",
++            "@LLDB_ENUM_PLUGINS@": _WINDOWS_LOAD_PLUGINS,
++        },
+         "//conditions:default": {
++            "@LLDB_PROCESS_WINDOWS_PLUGIN@": "",
+             "@LLDB_ENUM_PLUGINS@": _DEFAULT_LOAD_PLUGINS,
+         },
+     }),
+diff --git a/utils/bazel/llvm-project-overlay/lldb/source/Plugins/plugin_config.bzl b/utils/bazel/llvm-project-overlay/lldb/source/Plugins/plugin_config.bzl
+index 56b3ea174f52c..a9089daebb5ab 100644
+--- a/utils/bazel/llvm-project-overlay/lldb/source/Plugins/plugin_config.bzl
++++ b/utils/bazel/llvm-project-overlay/lldb/source/Plugins/plugin_config.bzl
+@@ -100,6 +100,13 @@ DEFAULT_SCRIPT_PLUGINS = [
+     "ScriptInterpreterNone",
+ ]
+ 
++# Plugins excluded on Windows: GNUstep has source compat issues with
++# the current LLVM version, ScriptedProcess requires Python.
++WINDOWS_EXCLUDED_PLUGINS = [
++    "GNUstepObjCRuntime",
++    "ScriptedProcess",
++]
++
+ OBJCPP_COPTS = [
+     "-std=c++{}".format(CMAKE_CXX_STANDARD),
+     "-fno-objc-exceptions",
+

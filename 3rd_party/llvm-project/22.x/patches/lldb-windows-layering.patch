@@ -1,0 +1,39 @@
+diff --git a/utils/bazel/llvm-project-overlay/lldb/BUILD.bazel b/utils/bazel/llvm-project-overlay/lldb/BUILD.bazel
+index ef883d6..667b5c0 100644
+--- a/utils/bazel/llvm-project-overlay/lldb/BUILD.bazel
++++ b/utils/bazel/llvm-project-overlay/lldb/BUILD.bazel
+@@ -857,6 +857,7 @@ cc_library(
+     deps = [
+         ":CoreHeaders",
+         ":Headers",
++        ":HostHeaders",
+         ":TargetHeaders",
+         ":UtilityPrivateHeaders",
+         "//llvm:BinaryFormat",
+diff --git a/utils/bazel/llvm-project-overlay/lldb/source/Plugins/BUILD.bazel b/utils/bazel/llvm-project-overlay/lldb/source/Plugins/BUILD.bazel
+index 51e9800..1906cc5 100644
+--- a/utils/bazel/llvm-project-overlay/lldb/source/Plugins/BUILD.bazel
++++ b/utils/bazel/llvm-project-overlay/lldb/source/Plugins/BUILD.bazel
+@@ -2339,15 +2339,21 @@ cc_library(
+         "Process/Windows/Common/*.h",
+         "Process/Windows/Common/**/*.h",
+     ]),
+-    includes = [".."],
++    includes = [
++        "..",
++        "Process/Windows/Common",
++    ],
+     target_compatible_with = ["@platforms//os:windows"],
+     deps = [
+         ":PluginDynamicLoaderWindowsDYLD",
++        ":PluginProcessUtility",
+         "//lldb:Breakpoint",
+         "//lldb:Core",
+         "//lldb:Headers",
+         "//lldb:Host",
++        "//lldb:SymbolHeaders",
+         "//lldb:Target",
++        "//lldb:TargetHeaders",
+         "//lldb:Utility",
+         "//llvm:Support",
+     ],
