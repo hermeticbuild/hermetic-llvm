@@ -1,9 +1,9 @@
 load("@bazel_features//:features.bzl", "bazel_features")
 load("@bazel_lib//lib:transitions.bzl", "platform_transition_binary", "platform_transition_filegroup")
-load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@llvm//:defs.bzl", "exec_test")
 load("@platforms//host:constraints.bzl", "HOST_CONSTRAINTS")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_import.bzl", "cc_import")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:cc_static_library.bzl", "cc_static_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
@@ -242,23 +242,22 @@ cc_binary(
     linkstatic = True,
 )
 
-write_file(
-    name = "windows_runtime_dll",
-    out = "windows_runtime/sub/runtime.dll",
+cc_import(
+    name = "windows_add_import",
+    shared_library = "//windows_dll:windows_add.dll",
+    target_compatible_with = ["@platforms//os:windows"],
 )
 
 cc_binary(
     name = "windows_runtime_dynamic_libraries_binary",
-    srcs = [
-        "main.cc",
-        ":windows_runtime_dll",
-    ],
+    srcs = ["windows_dll_main.cc"],
     target_compatible_with = ["@platforms//os:windows"],
+    deps = [":windows_add_import"],
 )
 
 windows_runtime_dynamic_libraries_assertion(
     name = "windows_runtime_dynamic_libraries_test",
-    runtime_library_basename = "runtime.dll",
+    runtime_library_basename = "windows_add.dll",
     target = ":windows_runtime_dynamic_libraries_binary",
     target_compatible_with = ["@platforms//os:windows"],
 )
