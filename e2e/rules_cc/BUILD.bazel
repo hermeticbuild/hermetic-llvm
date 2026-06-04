@@ -304,6 +304,9 @@ cc_binary(
 cc_test(
     name = "windows_explicit_def_test",
     srcs = ["windows_explicit_def_test.cc"],
+    exec_compatible_with = [
+        "@platforms//os:windows",
+    ],
     tags = ["no-remote"],
     target_compatible_with = ["@platforms//os:windows"],
     deps = [":windows_explicit_def_import"],
