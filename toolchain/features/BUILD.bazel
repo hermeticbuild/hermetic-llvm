@@ -298,14 +298,18 @@ cc_feature_set(
         ":dbg",
         ":dbg_stub",
         ":static_link_cpp_runtimes",
-        ":copy_dynamic_libraries_to_binary",
-        ":targets_windows",
         ":parse_headers",
         # TODO: Re-enable once coverage is supported
         # ":coverage_stub",
         # ":llvm_coverage_map_format",
         # ":gcc_coverage_map_format",
         ":fully_static_link",
-    ],
+    ] + select({
+        "@platforms//os:windows": [
+            ":copy_dynamic_libraries_to_binary",
+            ":targets_windows",
+        ],
+        "//conditions:default": [],
+    }),
     visibility = ["//visibility:public"],
 )
