@@ -1,5 +1,6 @@
 load("@bazel_features//:features.bzl", "bazel_features")
 load("@bazel_lib//lib:transitions.bzl", "platform_transition_binary", "platform_transition_filegroup")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@llvm//:defs.bzl", "exec_test")
 load("@platforms//host:constraints.bzl", "HOST_CONSTRAINTS")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
@@ -267,6 +268,75 @@ windows_runtime_dynamic_libraries_assertion(
     runtime_library_basename = "windows_add.dll",
     target = ":windows_runtime_dynamic_libraries_binary",
     target_compatible_with = ["@platforms//os:windows"],
+)
+
+write_file(
+    name = "windows_explicit_def_file",
+    out = "windows_explicit.def",
+    content = [
+        "LIBRARY windows_explicit_def",
+        "EXPORTS",
+        "    add42=internal_add42",
+    ],
+)
+
+cc_binary(
+    name = "windows_explicit_def.dll",
+    srcs = ["windows_explicit_def.cc"],
+    linkshared = True,
+    target_compatible_with = ["@platforms//os:windows"],
+    win_def_file = ":windows_explicit_def_file",
+)
+
+cc_import(
+    name = "windows_explicit_def_import",
+    shared_library = ":windows_explicit_def.dll",
+    target_compatible_with = ["@platforms//os:windows"],
+)
+
+cc_binary(
+    name = "windows_explicit_def_binary",
+    srcs = ["windows_explicit_def_test.cc"],
+    target_compatible_with = ["@platforms//os:windows"],
+    deps = [":windows_explicit_def_import"],
+)
+
+cc_test(
+    name = "windows_explicit_def_test",
+    srcs = ["windows_explicit_def_test.cc"],
+    tags = ["no-remote"],
+    target_compatible_with = ["@platforms//os:windows"],
+    deps = [":windows_explicit_def_import"],
+)
+
+cc_binary(
+    name = "windows_generated_def.dll",
+    srcs = ["windows_generated_def.cc"],
+    exec_compatible_with = [
+        "@platforms//os:windows",
+    ],
+    features = ["windows_export_all_symbols"],
+    linkopts = ["-Wl,--exclude-all-symbols"],
+    linkshared = True,
+    tags = ["no-remote"],
+    target_compatible_with = ["@platforms//os:windows"],
+)
+
+cc_import(
+    name = "windows_generated_def_import",
+    shared_library = ":windows_generated_def.dll",
+    target_compatible_with = ["@platforms//os:windows"],
+)
+
+cc_test(
+    name = "windows_generated_def_test",
+    srcs = ["windows_generated_def_test.cc"],
+    exec_compatible_with = [
+        "@platforms//os:windows",
+    ],
+    tags = ["no-remote"],
+    target_compatible_with = ["@platforms//os:windows"],
+    deps = [":windows_generated_def_import"],
 )
 
 # dynamic linker + static runtime libs (even tho -static)
