@@ -1,5 +1,6 @@
 load("@bazel_features//:features.bzl", "bazel_features")
 load("@bazel_lib//lib:transitions.bzl", "platform_transition_binary", "platform_transition_filegroup")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@llvm//:defs.bzl", "exec_test")
 load("@platforms//host:constraints.bzl", "HOST_CONSTRAINTS")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
@@ -30,6 +31,7 @@ load(
 )
 load(":bazel_version.bzl", "validate_static_library_compatible")
 load(":musl_header_generation_tests.bzl", "musl_header_generation_tests")
+load(":windows_runtime_dynamic_libraries_test.bzl", "windows_runtime_dynamic_libraries_assertion")
 
 _VALIDATE_STATIC_LIBRARY_COMPATIBLE = validate_static_library_compatible()
 
@@ -238,6 +240,27 @@ cc_binary(
     name = "main_static",
     srcs = ["main.cc"],
     linkstatic = True,
+)
+
+write_file(
+    name = "windows_runtime_dll",
+    out = "windows_runtime/sub/runtime.dll",
+)
+
+cc_binary(
+    name = "windows_runtime_dynamic_libraries_binary",
+    srcs = [
+        "main.cc",
+        ":windows_runtime_dll",
+    ],
+    target_compatible_with = ["@platforms//os:windows"],
+)
+
+windows_runtime_dynamic_libraries_assertion(
+    name = "windows_runtime_dynamic_libraries_test",
+    runtime_library_basename = "runtime.dll",
+    target = ":windows_runtime_dynamic_libraries_binary",
+    target_compatible_with = ["@platforms//os:windows"],
 )
 
 # dynamic linker + static runtime libs (even tho -static)

@@ -38,6 +38,17 @@ cc_feature(
     feature_name = "external_include_paths",
 )
 
+cc_feature(
+    name = "copy_dynamic_libraries_to_binary",
+    feature_name = "copy_dynamic_libraries_to_binary",
+)
+
+cc_feature(
+    name = "targets_windows",
+    feature_name = "targets_windows",
+    implies = [":copy_dynamic_libraries_to_binary"],
+)
+
 cc_args(
     name = "opt_link_flags",
     actions = [
@@ -287,6 +298,8 @@ cc_feature_set(
         ":dbg",
         ":dbg_stub",
         ":static_link_cpp_runtimes",
+        ":copy_dynamic_libraries_to_binary",
+        ":targets_windows",
         ":parse_headers",
         # TODO: Re-enable once coverage is supported
         # ":coverage_stub",
