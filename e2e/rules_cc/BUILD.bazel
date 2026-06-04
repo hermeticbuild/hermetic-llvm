@@ -242,9 +242,16 @@ cc_binary(
     linkstatic = True,
 )
 
+cc_binary(
+    name = "windows_add.dll",
+    srcs = ["windows_add.cc"],
+    linkshared = True,
+    target_compatible_with = ["@platforms//os:windows"],
+)
+
 cc_import(
     name = "windows_add_import",
-    shared_library = "//windows_dll:windows_add.dll",
+    shared_library = ":windows_add.dll",
     target_compatible_with = ["@platforms//os:windows"],
 )
 

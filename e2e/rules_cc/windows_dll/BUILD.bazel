@@ -1,9 +1,0 @@
-load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
-
-cc_binary(
-    name = "windows_add.dll",
-    srcs = ["windows_add.cc"],
-    linkshared = True,
-    target_compatible_with = ["@platforms//os:windows"],
-    visibility = ["//visibility:public"],
-)
