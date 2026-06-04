@@ -312,9 +312,14 @@ cc_test(
     deps = [":windows_explicit_def_import"],
 )
 
+cc_library(
+    name = "windows_generated_def_library",
+    srcs = ["windows_generated_def.cc"],
+    target_compatible_with = ["@platforms//os:windows"],
+)
+
 cc_binary(
     name = "windows_generated_def.dll",
-    srcs = ["windows_generated_def.cc"],
     exec_compatible_with = [
         "@platforms//os:windows",
     ],
@@ -323,6 +328,7 @@ cc_binary(
     linkshared = True,
     tags = ["no-remote"],
     target_compatible_with = ["@platforms//os:windows"],
+    deps = [":windows_generated_def_library"],
 )
 
 cc_import(

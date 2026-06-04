@@ -6,11 +6,6 @@ load("//platforms:common.bzl", "SUPPORTED_TARGETS")
 load("//toolchain:cc_toolchain.bzl", "cc_toolchain")
 load(":bootstrap_binary.bzl", "bootstrap_binary", "bootstrap_directory")
 
-_SUPPORTS_PIC_ON_NON_WINDOWS = select({
-    "@platforms//os:windows": [],
-    "//conditions:default": ["@rules_cc//cc/toolchains/capabilities:supports_pic"],
-})
-
 def _validate_static_library_tool(prefix):
     if not bazel_features.cc.supports_starlarkified_toolchains:
         return {}
@@ -126,7 +121,7 @@ def declare_tool_map(exec_os, exec_cpu):
         data = [
             prefix + "/clang_builtin_headers_include_directory",
         ],
-        capabilities = _SUPPORTS_PIC_ON_NON_WINDOWS,
+        capabilities = ["@rules_cc//cc/toolchains/capabilities:supports_pic"],
     )
 
     bootstrap_binary(
@@ -144,7 +139,7 @@ def declare_tool_map(exec_os, exec_cpu):
         data = [
             prefix + "/clang_builtin_headers_include_directory",
         ],
-        capabilities = _SUPPORTS_PIC_ON_NON_WINDOWS,
+        capabilities = ["@rules_cc//cc/toolchains/capabilities:supports_pic"],
     )
 
     cc_tool(
