@@ -56,7 +56,6 @@ def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
             "@platforms//os:macos": [],
             "@platforms//os:windows": [
                 "@llvm//toolchain/features:static_link_cpp_runtimes",
-                "@llvm//toolchain/features/runtime_library_search_directories:feature",
                 "@llvm//toolchain/features:targets_windows",
             ],
             "@platforms//os:none": [],
