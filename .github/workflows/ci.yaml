@@ -80,7 +80,8 @@ jobs:
         folder:
           - "e2e/rules_cc"
           # - "e2e/rules_foreign_cc" TODO: Current tests only support linux
-          # - "e2e/rules_rust" - Need a bazel nightly with https://github.com/bazelbuild/bazel/pull/28038
+          - "e2e/rules_rust"
+          - "e2e/rules_rs"
           - "e2e/cross_compilation"
           # - "e2e/wasm"
     runs-on: ${{ matrix.os }}
