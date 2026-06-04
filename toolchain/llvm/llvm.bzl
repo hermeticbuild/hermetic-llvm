@@ -9,6 +9,11 @@ _VALIDATE_STATIC_LIBRARY_TOOL = {
     "@rules_cc//cc/toolchains/actions:validate_static_library": ":static_library_validator",
 } if bazel_features.cc.supports_starlarkified_toolchains else {}
 
+_SUPPORTS_PIC_ON_NON_WINDOWS = select({
+    "@platforms//os:windows": [],
+    "//conditions:default": ["@rules_cc//cc/toolchains/capabilities:supports_pic"],
+})
+
 def declare_llvm_targets(*, suffix = ""):
     headers_directory(
         name = "builtin_resource_dir",
@@ -183,7 +188,7 @@ def declare_llvm_targets(*, suffix = ""):
         data = [
             ":builtin_resource_dir",
         ],
-        capabilities = ["@rules_cc//cc/toolchains/capabilities:supports_pic"],
+        capabilities = _SUPPORTS_PIC_ON_NON_WINDOWS,
         allowlist_include_directories = [":builtin_resource_dir"],
     )
 
@@ -193,7 +198,7 @@ def declare_llvm_targets(*, suffix = ""):
         data = [
             ":builtin_resource_dir",
         ],
-        capabilities = ["@rules_cc//cc/toolchains/capabilities:supports_pic"],
+        capabilities = _SUPPORTS_PIC_ON_NON_WINDOWS,
         allowlist_include_directories = [":builtin_resource_dir"],
     )
 
