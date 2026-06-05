@@ -54,15 +54,7 @@ def _root_release_keys(module_ctx, index):
             continue
 
         for release in module.tags.release:
-            release_key = _release_key_for(index, release.llvm_version, release.suffix)
-            previous = release_keys.get(release.llvm_version)
-            if previous != None and previous != release_key:
-                fail("Root module requested multiple llvm-toolchain-minimal releases for LLVM {}: {} and {}".format(
-                    release.llvm_version,
-                    previous,
-                    release_key,
-                ))
-            release_keys[release.llvm_version] = release_key
+            release_keys[release.llvm_version] = _release_key_for(index, release.llvm_version, release.suffix)
     return release_keys
 
 def _release_repo_specs(release, root_release_keys, index):
@@ -81,9 +73,6 @@ def _release_repo_specs(release, root_release_keys, index):
         for target in _TARGETS
     }
 
-def _same_repo_spec(left, right):
-    return left.build_file == right.build_file and left.sha256 == right.sha256 and left.urls == right.urls
-
 def _llvm_toolchain_minimal_impl(module_ctx):
     index = _get_index(module_ctx)
     repo_specs = {}
@@ -98,15 +87,6 @@ def _llvm_toolchain_minimal_impl(module_ctx):
                     root_repos[repo_name] = True
 
             for repo_name, spec in release_specs.items():
-                previous = repo_specs.get(repo_name)
-                if previous != None:
-                    if not _same_repo_spec(previous, spec):
-                        fail("Conflicting llvm-toolchain-minimal release requests: {} and {} both map to repository {}. Choose one release suffix in the root module.".format(
-                            previous.release_key,
-                            spec.release_key,
-                            repo_name,
-                        ))
-                    continue
                 repo_specs[repo_name] = spec
 
     for repo_name, spec in repo_specs.items():
