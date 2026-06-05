@@ -37,7 +37,6 @@ def llvm_release(name, bin_suffix = ""):
             "bin/" + binary + bin_suffix: "empty"
             for binary in [
                 "clang-tidy",
-                "clang-format",
                 "clangd",
             ]
         },
