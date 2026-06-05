@@ -21,6 +21,14 @@ _LLVM_TOOLCHAIN_MINIMAL_RELEASES = {
         "windows-amd64": "225a8da883543ecd8df865457931d09f38e344243901ad97ddc1fc2a2266563a",
         "windows-arm64": "31f6c4637a27028ad5251ce7aa4ed244f744190eac90cfe7755a7a5d91b11b40",
     },
+    "llvm-22.1.7-1": {
+        "darwin-amd64": "ee5b1e8b7bc2914da7439850321d7216d6367dfb138c4faa6bc6a5c046abaf21",
+        "darwin-arm64": "83259015d1e7fe11cd3ab14df2f442da2754c88fb502f1e81789d2ed8ff166a2",
+        "linux-amd64-musl": "8005a453f3f870bfd19ceda7781ed85d41a9d976d8a40a747f88ca41665b4315",
+        "linux-arm64-musl": "ba5f8078fd665fd43c8c5d1fcffd4908e130e2b6a4fdf1e281316508f6e9e9fb",
+        "windows-amd64": "d8a302fb3d752aa7cd18800ec4cf52ca81c1c6cd547ecfa913629c7a7ea9202d",
+        "windows-arm64": "6adee51f1cdf8bce4141b031e865ff012f359b36d527cbfb74064441328785be",
+    },
 }
 
 def _repo_target(target):
