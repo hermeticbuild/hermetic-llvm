@@ -3,6 +3,8 @@
 load("@bazel_features//:features.bzl", "bazel_features")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
+DEFAULT_LLVM_TOOLCHAIN_MINIMAL_INDEX_FILE = "//extensions:llvm_toolchain_minimal_index.json"
+
 _TARGETS = [
     "darwin-amd64",
     "darwin-arm64",
@@ -11,25 +13,6 @@ _TARGETS = [
     "windows-amd64",
     "windows-arm64",
 ]
-
-_LLVM_TOOLCHAIN_MINIMAL_RELEASES = {
-    "llvm-22.1.6-1": {
-        "darwin-amd64": "cc79ad7858a02589b334643b38b7112cb2ca7a7546dfefca3feee244f58c209e",
-        "darwin-arm64": "da43c29334d92d232f7951ce7be23cf5958f9388fa02ba75a87600a5900b2d52",
-        "linux-amd64-musl": "19ecc9a5a3eedd00d7a46e35b292a908ec4eba4f33a40d2566e9a1d2cce31d85",
-        "linux-arm64-musl": "3bef1e2cd4de0b35d5305a00d125b8a3257b926171f71ab95bc4ca755fee1647",
-        "windows-amd64": "225a8da883543ecd8df865457931d09f38e344243901ad97ddc1fc2a2266563a",
-        "windows-arm64": "31f6c4637a27028ad5251ce7aa4ed244f744190eac90cfe7755a7a5d91b11b40",
-    },
-    "llvm-22.1.7-1": {
-        "darwin-amd64": "ee5b1e8b7bc2914da7439850321d7216d6367dfb138c4faa6bc6a5c046abaf21",
-        "darwin-arm64": "83259015d1e7fe11cd3ab14df2f442da2754c88fb502f1e81789d2ed8ff166a2",
-        "linux-amd64-musl": "8005a453f3f870bfd19ceda7781ed85d41a9d976d8a40a747f88ca41665b4315",
-        "linux-arm64-musl": "ba5f8078fd665fd43c8c5d1fcffd4908e130e2b6a4fdf1e281316508f6e9e9fb",
-        "windows-amd64": "d8a302fb3d752aa7cd18800ec4cf52ca81c1c6cd547ecfa913629c7a7ea9202d",
-        "windows-arm64": "6adee51f1cdf8bce4141b031e865ff012f359b36d527cbfb74064441328785be",
-    },
-}
 
 def _repo_target(target):
     return target.replace("-musl", "")
@@ -46,65 +29,145 @@ def _release_key(llvm_version, suffix):
         suffix = suffix,
     )
 
-def _url(release_key, llvm_version, target):
-    return "https://github.com/hermeticbuild/hermetic-llvm/releases/download/{release_key}/llvm-toolchain-minimal-{llvm_version}-{target}.tar.zst".format(
-        release_key = release_key,
-        llvm_version = llvm_version,
-        target = target,
-    )
-
 def _build_file(target):
     if target.startswith("windows-"):
         return Label("//toolchain/llvm:llvm_release_windows.BUILD.bazel")
     return Label("//toolchain/llvm:llvm_release.BUILD.bazel")
 
-def _release_sha256(llvm_version, suffix):
-    release_key = _release_key(llvm_version, suffix)
-    sha256 = _LLVM_TOOLCHAIN_MINIMAL_RELEASES.get(release_key)
-    if sha256 == None:
+def _get_index_file(module_ctx):
+    index_file = Label(DEFAULT_LLVM_TOOLCHAIN_MINIMAL_INDEX_FILE)
+    index_seen = False
+    for module in module_ctx.modules:
+        for index in module.tags.index:
+            if not module.is_root:
+                fail("Only the root module may set llvm_toolchain_minimal.index(...)")
+            if index_seen:
+                fail("Only one llvm_toolchain_minimal.index(...) tag is allowed")
+            index_file = index.file
+            index_seen = True
+    return index_file
+
+def _get_index(module_ctx):
+    index_file = _get_index_file(module_ctx)
+    decoded = json.decode(module_ctx.read(module_ctx.path(index_file)), default = None)
+    if type(decoded) != "dict":
+        fail("Invalid llvm-toolchain-minimal index in '{}': expected top-level dict".format(index_file))
+
+    if type(decoded.get("latest_by_llvm_version")) != "dict":
+        fail("Invalid llvm-toolchain-minimal index in '{}': expected latest_by_llvm_version dict".format(index_file))
+
+    if type(decoded.get("releases")) != "dict":
+        fail("Invalid llvm-toolchain-minimal index in '{}': expected releases dict".format(index_file))
+
+    return decoded
+
+def _index_release(index, release_key):
+    release = index["releases"].get(release_key)
+    if type(release) != "dict":
         fail("No llvm-toolchain-minimal prebuilts declared for {}".format(release_key))
 
-    missing = [target for target in _TARGETS if target not in sha256]
+    return release
+
+def _latest_release_key(index, llvm_version):
+    release_key = index["latest_by_llvm_version"].get(llvm_version)
+    if type(release_key) != "string":
+        fail("No latest llvm-toolchain-minimal release declared for LLVM {}".format(llvm_version))
+
+    return release_key
+
+def _resolved_release_key(index, llvm_version, suffix):
+    if suffix:
+        return _release_key(llvm_version, suffix)
+    return _latest_release_key(index, llvm_version)
+
+def _validate_release(release_key, release, llvm_version):
+    release_llvm_version = release.get("llvm_version")
+    if release_llvm_version != llvm_version:
+        fail("{} declares LLVM version {}, expected {}".format(
+            release_key,
+            release_llvm_version,
+            llvm_version,
+        ))
+
+    suffix = release.get("suffix")
+    if type(suffix) != "string" or not suffix:
+        fail("{} must declare a non-empty suffix".format(release_key))
+
+    expected_key = _release_key(llvm_version, suffix)
+    if release_key != expected_key:
+        fail("{} declares suffix {}, expected release key {}".format(
+            release_key,
+            suffix,
+            expected_key,
+        ))
+
+    archives = release.get("archives")
+    if type(archives) != "dict":
+        fail("{} must declare an archives dict".format(release_key))
+
+    return suffix, archives
+
+def _release_archives(index, llvm_version, suffix):
+    release_key = _resolved_release_key(index, llvm_version, suffix)
+    release = _index_release(index, release_key)
+    _, archives = _validate_release(release_key, release, llvm_version)
+
+    missing = [target for target in _TARGETS if target not in archives]
     if missing:
         fail("{} is missing llvm-toolchain-minimal sha256 values for {}".format(
             release_key,
             ", ".join(missing),
         ))
 
-    extra = [target for target in sha256.keys() if target not in _TARGETS]
+    extra = [target for target in archives.keys() if target not in _TARGETS]
     if extra:
         fail("{} has unknown llvm-toolchain-minimal sha256 targets {}".format(
             release_key,
             ", ".join(extra),
         ))
 
-    return release_key, sha256
+    for target in _TARGETS:
+        archive = archives[target]
+        if type(archive) != "dict":
+            fail("{} archive {} must be a dict".format(release_key, target))
+        if type(archive.get("url")) != "string" or not archive.get("url"):
+            fail("{} archive {} must declare a non-empty url".format(release_key, target))
+        if type(archive.get("sha256")) != "string" or not archive.get("sha256"):
+            fail("{} archive {} must declare a non-empty sha256".format(release_key, target))
 
-def _root_release_suffixes(module_ctx):
+    return release_key, archives
+
+def _root_release_suffixes(module_ctx, index):
     suffixes = {}
     for module in module_ctx.modules:
         if not module.is_root:
             continue
         for release in module.tags.release:
+            suffix = release.suffix
+            if not suffix:
+                release_key = _latest_release_key(index, release.llvm_version)
+                latest_release = _index_release(index, release_key)
+                suffix, _ = _validate_release(release_key, latest_release, release.llvm_version)
+
             previous = suffixes.get(release.llvm_version)
-            if previous != None and previous != release.suffix:
+            if previous != None and previous != suffix:
                 fail("Root module requested multiple llvm-toolchain-minimal releases for LLVM {}: {} and {}".format(
                     release.llvm_version,
                     _release_key(release.llvm_version, previous),
-                    _release_key(release.llvm_version, release.suffix),
+                    _release_key(release.llvm_version, suffix),
                 ))
-            suffixes[release.llvm_version] = release.suffix
+            suffixes[release.llvm_version] = suffix
     return suffixes
 
-def _release_repo_specs(release, root_suffixes):
+def _release_repo_specs(release, root_suffixes, index):
     suffix = root_suffixes.get(release.llvm_version, release.suffix)
-    release_key, sha256 = _release_sha256(release.llvm_version, suffix)
+    release_key, archives = _release_archives(index, release.llvm_version, suffix)
     return {
         _repo_name(release.llvm_version, target): struct(
             build_file = _build_file(target),
             release_key = release_key,
-            sha256 = sha256[target],
-            urls = [_url(release_key, release.llvm_version, target)],
+            sha256 = archives[target]["sha256"],
+            urls = [archives[target]["url"]],
         )
         for target in _TARGETS
     }
@@ -113,13 +176,14 @@ def _same_repo_spec(left, right):
     return left.build_file == right.build_file and left.sha256 == right.sha256 and left.urls == right.urls
 
 def _llvm_toolchain_minimal_impl(module_ctx):
+    index = _get_index(module_ctx)
     repo_specs = {}
     root_repos = {}
-    root_suffixes = _root_release_suffixes(module_ctx)
+    root_suffixes = _root_release_suffixes(module_ctx, index)
 
     for module in module_ctx.modules:
         for release in module.tags.release:
-            release_specs = _release_repo_specs(release, root_suffixes)
+            release_specs = _release_repo_specs(release, root_suffixes, index)
             if module.is_root:
                 for repo_name in release_specs.keys():
                     root_repos[repo_name] = True
@@ -163,7 +227,16 @@ def _llvm_toolchain_minimal_impl(module_ctx):
 _release_tag = tag_class(
     attrs = {
         "llvm_version": attr.string(mandatory = True),
-        "suffix": attr.string(mandatory = True),
+        "suffix": attr.string(default = ""),
+    },
+)
+
+_index_tag = tag_class(
+    attrs = {
+        "file": attr.label(
+            allow_single_file = True,
+            default = Label(DEFAULT_LLVM_TOOLCHAIN_MINIMAL_INDEX_FILE),
+        ),
     },
 )
 
@@ -171,6 +244,7 @@ llvm_toolchain_minimal = module_extension(
     implementation = _llvm_toolchain_minimal_impl,
     doc = "Declares llvm-toolchain-minimal prebuilt compiler repositories.",
     tag_classes = {
+        "index": _index_tag,
         "release": _release_tag,
     },
 )

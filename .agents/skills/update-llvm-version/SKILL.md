@@ -24,9 +24,9 @@ argument-hint: 'Target LLVM version, optionally with prebuilt suffix number'
 This workflow has two phases:
 
 1. Build and publish prebuilts from a branch named llvm-<version>-<suffix>.
-2. Consume those prebuilts from a branch named update-llvm-<version> by updating MODULE.bazel, the prebuilt metadata extension, and opening a PR.
+2. Consume those prebuilts from a branch named update-llvm-<version> by updating MODULE.bazel, the prebuilt index, and opening a PR.
 
-The first branch must keep PREBUILT_LLVM_VERSION unchanged. The second branch switches PREBUILT_LLVM_VERSION and the llvm-toolchain-minimal sha256 table to the newly published release.
+The first branch must keep PREBUILT_LLVM_VERSION unchanged. The second branch switches PREBUILT_LLVM_VERSION and the checked-in llvm-toolchain-minimal index to the newly published release.
 Pushes, release inspection, and PR creation should be performed automatically unless the user overrides that behavior.
 Do not run local builds unless the user explicitly asks. Default verification is the LLVM Prebuilt Release workflow plus the final PR CI.
 
@@ -46,7 +46,6 @@ Do not run local builds unless the user explicitly asks. Default verification is
 3. Edit MODULE.bazel:
    - Set LLVM_VERSION to the new version.
    - Leave PREBUILT_LLVM_VERSION unchanged.
-   - Leave PREBUILT_LLVM_SUFFIX unchanged.
 4. Commit the change and push the branch.
 5. Monitor the LLVM Prebuilt Release workflow for that branch push.
    - Expect the successful run to often take roughly 20 to 30 minutes.
@@ -69,12 +68,12 @@ Do not run local builds unless the user explicitly asks. Default verification is
    - Expected tag: llvm-<version>-<suffix>.
    - Expected assets: six llvm-toolchain-minimal-<version>-<target>.tar.zst archives plus SHA256.txt.
 4. Retrieve the SHA256 values for all minimal toolchain artifacts from the release.
-   - Use SHA256.txt as the source of truth when updating extensions/llvm_toolchain_minimal.bzl.
-5. Edit extensions/llvm_toolchain_minimal.bzl:
-   - Add or replace the new `llvm-<version><suffix>` entry in _LLVM_TOOLCHAIN_MINIMAL_RELEASES with the published values.
+   - Use SHA256.txt as the source of truth when updating extensions/llvm_toolchain_minimal_index.json.
+5. Edit extensions/llvm_toolchain_minimal_index.json:
+   - Add or replace the new `llvm-<version>-<suffix>` entry under `releases` with the published URLs and sha256 values.
+   - Set `latest_by_llvm_version["<version>"]` to `llvm-<version>-<suffix>`.
 6. Edit MODULE.bazel:
    - Set PREBUILT_LLVM_VERSION to the new version.
-   - Set PREBUILT_LLVM_SUFFIX to -<suffix>.
    - Keep LLVM_VERSION at the new version.
 7. Edit toolchain/selects.bzl:
    - Set LLVM_VERSION to the new version.
@@ -125,8 +124,8 @@ gh pr create --base main --head update-llvm-<version> --fill
 - The llvm-<version>-<suffix> branch successfully published its GitHub release.
 - The release contains SHA256.txt and all six minimal toolchain archives.
 - PREBUILT_LLVM_VERSION matches the published prebuilt version.
-- PREBUILT_LLVM_SUFFIX matches the chosen suffix.
-- extensions/llvm_toolchain_minimal.bzl matches the published release checksums exactly.
+- extensions/llvm_toolchain_minimal_index.json maps the LLVM version to the chosen release suffix.
+- extensions/llvm_toolchain_minimal_index.json matches the published release URLs and checksums exactly.
 - The update-llvm-<version> branch is pushed.
 - A PR targeting main exists for the final branch.
 

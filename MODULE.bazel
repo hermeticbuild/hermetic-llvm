@@ -26,12 +26,9 @@ LLVM_VERSION = "22.1.7"
 
 PREBUILT_LLVM_VERSION = "22.1.7"
 
-PREBUILT_LLVM_SUFFIX = "-1"
-
 llvm_toolchain_minimal = use_extension("//extensions:llvm_toolchain_minimal.bzl", "llvm_toolchain_minimal")
 llvm_toolchain_minimal.release(
     llvm_version = PREBUILT_LLVM_VERSION,
-    suffix = PREBUILT_LLVM_SUFFIX,
 )
 use_repo(
     llvm_toolchain_minimal,
