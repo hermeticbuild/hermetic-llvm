@@ -33,12 +33,12 @@ llvm_toolchain_minimal.release(
 )
 use_repo(
     llvm_toolchain_minimal,
-    "llvm-toolchain-minimal-%s-darwin-amd64" % PREBUILT_LLVM_VERSION,
-    "llvm-toolchain-minimal-%s-darwin-arm64" % PREBUILT_LLVM_VERSION,
-    "llvm-toolchain-minimal-%s-linux-amd64" % PREBUILT_LLVM_VERSION,
-    "llvm-toolchain-minimal-%s-linux-arm64" % PREBUILT_LLVM_VERSION,
-    "llvm-toolchain-minimal-%s-windows-amd64" % PREBUILT_LLVM_VERSION,
-    "llvm-toolchain-minimal-%s-windows-arm64" % PREBUILT_LLVM_VERSION,
+    "llvm-toolchain-minimal-22.1.7-darwin-amd64",
+    "llvm-toolchain-minimal-22.1.7-darwin-arm64",
+    "llvm-toolchain-minimal-22.1.7-linux-amd64",
+    "llvm-toolchain-minimal-22.1.7-linux-arm64",
+    "llvm-toolchain-minimal-22.1.7-windows-amd64",
+    "llvm-toolchain-minimal-22.1.7-windows-arm64",
 )
 
 TOOLCHAIN_EXTRAS_SHA256 = {
