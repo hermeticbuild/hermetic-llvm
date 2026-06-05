@@ -40,6 +40,7 @@ _LLVM_22_SOURCE_PATCHES = _DEFAULT_SOURCE_PATCHES + [
     "//3rd_party/llvm-project/22.x/patches:llvm-link-multicall.patch",
     "//3rd_party/llvm-project/22.x/patches:llvm-profdata-multicall.patch",
     "//3rd_party/llvm-project/22.x/patches:clang-format-multicall.patch",
+    "//3rd_party/llvm-project/22.x/patches:clang-tidy-multicall.patch",
     "//3rd_party/llvm-project/22.x/patches:windows_link_and_genrule.patch",
     "//3rd_party/llvm-project/22.x/patches:bundle_resources_no_python.patch",
     "//3rd_party/llvm-project/22.x/patches:no_rules_python.patch",

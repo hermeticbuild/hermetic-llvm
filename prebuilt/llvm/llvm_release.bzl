@@ -36,7 +36,6 @@ def llvm_release(name, bin_suffix = ""):
             # TODO(zbarsky): Consider adding these once LLVM multicall supports them.
             "bin/" + binary + bin_suffix: "empty"
             for binary in [
-                "clang-tidy",
                 "clangd",
             ]
         },

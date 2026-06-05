@@ -5,6 +5,7 @@ load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory_bin_action")
 _LLVM_TOOLS = [
     "clang",
     "clang-format",
+    "clang-tidy",
     "clang-scan-deps",
     "dsymutil",
     "lld",
