@@ -37,6 +37,7 @@ _LLVM_21_SOURCE_PATCHES = _DEFAULT_SOURCE_PATCHES + [
     "//3rd_party/llvm-project/21.x/patches:llvm-windows-stack-size.patch",
     "//3rd_party/llvm-project/21.x/patches:libcxx-lgamma_r.patch",
     "//3rd_party/llvm-project/21.x/patches:llvm-bazel-blake3-windows-gnu.patch",
+    "//3rd_party/llvm-project/x.x/patches:llvm-abi-breaking-checks.patch",
 ]
 
 _LLVM_22_SOURCE_PATCHES = _DEFAULT_SOURCE_PATCHES + [
@@ -51,6 +52,7 @@ _LLVM_22_SOURCE_PATCHES = _DEFAULT_SOURCE_PATCHES + [
     "//3rd_party/llvm-project/22.x/patches:llvm-windows-stack-size.patch",
     "//3rd_party/llvm-project/22.x/patches:libcxx-lgamma_r.patch",
     "//3rd_party/llvm-project/22.x/patches:llvm-bazel-blake3-windows-gnu.patch",
+    "//3rd_party/llvm-project/x.x/patches:llvm-abi-breaking-checks.patch",
 ]
 
 _LLVM_PATCHES_BY_MAJOR = {
