@@ -14,6 +14,21 @@ def _validate_static_library_tool(prefix):
         "@rules_cc//cc/toolchains/actions:validate_static_library": prefix + "/static-library-validator",
     }
 
+def _bootstrap_cc_tool(prefix, tool, *, capabilities = [], data = [], symlink = True):
+    binary = prefix + "/bin/" + tool
+    bootstrap_binary(
+        name = binary,
+        platform = prefix + "_platform",
+        actual = "@llvm-project//llvm:llvm.stripped",
+        symlink = symlink,
+    )
+    cc_tool(
+        name = prefix + "/" + tool,
+        src = binary,
+        capabilities = capabilities,
+        data = data,
+    )
+
 def declare_tool_map(exec_os, exec_cpu):
     prefix = exec_os + "_" + exec_cpu
 
@@ -103,12 +118,6 @@ def declare_tool_map(exec_os, exec_cpu):
         }),
     )
 
-    bootstrap_binary(
-        name = prefix + "/bin/clang",
-        platform = prefix + "_platform",
-        actual = "@llvm-project//llvm:llvm.stripped",
-    )
-
     bootstrap_directory(
         name = prefix + "/clang_builtin_headers_include_directory",
         srcs = "@llvm-project//clang:builtin_headers_files",
@@ -118,27 +127,21 @@ def declare_tool_map(exec_os, exec_cpu):
         strip_prefix = "clang/lib/Headers",
     )
 
-    cc_tool(
-        name = prefix + "/clang",
-        src = prefix + "/bin/clang",
+    _bootstrap_cc_tool(
+        prefix,
+        "clang",
         data = [
             prefix + "/clang_builtin_headers_include_directory",
         ],
         capabilities = ["@rules_cc//cc/toolchains/capabilities:supports_pic"],
     )
 
-    bootstrap_binary(
-        name = prefix + "/bin/clang++",
-        platform = prefix + "_platform",
-        actual = "@llvm-project//llvm:llvm.stripped",
+    _bootstrap_cc_tool(
+        prefix,
+        "clang++",
         # Copy instead of symlink so clang's InstalledDir matches the packaged tree.
         # This is crucial for properly locating the various linkers, since we don't use `-ld-path`.
         symlink = False,
-    )
-
-    cc_tool(
-        name = prefix + "/clang++",
-        src = prefix + "/bin/clang++",
         data = [
             prefix + "/clang_builtin_headers_include_directory",
         ],
@@ -254,92 +257,20 @@ def declare_tool_map(exec_os, exec_cpu):
         },
     )
 
-    bootstrap_binary(
-        name = prefix + "/bin/llvm-ar",
-        platform = prefix + "_platform",
-        actual = "@llvm-project//llvm:llvm.stripped",
-    )
+    for tool in [
+        "llvm-ar",
+        "llvm-libtool-darwin",
+        "llvm-dwp",
+        "gcov",
+        "llvm-cov",
+        "llvm-profdata",
+        "llvm-objcopy",
+    ]:
+        _bootstrap_cc_tool(prefix, tool)
 
-    cc_tool(
-        name = prefix + "/llvm-ar",
-        src = prefix + "/bin/llvm-ar",
-    )
-
-    bootstrap_binary(
-        name = prefix + "/bin/llvm-libtool-darwin",
-        platform = prefix + "_platform",
-        actual = "@llvm-project//llvm:llvm.stripped",
-    )
-
-    cc_tool(
-        name = prefix + "/llvm-libtool-darwin",
-        src = prefix + "/bin/llvm-libtool-darwin",
-    )
-
-    bootstrap_binary(
-        name = prefix + "/bin/llvm-dwp",
-        platform = prefix + "_platform",
-        actual = "@llvm-project//llvm:llvm.stripped",
-    )
-
-    cc_tool(
-        name = prefix + "/llvm-dwp",
-        src = prefix + "/bin/llvm-dwp",
-    )
-
-    bootstrap_binary(
-        name = prefix + "/bin/gcov",
-        platform = prefix + "_platform",
-        actual = "@llvm-project//llvm:llvm.stripped",
-    )
-
-    cc_tool(
-        name = prefix + "/gcov",
-        src = prefix + "/bin/gcov",
-    )
-
-    bootstrap_binary(
-        name = prefix + "/bin/llvm-cov",
-        platform = prefix + "_platform",
-        actual = "@llvm-project//llvm:llvm.stripped",
-    )
-
-    cc_tool(
-        name = prefix + "/llvm-cov",
-        src = prefix + "/bin/llvm-cov",
-    )
-
-    bootstrap_binary(
-        name = prefix + "/bin/llvm-profdata",
-        platform = prefix + "_platform",
-        actual = "@llvm-project//llvm:llvm.stripped",
-    )
-
-    cc_tool(
-        name = prefix + "/llvm-profdata",
-        src = prefix + "/bin/llvm-profdata",
-    )
-
-    bootstrap_binary(
-        name = prefix + "/bin/llvm-objcopy",
-        platform = prefix + "_platform",
-        actual = "@llvm-project//llvm:llvm.stripped",
-    )
-
-    cc_tool(
-        name = prefix + "/llvm-objcopy",
-        src = prefix + "/bin/llvm-objcopy",
-    )
-
-    bootstrap_binary(
-        name = prefix + "/bin/llvm-strip",
-        platform = prefix + "_platform",
-        actual = "@llvm-project//llvm:llvm.stripped",
-    )
-
-    cc_tool(
-        name = prefix + "/llvm-strip",
-        src = prefix + "/bin/llvm-strip",
+    _bootstrap_cc_tool(
+        prefix,
+        "llvm-strip",
         # TODO: Remove this once rules_cc includes validate_static_library in
         # all_files, or cc_static_library uses the validate action's files
         # directly. This hangs validator files off strip because strip is an
