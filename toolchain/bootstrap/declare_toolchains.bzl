@@ -28,6 +28,9 @@ def declare_tool_map(exec_os, exec_cpu):
     BASE_TOOLS = {
         "@rules_cc//cc/toolchains/actions:assembly_actions": prefix + "/clang",
         "@rules_cc//cc/toolchains/actions:c_compile": prefix + "/clang",
+        "@rules_cc//cc/toolchains/actions:gcov": prefix + "/gcov",
+        "@rules_cc//cc/toolchains/actions:llvm_cov": prefix + "/llvm-cov",
+        "@rules_cc//cc/toolchains/actions:llvm_profdata": prefix + "/llvm-profdata",
         "@rules_cc//cc/toolchains/actions:objc_compile": prefix + "/clang",
         "@llvm//toolchain:cpp_compile_actions_without_header_parsing": prefix + "/clang++",
         "@rules_cc//cc/toolchains/actions:dwp": prefix + "/llvm-dwp",
@@ -282,6 +285,39 @@ def declare_tool_map(exec_os, exec_cpu):
     cc_tool(
         name = prefix + "/llvm-dwp",
         src = prefix + "/bin/llvm-dwp",
+    )
+
+    bootstrap_binary(
+        name = prefix + "/bin/gcov",
+        platform = prefix + "_platform",
+        actual = "@llvm-project//llvm:llvm.stripped",
+    )
+
+    cc_tool(
+        name = prefix + "/gcov",
+        src = prefix + "/bin/gcov",
+    )
+
+    bootstrap_binary(
+        name = prefix + "/bin/llvm-cov",
+        platform = prefix + "_platform",
+        actual = "@llvm-project//llvm:llvm.stripped",
+    )
+
+    cc_tool(
+        name = prefix + "/llvm-cov",
+        src = prefix + "/bin/llvm-cov",
+    )
+
+    bootstrap_binary(
+        name = prefix + "/bin/llvm-profdata",
+        platform = prefix + "_platform",
+        actual = "@llvm-project//llvm:llvm.stripped",
+    )
+
+    cc_tool(
+        name = prefix + "/llvm-profdata",
+        src = prefix + "/bin/llvm-profdata",
     )
 
     bootstrap_binary(

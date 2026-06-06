@@ -97,6 +97,9 @@ def declare_llvm_targets(*, suffix = ""):
     BASE_TOOLS = {
         "@rules_cc//cc/toolchains/actions:assembly_actions": ":clang",
         "@rules_cc//cc/toolchains/actions:c_compile": ":clang",
+        "@rules_cc//cc/toolchains/actions:gcov": ":gcov",
+        "@rules_cc//cc/toolchains/actions:llvm_cov": ":llvm-cov",
+        "@rules_cc//cc/toolchains/actions:llvm_profdata": ":llvm-profdata",
         "@rules_cc//cc/toolchains/actions:objc_compile": ":clang",
         "@llvm//toolchain:cpp_compile_actions_without_header_parsing": ":clang++",
         "@rules_cc//cc/toolchains/actions:link_actions": ":lld",
@@ -250,6 +253,21 @@ def declare_llvm_targets(*, suffix = ""):
     cc_tool(
         name = "llvm-dwp",
         src = "bin/llvm-dwp" + suffix,
+    )
+
+    cc_tool(
+        name = "gcov",
+        src = "bin/gcov" + suffix,
+    )
+
+    cc_tool(
+        name = "llvm-cov",
+        src = "bin/llvm-cov" + suffix,
+    )
+
+    cc_tool(
+        name = "llvm-profdata",
+        src = "bin/llvm-profdata" + suffix,
     )
 
     cc_tool(
