@@ -134,15 +134,14 @@ def config_settings():
     # Yet, it is possible for dependencies that you do not control to pass -lgcc_s
     # linker flags.
     #
-    # If you know what you are doing and want to no-op these flags, this option
-    # will make a stub libgcc_s to satistfy the linker, but will still link libunwind
-    # statically.
+    # Since rustc passes this flag, we default to enabling this flag to make this toolchain
+    # more broadly compatible out-of-the-box. If you know what you are doing and do not want
+    # to no-op these flags, you can disable this behavior.
     #
-    # In theory, such option should only be available if this toolchain had support
-    # for a dynamically linked unwinder.
+    # In theory, we should implement llvm-libgcc and provide these libs into the resource directory.
     bool_flag(
         name = "experimental_stub_libgcc_s",
-        build_setting_default = False,
+        build_setting_default = True,
     )
 
     for sanitizer in SANITIZERS:

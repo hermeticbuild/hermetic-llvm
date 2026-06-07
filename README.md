@@ -104,7 +104,7 @@ e2e/wasm has an example of a fully working Cgo setup.
 We highly recommend using [rules_rs](https://github.com/hermeticbuild/rules_rs) to seamlessly interop the Rust and CC toolchains. It is best to use the toolchains and platforms defined by that ruleset to configure everything properly.
 
 If you wish to setup things manually, you will likely require a few flags:
-- Rust passes `-lgcc_s` when linking, so you will want to set `--@llvm//config:experimental_stub_libgcc_s=True` flag to provide it.
+- Rust passes `-lgcc_s` when linking, so make sure you have not set `--@llvm//config:experimental_stub_libgcc_s=False`.
 - Rust `cc-rs` crate does not properly account for `$AR` and `$ARFLAGS` env vars, so it does not work when `llvm-libtool-darwin` is used as the archiver. You will want to set `--@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_macos=False` to avoid failure in build scripts using `cc-rs`.
 - Rust forces `-no-pie` when linking musl targets, while we default to `-static-pie`, which are incompatible. You can configure your platform with the `@llvm//constraints/pie:off` constraint_value to harmonize the link flags.
 

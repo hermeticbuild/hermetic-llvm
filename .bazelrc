@@ -53,7 +53,6 @@ common:prebuilt --@llvm-project//llvm:driver-tools=clang-format,clang-tidy,clang
 
 common:rust    --@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_macos=False
 common:rust    --@rules_rust//rust/settings:experimental_use_sh_toolchain_for_bootstrap_process_wrapper
-common:rust    --@llvm//config:experimental_stub_libgcc_s=True
 
 common --bes_results_url=https://app.buildbuddy.io/invocation/
 common --bes_backend=grpcs://remote.buildbuddy.io
