@@ -1,4 +1,4 @@
-load("@bazel_lib//lib:copy_file.bzl", "copy_file")
+load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("@llvm//toolchain/runtimes:cc_runtime_library.bzl", "cc_runtime_stage0_library")
 
 def crt_object(name, out, visibility, **kwargs):
@@ -17,5 +17,6 @@ def crt_object(name, out, visibility, **kwargs):
         name = name,
         src = name + "_file",
         out = out,
+        allow_symlink = True,
         visibility = visibility,
     )

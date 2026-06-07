@@ -1,7 +1,7 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
-load("@bazel_lib//lib:copy_file.bzl", "copy_file")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@bazel_lib//lib:run_binary.bzl", "run_binary")
+load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("@llvm//toolchain/runtimes:cc_runtime_library.bzl", "cc_runtime_stage0_library")
 load("//runtimes:defs.bzl", "stub_library")
 load(":crt_object.bzl", "crt_object")
@@ -314,6 +314,7 @@ copy_file(
     name = "pthread",
     src = ":winpthread",
     out = "libpthread.a",
+    allow_symlink = True,
     visibility = ["//visibility:public"],
 )
 

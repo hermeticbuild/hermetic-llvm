@@ -181,6 +181,7 @@ copy_file(
     name = "glibc_crt1.object",
     src = "Scrt1.o",
     out = "crt1.o",
+    allow_symlink = True,
     visibility = ["//visibility:public"],
 )
 
