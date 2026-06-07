@@ -89,12 +89,10 @@ filegroup(
         ":libcxx_linux": [
             "@llvm-project//libcxx:libcxx.static",
             "@llvm-project//libcxxabi:libcxxabi.static",
-            "@llvm-project//libunwind:libunwind.static",
         ],
         ":libcxx_windows": [
             "@llvm-project//libcxx:libcxx.static",
             "@llvm-project//libcxxabi:libcxxabi.static",
-            "@llvm-project//libunwind:libunwind.static",
         ],
         "//conditions:default": [],
     }),
@@ -105,13 +103,11 @@ filegroup(
     srcs = select({
         ":libstdcxx_linux": [
             ":libstdcxx_dynamic_runtime_lib",
-            "//runtimes/libunwind:libunwind.shared",
         ],
         ":libstdcxx_windows": [":libstdcxx_windows_unsupported"],
         ":libcxx_linux": [
             "@llvm-project//libcxx:libcxx.shared",
             "@llvm-project//libcxxabi:libcxxabi.shared",
-            "@llvm-project//libunwind:libunwind.shared",
         ],
         # TODO(zbarsky): windows?
         "//conditions:default": [],

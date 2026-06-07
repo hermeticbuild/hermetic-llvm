@@ -177,7 +177,41 @@ cc_args_list(
         "@platforms//os:windows": [
             "//toolchain/args/windows:default_libs",
         ],
-        "@platforms//os:none": [],
+        "//conditions:default": [],
+    }),
+)
+
+# Those are stubs since we link against static_runtime_libs / dynamic_runtime_libs.
+cc_args_list(
+    name = "cxxstdlib_library_search_paths",
+    args = select({
+        # libc++ is provided by the macOS SDK.
+        "@platforms//os:macos": [],
+        "@platforms//os:linux": [
+            "//toolchain/args:cxxstdlib_library_search_paths",
+        ],
+        "@platforms//os:windows": [
+            "//toolchain/args:cxxstdlib_library_search_paths",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+# Those are stubs since we link against static_runtime_libs / dynamic_runtime_libs.
+cc_args_list(
+    name = "libunwind_library_search_paths",
+    args = select({
+        "@platforms//os:macos": [
+            # We want to provide the stubs for macOS.
+            "//toolchain/args:libunwind_library_search_paths",
+        ],
+        "@platforms//os:linux": [
+            "//toolchain/args:libunwind_library_search_paths",
+        ],
+        "@platforms//os:windows": [
+            "//toolchain/args:libunwind_library_search_paths",
+        ],
+        "//conditions:default": [],
     }),
 )
 
@@ -207,59 +241,26 @@ cc_args_list(
     name = "stdlib",
     args = select({
         "@platforms//os:macos": [],
-        "@platforms//os:linux": [
+        "//conditions:default": [
             "//toolchain/args:stdlib",
         ],
-        "@platforms//os:windows": [
-            "//toolchain/args:stdlib",
-        ],
-        "@platforms//os:none": [],
     }),
 )
 
-cc_args_list(
-    name = "gcc_install_dir",
-    args = select({
-        "@platforms//os:linux": [
-            "//toolchain/args:gcc_install_dir",
-        ],
-        "//conditions:default": [],
-    }),
-)
-
+# This makes the clang driver use compiler-rt compliant filenames
+# and paths when resolving compiler runtime libraries from the resource-dir.
 cc_args_list(
     name = "rtlib",
-    args = select({
-        "@platforms//os:macos": [
-            "//toolchain/args:rtlib_compiler_rt",
-        ],
-        "@platforms//os:linux": [
-            "//toolchain/args/linux:rtlib",
-        ],
-        "@platforms//os:windows": [
-            "//toolchain/args:rtlib_compiler_rt",
-        ],
-        "@platforms//os:none": [
-            "//toolchain/args:rtlib_compiler_rt",
-        ],
-    }),
+    args = [
+        "//toolchain/args:rtlib_compiler_rt",
+    ],
 )
-
 
 cc_args_list(
     name = "unwindlib",
-    args = select({
-        "@platforms//os:macos": [],
-        "@platforms//os:linux": [
-            "//toolchain/args/linux:unwindlib",
-        ],
-        "@platforms//os:windows": [
-            "//toolchain/args:unwindlib_libunwind",
-        ],
-        "@platforms//os:none": [
-            "//toolchain/args:unwindlib_none",
-        ],
-    }),
+    args = [
+        "//toolchain/args:unwindlib_none",
+    ],
 )
 
 # TODO(cerisier): extract those into proper semantic args list.
@@ -333,8 +334,6 @@ cc_args_list(
         ":sysroot_flags",
         ":hermetic_compile_flags",
 
-        ":gcc_install_dir",
-
         # TODO(cerisier): Explode this into specific args instead
         ":platform_specific_args",
 
@@ -357,6 +356,9 @@ cc_args_list(
         # Common default link flags.
         "//toolchain/args:fuse_ld",
         "//toolchain/args:lto_plugin_target_flags",
+    ] + [
+        ":cxxstdlib_library_search_paths",
+        ":libunwind_library_search_paths",
         ":rtlib",
         ":stdlib",
         ":unwindlib",

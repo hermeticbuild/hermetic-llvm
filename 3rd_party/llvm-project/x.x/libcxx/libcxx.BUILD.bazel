@@ -354,9 +354,6 @@ cc_runtime_stage0_static_library(
     visibility = ["//visibility:public"],
     deps = [
         ":libcxx",
-        # This is controlled by LIBCXX_STATICALLY_LINK_ABI_IN_STATIC_LIBRARY.
-        # This option is ON for default LLVM release builds.
-        "@llvm-project//libcxxabi:libcxxabi",
     ],
 )
 

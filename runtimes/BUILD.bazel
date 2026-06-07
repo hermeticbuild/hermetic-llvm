@@ -58,6 +58,44 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
+filegroup(
+    name = "static_runtime_lib",
+    srcs = [
+        "//runtimes/cxxstdlib:static_runtime_lib",
+    ] + select({
+        "//platforms/config:gnu": [
+            "//runtimes/libgcc:static_runtime_lib",
+        ],
+        "//platforms/config:musl": [
+            "//runtimes/libunwind:static_runtime_lib",
+        ],
+        "@platforms//os:windows": [
+            "//runtimes/libunwind:static_runtime_lib",
+        ],
+        "//conditions:default": [],
+    }),
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "dynamic_runtime_lib",
+    srcs = [
+        "//runtimes/cxxstdlib:dynamic_runtime_lib",
+    ] + select({
+        "//platforms/config:gnu": [
+            "//runtimes/libgcc:dynamic_runtime_lib",
+        ],
+        "//platforms/config:musl": [
+            "//runtimes/libunwind:dynamic_runtime_lib",
+        ],
+        "@platforms//os:windows": [
+            "//runtimes/libunwind:dynamic_runtime_lib",
+        ],
+        "//conditions:default": [],
+    }),
+    visibility = ["//visibility:public"],
+)
+
 cc_library(
     name = "empty",
     srcs = ["empty.c"],

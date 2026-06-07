@@ -110,7 +110,6 @@ cc_args_list(
         "//toolchain/runtimes/args:optimization_flags",
         "//toolchain:sysroot_flags",
         "//toolchain:hermetic_compile_flags",
-        ":gcc_install_dir",
         ":hermetic_link_flags",
 
         # TODO(cerisier): Explode this into specific args instead
@@ -174,20 +173,6 @@ cc_args_list(
         ],
         "//toolchain:runtimes_stage1_hosted": [
             "//toolchain:rtlib",
-        ],
-        "//toolchain:runtimes_none": [],
-    }),
-)
-
-cc_args_list(
-    name = "gcc_install_dir",
-    args = select({
-        "//toolchain:runtimes_all": [],
-        "//toolchain:runtimes_stage1": [
-            "//toolchain:gcc_install_dir",
-        ],
-        "//toolchain:runtimes_stage1_hosted": [
-            "//toolchain:gcc_install_dir",
         ],
         "//toolchain:runtimes_none": [],
     }),
