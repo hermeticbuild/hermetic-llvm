@@ -122,26 +122,13 @@ def config_settings():
         build_setting_default = True,
     )
 
-    # This flag makes a dummy gcc_s library to link against.
+    # This flag uses llvm-libgcc runtime libraries instead of libunwind directly.
     #
-    # libgcc_s is a shared library (only libgcc_s.so exists) that is required
-    # when creating or linking against a shared library that uses c++ exceptions
-    # that may cross the library boundary.
-    #
-    # This toolchain currently doesn't support linking dynamically against an
-    # unwinder, which means that this toolchain doesn't support cross boundary
-    # c++ exceptions for the moment (and the only unwinder supported is libunwind).
-    # Yet, it is possible for dependencies that you do not control to pass -lgcc_s
-    # linker flags.
-    #
-    # Since rustc passes this flag, we default to enabling this flag to make this toolchain
-    # more broadly compatible out-of-the-box. If you know what you are doing and do not want
-    # to no-op these flags, you can disable this behavior.
-    #
-    # In theory, we should implement llvm-libgcc and provide these libs into the resource directory.
+    # This also makes a dummy gcc_s library available in the libunwind search
+    # directory for third-party link flags such as -lgcc_s.
     bool_flag(
-        name = "experimental_stub_libgcc_s",
-        build_setting_default = True,
+        name = "experimental_use_llvm_libgcc",
+        build_setting_default = False,
     )
 
     for sanitizer in SANITIZERS:

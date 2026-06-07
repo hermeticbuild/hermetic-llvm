@@ -40,9 +40,9 @@ stub_library(
 )
 
 config_setting(
-    name = "stub_libgcc_s",
+    name = "use_llvm_libgcc",
     flag_values = {
-        "//config:experimental_stub_libgcc_s": "True",
+        "//config:experimental_use_llvm_libgcc": "True",
     },
 )
 
@@ -51,7 +51,7 @@ copy_to_directory(
     srcs = [
         ":unwind",
     ] + select({
-        ":stub_libgcc_s": [":gcc_s"],
+        ":use_llvm_libgcc": [":gcc_s"],
         "//conditions:default": [],
     }),
     visibility = ["//visibility:public"],

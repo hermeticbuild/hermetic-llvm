@@ -63,11 +63,11 @@ filegroup(
     srcs = [
         "//runtimes/cxxstdlib:static_runtime_lib",
     ] + select({
-        # "//config:unwindlib_libunwind": [
-        #     "//runtimes/libunwind:static_runtime_lib",
-        # ],
-        "//conditions:default": [
+        "//config:experimental_use_llvm_libgcc": [
             "//runtimes/libgcc:static_runtime_lib",
+        ],
+        "//conditions:default": [
+            "//runtimes/libunwind:static_runtime_lib",
         ],
     }),
     visibility = ["//visibility:public"],
@@ -78,11 +78,11 @@ filegroup(
     srcs = [
         "//runtimes/cxxstdlib:dynamic_runtime_lib",
     ] + select({
-        # "//config:unwindlib_libunwind": [
-        #     "//runtimes/libunwind:dynamic_runtime_lib",
-        # ],
-        "//conditions:default": [
+        "//config:experimental_use_llvm_libgcc": [
             "//runtimes/libgcc:dynamic_runtime_lib",
+        ],
+        "//conditions:default": [
+            "//runtimes/libunwind:dynamic_runtime_lib",
         ],
     }),
     visibility = ["//visibility:public"],

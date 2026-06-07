@@ -1,7 +1,7 @@
 load("@bazel_lib//lib:run_binary.bzl", "run_binary")
 load("//toolchain/args:llvm_target_triple.bzl", "LLVM_TARGET_TRIPLE")
-load("//toolchain/runtimes:cc_runtime_static_library.bzl", "cc_runtime_stage0_static_library")
 load("//toolchain/runtimes:cc_runtime_shared_library.bzl", "cc_runtime_stage0_shared_library")
+load("//toolchain/runtimes:cc_runtime_static_library.bzl", "cc_runtime_stage0_static_library")
 
 run_binary(
     name = "gcc_s.version_script",
@@ -9,7 +9,6 @@ run_binary(
         "gcc_s.ver.in",
     ],
     outs = ["gcc_s.ver"],
-    tool = "//tools:clang",
     args = [
         "-E",
         "-x",
@@ -20,6 +19,7 @@ run_binary(
         "-o",
         "$(location gcc_s.ver)",
     ],
+    tool = "//tools:clang",
     visibility = ["//visibility:public"],
 )
 
@@ -32,29 +32,21 @@ cc_runtime_stage0_static_library(
 
 cc_runtime_stage0_shared_library(
     name = "gcc_s",
-    deps = [
-        "@llvm-project//libunwind:libunwind",
-        "@llvm-project//compiler-rt:builtins",
-    ],
+    additional_linker_inputs = [":gcc_s.version_script"],
+    shared_lib_name = "libgcc_s.so.1",
     user_link_flags = [
         "-Wl,--version-script=$(location :gcc_s.version_script)",
         "-Wl,-soname,libgcc_s.so.1",
     ],
-    shared_lib_name = "libgcc_s.so.1",
-    additional_linker_inputs = [":gcc_s.version_script"],
-)
-
-cc_runtime_stage0_static_library(
-    name = "gcc",
     deps = [
         "@llvm-project//compiler-rt:builtins",
+        "@llvm-project//libunwind:libunwind",
     ],
 )
 
 filegroup(
     name = "static_runtime_lib",
     srcs = [
-        ":gcc",
         ":gcc_eh",
     ],
     visibility = ["//visibility:public"],
