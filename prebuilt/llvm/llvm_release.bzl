@@ -32,12 +32,6 @@ def llvm_release(name, bin_suffix = ""):
         symlinks = {
             "bin/" + binary + bin_suffix: "llvm" + bin_suffix
             for binary in ["clang-{llvm_major}"] + TOOLCHAIN_BINARIES
-        } | {
-            # TODO(zbarsky): Consider adding these once LLVM multicall supports them.
-            "bin/" + binary + bin_suffix: "empty"
-            for binary in [
-                "clangd",
-            ]
         },
         format = {
             "llvm_major": LLVM_VERSION_MAJOR,

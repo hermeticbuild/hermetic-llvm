@@ -3,10 +3,11 @@ load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory_bin_action")
 
 # Enable the same set of tools we provide with prebuilts.
 _LLVM_TOOLS = [
-    "clang",
     "clang-format",
     "clang-tidy",
+    "clangd",
     "clang-scan-deps",
+    "clang",
     "dsymutil",
     "lld",
     "llvm-ar",
