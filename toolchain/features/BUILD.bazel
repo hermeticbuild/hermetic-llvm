@@ -233,11 +233,23 @@ cc_args(
     requires_not_none = "@rules_cc//cc/toolchains/variables:dsym_path",
 )
 
+cc_args(
+    name = "generate_dsym_file_strip_debug_symbols_link_args",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    env = {
+        "LLVM_STRIP_DEBUG_SYMBOLS": "1",
+    },
+    requires_not_none = "@rules_cc//cc/toolchains/variables:strip_debug_symbols",
+)
+
 cc_feature(
     name = "generate_dsym_file",
     args = [
         ":generate_dsym_file_compile_args",
         ":generate_dsym_file_link_args",
+        ":generate_dsym_file_strip_debug_symbols_link_args",
     ],
     overrides = "@rules_cc//cc/toolchains/features/legacy:generate_dsym_file",
 )
