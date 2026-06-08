@@ -25,6 +25,7 @@ _DEFAULT_SOURCE_PATCHES = [
     "//3rd_party/llvm-project/x.x/patches:x86-disassembler-sparse-row-pooling.patch",
     "//3rd_party/llvm-project/x.x/patches:mcsched-class-layout.patch",
     "//3rd_party/llvm-project/x.x/patches:instr-info-pack-operand-sequences.patch",
+    "//3rd_party/llvm-project/x.x/patches:globalisel-match-table-compaction.patch",
     "//3rd_party/llvm-project/x.x/patches:clang-diagnostic-description-table.patch",
     "//3rd_party/llvm-project/x.x/patches:clang-tidy-compact-check-factories.patch",
     "//3rd_party/llvm-project/x.x/patches:opttable-info-layout.patch",

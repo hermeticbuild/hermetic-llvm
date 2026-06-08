@@ -1,0 +1,511 @@
+diff --git a/llvm/include/llvm/CodeGen/GlobalISel/GIMatchTableExecutor.h b/llvm/include/llvm/CodeGen/GlobalISel/GIMatchTableExecutor.h
+index 3a2509345b77..c5e127936ee1 100644
+--- a/llvm/include/llvm/CodeGen/GlobalISel/GIMatchTableExecutor.h
++++ b/llvm/include/llvm/CodeGen/GlobalISel/GIMatchTableExecutor.h
+@@ -90,6 +90,19 @@ enum {
+   ///        requires an extra opcode and iteration in the interpreter on each
+   ///        failed match.
+   GIM_Try,
++  /// GIM_Try with an 8-bit forward-relative OnFail.
++  GIM_Try8,
++  /// GIM_Try with a 16-bit forward-relative OnFail.
++  GIM_Try16,
++
++  /// GIM_Try only if the feature bits match.
++  /// - OnFail(4) - The MatchTable entry at which to resume if the match fails.
++  /// - Feature(2) - Expected features
++  GIM_Try_CheckFeatures,
++  /// GIM_Try_CheckFeatures with an 8-bit forward-relative OnFail.
++  GIM_Try_CheckFeatures8,
++  /// GIM_Try_CheckFeatures with a 16-bit forward-relative OnFail.
++  GIM_Try_CheckFeatures16,
+ 
+   /// Switch over the opcode on the specified instruction
+   /// - InsnID(ULEB128) - Instruction ID
+@@ -116,10 +129,6 @@ enum {
+   GIM_RecordInsn,
+   GIM_RecordInsnIgnoreCopies,
+ 
+-  /// Check the feature bits
+-  ///   Feature(2) - Expected features
+-  GIM_CheckFeatures,
+-
+   /// Check the opcode on the specified instruction
+   /// - InsnID(ULEB128) - Instruction ID
+   /// - Opc(2) - Expected opcode
+@@ -239,6 +248,16 @@ enum {
+   GIM_CheckType,
+   /// GIM_CheckType but InsnID is omitted and defaults to zero.
+   GIM_RootCheckType,
++  /// GIM_RootCheckType with OpIdx encoded in the opcode.
++  GIM_RootCheckType0,
++  GIM_RootCheckType1,
++  GIM_RootCheckType2,
++  GIM_RootCheckType3,
++  GIM_RootCheckType4,
++  GIM_RootCheckType5,
++  GIM_RootCheckType6,
++  GIM_RootCheckType7,
++  GIM_RootCheckType8,
+ 
+   /// Check the type of a pointer to any address space.
+   /// - InsnID(ULEB128) - Instruction ID
+@@ -253,6 +272,16 @@ enum {
+   GIM_CheckRegBankForClass,
+   /// GIM_CheckRegBankForClass but InsnID is omitted and defaults to zero.
+   GIM_RootCheckRegBankForClass,
++  /// GIM_RootCheckRegBankForClass with OpIdx encoded in the opcode.
++  GIM_RootCheckRegBankForClass0,
++  GIM_RootCheckRegBankForClass1,
++  GIM_RootCheckRegBankForClass2,
++  GIM_RootCheckRegBankForClass3,
++  GIM_RootCheckRegBankForClass4,
++  GIM_RootCheckRegBankForClass5,
++  GIM_RootCheckRegBankForClass6,
++  GIM_RootCheckRegBankForClass7,
++  GIM_RootCheckRegBankForClass8,
+ 
+   /// Check the operand matches a complex predicate
+   /// - InsnID(ULEB128) - Instruction ID
+@@ -380,6 +409,16 @@ enum {
+   GIR_Copy,
+   /// GIR_Copy but with both New/OldInsnIDs omitted and defaulting to zero.
+   GIR_RootToRootCopy,
++  /// GIR_RootToRootCopy with OpIdx encoded in the opcode.
++  GIR_RootToRootCopy0,
++  GIR_RootToRootCopy1,
++  GIR_RootToRootCopy2,
++  GIR_RootToRootCopy3,
++  GIR_RootToRootCopy4,
++  GIR_RootToRootCopy5,
++  GIR_RootToRootCopy6,
++  GIR_RootToRootCopy7,
++  GIR_RootToRootCopy8,
+ 
+   /// Copies all operand starting from OpIdx in OldInsnID into the new
+   /// instruction NewInsnID.
+@@ -586,6 +625,8 @@ enum {
+   /// Keeping track of the number of the GI opcodes. Must be the last entry.
+   GIU_NumOpcodes,
+ };
++static_assert(GIU_NumOpcodes <= 256,
++              "GlobalISel opcodes must fit in a match table byte");
+ 
+ /// Provides the logic to execute GlobalISel match tables, which are used by the
+ /// instruction selector and instruction combiners as their engine to match and
+diff --git a/llvm/include/llvm/CodeGen/GlobalISel/GIMatchTableExecutorImpl.h b/llvm/include/llvm/CodeGen/GlobalISel/GIMatchTableExecutorImpl.h
+index a50a0a04fe2b..80ae38478627 100644
+--- a/llvm/include/llvm/CodeGen/GlobalISel/GIMatchTableExecutorImpl.h
++++ b/llvm/include/llvm/CodeGen/GlobalISel/GIMatchTableExecutorImpl.h
+@@ -139,13 +139,55 @@ bool GIMatchTableExecutor::executeMatchTable(
+     assert(CurrentIdx != ~0u && "Invalid MatchTable index");
+     uint8_t MatcherOpcode = MatchTable[CurrentIdx++];
+     switch (MatcherOpcode) {
+-    case GIM_Try: {
++    case GIM_Try:
++    case GIM_Try8:
++    case GIM_Try16: {
+       DEBUG_WITH_TYPE(TgtExecutor::getName(),
+                       dbgs() << CurrentIdx << ": Begin try-block\n");
+-      OnFailResumeAt.push_back(readU32());
++      unsigned OnFail;
++      if (MatcherOpcode == GIM_Try) {
++        OnFail = readU32();
++      } else if (MatcherOpcode == GIM_Try8) {
++        OnFail = MatchTable[CurrentIdx++];
++        OnFail += CurrentIdx;
++      } else {
++        OnFail = readU16();
++        OnFail += CurrentIdx;
++      }
++      OnFailResumeAt.push_back(OnFail);
++      break;
++    }
++    case GIM_Try_CheckFeatures:
++    case GIM_Try_CheckFeatures8:
++    case GIM_Try_CheckFeatures16: {
++      // This is optimized so that if the feature is not present, we don't even
++      // modify OnFailResumeAt. Instead we directly jump to OnFail.
++      unsigned OnFail;
++      if (MatcherOpcode == GIM_Try_CheckFeatures) {
++        OnFail = readU32();
++      } else if (MatcherOpcode == GIM_Try_CheckFeatures8) {
++        OnFail = MatchTable[CurrentIdx++];
++        OnFail += CurrentIdx;
++      } else {
++        OnFail = readU16();
++        OnFail += CurrentIdx;
++      }
++      uint16_t ExpectedBitsetID = readU16();
++      DEBUG_WITH_TYPE(TgtExecutor::getName(),
++                      dbgs() << CurrentIdx
++                             << ": GIM_Try_CheckFeatures(ExpectedBitsetID="
++                             << ExpectedBitsetID << ")\n");
++      if ((AvailableFeatures & ExecInfo.FeatureBitsets[ExpectedBitsetID]) !=
++          ExecInfo.FeatureBitsets[ExpectedBitsetID]) {
++        DEBUG_WITH_TYPE(TgtExecutor::getName(),
++                        dbgs() << CurrentIdx
++                               << ": Features do not match, rejected\n");
++        CurrentIdx = OnFail;
++      } else {
++        OnFailResumeAt.push_back(OnFail);
++      }
+       break;
+     }
+-
+     case GIM_RecordInsn:
+     case GIM_RecordInsnIgnoreCopies: {
+       uint64_t NewInsnID = readULEB();
+@@ -191,20 +233,6 @@ bool GIMatchTableExecutor::executeMatchTable(
+                              << ")\n");
+       break;
+     }
+-
+-    case GIM_CheckFeatures: {
+-      uint16_t ExpectedBitsetID = readU16();
+-      DEBUG_WITH_TYPE(TgtExecutor::getName(),
+-                      dbgs() << CurrentIdx
+-                             << ": GIM_CheckFeatures(ExpectedBitsetID="
+-                             << ExpectedBitsetID << ")\n");
+-      if ((AvailableFeatures & ExecInfo.FeatureBitsets[ExpectedBitsetID]) !=
+-          ExecInfo.FeatureBitsets[ExpectedBitsetID]) {
+-        if (handleReject() == RejectAndGiveUp)
+-          return false;
+-      }
+-      break;
+-    }
+     case GIM_CheckOpcode:
+     case GIM_CheckOpcodeIsEither: {
+       uint64_t InsnID = readULEB();
+@@ -720,10 +748,23 @@ bool GIMatchTableExecutor::executeMatchTable(
+ 
+       break;
+     }
++    case GIM_RootCheckType0:
++    case GIM_RootCheckType1:
++    case GIM_RootCheckType2:
++    case GIM_RootCheckType3:
++    case GIM_RootCheckType4:
++    case GIM_RootCheckType5:
++    case GIM_RootCheckType6:
++    case GIM_RootCheckType7:
++    case GIM_RootCheckType8:
+     case GIM_RootCheckType:
+     case GIM_CheckType: {
+-      uint64_t InsnID = (MatcherOpcode == GIM_RootCheckType) ? 0 : readULEB();
+-      uint64_t OpIdx = readULEB();
++      bool IsRoot = MatcherOpcode >= GIM_RootCheckType &&
++                    MatcherOpcode <= GIM_RootCheckType8;
++      uint64_t InsnID = IsRoot ? 0 : readULEB();
++      uint64_t OpIdx = MatcherOpcode >= GIM_RootCheckType0
++                           ? MatcherOpcode - GIM_RootCheckType0
++                           : readULEB();
+       int TypeID = readS8();
+       DEBUG_WITH_TYPE(TgtExecutor::getName(),
+                       dbgs() << CurrentIdx << ": GIM_CheckType(MIs[" << InsnID
+@@ -802,11 +843,23 @@ bool GIMatchTableExecutor::executeMatchTable(
+       break;
+     }
+ 
++    case GIM_RootCheckRegBankForClass0:
++    case GIM_RootCheckRegBankForClass1:
++    case GIM_RootCheckRegBankForClass2:
++    case GIM_RootCheckRegBankForClass3:
++    case GIM_RootCheckRegBankForClass4:
++    case GIM_RootCheckRegBankForClass5:
++    case GIM_RootCheckRegBankForClass6:
++    case GIM_RootCheckRegBankForClass7:
++    case GIM_RootCheckRegBankForClass8:
+     case GIM_RootCheckRegBankForClass:
+     case GIM_CheckRegBankForClass: {
+-      uint64_t InsnID =
+-          (MatcherOpcode == GIM_RootCheckRegBankForClass) ? 0 : readULEB();
+-      uint64_t OpIdx = readULEB();
++      bool IsRoot = MatcherOpcode >= GIM_RootCheckRegBankForClass &&
++                    MatcherOpcode <= GIM_RootCheckRegBankForClass8;
++      uint64_t InsnID = IsRoot ? 0 : readULEB();
++      uint64_t OpIdx = MatcherOpcode >= GIM_RootCheckRegBankForClass0
++                           ? MatcherOpcode - GIM_RootCheckRegBankForClass0
++                           : readULEB();
+       uint16_t RCEnum = readU16();
+       DEBUG_WITH_TYPE(TgtExecutor::getName(),
+                       dbgs() << CurrentIdx << ": GIM_CheckRegBankForClass(MIs["
+@@ -1100,13 +1153,24 @@ bool GIMatchTableExecutor::executeMatchTable(
+       break;
+     }
+ 
++    case GIR_RootToRootCopy0:
++    case GIR_RootToRootCopy1:
++    case GIR_RootToRootCopy2:
++    case GIR_RootToRootCopy3:
++    case GIR_RootToRootCopy4:
++    case GIR_RootToRootCopy5:
++    case GIR_RootToRootCopy6:
++    case GIR_RootToRootCopy7:
++    case GIR_RootToRootCopy8:
+     case GIR_RootToRootCopy:
+     case GIR_Copy: {
+-      uint64_t NewInsnID =
+-          (MatcherOpcode == GIR_RootToRootCopy) ? 0 : readULEB();
+-      uint64_t OldInsnID =
+-          (MatcherOpcode == GIR_RootToRootCopy) ? 0 : readULEB();
+-      uint64_t OpIdx = readULEB();
++      bool IsRoot = MatcherOpcode >= GIR_RootToRootCopy &&
++                    MatcherOpcode <= GIR_RootToRootCopy8;
++      uint64_t NewInsnID = IsRoot ? 0 : readULEB();
++      uint64_t OldInsnID = IsRoot ? 0 : readULEB();
++      uint64_t OpIdx = MatcherOpcode >= GIR_RootToRootCopy0
++                           ? MatcherOpcode - GIR_RootToRootCopy0
++                           : readULEB();
+       assert(OutMIs[NewInsnID] && "Attempted to add to undefined instruction");
+       OutMIs[NewInsnID].add(State.MIs[OldInsnID]->getOperand(OpIdx));
+       DEBUG_WITH_TYPE(TgtExecutor::getName(),
+diff --git a/llvm/utils/TableGen/Common/GlobalISel/GlobalISelMatchTable.cpp b/llvm/utils/TableGen/Common/GlobalISel/GlobalISelMatchTable.cpp
+index 8540faed34e5..8dab54ad19da 100644
+--- a/llvm/utils/TableGen/Common/GlobalISel/GlobalISelMatchTable.cpp
++++ b/llvm/utils/TableGen/Common/GlobalISel/GlobalISelMatchTable.cpp
+@@ -46,6 +46,10 @@ getMatchOpcodeForImmPredicate(const TreePredicateFn &Predicate) {
+ // GIMT_Encode2/4/8
+ constexpr StringLiteral EncodeMacroName = "GIMT_Encode";
+ 
++// Avoid adding specialized bytecode to small tables where the linked size
++// reduction is negligible.
++constexpr unsigned MinMatchTableSizeForCompaction = 64 * 1024;
++
+ //===- Helpers ------------------------------------------------------------===//
+ 
+ void llvm::gi::emitEncodingMacrosDef(raw_ostream &OS) {
+@@ -166,7 +170,8 @@ std::set<LLTCodeGen> llvm::gi::KnownTypes;
+ //===- MatchTableRecord ---------------------------------------------------===//
+ 
+ void MatchTableRecord::emit(raw_ostream &OS, bool LineBreakIsNextAfterThis,
+-                            const MatchTable &Table) const {
++                            const MatchTable &Table,
++                            unsigned CurrentIndex) const {
+   bool UseLineComment =
+       LineBreakIsNextAfterThis || (Flags & MTRF_LineBreakFollows);
+   if (Flags & (MTRF_JumpTarget | MTRF_CommaFollows))
+@@ -189,9 +194,17 @@ void MatchTableRecord::emit(raw_ostream &OS, bool LineBreakIsNextAfterThis,
+   if (Flags & MTRF_JumpTarget) {
+     if (Flags & MTRF_Comment)
+       OS << " ";
+-    // TODO: Could encode this AOT to speed up build of generated file
+-    OS << getEncodedEmitStr(llvm::to_string(Table.getLabelIndex(LabelID)),
+-                            NumElements);
++    unsigned Target = Table.getLabelIndex(LabelID);
++    if (Flags & MTRF_RelativeJumpTarget) {
++      assert(Target >= CurrentIndex + NumElements &&
++             "Relative jumps must be forward");
++      Target -= CurrentIndex + NumElements;
++    }
++    // TODO: Could encode this AOT to speed up build of generated file.
++    if (NumElements == 1)
++      OS << Target;
++    else
++      OS << getEncodedEmitStr(llvm::to_string(Target), NumElements);
+   }
+ 
+   if (Flags & MTRF_CommaFollows) {
+@@ -297,7 +310,7 @@ void MatchTable::emitDeclaration(raw_ostream &OS) const {
+   static constexpr unsigned BaseIndent = 4;
+   unsigned Indentation = 0;
+   OS << "  constexpr static uint8_t MatchTable" << ID << "[] = {";
+-  LineBreak.emit(OS, true, *this);
++  LineBreak.emit(OS, true, *this, 0);
+ 
+   // We want to display the table index of each line in a consistent
+   // manner. It has to appear as a column on the left side of the table.
+@@ -329,7 +342,7 @@ void MatchTable::emitDeclaration(raw_ostream &OS) const {
+     if (I->Flags & MatchTableRecord::MTRF_Indent)
+       Indentation += 2;
+ 
+-    I->emit(OS, LineBreakIsNext, *this);
++    I->emit(OS, LineBreakIsNext, *this, CurIndex);
+     if (I->Flags & MatchTableRecord::MTRF_LineBreakFollows)
+       BeginLine();
+ 
+@@ -342,13 +355,107 @@ void MatchTable::emitDeclaration(raw_ostream &OS) const {
+   OS << "}; // Size: " << CurrentSize << " bytes\n";
+ }
+ 
++void MatchTable::rebuildLabelMap() {
++  LabelMap.clear();
++  CurrentSize = 0;
++  for (const MatchTableRecord &Record : Contents) {
++    if (Record.Flags & MatchTableRecord::MTRF_Label)
++      defineLabel(Record.LabelID);
++    CurrentSize += Record.size();
++  }
++}
++
++void MatchTable::compactFailureTargets() {
++  if (CurrentSize < MinMatchTableSizeForCompaction)
++    return;
++
++  std::vector<unsigned> RecordOffsets;
++  RecordOffsets.reserve(Contents.size());
++  unsigned Offset = 0;
++  for (const MatchTableRecord &Record : Contents) {
++    RecordOffsets.push_back(Offset);
++    Offset += Record.size();
++  }
++
++  for (unsigned I = 0, E = Contents.size(); I != E; ++I) {
++    MatchTableRecord &Opcode = Contents[I];
++    StringRef OpcodeName = Opcode.EmitStr;
++    if (OpcodeName != "GIM_Try" && OpcodeName != "GIM_Try_CheckFeatures")
++      continue;
++
++    unsigned JumpRecord = I + 1;
++    while (JumpRecord != E && Contents[JumpRecord].size() == 0)
++      ++JumpRecord;
++    assert(JumpRecord != E &&
++           (Contents[JumpRecord].Flags & MatchTableRecord::MTRF_JumpTarget));
++
++    MatchTableRecord &Jump = Contents[JumpRecord];
++    unsigned Target = getLabelIndex(Jump.LabelID);
++    unsigned JumpOffset = RecordOffsets[JumpRecord];
++    assert(Target > JumpOffset && "GIM_Try targets must be forward");
++
++    unsigned NumBytes;
++    StringRef Suffix;
++    unsigned Distance = Target - JumpOffset;
++    if (Distance <= 256) {
++      NumBytes = 1;
++      Suffix = "8";
++    } else if (Distance <= 65537) {
++      NumBytes = 2;
++      Suffix = "16";
++    } else {
++      continue;
++    }
++
++    Opcode.EmitStr += Suffix;
++    Jump.makeRelativeJumpTarget(NumBytes);
++  }
++
++  rebuildLabelMap();
++}
++
++void MatchTable::compactRootOperandIndices() {
++  if (CurrentSize < MinMatchTableSizeForCompaction)
++    return;
++
++  static constexpr StringLiteral RootOperandOpcodes[] = {
++      "GIM_RootCheckType", "GIM_RootCheckRegBankForClass",
++      "GIR_RootToRootCopy"};
++
++  for (unsigned I = 0, E = Contents.size(); I != E; ++I) {
++    MatchTableRecord &Opcode = Contents[I];
++    if (!is_contained(RootOperandOpcodes, Opcode.EmitStr))
++      continue;
++
++    unsigned OperandRecord = I + 1;
++    while (OperandRecord != E && Contents[OperandRecord].size() == 0)
++      ++OperandRecord;
++    assert(OperandRecord != E && "Missing root operand index");
++
++    MatchTableRecord &Operand = Contents[OperandRecord];
++    unsigned OperandIndex;
++    if (Operand.size() != 1 ||
++        StringRef(Operand.EmitStr).getAsInteger(10, OperandIndex) ||
++        OperandIndex > 8)
++      continue;
++
++    Opcode.EmitStr += llvm::to_string(OperandIndex);
++    Operand.clear();
++  }
++
++  rebuildLabelMap();
++}
++
+ MatchTable MatchTable::buildTable(ArrayRef<Matcher *> Rules, bool WithCoverage,
+                                   bool IsCombiner) {
+   MatchTable Table(WithCoverage, IsCombiner);
+   for (Matcher *Rule : Rules)
+     Rule->emit(Table);
+ 
+-  return Table << MatchTable::Opcode("GIM_Reject") << MatchTable::LineBreak;
++  Table << MatchTable::Opcode("GIM_Reject") << MatchTable::LineBreak;
++  Table.compactFailureTargets();
++  Table.compactRootOperandIndices();
++  return Table;
+ }
+ 
+ //===- LLTCodeGen ---------------------------------------------------------===//
+@@ -1002,18 +1109,20 @@ void RuleMatcher::emit(MatchTable &Table) {
+   assert(Matchers.size() == 1 && "Cannot handle multi-root matchers yet");
+ 
+   unsigned LabelID = Table.allocateLabelID();
+-  Table << MatchTable::Opcode("GIM_Try", +1)
+-        << MatchTable::Comment("On fail goto")
+-        << MatchTable::JumpTarget(LabelID)
+-        << MatchTable::Comment(("Rule ID " + Twine(RuleID) + " //").str())
+-        << MatchTable::LineBreak;
+ 
+   if (!RequiredFeatures.empty() || HwModeIdx >= 0) {
+-    Table << MatchTable::Opcode("GIM_CheckFeatures")
++    Table << MatchTable::Opcode("GIM_Try_CheckFeatures", +1)
++          << MatchTable::Comment("On fail goto")
++          << MatchTable::JumpTarget(LabelID)
+           << MatchTable::NamedValue(
+-                 2, getNameForFeatureBitset(RequiredFeatures, HwModeIdx))
+-          << MatchTable::LineBreak;
++                 2, getNameForFeatureBitset(RequiredFeatures, HwModeIdx));
++  } else {
++    Table << MatchTable::Opcode("GIM_Try", +1)
++          << MatchTable::Comment("On fail goto")
++          << MatchTable::JumpTarget(LabelID);
+   }
++  Table << MatchTable::Comment(("Rule ID " + Twine(RuleID) + " //").str())
++        << MatchTable::LineBreak;
+ 
+   if (!RequiredSimplePredicates.empty()) {
+     for (const auto &Pred : RequiredSimplePredicates) {
+diff --git a/llvm/utils/TableGen/Common/GlobalISel/GlobalISelMatchTable.h b/llvm/utils/TableGen/Common/GlobalISel/GlobalISelMatchTable.h
+index 6a8017894a48..78f97c31f6e3 100644
+--- a/llvm/utils/TableGen/Common/GlobalISel/GlobalISelMatchTable.h
++++ b/llvm/utils/TableGen/Common/GlobalISel/GlobalISelMatchTable.h
+@@ -126,6 +126,8 @@ struct MatchTableRecord {
+     /// Causes the formatter to not use encoding macros to emit this multi-byte
+     /// value.
+     MTRF_PreEncoded = 0x80,
++    /// Causes a jump target to be emitted relative to the end of this record.
++    MTRF_RelativeJumpTarget = 0x100,
+   };
+ 
+   /// When MTRF_Label or MTRF_JumpTarget is used, indicates a label id to
+@@ -162,8 +164,21 @@ public:
+     NumElements = 0;
+   }
+ 
++  void makeRelativeJumpTarget(unsigned NumBytes) {
++    assert(Flags & MTRF_JumpTarget);
++    assert((NumBytes == 1 || NumBytes == 2) && "Unsupported jump size");
++    Flags |= MTRF_RelativeJumpTarget;
++    NumElements = NumBytes;
++  }
++
++  void clear() {
++    EmitStr.clear();
++    NumElements = 0;
++    Flags = MTRF_None;
++  }
++
+   void emit(raw_ostream &OS, bool LineBreakNextAfterThis,
+-            const MatchTable &Table) const;
++            const MatchTable &Table, unsigned CurrentIndex) const;
+   unsigned size() const { return NumElements; }
+ };
+ 
+@@ -187,6 +202,10 @@ class MatchTable {
+   /// Whether this table is for the GISel combiner.
+   bool IsCombinerTable;
+ 
++  void compactFailureTargets();
++  void compactRootOperandIndices();
++  void rebuildLabelMap();
++
+ public:
+   static MatchTableRecord LineBreak;
+   static MatchTableRecord Comment(StringRef Comment);
