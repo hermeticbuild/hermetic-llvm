@@ -1,0 +1,109 @@
+diff --git a/llvm/include/llvm/MC/MCSchedule.h b/llvm/include/llvm/MC/MCSchedule.h
+index d41a7412a983..a68b52a50db5 100644
+--- a/llvm/include/llvm/MC/MCSchedule.h
++++ b/llvm/include/llvm/MC/MCSchedule.h
+@@ -132,11 +132,11 @@ struct MCSchedClassDesc {
+   uint16_t EndGroup : 1;
+   uint16_t RetireOOO : 1;
+   uint16_t WriteProcResIdx; // First index into WriteProcResTable.
+-  uint16_t NumWriteProcResEntries;
+   uint16_t WriteLatencyIdx; // First index into WriteLatencyTable.
+-  uint16_t NumWriteLatencyEntries;
+   uint16_t ReadAdvanceIdx; // First index into ReadAdvanceTable.
+   uint16_t NumReadAdvanceEntries;
++  uint8_t NumWriteProcResEntries;
++  uint8_t NumWriteLatencyEntries;
+ 
+   bool isValid() const {
+     return NumMicroOps != InvalidNumMicroOps;
+@@ -149,7 +149,12 @@ struct MCSchedClassDesc {
+   }
+   bool isVariant() const {
+     return NumMicroOps == VariantNumMicroOps;
+   }
+ };
+-
++#if !defined(NDEBUG) || defined(LLVM_ENABLE_DUMP)
++static_assert(sizeof(MCSchedClassDesc) == 16);
++#else
++static_assert(sizeof(MCSchedClassDesc) == 12);
++#endif
++
+ /// Specify the cost of a register definition in terms of number of physical
+diff --git a/llvm/utils/TableGen/SubtargetEmitter.cpp b/llvm/utils/TableGen/SubtargetEmitter.cpp
+index 27299fdda3e0..f96eb3636bec 100644
+--- a/llvm/utils/TableGen/SubtargetEmitter.cpp
++++ b/llvm/utils/TableGen/SubtargetEmitter.cpp
+@@ -36,6 +36,7 @@
+ #include <cassert>
+ #include <cstdint>
+ #include <iterator>
++#include <limits>
+ #include <string>
+ #include <vector>
+ 
+@@ -45,6 +46,17 @@ using namespace llvm;
+ 
+ namespace {
+ 
++static uint8_t checkedSchedClassEntryCount(
++    size_t Count, StringRef EntryKind, const CodeGenProcModel &ProcModel,
++    const CodeGenSchedClass &SchedClass) {
++  if (Count > std::numeric_limits<uint8_t>::max())
++    PrintFatalError(ProcModel.ModelDef->getLoc(),
++                    Twine("Too many ") + EntryKind +
++                        " entries in scheduling class '" + SchedClass.Name +
++                        "' for processor model '" + ProcModel.ModelName + "'");
++  return static_cast<uint8_t>(Count);
++}
++
+ class SubtargetEmitter : TargetFeaturesEmitter {
+   // Each processor has a SchedClassDesc table with an entry for each
+   // SchedClass. The SchedClassDesc table indexes into a global write resource
+@@ -1287,7 +1299,8 @@ void SubtargetEmitter::genSchedClassTables(const CodeGenProcModel &ProcModel,
+     // WritePrecRes entries are sorted by ProcResIdx.
+     llvm::sort(WriteProcResources, LessWriteProcResources());
+ 
+-    SCDesc.NumWriteProcResEntries = WriteProcResources.size();
++    SCDesc.NumWriteProcResEntries = checkedSchedClassEntryCount(
++        WriteProcResources.size(), "write processor resource", ProcModel, SC);
+     std::vector<MCWriteProcResEntry>::iterator WPRPos =
+         std::search(SchedTables.WriteProcResources.begin(),
+                     SchedTables.WriteProcResources.end(),
+@@ -1300,7 +1313,8 @@ void SubtargetEmitter::genSchedClassTables(const CodeGenProcModel &ProcModel,
+                                             WriteProcResources.end());
+     }
+     // Latency entries must remain in operand order.
+-    SCDesc.NumWriteLatencyEntries = WriteLatencies.size();
++    SCDesc.NumWriteLatencyEntries = checkedSchedClassEntryCount(
++        WriteLatencies.size(), "write latency", ProcModel, SC);
+     std::vector<MCWriteLatencyEntry>::iterator WLPos = std::search(
+         SchedTables.WriteLatencies.begin(), SchedTables.WriteLatencies.end(),
+         WriteLatencies.begin(), WriteLatencies.end());
+@@ -1398,7 +1412,9 @@ void SubtargetEmitter::emitSchedClassTables(SchedClassTables &SchedTables,
+         SchedTables.ProcSchedClasses[1 + Idx];
+ 
+     OS << "\n// {Name, NumMicroOps, BeginGroup, EndGroup, RetireOOO,"
+-       << " WriteProcResIdx,#, WriteLatencyIdx,#, ReadAdvanceIdx,#}\n";
++       << " WriteProcResIdx, WriteLatencyIdx, ReadAdvanceIdx,"
++       << " NumReadAdvanceEntries, NumWriteProcResEntries,"
++       << " NumWriteLatencyEntries}\n";
+     OS << "static const llvm::MCSchedClassDesc " << Proc.ModelName
+        << "SchedClasses[] = {\n";
+ 
+@@ -1421,11 +1437,12 @@ void SubtargetEmitter::emitSchedClassTables(SchedClassTables &SchedTables,
+          << ", " << (MCDesc.EndGroup ? "true" : "false") << ", "
+          << (MCDesc.RetireOOO ? "true" : "false") << ", "
+          << format("%2d", MCDesc.WriteProcResIdx) << ", "
+-         << MCDesc.NumWriteProcResEntries << ", "
+          << format("%2d", MCDesc.WriteLatencyIdx) << ", "
+-         << MCDesc.NumWriteLatencyEntries << ", "
+          << format("%2d", MCDesc.ReadAdvanceIdx) << ", "
+-         << MCDesc.NumReadAdvanceEntries << "}, // #" << SCIdx << '\n';
++         << MCDesc.NumReadAdvanceEntries << ", "
++         << static_cast<unsigned>(MCDesc.NumWriteProcResEntries) << ", "
++         << static_cast<unsigned>(MCDesc.NumWriteLatencyEntries)
++         << "}, // #" << SCIdx << '\n';
+     }
+     OS << "}; // " << Proc.ModelName << "SchedClasses\n";
+   }
