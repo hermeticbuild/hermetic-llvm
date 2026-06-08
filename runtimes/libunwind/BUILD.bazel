@@ -52,7 +52,7 @@ stub_library(
 config_setting(
     name = "use_llvm_libgcc",
     flag_values = {
-        "//config:experimental_use_llvm_libgcc": "True",
+        "//config:use_llvm_libgcc": "True",
     },
 )
 

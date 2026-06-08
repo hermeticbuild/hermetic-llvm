@@ -126,9 +126,12 @@ def config_settings():
     #
     # This also makes dummy gcc, gcc_eh, and gcc_s libraries available in the
     # libunwind search directory for third-party link flags.
+    #
+    # This is the default because most projects expect to link against libgcc.
+    # Under the hood, this is actually compiler-rt.builtins and libunwind disguised as libgcc.
     bool_flag(
-        name = "experimental_use_llvm_libgcc",
-        build_setting_default = False,
+        name = "use_llvm_libgcc",
+        build_setting_default = True,
     )
 
     for sanitizer in SANITIZERS:

@@ -63,7 +63,7 @@ filegroup(
     srcs = [
         "//runtimes/cxxstdlib:static_runtime_lib",
     ] + select({
-        "//config:experimental_use_llvm_libgcc": [
+        "//config:use_llvm_libgcc": [
             "//runtimes/libgcc:static_runtime_lib",
         ],
         "//conditions:default": [
@@ -78,7 +78,7 @@ filegroup(
     srcs = [
         "//runtimes/cxxstdlib:dynamic_runtime_lib",
     ] + select({
-        "//config:experimental_use_llvm_libgcc": [
+        "//config:use_llvm_libgcc": [
             "//runtimes/libgcc:dynamic_runtime_lib",
         ],
         "//conditions:default": [
