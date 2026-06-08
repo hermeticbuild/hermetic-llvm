@@ -1,0 +1,280 @@
+diff --git a/clang-tools-extra/clangd/Diagnostics.cpp b/clang-tools-extra/clangd/Diagnostics.cpp
+index e10960ca5850..b992cdb4e6e1 100644
+--- a/clang-tools-extra/clangd/Diagnostics.cpp
++++ b/clang-tools-extra/clangd/Diagnostics.cpp
+@@ -53,7 +53,8 @@ namespace {
+ const char *getDiagnosticCode(unsigned ID) {
+   switch (ID) {
+ #define DIAG(ENUM, CLASS, DEFAULT_MAPPING, DESC, GROPU, SFINAE, NOWERROR,      \
+-             SHOWINSYSHEADER, SHOWINSYSMACRO, DEFERRABLE, CATEGORY)            \
++             SHOWINSYSHEADER, SHOWINSYSMACRO, DEFERRABLE, CATEGORY,            \
++             DESCRIPTION_OFFSET)                                               \
+   case clang::diag::ENUM:                                                      \
+     return #ENUM;
+ #include "clang/Basic/DiagnosticASTKinds.inc"
+diff --git a/clang/include/clang/Basic/CMakeLists.txt b/clang/include/clang/Basic/CMakeLists.txt
+index cfd165e6fa7e..12aa60a0e11a 100644
+--- a/clang/include/clang/Basic/CMakeLists.txt
++++ b/clang/include/clang/Basic/CMakeLists.txt
+@@ -47,6 +47,11 @@ clang_tablegen(DiagnosticAllCompatIDs.inc
+   SOURCE Diagnostic.td
+   TARGET ClangDiagnosticAllCompatIDs)
+ 
++clang_tablegen(DiagnosticDescriptions.inc
++  -gen-clang-diag-descriptions
++  SOURCE Diagnostic.td
++  TARGET ClangDiagnosticDescriptions)
++
+ clang_tablegen(AttrList.inc -gen-clang-attr-list
+   -I ${CMAKE_CURRENT_SOURCE_DIR}/../../
+   SOURCE Attr.td
+diff --git a/clang/lib/Basic/DiagnosticIDs.cpp b/clang/lib/Basic/DiagnosticIDs.cpp
+index 691a1c593ad9..764a37905882 100644
+--- a/clang/lib/Basic/DiagnosticIDs.cpp
++++ b/clang/lib/Basic/DiagnosticIDs.cpp
+@@ -30,39 +30,11 @@ using namespace clang;
+ 
+ namespace {
+ 
+-struct StaticDiagInfoRec;
+-
+-// Store the descriptions in a separate table to avoid pointers that need to
+-// be relocated, and also decrease the amount of data needed on 64-bit
+-// platforms. See "How To Write Shared Libraries" by Ulrich Drepper.
+-struct StaticDiagInfoDescriptionStringTable {
+-#define DIAG(ENUM, CLASS, DEFAULT_SEVERITY, DESC, GROUP, SFINAE, NOWERROR,     \
+-             SHOWINSYSHEADER, SHOWINSYSMACRO, DEFERRABLE, CATEGORY)            \
+-  char ENUM##_desc[sizeof(DESC)];
+-#include "clang/Basic/AllDiagnosticKinds.inc"
+-#undef DIAG
+-};
+-
+-const StaticDiagInfoDescriptionStringTable StaticDiagInfoDescriptions = {
+-#define DIAG(ENUM, CLASS, DEFAULT_SEVERITY, DESC, GROUP, SFINAE, NOWERROR,     \
+-             SHOWINSYSHEADER, SHOWINSYSMACRO, DEFERRABLE, CATEGORY)            \
+-  DESC,
+-#include "clang/Basic/AllDiagnosticKinds.inc"
+-#undef DIAG
+-};
++#include "clang/Basic/DiagnosticDescriptions.inc"
+ 
++struct StaticDiagInfoRec;
+ extern const StaticDiagInfoRec StaticDiagInfo[];
+ 
+-// Stored separately from StaticDiagInfoRec to pack better.  Otherwise,
+-// StaticDiagInfoRec would have extra padding on 64-bit platforms.
+-const uint32_t StaticDiagInfoDescriptionOffsets[] = {
+-#define DIAG(ENUM, CLASS, DEFAULT_SEVERITY, DESC, GROUP, SFINAE, NOWERROR,     \
+-             SHOWINSYSHEADER, SHOWINSYSMACRO, DEFERRABLE, CATEGORY)            \
+-  offsetof(StaticDiagInfoDescriptionStringTable, ENUM##_desc),
+-#include "clang/Basic/AllDiagnosticKinds.inc"
+-#undef DIAG
+-};
+-
+ enum DiagnosticClass {
+   CLASS_NOTE = DiagnosticIDs::CLASS_NOTE,
+   CLASS_REMARK = DiagnosticIDs::CLASS_REMARK,
+@@ -86,25 +58,28 @@ struct StaticDiagInfoRec {
+   uint16_t WarnNoWerror : 1;
+   LLVM_PREFERRED_TYPE(bool)
+   uint16_t WarnShowInSystemHeader : 1;
+-  LLVM_PREFERRED_TYPE(bool)
+-  uint16_t WarnShowInSystemMacro : 1;
+ 
+   LLVM_PREFERRED_TYPE(diag::Group)
+-  uint16_t OptionGroupIndex : 15;
++  uint16_t OptionGroupIndex : 14;
++  LLVM_PREFERRED_TYPE(bool)
++  uint16_t WarnShowInSystemMacro : 1;
+   LLVM_PREFERRED_TYPE(bool)
+   uint16_t Deferrable : 1;
+ 
+-  uint16_t DescriptionLen;
++  uint16_t DescriptionOffsetLow;
++  uint16_t DescriptionOffsetHigh : 4;
++  uint16_t DescriptionLen : 12;
+ 
+   unsigned getOptionGroupIndex() const {
+     return OptionGroupIndex;
+   }
+ 
+   StringRef getDescription() const {
+-    size_t MyIndex = this - &StaticDiagInfo[0];
+-    uint32_t StringOffset = StaticDiagInfoDescriptionOffsets[MyIndex];
+-    const char* Table = reinterpret_cast<const char*>(&StaticDiagInfoDescriptions);
+-    return StringRef(&Table[StringOffset], DescriptionLen);
++    uint32_t Offset =
++        DescriptionOffsetLow | (uint32_t(DescriptionOffsetHigh) << 16);
++    return StringRef(StaticDiagInfoDescriptions.getCString(
++                         llvm::StringTable::Offset(Offset)),
++                     DescriptionLen);
+   }
+ 
+   diag::Flavor getFlavor() const {
+@@ -116,6 +91,9 @@ struct StaticDiagInfoRec {
+     return DiagID < RHS.DiagID;
+   }
+ };
++static_assert(sizeof(StaticDiagInfoRec) == 10);
++static_assert(static_cast<unsigned>(diag::Group::NUM_GROUPS) < (1U << 14),
++              "too many diagnostic groups for StaticDiagInfoRec");
+ 
+ #define STRINGIFY_NAME(NAME) #NAME
+ #define VALIDATE_DIAG_SIZE(NAME)                                               \
+@@ -147,7 +125,8 @@ VALIDATE_DIAG_SIZE(TRAP)
+ const StaticDiagInfoRec StaticDiagInfo[] = {
+ // clang-format off
+ #define DIAG(ENUM, CLASS, DEFAULT_SEVERITY, DESC, GROUP, SFINAE, NOWERROR,     \
+-             SHOWINSYSHEADER, SHOWINSYSMACRO, DEFERRABLE, CATEGORY)            \
++             SHOWINSYSHEADER, SHOWINSYSMACRO, DEFERRABLE, CATEGORY,            \
++             DESCRIPTION_OFFSET)                                               \
+   {                                                                            \
+       diag::ENUM,                                                              \
+       DEFAULT_SEVERITY,                                                        \
+@@ -156,9 +135,11 @@ const StaticDiagInfoRec StaticDiagInfo[] = {
+       CATEGORY,                                                                \
+       NOWERROR,                                                                \
+       SHOWINSYSHEADER,                                                         \
+-      SHOWINSYSMACRO,                                                          \
+       GROUP,                                                                   \
+-	    DEFERRABLE,                                                              \
++      SHOWINSYSMACRO,                                                          \
++      DEFERRABLE,                                                              \
++      uint16_t(DESCRIPTION_OFFSET),                                            \
++      uint16_t(DESCRIPTION_OFFSET >> 16),                                      \
+       STR_SIZE(DESC, uint16_t)},
+ #include "clang/Basic/DiagnosticCommonKinds.inc"
+ #include "clang/Basic/DiagnosticDriverKinds.inc"
+diff --git a/clang/tools/diagtool/DiagnosticNames.cpp b/clang/tools/diagtool/DiagnosticNames.cpp
+index 4ac9825848ef..8fdfa14beae7 100644
+--- a/clang/tools/diagtool/DiagnosticNames.cpp
++++ b/clang/tools/diagtool/DiagnosticNames.cpp
+@@ -28,7 +28,8 @@ llvm::ArrayRef<DiagnosticRecord> diagtool::getBuiltinDiagnosticsByName() {
+ // out of sync easily?
+ static const DiagnosticRecord BuiltinDiagnosticsByID[] = {
+ #define DIAG(ENUM, CLASS, DEFAULT_MAPPING, DESC, GROUP, SFINAE, NOWERROR,      \
+-             SHOWINSYSHEADER, SHOWINSYSMACRO, DEFER, CATEGORY)                 \
++             SHOWINSYSHEADER, SHOWINSYSMACRO, DEFER, CATEGORY,                 \
++             DESCRIPTION_OFFSET)                                               \
+   {#ENUM, diag::ENUM, STR_SIZE(#ENUM, uint8_t)},
+ #include "clang/Basic/AllDiagnosticKinds.inc"
+ #undef DIAG
+diff --git a/clang/utils/TableGen/ClangDiagnosticsEmitter.cpp b/clang/utils/TableGen/ClangDiagnosticsEmitter.cpp
+index f4d5023d1cb9..07e36c7981a9 100644
+--- a/clang/utils/TableGen/ClangDiagnosticsEmitter.cpp
++++ b/clang/utils/TableGen/ClangDiagnosticsEmitter.cpp
+@@ -1585,7 +1585,8 @@ namespace clang {
+ namespace diag {
+ enum {
+ #define DIAG(ENUM, FLAGS, DEFAULT_MAPPING, DESC, GROUP, SFINAE, NOWERROR,      \
+-             SHOWINSYSHEADER, SHOWINSYSMACRO, DEFERRABLE, CATEGORY)            \
++             SHOWINSYSHEADER, SHOWINSYSMACRO, DEFERRABLE, CATEGORY,            \
++             DESCRIPTION_OFFSET)                                               \
+   ENUM,
+ #define %sSTART
+ #include "clang/Basic/Diagnostic%sKinds.inc"
+@@ -1673,6 +1674,29 @@ void clang::EmitClangDiagsEnums(const RecordKeeper &Records, raw_ostream &OS,
+   }
+ }
+ 
++void clang::EmitClangDiagDescriptions(const RecordKeeper &Records,
++                                      raw_ostream &OS) {
++  DiagnosticTextBuilder DiagTextBuilder(Records);
++  StringToOffsetTable Descriptions;
++
++  OS << "enum {\n";
++  for (const Record &R :
++       make_pointee_range(Records.getAllDerivedDefinitions("Diagnostic"))) {
++    std::string Description = DiagTextBuilder.buildForDefinition(&R);
++    if (Description.size() >= (1U << 12))
++      PrintFatalError(R.getLoc(),
++                      "diagnostic description exceeds 12-bit length limit");
++
++    unsigned Offset = Descriptions.GetOrAddStringOffset(Description);
++    OS << "  DIAG_DESC_OFFSET_" << R.getName() << " = " << Offset << ",\n";
++  }
++  OS << "};\n\n";
++
++  if (Descriptions.size() >= (1U << 20))
++    PrintFatalError("diagnostic descriptions exceed 20-bit offset limit");
++  Descriptions.EmitStringTableDef(OS, "StaticDiagInfoDescriptions");
++}
++
+ /// ClangDiagsDefsEmitter - The top-level class emits .def files containing
+ /// declarations of Clang diagnostics.
+ void clang::EmitClangDiagsDefs(const RecordKeeper &Records, raw_ostream &OS,
+@@ -1782,6 +1806,7 @@ void clang::EmitClangDiagsDefs(const RecordKeeper &Records, raw_ostream &OS,
+ 
+     // Category number.
+     OS << ", " << CategoryIDs.getID(getDiagnosticCategory(&R, DGParentMap));
++    OS << ", DIAG_DESC_OFFSET_" << R.getName();
+     OS << ")\n";
+   }
+ }
+diff --git a/clang/utils/TableGen/TableGen.cpp b/clang/utils/TableGen/TableGen.cpp
+index 707ce617cb2d..7442f3ad6499 100644
+--- a/clang/utils/TableGen/TableGen.cpp
++++ b/clang/utils/TableGen/TableGen.cpp
+@@ -51,6 +51,7 @@ enum ActionType {
+   GenClangBuiltins,
+   GenClangBuiltinTemplates,
+   GenClangDiagsCompatIDs,
++  GenClangDiagDescriptions,
+   GenClangDiagsDefs,
+   GenClangDiagsEnums,
+   GenClangDiagGroups,
+@@ -193,6 +194,8 @@ cl::opt<ActionType> Action(
+                    "Generate clang builtins list"),
+         clEnumValN(GenClangDiagsCompatIDs, "gen-clang-diags-compat-ids",
+                    "Generate Clang diagnostic compatibility ids"),
++        clEnumValN(GenClangDiagDescriptions, "gen-clang-diag-descriptions",
++                   "Generate Clang diagnostic descriptions"),
+         clEnumValN(GenClangDiagsDefs, "gen-clang-diags-defs",
+                    "Generate Clang diagnostics definitions"),
+         clEnumValN(GenClangDiagsEnums, "gen-clang-diags-enums",
+@@ -445,6 +448,9 @@ bool ClangTableGenMain(raw_ostream &OS, const RecordKeeper &Records) {
+   case GenClangDiagsCompatIDs:
+     EmitClangDiagsCompatIDs(Records, OS, ClangComponent);
+     break;
++  case GenClangDiagDescriptions:
++    EmitClangDiagDescriptions(Records, OS);
++    break;
+   case GenClangDiagsDefs:
+     EmitClangDiagsDefs(Records, OS, ClangComponent);
+     break;
+diff --git a/clang/utils/TableGen/TableGenBackends.h b/clang/utils/TableGen/TableGenBackends.h
+index 058bda3ebd24..4991a451d424 100644
+--- a/clang/utils/TableGen/TableGenBackends.h
++++ b/clang/utils/TableGen/TableGenBackends.h
+@@ -99,6 +99,8 @@ void EmitClangBuiltinTemplates(const llvm::RecordKeeper &Records,
+ void EmitClangDiagsCompatIDs(const llvm::RecordKeeper &Records,
+                              llvm::raw_ostream &OS,
+                              const std::string &Component);
++void EmitClangDiagDescriptions(const llvm::RecordKeeper &Records,
++                               llvm::raw_ostream &OS);
+ void EmitClangDiagsDefs(const llvm::RecordKeeper &Records,
+                         llvm::raw_ostream &OS, const std::string &Component);
+ void EmitClangDiagsEnums(const llvm::RecordKeeper &Records,
+diff --git a/utils/bazel/llvm-project-overlay/clang/BUILD.bazel b/utils/bazel/llvm-project-overlay/clang/BUILD.bazel
+index 2b9c849e90c4..88b5afaa25f5 100644
+--- a/utils/bazel/llvm-project-overlay/clang/BUILD.bazel
++++ b/utils/bazel/llvm-project-overlay/clang/BUILD.bazel
+@@ -101,6 +101,10 @@ gentbl_cc_library(
+             "include/clang/Basic/DiagnosticAllCompatIDs.inc",
+             ["-gen-clang-diags-compat-ids"],
+         ),
++        (
++            "include/clang/Basic/DiagnosticDescriptions.inc",
++            ["-gen-clang-diag-descriptions"],
++        ),
+     ]),
+     tblgen = ":clang-tblgen",
+     td_file = "include/clang/Basic/Diagnostic.td",
+@@ -660,6 +664,7 @@ cc_library(
+         "include/clang/Basic/DiagnosticCommentKinds.inc",
+         "include/clang/Basic/DiagnosticCommonKinds.inc",
+         "include/clang/Basic/DiagnosticCrossTUKinds.inc",
++        "include/clang/Basic/DiagnosticDescriptions.inc",
+         "include/clang/Basic/DiagnosticDriverKinds.inc",
+         "include/clang/Basic/DiagnosticFrontendKinds.inc",
+         "include/clang/Basic/DiagnosticGroups.inc",
