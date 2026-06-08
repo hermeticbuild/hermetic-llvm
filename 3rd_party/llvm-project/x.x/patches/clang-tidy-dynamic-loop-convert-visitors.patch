@@ -1,0 +1,97 @@
+diff --git a/clang-tools-extra/clang-tidy/modernize/LoopConvertUtils.h b/clang-tools-extra/clang-tidy/modernize/LoopConvertUtils.h
+index 5d0800d8e788..0ec708df6ca1 100644
+--- a/clang-tools-extra/clang-tidy/modernize/LoopConvertUtils.h
++++ b/clang-tools-extra/clang-tidy/modernize/LoopConvertUtils.h
+@@ -10,6 +10,7 @@
+ #define LLVM_CLANG_TOOLS_EXTRA_CLANG_TIDY_MODERNIZE_LOOPCONVERTUTILS_H
+ 
+ #include "clang/AST/ASTContext.h"
++#include "clang/AST/DynamicRecursiveASTVisitor.h"
+ #include "clang/AST/RecursiveASTVisitor.h"
+ #include "clang/ASTMatchers/ASTMatchFinder.h"
+ #include "clang/Basic/SourceLocation.h"
+@@ -86,7 +87,7 @@ private:
+ /// Class used to find the variables and member expressions on which an
+ /// arbitrary expression depends.
+ class ComponentFinderASTVisitor
+-    : public clang::RecursiveASTVisitor<ComponentFinderASTVisitor> {
++    : public clang::DynamicRecursiveASTVisitor {
+ public:
+   ComponentFinderASTVisitor() = default;
+ 
+@@ -98,19 +99,17 @@ public:
+   /// Accessor for Components.
+   const ComponentVector &getComponents() { return Components; }
+ 
+-  friend class clang::RecursiveASTVisitor<ComponentFinderASTVisitor>;
+-
+ private:
+   ComponentVector Components;
+ 
+-  bool VisitDeclRefExpr(clang::DeclRefExpr *E);
+-  bool VisitMemberExpr(clang::MemberExpr *Member);
++  bool VisitDeclRefExpr(clang::DeclRefExpr *E) override;
++  bool VisitMemberExpr(clang::MemberExpr *Member) override;
+ };
+ 
+ /// Class used to determine if an expression is dependent on a variable declared
+ /// inside of the loop where it would be used.
+ class DependencyFinderASTVisitor
+-    : public clang::RecursiveASTVisitor<DependencyFinderASTVisitor> {
++    : public clang::DynamicRecursiveASTVisitor {
+ public:
+   DependencyFinderASTVisitor(const StmtParentMap *StmtParents,
+                              const DeclParentMap *DeclParents,
+@@ -155,8 +154,6 @@ public:
+     return DependsOnInsideVariable;
+   }
+ 
+-  friend class clang::RecursiveASTVisitor<DependencyFinderASTVisitor>;
+-
+ private:
+   const StmtParentMap *StmtParents;
+   const DeclParentMap *DeclParents;
+@@ -164,8 +161,8 @@ private:
+   const ReplacedVarsMap *ReplacedVars;
+   bool DependsOnInsideVariable;
+ 
+-  bool VisitVarDecl(clang::VarDecl *V);
+-  bool VisitDeclRefExpr(clang::DeclRefExpr *D);
++  bool VisitVarDecl(clang::VarDecl *V) override;
++  bool VisitDeclRefExpr(clang::DeclRefExpr *D) override;
+ };
+ 
+ /// Class used to determine if any declarations used in a Stmt would conflict
+@@ -173,7 +170,7 @@ private:
+ /// actually appear in the AST (i.e. created by a refactoring tool) by including
+ /// a map from Stmts to generated names associated with those stmts.
+ class DeclFinderASTVisitor
+-    : public clang::RecursiveASTVisitor<DeclFinderASTVisitor> {
++    : public clang::DynamicRecursiveASTVisitor {
+ public:
+   DeclFinderASTVisitor(const StringRef &Name,
+                        const StmtGeneratedVarNameMap *GeneratedDecls)
+@@ -188,8 +185,6 @@ public:
+     return Found;
+   }
+ 
+-  friend class clang::RecursiveASTVisitor<DeclFinderASTVisitor>;
+-
+ private:
+   std::string Name;
+   /// GeneratedDecls keeps track of ForStmts which have been transformed,
+@@ -197,10 +192,10 @@ private:
+   const StmtGeneratedVarNameMap *GeneratedDecls;
+   bool Found = false;
+ 
+-  bool VisitForStmt(clang::ForStmt *);
+-  bool VisitNamedDecl(clang::NamedDecl *);
+-  bool VisitDeclRefExpr(clang::DeclRefExpr *);
+-  bool VisitTypeLoc(clang::TypeLoc);
++  bool VisitForStmt(clang::ForStmt *) override;
++  bool VisitNamedDecl(clang::NamedDecl *) override;
++  bool VisitDeclRefExpr(clang::DeclRefExpr *) override;
++  bool VisitTypeLoc(clang::TypeLoc) override;
+ };
+ 
+ /// The information needed to describe a valid convertible usage
