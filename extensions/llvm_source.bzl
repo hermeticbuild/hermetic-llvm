@@ -18,6 +18,7 @@ _DEFAULT_SOURCE_PATCHES = [
     "//3rd_party/llvm-project/x.x/patches:llvm-driver-best-tool-match.patch",
     "//3rd_party/llvm-project/x.x/patches:recursive-ast-visitor-minsize.patch",
     "//3rd_party/llvm-project/x.x/patches:compiler-invocation-reuse-option-string-table.patch",
+    "//3rd_party/llvm-project/x.x/patches:clangd-dynamic-semantic-highlighting-visitor.patch",
     "//3rd_party/llvm-project/x.x/patches:llvm-dsymutil-corefoundation.patch",
     "//3rd_party/llvm-project/x.x/patches:compiler-rt-symbolizer_skip_cxa_atexit.patch",
     "//3rd_party/llvm-project/x.x/patches:lit_test_stub.patch",
