@@ -1,17 +1,23 @@
 --- a/utils/bazel/llvm-project-overlay/llvm/driver.bzl
 +++ b/utils/bazel/llvm-project-overlay/llvm/driver.bzl
-@@ -128,9 +128,12 @@
-     # This is consistent with how tools/llvm-driver/CMakeLists.txt does it,
-     # and this makes sure that more specific tools are checked first.
-     # For example, "clang-scan-deps" should not match "clang".
+@@ -121,3 +121,4 @@
+-    # Compare just on the name. We could also include the package,
+-    # but the name itself is unique in practice.
+-    label_to_name = {Label(v).name: k for k, v in _TOOLS.items()}
++    label_to_name = {
++        (Label(v).package, Label(v).name): k
++        for k, v in _TOOLS.items()
++    }
+@@ -129,2 +130,8 @@
 -    tools = [label_to_name[tool.label.name] for tool in ctx.attr.driver_tools]
 +    tools = sorted(
-+        [label_to_name[tool.label.name] for tool in ctx.attr.driver_tools],
++        [
++            label_to_name[(tool.label.package, tool.label.name)]
++            for tool in ctx.attr.driver_tools
++        ],
 +        reverse = True,
 +    )
      tool_alias_pairs = []
+@@ -134 +141 @@
 -    for tool_name in reversed(tools):
 +    for tool_name in tools:
-         tool_alias_pairs.append((tool_name, tool_name))
-         for extra_alias in _EXTRA_ALIASES.get(tool_name, []):
-             tool_alias_pairs.append((tool_name, extra_alias))
