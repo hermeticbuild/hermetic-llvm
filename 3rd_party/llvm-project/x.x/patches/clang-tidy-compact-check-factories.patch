@@ -1,0 +1,131 @@
+diff --git a/clang-tools-extra/clang-tidy/ClangTidyModule.cpp b/clang-tools-extra/clang-tidy/ClangTidyModule.cpp
+index 976e87d..b599714 100644
+--- a/clang-tools-extra/clang-tidy/ClangTidyModule.cpp
++++ b/clang-tools-extra/clang-tidy/ClangTidyModule.cpp
+@@ -15,9 +15,50 @@
+ 
+ namespace clang::tidy {
+ 
++ClangTidyCheckFactories::FactoryEntry::FactoryEntry(
++    CheckFactoryFunction Function)
++    : Function(Function) {}
++
++ClangTidyCheckFactories::FactoryEntry::FactoryEntry(CheckFactory Factory)
++    : Factory(std::make_unique<CheckFactory>(std::move(Factory))) {}
++
++ClangTidyCheckFactories::FactoryEntry::FactoryEntry(const FactoryEntry &Other)
++    : Function(Other.Function) {
++  if (Other.Factory)
++    Factory = std::make_unique<CheckFactory>(*Other.Factory);
++}
++
++ClangTidyCheckFactories::FactoryEntry &
++ClangTidyCheckFactories::FactoryEntry::operator=(const FactoryEntry &Other) {
++  if (this == &Other)
++    return *this;
++  Function = Other.Function;
++  Factory =
++      Other.Factory ? std::make_unique<CheckFactory>(*Other.Factory) : nullptr;
++  return *this;
++}
++
++std::unique_ptr<ClangTidyCheck>
++ClangTidyCheckFactories::FactoryEntry::operator()(
++    StringRef Name, ClangTidyContext *Context) const {
++  if (Function)
++    return Function(Name, Context);
++  return (*Factory)(Name, Context);
++}
++
+ void ClangTidyCheckFactories::registerCheckFactory(StringRef Name,
+                                                    CheckFactory Factory) {
+-  Factories.insert_or_assign(Name, std::move(Factory));
++  Factories.insert_or_assign(Name, FactoryEntry(std::move(Factory)));
++}
++
++void ClangTidyCheckFactories::registerCheckFactory(
++    StringRef Name, const FactoryEntry &Factory) {
++  Factories.insert_or_assign(Name, Factory);
++}
++
++void ClangTidyCheckFactories::registerCheckFunction(
++    StringRef Name, CheckFactoryFunction Function) {
++  Factories.insert_or_assign(Name, FactoryEntry(Function));
+ }
+ 
+ std::vector<std::unique_ptr<ClangTidyCheck>>
+diff --git a/clang-tools-extra/clang-tidy/ClangTidyModule.h b/clang-tools-extra/clang-tidy/ClangTidyModule.h
+index c2d6235..3b02893 100644
+--- a/clang-tools-extra/clang-tidy/ClangTidyModule.h
++++ b/clang-tools-extra/clang-tidy/ClangTidyModule.h
+@@ -29,11 +29,32 @@ class ClangTidyCheckFactories {
+ public:
+   using CheckFactory = std::function<std::unique_ptr<ClangTidyCheck>(
+       llvm::StringRef Name, ClangTidyContext *Context)>;
++  using CheckFactoryFunction = std::unique_ptr<ClangTidyCheck> (*)(
++      llvm::StringRef Name, ClangTidyContext *Context);
++
++  class FactoryEntry {
++  public:
++    FactoryEntry(CheckFactoryFunction Function);
++    FactoryEntry(CheckFactory Factory);
++    FactoryEntry(const FactoryEntry &Other);
++    FactoryEntry &operator=(const FactoryEntry &Other);
++    FactoryEntry(FactoryEntry &&) = default;
++    FactoryEntry &operator=(FactoryEntry &&) = default;
++
++    std::unique_ptr<ClangTidyCheck>
++    operator()(llvm::StringRef Name, ClangTidyContext *Context) const;
++
++  private:
++    CheckFactoryFunction Function = nullptr;
++    std::unique_ptr<CheckFactory> Factory;
++  };
++  static_assert(sizeof(FactoryEntry) == 2 * sizeof(void *));
+ 
+   /// Registers check \p Factory with name \p Name.
+   ///
+   /// For all checks that have default constructors, use \c registerCheck.
+   void registerCheckFactory(llvm::StringRef Name, CheckFactory Factory);
++  void registerCheckFactory(llvm::StringRef Name, const FactoryEntry &Factory);
+ 
+   /// Registers the \c CheckType with the name \p Name.
+   ///
+@@ -57,10 +77,7 @@ public:
+   /// };
+   /// \endcode
+   template <typename CheckType> void registerCheck(llvm::StringRef CheckName) {
+-    registerCheckFactory(CheckName,
+-                         [](llvm::StringRef Name, ClangTidyContext *Context) {
+-                           return std::make_unique<CheckType>(Name, Context);
+-                         });
++    registerCheckFunction(CheckName, &createCheck<CheckType>);
+   }
+ 
+   void eraseCheck(llvm::StringRef CheckName) { Factories.erase(CheckName); }
+@@ -73,12 +90,24 @@ public:
+   std::vector<std::unique_ptr<ClangTidyCheck>>
+   createChecksForLanguage(ClangTidyContext *Context) const;
+ 
+-  using FactoryMap = llvm::StringMap<CheckFactory>;
++  using FactoryMap = llvm::StringMap<FactoryEntry>;
+   FactoryMap::const_iterator begin() const { return Factories.begin(); }
+   FactoryMap::const_iterator end() const { return Factories.end(); }
+   bool empty() const { return Factories.empty(); }
+ 
+ private:
++  template <typename CheckType>
++#if defined(__clang__)
++  __attribute__((internal_linkage))
++#endif
++  static std::unique_ptr<ClangTidyCheck>
++  createCheck(llvm::StringRef Name, ClangTidyContext *Context) {
++    return std::make_unique<CheckType>(Name, Context);
++  }
++
++  void registerCheckFunction(llvm::StringRef Name,
++                             CheckFactoryFunction Function);
++
+   FactoryMap Factories;
+ };
+ 
