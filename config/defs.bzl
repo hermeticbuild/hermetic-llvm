@@ -154,6 +154,7 @@ def config_settings():
         name = "experimental_stub_libgcc",
         build_setting_default = True,
     )
+
     # Compat
     native.alias(
         name = "experimental_stub_libgcc_s",
