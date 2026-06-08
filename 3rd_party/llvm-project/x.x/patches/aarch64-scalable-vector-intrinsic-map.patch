@@ -1,0 +1,100 @@
+diff --git a/clang/lib/CodeGen/TargetBuiltins/ARM.cpp b/clang/lib/CodeGen/TargetBuiltins/ARM.cpp
+index 2d7128bf95df..7446450c05a7 100644
+--- a/clang/lib/CodeGen/TargetBuiltins/ARM.cpp
++++ b/clang/lib/CodeGen/TargetBuiltins/ARM.cpp
+@@ -576,6 +576,21 @@ struct ARMVectorIntrinsicInfo {
+     return BuiltinID < TE.BuiltinID;
+   }
+ };
++
++struct ARMScalableVectorIntrinsicInfo {
++  unsigned BuiltinID;
++  unsigned LLVMIntrinsic;
++  uint64_t TypeModifier;
++
++  bool operator<(unsigned RHSBuiltinID) const {
++    return BuiltinID < RHSBuiltinID;
++  }
++  bool operator<(const ARMScalableVectorIntrinsicInfo &TE) const {
++    return BuiltinID < TE.BuiltinID;
++  }
++};
++
++static_assert(sizeof(ARMScalableVectorIntrinsicInfo) == 16);
+ } // end anonymous namespace
+ 
+ #define NEONMAP0(NameBase) \
+@@ -1621,14 +1636,11 @@ static const std::pair<unsigned, unsigned> NEONEquivalentIntrinsicMap[] = {
+ #undef NEONMAP2
+ 
+ #define SVEMAP1(NameBase, LLVMIntrinsic, TypeModifier)                         \
+-  {                                                                            \
+-    #NameBase, SVE::BI__builtin_sve_##NameBase, Intrinsic::LLVMIntrinsic, 0,   \
+-        TypeModifier                                                           \
+-  }
++  { SVE::BI__builtin_sve_##NameBase, Intrinsic::LLVMIntrinsic, TypeModifier }
+ 
+ #define SVEMAP2(NameBase, TypeModifier)                                        \
+-  { #NameBase, SVE::BI__builtin_sve_##NameBase, 0, 0, TypeModifier }
+-static const ARMVectorIntrinsicInfo AArch64SVEIntrinsicMap[] = {
++  { SVE::BI__builtin_sve_##NameBase, 0, TypeModifier }
++static const ARMScalableVectorIntrinsicInfo AArch64SVEIntrinsicMap[] = {
+ #define GET_SVE_LLVM_INTRINSIC_MAP
+ #include "clang/Basic/arm_sve_builtin_cg.inc"
+ #include "clang/Basic/BuiltinsAArch64NeonSVEBridge_cg.def"
+@@ -1639,14 +1651,11 @@ static const ARMVectorIntrinsicInfo AArch64SVEIntrinsicMap[] = {
+ #undef SVEMAP2
+ 
+ #define SMEMAP1(NameBase, LLVMIntrinsic, TypeModifier)                         \
+-  {                                                                            \
+-    #NameBase, SME::BI__builtin_sme_##NameBase, Intrinsic::LLVMIntrinsic, 0,   \
+-        TypeModifier                                                           \
+-  }
++  { SME::BI__builtin_sme_##NameBase, Intrinsic::LLVMIntrinsic, TypeModifier }
+ 
+ #define SMEMAP2(NameBase, TypeModifier)                                        \
+-  { #NameBase, SME::BI__builtin_sme_##NameBase, 0, 0, TypeModifier }
+-static const ARMVectorIntrinsicInfo AArch64SMEIntrinsicMap[] = {
++  { SME::BI__builtin_sme_##NameBase, 0, TypeModifier }
++static const ARMScalableVectorIntrinsicInfo AArch64SMEIntrinsicMap[] = {
+ #define GET_SME_LLVM_INTRINSIC_MAP
+ #include "clang/Basic/arm_sme_builtin_cg.inc"
+ #undef GET_SME_LLVM_INTRINSIC_MAP
+@@ -1662,8 +1671,9 @@ static bool AArch64SISDIntrinsicsProvenSorted = false;
+ static bool AArch64SVEIntrinsicsProvenSorted = false;
+ static bool AArch64SMEIntrinsicsProvenSorted = false;
+ 
+-static const ARMVectorIntrinsicInfo *
+-findARMVectorIntrinsicInMap(ArrayRef<ARMVectorIntrinsicInfo> IntrinsicMap,
++template <typename IntrinsicInfo>
++static const IntrinsicInfo *
++findARMVectorIntrinsicInMap(ArrayRef<IntrinsicInfo> IntrinsicMap,
+                             unsigned BuiltinID, bool &MapProvenSorted) {
+ 
+ #ifndef NDEBUG
+@@ -1673,8 +1683,7 @@ findARMVectorIntrinsicInMap(ArrayRef<ARMVectorIntrinsicInfo> IntrinsicMap,
+   }
+ #endif
+ 
+-  const ARMVectorIntrinsicInfo *Builtin =
+-      llvm::lower_bound(IntrinsicMap, BuiltinID);
++  const IntrinsicInfo *Builtin = llvm::lower_bound(IntrinsicMap, BuiltinID);
+ 
+   if (Builtin != IntrinsicMap.end() && Builtin->BuiltinID == BuiltinID)
+     return Builtin;
+@@ -1682,6 +1691,15 @@ findARMVectorIntrinsicInMap(ArrayRef<ARMVectorIntrinsicInfo> IntrinsicMap,
+   return nullptr;
+ }
+ 
++template <typename IntrinsicInfo, size_t NumIntrinsics>
++static const IntrinsicInfo *
++findARMVectorIntrinsicInMap(
++    const IntrinsicInfo (&IntrinsicMap)[NumIntrinsics], unsigned BuiltinID,
++    bool &MapProvenSorted) {
++  return findARMVectorIntrinsicInMap(ArrayRef<IntrinsicInfo>(IntrinsicMap),
++                                     BuiltinID, MapProvenSorted);
++}
++
+ Function *CodeGenFunction::LookupNeonLLVMIntrinsic(unsigned IntrinsicID,
+                                                    unsigned Modifier,
+                                                    llvm::Type *ArgType,
