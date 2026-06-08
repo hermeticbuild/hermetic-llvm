@@ -1,0 +1,41 @@
+filegroup(
+    name = "static_unwind_runtime_lib",
+    srcs = select({
+        "//config:use_llvm_libgcc_enabled": [
+            "//runtimes/libgcc:static_runtime_lib",
+        ],
+        "//conditions:default": [
+            "//runtimes/libunwind:static_runtime_lib",
+        ],
+    }),
+)
+
+filegroup(
+    name = "dynamic_unwind_runtime_lib",
+    srcs = select({
+        "//config:use_llvm_libgcc_enabled": [
+            "//runtimes/libgcc:dynamic_runtime_lib",
+        ],
+        "//conditions:default": [
+            "//runtimes/libunwind:dynamic_runtime_lib",
+        ],
+    }),
+)
+
+filegroup(
+    name = "static_runtime_lib",
+    srcs = select({
+        "@platforms//os:linux": [":static_unwind_runtime_lib"],
+        "@platforms//os:windows": [":static_unwind_runtime_lib"],
+        "//conditions:default": [],
+    }),
+)
+
+filegroup(
+    name = "dynamic_runtime_lib",
+    srcs = select({
+        "@platforms//os:linux": [":dynamic_unwind_runtime_lib"],
+        "@platforms//os:windows": [":dynamic_unwind_runtime_lib"],
+        "//conditions:default": [],
+    }),
+)
