@@ -133,6 +133,12 @@ def config_settings():
         name = "use_llvm_libgcc",
         build_setting_default = True,
     )
+    native.config_setting(
+        name = "use_llvm_libgcc_enabled",
+        flag_values = {
+            ":use_llvm_libgcc": "True",
+        },
+    )
 
     for sanitizer in SANITIZERS:
         bool_flag(
