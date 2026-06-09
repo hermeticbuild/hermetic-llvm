@@ -34,6 +34,26 @@ def gcc_repository(gcc_version):
         srcs = [],
     )
 
+    write_file(
+        name = "libstdcxx_cxx23_std_cc",
+        out = "libstdcxx_generated/src/c++23/std.cc",
+        content = [
+            "// Empty fallback until GCC 16 C++ module source compilation is modeled.",
+        ],
+    )
+
+    write_file(
+        name = "libstdcxx_cxx23_std_compat_cc",
+        out = "libstdcxx_generated/src/c++23/std.compat.cc",
+        content = [
+            "// Empty fallback until GCC 16 C++ module source compilation is modeled.",
+        ],
+    )
+
+    _GCC_16_CXX20_FORMAT_INST_SOURCES = [
+        "libstdc++-v3/src/c++20/format-inst.cc",
+    ]
+
     # Keep this export list in sync with the sparse archive roots in
     # 3rd_party/gcc/extension/gcc.bzl. The libstdc++ configure inputs are exported
     # for the audit test; the config/include/libsupc++ entries are the files
@@ -897,7 +917,6 @@ def gcc_repository(gcc_version):
             "libstdc++-v3/src/c++20/atomic.cc",
             "libstdc++-v3/src/c++20/clock.cc",
             "libstdc++-v3/src/c++20/cow-string-inst.cc",
-            "libstdc++-v3/src/c++20/format-inst.cc",
             "libstdc++-v3/src/c++20/sstream-inst.cc",
             "libstdc++-v3/src/c++20/string-inst.cc",
             "libstdc++-v3/src/c++20/syncbuf.cc",
@@ -907,9 +926,14 @@ def gcc_repository(gcc_version):
 
     native.filegroup(
         name = "libstdcxx_cxx23_sources",
+        # GCC 16 links src/c++23/libmodulesconvenience.la into libstdc++.
+        # Upstream falls back to empty sources when module compilation is not
+        # available; this port uses that fallback until C++ module support is
+        # modeled explicitly.
         srcs = [
-            "libstdc++-v3/src/c++23/stacktrace.cc",
-        ],
+            ":libstdcxx_cxx23_std_cc",
+            ":libstdcxx_cxx23_std_compat_cc",
+        ] if gcc_version_at_least("16.0.0") else [],
     )
 
     # The filesystem TS library is still a distinct archive in GCC, sourced from
@@ -1097,6 +1121,19 @@ def gcc_repository(gcc_version):
     )
 
     cc_library(
+        name = "libstdcxx_cxx20_format_inst",
+        srcs = _GCC_16_CXX20_FORMAT_INST_SOURCES if gcc_version_at_least("16.0.0") else [],
+        hdrs = LIBSTDCXX_LIBRARY_HDRS,
+        copts = LIBSTDCXX_LIBRARY_COPTS + [
+            "-std=gnu++20",
+            "-fexec-charset=UTF-8",
+            "-fimplicit-templates",
+        ],
+        implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
+        includes = LIBSTDCXX_LIBRARY_INCLUDES,
+    )
+
+    cc_library(
         name = "libstdcxx_cxx23",
         srcs = [":libstdcxx_cxx23_sources"],
         hdrs = LIBSTDCXX_LIBRARY_HDRS,
@@ -1136,18 +1173,6 @@ def gcc_repository(gcc_version):
     )
 
     cc_library(
-        name = "libstdcxx_cxx23_print",
-        srcs = ["libstdc++-v3/src/c++23/print.cc"],
-        hdrs = LIBSTDCXX_LIBRARY_HDRS,
-        copts = LIBSTDCXX_LIBRARY_COPTS + [
-            "-std=gnu++26",
-            "-fimplicit-templates",
-        ],
-        implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
-        includes = LIBSTDCXX_LIBRARY_INCLUDES,
-    )
-
-    cc_library(
         name = "libstdcxx",
         deps = [
             ":libstdcxx_cxx11",
@@ -1157,6 +1182,7 @@ def gcc_repository(gcc_version):
             ":libstdcxx_cxx17",
             ":libstdcxx_cxx20",
             ":libstdcxx_cxx20_format",
+            ":libstdcxx_cxx20_format_inst",
             ":libstdcxx_cxx23",
             ":libstdcxx_cxx98",
             ":libstdcxx_cxx98_compat",
@@ -1166,12 +1192,7 @@ def gcc_repository(gcc_version):
             ":libstdcxx_cxx98_parallel_settings",
             ":libstdcxx_cxx98_strstream",
             ":libsupcxx",
-        ] + select({
-            "@platforms//os:windows": [
-                # TODO: enable print.cc once MinGW native_handle_type selection is modeled.
-            ],
-            "//conditions:default": [":libstdcxx_cxx23_print"],
-        }),
+        ],
     )
 
     # The shared library version and linker flags should stay aligned with GCC's
@@ -1198,6 +1219,7 @@ def gcc_repository(gcc_version):
             ":libstdcxx_cxx17",
             ":libstdcxx_cxx20",
             ":libstdcxx_cxx20_format",
+            ":libstdcxx_cxx20_format_inst",
             ":libstdcxx_cxx23",
             ":libstdcxx_cxx98",
             ":libstdcxx_cxx98_compat",
@@ -1209,12 +1231,7 @@ def gcc_repository(gcc_version):
             ":libsupcxx_atomicity",
             ":libsupcxx_demangle",
             ":libsupcxx_objects",
-        ] + select({
-            "@platforms//os:windows": [
-                # TODO: enable print.cc once MinGW native_handle_type selection is modeled.
-            ],
-            "//conditions:default": [":libstdcxx_cxx23_print"],
-        }),
+        ],
     )
 
     native.alias(
