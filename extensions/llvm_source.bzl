@@ -80,6 +80,7 @@ _LLVM_22_SOURCE_PATCHES = _DEFAULT_SOURCE_PATCHES + [
     "//3rd_party/llvm-project/22.x/patches:openmp-runtime-descriptors.patch",
     "//3rd_party/llvm-project/22.x/patches:vector-library-descriptors.patch",
     "//3rd_party/llvm-project/22.x/patches:code-emitter-base-encoding-pool.patch",
+    "//3rd_party/llvm-project/22.x/patches:astcontext-builtin-type-init.patch",
     "//3rd_party/llvm-project/22.x/patches:llvm-link-multicall.patch",
     "//3rd_party/llvm-project/22.x/patches:llvm-profdata-multicall.patch",
     "//3rd_party/llvm-project/22.x/patches:clang-format-multicall.patch",
