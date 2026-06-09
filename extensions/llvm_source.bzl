@@ -44,6 +44,7 @@ _DEFAULT_SOURCE_PATCHES = [
     "//3rd_party/llvm-project/x.x/patches:clang-constexpr-shift-diagnostics.patch",
     "//3rd_party/llvm-project/x.x/patches:clang-attr-pretty-print-sharing.patch",
     "//3rd_party/llvm-project/x.x/patches:clang-parsed-attr-info-sharing.patch",
+    "//3rd_party/llvm-project/x.x/patches:clang-static-analyzer-generic-taint-descriptors.patch",
     "//3rd_party/llvm-project/x.x/patches:clang-static-analyzer-stdlib-minsize.patch",
     "//3rd_party/llvm-project/x.x/patches:clang-stdlib-symbol-table.patch",
     "//3rd_party/llvm-project/x.x/patches:clang-tidy-compact-confusables.patch",
