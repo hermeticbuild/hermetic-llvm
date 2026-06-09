@@ -1,0 +1,13 @@
+diff --git a/clang/lib/StaticAnalyzer/Checkers/StdLibraryFunctionsChecker.cpp b/clang/lib/StaticAnalyzer/Checkers/StdLibraryFunctionsChecker.cpp
+index ae076626cbce..50b34cb181ca 100644
+--- a/clang/lib/StaticAnalyzer/Checkers/StdLibraryFunctionsChecker.cpp
++++ b/clang/lib/StaticAnalyzer/Checkers/StdLibraryFunctionsChecker.cpp
+@@ -851,7 +851,7 @@ private:
+   std::optional<Summary> findFunctionSummary(const CallEvent &Call,
+                                              CheckerContext &C) const;
+ 
+-  void initFunctionSummaries(CheckerContext &C) const;
++  LLVM_ATTRIBUTE_MINSIZE void initFunctionSummaries(CheckerContext &C) const;
+ 
+   void reportBug(const CallEvent &Call, ExplodedNode *N,
+                  const ValueConstraint *VC, const ValueConstraint *NegatedVC,
