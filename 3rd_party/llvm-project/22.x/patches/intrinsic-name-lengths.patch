@@ -1,0 +1,218 @@
+diff --git a/llvm/lib/IR/Intrinsics.cpp b/llvm/lib/IR/Intrinsics.cpp
+index f46d3e5063e4..82084463b214 100644
+--- a/llvm/lib/IR/Intrinsics.cpp
++++ b/llvm/lib/IR/Intrinsics.cpp
+@@ -34,6 +34,7 @@
+ #include "llvm/IR/Module.h"
+ #include "llvm/IR/NVVMIntrinsicUtils.h"
+ #include "llvm/IR/Type.h"
++#include <iterator>
+ 
+ using namespace llvm;
+ 
+@@ -42,9 +43,17 @@ using namespace llvm;
+ #include "llvm/IR/IntrinsicImpl.inc"
+ #undef GET_INTRINSIC_NAME_TABLE
+ 
++static_assert(std::size(IntrinsicNameOffsetTable) == Intrinsic::num_intrinsics);
++
++static StringRef getIntrinsicName(unsigned TableEntry) {
++  unsigned Offset = TableEntry & IntrinsicNameOffsetMask;
++  unsigned Length = TableEntry >> IntrinsicNameLengthShift;
++  return StringRef(IntrinsicNameTableStorage + Offset, Length);
++}
++
+ StringRef Intrinsic::getBaseName(ID id) {
+   assert(id < num_intrinsics && "Invalid intrinsic ID!");
+-  return IntrinsicNameTable[IntrinsicNameOffsetTable[id]];
++  return getIntrinsicName(IntrinsicNameOffsetTable[id]);
+ }
+ 
+ StringRef Intrinsic::getName(ID id) {
+@@ -645,33 +654,34 @@ static int lookupLLVMIntrinsicByName(ArrayRef<unsigned> NameOffsetTable,
+     CmpEnd = Name.find('.', CmpStart + 1);
+     CmpEnd = CmpEnd == StringRef::npos ? Name.size() : CmpEnd;
+     auto Cmp = [CmpStart, CmpEnd](auto LHS, auto RHS) {
+-      // `equal_range` requires the comparison to work with either side being an
+-      // offset or the value. Detect which kind each side is to set up the
++      // `equal_range` requires the comparison to work with either side being a
++      // table entry or the value. Detect which kind each side is to set up the
+       // compared strings.
+-      const char *LHSStr;
++      StringRef LHSStr;
+       if constexpr (std::is_integral_v<decltype(LHS)>)
+-        LHSStr = IntrinsicNameTable.getCString(LHS);
++        LHSStr = getIntrinsicName(LHS);
+       else
+         LHSStr = LHS;
+ 
+-      const char *RHSStr;
++      StringRef RHSStr;
+       if constexpr (std::is_integral_v<decltype(RHS)>)
+-        RHSStr = IntrinsicNameTable.getCString(RHS);
++        RHSStr = getIntrinsicName(RHS);
+       else
+         RHSStr = RHS;
+ 
+-      return strncmp(LHSStr + CmpStart, RHSStr + CmpStart, CmpEnd - CmpStart) <
+-             0;
++      size_t CmpLength = CmpEnd - CmpStart;
++      return LHSStr.substr(CmpStart, CmpLength) <
++             RHSStr.substr(CmpStart, CmpLength);
+     };
+     LastLow = Low;
+-    std::tie(Low, High) = std::equal_range(Low, High, Name.data(), Cmp);
++    std::tie(Low, High) = std::equal_range(Low, High, Name, Cmp);
+   }
+   if (High - Low > 0)
+     LastLow = Low;
+ 
+   if (LastLow == NameOffsetTable.end())
+     return -1;
+-  StringRef NameFound = IntrinsicNameTable[*LastLow];
++  StringRef NameFound = getIntrinsicName(*LastLow);
+   if (Name == NameFound ||
+       (Name.starts_with(NameFound) && Name[NameFound.size()] == '.'))
+     return LastLow - NameOffsetTable.begin();
+@@ -715,7 +725,7 @@ Intrinsic::ID Intrinsic::lookupIntrinsicID(StringRef Name) {
+ 
+   // If the intrinsic is not overloaded, require an exact match. If it is
+   // overloaded, require either exact or prefix match.
+-  const auto MatchSize = IntrinsicNameTable[NameOffsetTable[Idx]].size();
++  const auto MatchSize = getIntrinsicName(NameOffsetTable[Idx]).size();
+   assert(Name.size() >= MatchSize && "Expected either exact or prefix match");
+   bool IsExactMatch = Name.size() == MatchSize;
+   return IsExactMatch || Intrinsic::isOverloaded(ID) ? ID
+diff --git a/llvm/unittests/IR/IntrinsicsTest.cpp b/llvm/unittests/IR/IntrinsicsTest.cpp
+index 87d922d22eaa..cd0ce7ed26fe 100644
+--- a/llvm/unittests/IR/IntrinsicsTest.cpp
++++ b/llvm/unittests/IR/IntrinsicsTest.cpp
+@@ -80,6 +80,13 @@ TEST(IntrinsicNameLookup, Basic) {
+   EXPECT_EQ(memcpy_inline, lookupIntrinsicID("llvm.memcpy.inline.p0.p0.i1024"));
+ }
+ 
++TEST(IntrinsicNameLookup, AllNamesRoundTrip) {
++  for (unsigned ID = 1; ID != Intrinsic::num_intrinsics; ++ID) {
++    StringRef Name = Intrinsic::getBaseName(ID);
++    EXPECT_EQ(ID, Intrinsic::lookupIntrinsicID(Name)) << Name;
++  }
++}
++
+ TEST(IntrinsicNameLookup, NonNullterminatedStringRef) {
+   using namespace Intrinsic;
+   // This reproduces an issue where lookupIntrinsicID() can access memory beyond
+diff --git a/llvm/utils/TableGen/Basic/IntrinsicEmitter.cpp b/llvm/utils/TableGen/Basic/IntrinsicEmitter.cpp
+index 9fed5920a019..36120f0e4f13 100644
+--- a/llvm/utils/TableGen/Basic/IntrinsicEmitter.cpp
++++ b/llvm/utils/TableGen/Basic/IntrinsicEmitter.cpp
+@@ -23,6 +23,7 @@
+ #include "llvm/Support/SourceMgr.h"
+ #include "llvm/Support/raw_ostream.h"
+ #include "llvm/TableGen/Error.h"
++#include "llvm/TableGen/Main.h"
+ #include "llvm/TableGen/Record.h"
+ #include "llvm/TableGen/StringToOffsetTable.h"
+ #include "llvm/TableGen/TableGenBackend.h"
+@@ -279,36 +280,87 @@ void IntrinsicEmitter::EmitIntrinsicBitTable(
+ 
+ void IntrinsicEmitter::EmitIntrinsicToNameTable(
+     const CodeGenIntrinsicTable &Ints, raw_ostream &OS) {
+-  // Built up a table of the intrinsic names.
+   constexpr StringLiteral NotIntrinsic = "not_intrinsic";
+-  StringToOffsetTable Table;
+-  Table.GetOrAddStringOffset(NotIntrinsic);
++  SmallVector<StringRef> Names;
++  Names.push_back(NotIntrinsic);
+   for (const auto &Int : Ints)
+-    Table.GetOrAddStringOffset(Int.Name);
++    Names.push_back(Int.Name);
+ 
+   OS << R"(// Intrinsic ID to name table.
+ #ifdef GET_INTRINSIC_NAME_TABLE
+ // Note that entry #0 is the invalid intrinsic!
+ 
++#ifdef __GNUC__
++#pragma GCC diagnostic push
++#pragma GCC diagnostic ignored "-Woverlength-strings"
++#endif
+ )";
+ 
+-  Table.EmitStringTableDef(OS, "IntrinsicNameTable");
+-
++  unsigned TableSize = 0;
++  unsigned MaxNameLength = 0;
++  for (StringRef Name : Names) {
++    TableSize += Name.size();
++    MaxNameLength = std::max<unsigned>(MaxNameLength, Name.size());
++  }
++  bool UseChars = !EmitLongStrLiterals && TableSize > 64 * 1024;
++  OS << "static constexpr char IntrinsicNameTableStorage[] ="
++     << (UseChars ? "{\n" : "\n");
++  ListSeparator LineSep(UseChars ? ",\n" : "\n");
++  for (StringRef Name : Names) {
++    OS << LineSep << "  ";
++    if (!UseChars) {
++      OS << "\"";
++      OS.write_escaped(Name);
++      OS << "\"";
++      continue;
++    }
++    ListSeparator CharSep(", ");
++    for (char C : Name) {
++      OS << CharSep << "'";
++      OS.write_escaped(StringRef(&C, 1));
++      OS << "'";
++    }
++  }
++  OS << LineSep << (UseChars ? "};" : ";");
+   OS << R"(
+-static constexpr unsigned IntrinsicNameOffsetTable[] = {
++#ifdef __GNUC__
++#pragma GCC diagnostic pop
++#endif
+ )";
+ 
+-  OS << formatv("  {}, // {}\n", Table.GetStringOffset(NotIntrinsic),
+-                NotIntrinsic);
+-  for (const auto &Int : Ints)
+-    OS << formatv("  {}, // {}\n", Table.GetStringOffset(Int.Name), Int.Name);
+-
+   OS << R"(
+-}; // IntrinsicNameOffsetTable
++static constexpr unsigned IntrinsicNameOffsetTable[] = {
++)";
+ 
+-#endif
++  constexpr unsigned OffsetBits = 24;
++  constexpr unsigned OffsetMask = (1u << OffsetBits) - 1;
++  constexpr unsigned LengthShift = OffsetBits;
++  unsigned Offset = 0;
++  for (StringRef Name : Names) {
++    if (Offset > OffsetMask)
++      PrintFatalError("intrinsic name table is too large to encode");
++    if (Name.size() > 0xffu)
++      PrintFatalError("intrinsic name is too long to encode");
++    unsigned Entry = Offset | (Name.size() << LengthShift);
++    OS << formatv("  0x{0:X-8}, // {1}\n", Entry, Name);
++    Offset += Name.size();
++  }
+ 
+-)";
++  OS << "\n}; // IntrinsicNameOffsetTable\n\n";
++  OS << formatv(
++      "static constexpr unsigned IntrinsicNameOffsetMask = 0x{0:X-8};\n"
++      "static constexpr unsigned IntrinsicNameLengthShift = {1};\n"
++      "static constexpr unsigned IntrinsicNameTableSize = {2};\n"
++      "static constexpr unsigned IntrinsicNameMaxLength = {3};\n"
++      "static_assert(IntrinsicNameTableSize <= "
++      "IntrinsicNameOffsetMask + 1);\n"
++      "static_assert(IntrinsicNameMaxLength <= 0xffu);\n"
++      "static_assert(sizeof(IntrinsicNameTableStorage) == "
++      "IntrinsicNameTableSize ||\n"
++      "              sizeof(IntrinsicNameTableStorage) == "
++      "IntrinsicNameTableSize + 1);\n",
++      OffsetMask, LengthShift, TableSize, MaxNameLength);
++  OS << "\n#endif\n\n";
+ }
+ 
+ void IntrinsicEmitter::EmitIntrinsicToOverloadTable(
