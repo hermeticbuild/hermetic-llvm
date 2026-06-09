@@ -1,0 +1,81 @@
+diff --git a/llvm/lib/CodeGen/SelectionDAG/SelectionDAGISel.cpp b/llvm/lib/CodeGen/SelectionDAG/SelectionDAGISel.cpp
+index c8b74b1..d02847d 100644
+--- a/llvm/lib/CodeGen/SelectionDAG/SelectionDAGISel.cpp
++++ b/llvm/lib/CodeGen/SelectionDAG/SelectionDAGISel.cpp
+@@ -108,6 +108,7 @@
+ #include <memory>
+ #include <optional>
+ #include <string>
++#include <type_traits>
+ #include <utility>
+ #include <vector>
+ 
+@@ -2736,13 +2737,24 @@ GetSignedVBR(const unsigned char *MatcherTable, unsigned &Idx) {
+   return Val;
+ }
+ 
+-/// getSimpleVT - Decode a value in MatcherTable, if it's a VBR encoded value,
+-/// use GetVBR to decode it.
++/// Decode an MVT from MatcherTable. Values below the escape byte are encoded
++/// directly; larger values use the escape followed by a VBR-encoded offset.
+ LLVM_ATTRIBUTE_ALWAYS_INLINE static MVT::SimpleValueType
+ getSimpleVT(const uint8_t *MatcherTable, unsigned &MatcherIndex) {
+-  unsigned SimpleVT = MatcherTable[MatcherIndex++];
+-  if (SimpleVT & 128)
+-    SimpleVT = GetVBR(SimpleVT, MatcherTable, MatcherIndex);
++  constexpr uint64_t Escape = std::numeric_limits<uint8_t>::max();
++  using SimpleVTStorage = std::underlying_type_t<MVT::SimpleValueType>;
++  static_assert(std::is_unsigned_v<SimpleVTStorage>);
++  static_assert(sizeof(SimpleVTStorage) <= sizeof(uint64_t));
++
++  uint64_t SimpleVT = MatcherTable[MatcherIndex++];
++  if (SimpleVT == Escape) {
++    uint64_t Offset = MatcherTable[MatcherIndex++];
++    if (Offset & 128)
++      Offset = GetVBR(Offset, MatcherTable, MatcherIndex);
++    assert(Offset <= std::numeric_limits<SimpleVTStorage>::max() - Escape &&
++           "invalid MVT encoding");
++    SimpleVT += Offset;
++  }
+ 
+   return static_cast<MVT::SimpleValueType>(SimpleVT);
+ }
+diff --git a/llvm/utils/TableGen/DAGISelMatcherEmitter.cpp b/llvm/utils/TableGen/DAGISelMatcherEmitter.cpp
+index 29f4510..0fefb1a 100644
+--- a/llvm/utils/TableGen/DAGISelMatcherEmitter.cpp
++++ b/llvm/utils/TableGen/DAGISelMatcherEmitter.cpp
+@@ -27,6 +27,9 @@
+ #include "llvm/Support/SourceMgr.h"
+ #include "llvm/TableGen/Error.h"
+ #include "llvm/TableGen/Record.h"
++#include <cstdint>
++#include <limits>
++#include <type_traits>
+ 
+ using namespace llvm;
+ 
+@@ -500,15 +503,21 @@ void MatcherTableEmitter::EmitPatternMatchTable(raw_ostream &OS) {
+ }
+ 
+ static unsigned emitMVT(MVT VT, raw_ostream &OS) {
+-  // Print the MVT directly if it doesn't require a VBR.
+-  if (VT.SimpleTy <= 127) {
++  constexpr uint64_t Escape = std::numeric_limits<uint8_t>::max();
++  using SimpleVTStorage = std::underlying_type_t<MVT::SimpleValueType>;
++  static_assert(std::is_unsigned_v<SimpleVTStorage>);
++  static_assert(sizeof(SimpleVTStorage) <= sizeof(uint64_t));
++
++  uint64_t SimpleVT = static_cast<SimpleVTStorage>(VT.SimpleTy);
++  if (SimpleVT < Escape) {
+     OS << getEnumName(VT) << ',';
+     return 1;
+   }
+ 
++  OS << Escape << ',';
+   if (!OmitComments)
+     OS << "/*" << getEnumName(VT) << "*/";
+-  return EmitVBRValue(VT.SimpleTy, OS);
++  return 1 + EmitVBRValue(SimpleVT - Escape, OS);
+ }
+ 
+ static StringRef getCompactISDOpcode(StringRef Opcode) {

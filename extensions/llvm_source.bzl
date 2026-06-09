@@ -32,6 +32,7 @@ _DEFAULT_SOURCE_PATCHES = [
     "//3rd_party/llvm-project/x.x/patches:dagisel-small-integer-opcodes.patch",
     "//3rd_party/llvm-project/x.x/patches:dagisel-compact-isd-opcodes.patch",
     "//3rd_party/llvm-project/x.x/patches:dagisel-fused-matchers.patch",
+    "//3rd_party/llvm-project/x.x/patches:dagisel-compact-mvt-encoding.patch",
     "//3rd_party/llvm-project/x.x/patches:clang-diagnostic-description-table.patch",
     "//3rd_party/llvm-project/x.x/patches:clang-tidy-compact-check-factories.patch",
     "//3rd_party/llvm-project/x.x/patches:clang-tidy-dynamic-loop-convert-visitors.patch",
