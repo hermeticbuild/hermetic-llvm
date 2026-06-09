@@ -153,6 +153,27 @@ def gcc_repository(gcc_version):
         ":libstdcxx_cxx17_memory_resource_cc",
     ]
 
+    _GCC_11_SRC_INTERNAL_HEADER_GLOBS = [
+        "libstdc++-v3/src/c++17/ryu/*.c",
+    ]
+
+    _GCC_11_STD_HEADERS = [
+        "libstdc++-v3/include/std/barrier",
+        "libstdc++-v3/include/std/latch",
+        "libstdc++-v3/include/std/semaphore",
+        "libstdc++-v3/include/std/source_location",
+        "libstdc++-v3/include/std/syncstream",
+    ]
+
+    _GCC_11_CXX20_SOURCES = [
+        "libstdc++-v3/src/c++20/sstream-inst.cc",
+    ]
+
+    _GCC_11_CXX17_SOURCES = [
+        "libstdc++-v3/src/c++17/floating_from_chars.cc",
+        "libstdc++-v3/src/c++17/floating_to_chars.cc",
+    ]
+
     # Keep this export list in sync with the sparse archive roots in
     # 3rd_party/gcc/extension/gcc.bzl. The libstdc++ configure inputs are exported
     # for the audit test; the config/include/libsupc++ entries are the files
@@ -264,7 +285,6 @@ def gcc_repository(gcc_version):
             "libstdc++-v3/include/std/any",
             "libstdc++-v3/include/std/array",
             "libstdc++-v3/include/std/atomic",
-            "libstdc++-v3/include/std/barrier",
             "libstdc++-v3/include/std/bit",
             "libstdc++-v3/include/std/bitset",
             "libstdc++-v3/include/std/charconv",
@@ -287,7 +307,6 @@ def gcc_repository(gcc_version):
             "libstdc++-v3/include/std/iostream",
             "libstdc++-v3/include/std/istream",
             "libstdc++-v3/include/std/iterator",
-            "libstdc++-v3/include/std/latch",
             "libstdc++-v3/include/std/limits",
             "libstdc++-v3/include/std/list",
             "libstdc++-v3/include/std/locale",
@@ -305,10 +324,8 @@ def gcc_repository(gcc_version):
             "libstdc++-v3/include/std/ratio",
             "libstdc++-v3/include/std/regex",
             "libstdc++-v3/include/std/scoped_allocator",
-            "libstdc++-v3/include/std/semaphore",
             "libstdc++-v3/include/std/set",
             "libstdc++-v3/include/std/shared_mutex",
-            "libstdc++-v3/include/std/source_location",
             "libstdc++-v3/include/std/span",
             "libstdc++-v3/include/std/sstream",
             "libstdc++-v3/include/std/stack",
@@ -317,7 +334,6 @@ def gcc_repository(gcc_version):
             "libstdc++-v3/include/std/streambuf",
             "libstdc++-v3/include/std/string",
             "libstdc++-v3/include/std/string_view",
-            "libstdc++-v3/include/std/syncstream",
             "libstdc++-v3/include/std/system_error",
             "libstdc++-v3/include/std/thread",
             "libstdc++-v3/include/std/tuple",
@@ -330,7 +346,7 @@ def gcc_repository(gcc_version):
             "libstdc++-v3/include/std/variant",
             "libstdc++-v3/include/std/vector",
             "libstdc++-v3/include/std/version",
-        ] + (_GCC_12_STD_HEADERS if gcc_version_at_least("12.0.0") else []) + (_GCC_13_STD_HEADERS if gcc_version_at_least("13.0.0") else []) + (_GCC_14_STD_HEADERS if gcc_version_at_least("14.0.0") else []) + (_GCC_15_STD_HEADERS if gcc_version_at_least("15.0.0") else []) + (_GCC_16_STD_HEADERS if gcc_version_at_least("16.0.0") else []),
+        ] + (_GCC_11_STD_HEADERS if gcc_version_at_least("11.0.0") else []) + (_GCC_12_STD_HEADERS if gcc_version_at_least("12.0.0") else []) + (_GCC_13_STD_HEADERS if gcc_version_at_least("13.0.0") else []) + (_GCC_14_STD_HEADERS if gcc_version_at_least("14.0.0") else []) + (_GCC_15_STD_HEADERS if gcc_version_at_least("15.0.0") else []) + (_GCC_16_STD_HEADERS if gcc_version_at_least("16.0.0") else []),
     )
 
     native.filegroup(
@@ -676,8 +692,7 @@ def gcc_repository(gcc_version):
         srcs = native.glob([
             "libstdc++-v3/src/**/*.h",
             "libstdc++-v3/src/**/*.cc",
-            "libstdc++-v3/src/c++17/ryu/*.c",
-        ]),
+        ] + (_GCC_11_SRC_INTERNAL_HEADER_GLOBS if gcc_version_at_least("11.0.0") else [])),
     )
 
     # Generated source adapters mirror the configure-selected source substitutions
@@ -1017,8 +1032,6 @@ def gcc_repository(gcc_version):
             "libstdc++-v3/src/c++17/cow-fs_dir.cc",
             "libstdc++-v3/src/c++17/cow-fs_ops.cc",
             "libstdc++-v3/src/c++17/cow-fs_path.cc",
-            "libstdc++-v3/src/c++17/floating_from_chars.cc",
-            "libstdc++-v3/src/c++17/floating_to_chars.cc",
             "libstdc++-v3/src/c++17/fs_dir.cc",
             "libstdc++-v3/src/c++17/fs_ops.cc",
             "libstdc++-v3/src/c++17/fs_path.cc",
@@ -1026,14 +1039,12 @@ def gcc_repository(gcc_version):
             ":libstdcxx_cxx17_cow_string_inst_cc",
             ":libstdcxx_cxx17_cow_string_inst_inc",
             ":libstdcxx_cxx17_string_inst_cc",
-        ] + (_GCC_12_CXX17_SOURCES if gcc_version_at_least("12.0.0") else _GCC_LT_12_CXX17_SOURCES),
+        ] + (_GCC_11_CXX17_SOURCES if gcc_version_at_least("11.0.0") else []) + (_GCC_12_CXX17_SOURCES if gcc_version_at_least("12.0.0") else _GCC_LT_12_CXX17_SOURCES),
     )
 
     native.filegroup(
         name = "libstdcxx_cxx20_sources",
-        srcs = [
-            "libstdc++-v3/src/c++20/sstream-inst.cc",
-        ] + (_GCC_13_CXX20_SOURCES if gcc_version_at_least("13.0.0") else []) + (_GCC_16_CXX20_SOURCES if gcc_version_at_least("16.0.0") else []),
+        srcs = (_GCC_11_CXX20_SOURCES if gcc_version_at_least("11.0.0") else []) + (_GCC_13_CXX20_SOURCES if gcc_version_at_least("13.0.0") else []) + (_GCC_16_CXX20_SOURCES if gcc_version_at_least("16.0.0") else []),
     )
 
     native.filegroup(

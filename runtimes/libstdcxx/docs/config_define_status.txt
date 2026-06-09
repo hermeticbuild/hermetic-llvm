@@ -34,7 +34,7 @@ HAVE_COSHF probe-modeled
 HAVE_COSHL probe-modeled
 HAVE_COSL probe-modeled
 HAVE_DECL_STRNLEN probe-modeled gcc_ge_12
-HAVE_DIRFD probe-modeled
+HAVE_DIRFD probe-modeled gcc_ge_11
 HAVE_EXCEPTION_PTR_SINCE_GCC46 policy-modeled
 HAVE_EXPF probe-modeled
 HAVE_EXPL probe-modeled
@@ -43,7 +43,7 @@ HAVE_FABSL probe-modeled
 HAVE_FINITE probe-modeled
 HAVE_FINITEF probe-modeled
 HAVE_FINITEL probe-modeled
-HAVE_FDOPENDIR probe-modeled
+HAVE_FDOPENDIR probe-modeled gcc_ge_11
 HAVE_FPCLASS probe-modeled
 HAVE_FLOORF probe-modeled
 HAVE_FLOORL probe-modeled
@@ -86,7 +86,7 @@ HAVE_MODFF probe-modeled
 HAVE_MODFL probe-modeled
 HAVE_OBSOLETE_ISINF probe-modeled
 HAVE_OBSOLETE_ISNAN probe-modeled
-HAVE_OPENAT probe-modeled
+HAVE_OPENAT probe-modeled gcc_ge_11
 HAVE_O_NONBLOCK probe-modeled gcc_ge_12
 HAVE_POLL probe-modeled
 HAVE_POSIX_MEMALIGN probe-modeled
@@ -132,8 +132,8 @@ HAVE_TIMESPEC_GET probe-modeled gcc_ge_9
 HAVE_TLS probe-modeled
 HAVE_TRUNCATE probe-modeled
 HAVE_UNISTD_H header-probe gcc_ge_16
-HAVE_UNLINKAT probe-modeled
-HAVE_USELOCALE probe-modeled
+HAVE_UNLINKAT probe-modeled gcc_ge_11
+HAVE_USELOCALE probe-modeled gcc_ge_11
 HAVE_USLEEP probe-modeled
 HAVE_VFWSCANF probe-modeled
 HAVE_VSWSCANF probe-modeled
@@ -143,7 +143,7 @@ HAVE_WCSTOF probe-modeled
 HAVE_WRITEV probe-modeled
 HAVE__ALIGNED_MALLOC probe-modeled
 HAVE__BOOL not-needed
-HAVE__WFOPEN probe-modeled gcc_ge_11
+HAVE__WFOPEN probe-modeled gcc_ge_10
 HAVE_CC_TLS probe-modeled
 ICONV_CONST intentionally-defaulted
 STRING_WITH_STRINGS not-needed
@@ -165,11 +165,11 @@ _GLIBCXX_CONCEPT_CHECKS policy-modeled
 _GLIBCXX_FULLY_DYNAMIC_STRING policy-modeled
 _GLIBCXX_HAS_GTHREADS probe-modeled
 _GLIBCXX_HOSTED policy-modeled
-_GLIBCXX_LONG_DOUBLE_ALT128_COMPAT intentionally-defaulted
+_GLIBCXX_LONG_DOUBLE_ALT128_COMPAT intentionally-defaulted gcc_ge_11
 _GLIBCXX_LONG_DOUBLE_COMPAT intentionally-defaulted
 _GLIBCXX_MANGLE_SIZE_T target-derived
 _GLIBCXX_NO_C99_ROUNDING_FUNCS policy-modeled
-_GLIBCXX_NO_SLEEP policy-modeled
+_GLIBCXX_NO_SLEEP policy-modeled gcc_ge_11
 _GLIBCXX_PTRDIFF_T_IS_INT target-derived
 _GLIBCXX_RES_LIMITS policy-modeled
 _GLIBCXX_SIZE_T_IS_UINT target-derived
@@ -236,7 +236,7 @@ _GLIBCXX_USE_SC_NPROCESSORS_ONLN probe-modeled
 _GLIBCXX_USE_SC_NPROC_ONLN probe-modeled
 _GLIBCXX_USE_SENDFILE probe-modeled
 _GLIBCXX_USE_STDIO_LOCKING probe-modeled gcc_ge_16
-_GLIBCXX_USE_STDIO_PURE build-setting-later
+_GLIBCXX_USE_STDIO_PURE build-setting-later gcc_ge_11
 _GLIBCXX_USE_STRUCT_TM_TM_ZONE probe-modeled gcc_ge_15
 _GLIBCXX_USE_ST_MTIM probe-modeled
 _GLIBCXX_USE_SYSCTL_HW_NCPU unsupported-target

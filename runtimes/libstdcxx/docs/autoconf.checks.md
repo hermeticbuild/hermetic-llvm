@@ -171,7 +171,7 @@ that are implemented as compile/link probes.
 - [x] `__cxa_thread_atexit`
 - [x] `__cxa_thread_atexit_impl`
 - [x] `_aligned_malloc`
-- [x] `_wfopen` - GCC 11+.
+- [x] `_wfopen` - GCC 10+.
 - [x] `aligned_alloc`
 - [x] `arc4random`
 - [x] `at_quick_exit`
