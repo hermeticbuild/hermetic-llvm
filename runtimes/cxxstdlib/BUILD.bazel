@@ -1,3 +1,5 @@
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
 package(default_visibility = ["//visibility:public"])
 
 config_setting(
@@ -16,9 +18,9 @@ config_setting(
     ],
 )
 
-config_setting(
+selects.config_setting_group(
     name = "libstdcxx_linux",
-    constraint_values = [
+    match_all = [
         "//constraints/cxxstdlib:libstdcxx",
         "@platforms//os:linux",
     ],
@@ -27,9 +29,9 @@ config_setting(
 # Recognize the Windows selection only to fail at the cxxstdlib routing
 # boundary. The MinGW source/header entries in the libstdc++ port are audit
 # parity with GCC, not supported runtime wiring yet.
-config_setting(
+selects.config_setting_group(
     name = "libstdcxx_windows",
-    constraint_values = [
+    match_all = [
         "//constraints/cxxstdlib:libstdcxx",
         "@platforms//os:windows",
     ],

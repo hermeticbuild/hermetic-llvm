@@ -163,16 +163,17 @@ This ensures your program runs on systems with that glibc version or newer witho
 Both libc++ and libstdc++ are supported. libc++ is selected by default.
 
 To select libstdc++ for a Linux glibc target, add the
-`@llvm//constraints/cxxstdlib:libstdcxx` constraint to the target platform.
+`@llvm//constraints/cxxstdlib:libstdcxx.<version>` constraint to the target
+platform.
 
 ```starlark
 platform(
-    name = "linux_x86_64_gnu_2_28_libstdcxx",
+    name = "linux_x86_64_gnu_2_28_libstdcxx_8_5_0",
     constraint_values = [
         "@platforms//os:linux",
         "@platforms//cpu:x86_64",
         "@llvm//constraints/libc:gnu.2.28",
-        "@llvm//constraints/cxxstdlib:libstdcxx",
+        "@llvm//constraints/cxxstdlib:libstdcxx.8.5.0",
     ],
 )
 ```
@@ -180,7 +181,7 @@ platform(
 Then build with that platform:
 
 ```sh
-bazel build --platforms=//:linux_x86_64_gnu_2_28_libstdcxx //:app
+bazel build --platforms=//:linux_x86_64_gnu_2_28_libstdcxx_8_5_0 //:app
 ```
 
 libstdc++ is currently supported as a dynamic C++ runtime, so C++ binaries

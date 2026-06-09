@@ -1,7 +1,36 @@
-exports_files(["gcc.BUILD.bazel"])
+load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+
+exports_files([
+    "gcc.BUILD.bazel",
+    "gcc_repository.bzl",
+])
 
 filegroup(
     name = "overlay_files",
     srcs = ["gcc.BUILD.bazel"],
     visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "version",
+    srcs = ["version.bzl"],
+    visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "gcc_repository",
+    srcs = ["gcc_repository.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":version",
+        "//runtimes/libstdcxx:libstdcxx_symbols_version_script",
+        "//runtimes/libstdcxx:target_config",
+        "//toolchain/runtimes:cc_runtime_shared_library",
+        "//toolchain/runtimes:cc_runtime_static_library",
+        "@bazel_lib//lib:copy_file",
+        "@bazel_lib//lib:copy_to_directory",
+        "@bazel_skylib//rules:expand_template",
+        "@bazel_skylib//rules:write_file",
+        "@rules_cc//cc:cc_library.bzl",
+    ],
 )

@@ -1,3 +1,4 @@
+load("//3rd_party/gcc:version.bzl", "GCC_VERSIONS", "libstdcxx_constraint_value")
 load("//constraints/cxxstdlib:cxxstdlib_versions.bzl", "DEFAULT_CXXSTDLIB")
 load("//constraints/libc:libc_versions.bzl", "LIBCS", "default_libc")
 load("//platforms:common.bzl", "ARCH_ALIASES", "LIBC_SUPPORTED_TARGETS", "SUPPORTED_TARGETS")
@@ -37,6 +38,7 @@ def declare_platforms():
             )
 
     declare_platforms_libc_aware()
+    declare_platforms_libstdcxx_aware()
 
 def declare_platforms_libc_aware():
     for target_os, target_cpu in LIBC_SUPPORTED_TARGETS:
@@ -61,5 +63,29 @@ def declare_platforms_libc_aware():
                         "//constraints/libc:{}".format(libc),
                         "//constraints/cxxstdlib:{}".format(DEFAULT_CXXSTDLIB),
                     ],
+                    visibility = ["//visibility:public"],
+                )
+
+def declare_platforms_libstdcxx_aware():
+    for target_os, target_cpu in LIBC_SUPPORTED_TARGETS:
+        for version in GCC_VERSIONS:
+            libstdcxx_version = libstdcxx_constraint_value(version)
+            constraints = [
+                "@platforms//cpu:{}".format(target_cpu),
+                "@platforms//os:{}".format(target_os),
+                "//constraints/libc:{}".format(default_libc(target_os, target_cpu)),
+                "//constraints/cxxstdlib:{}".format(libstdcxx_version),
+            ]
+
+            native.platform(
+                name = "{}_{}_{}".format(target_os, target_cpu, libstdcxx_version),
+                constraint_values = constraints,
+                visibility = ["//visibility:public"],
+            )
+
+            for alias in ARCH_ALIASES.get(target_cpu, []):
+                native.platform(
+                    name = "{}_{}_{}".format(target_os, alias, libstdcxx_version),
+                    constraint_values = constraints,
                     visibility = ["//visibility:public"],
                 )

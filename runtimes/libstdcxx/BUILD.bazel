@@ -2,6 +2,13 @@ load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 load("@bazel_lib//lib:copy_file.bzl", "copy_file")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load(
+    "//3rd_party/gcc:version.bzl",
+    "GCC_VERSIONS",
+    "gcc_repository_label",
+    "gcc_target_suffix",
+    "select_for_gcc_version",
+)
 load("//runtimes:defs.bzl", "stub_library")
 load(":libstdcxx_config_h.bzl", "libstdcxx_config_h")
 load(":libstdcxx_cxxconfig_header.bzl", "libstdcxx_cxxconfig_header")
@@ -44,10 +51,41 @@ exports_files([
     "linkage.m4.bzl",
 ])
 
-libstdcxx_config_h(
+[
+    libstdcxx_gthr_headers(
+        name = "gthr_headers_" + gcc_target_suffix(version),
+        gthr_default_h = libstdcxx_thread_header_h(version),
+        gthr_h = gcc_repository_label(version, "libgcc/gthr.h"),
+        gthr_posix_h = gcc_repository_label(version, "libgcc/gthr-posix.h"),
+        gthr_single_h = gcc_repository_label(version, "libgcc/gthr-single.h"),
+    )
+    for version in GCC_VERSIONS
+]
+
+alias(
+    name = "gthr_headers",
+    actual = select_for_gcc_version({
+        version: ":gthr_headers_" + gcc_target_suffix(version)
+        for version in GCC_VERSIONS
+    }),
+)
+
+[
+    libstdcxx_config_h(
+        name = "config_h_" + gcc_target_suffix(version),
+        config_defines = libstdcxx_config_h_policy_defines(version),
+        gcc_version = version,
+        gthr_headers = ":gthr_headers_" + gcc_target_suffix(version),
+    )
+    for version in GCC_VERSIONS
+]
+
+alias(
     name = "config_h",
-    config_defines = libstdcxx_config_h_policy_defines(),
-    gthr_headers = ":gthr_headers",
+    actual = select_for_gcc_version({
+        version: ":config_h_" + gcc_target_suffix(version)
+        for version in GCC_VERSIONS
+    }),
 )
 
 filegroup(
@@ -55,6 +93,15 @@ filegroup(
     srcs = [":config_h"],
     output_group = "config_h",
 )
+
+[
+    filegroup(
+        name = "config_h_header_" + gcc_target_suffix(version),
+        srcs = [":config_h_" + gcc_target_suffix(version)],
+        output_group = "config_h",
+    )
+    for version in GCC_VERSIONS
+]
 
 # Configured public headers mirror libstdc++-v3/include/Makefile.am. The
 # selected source labels come from configure.host fields in :target_config.bzl.
@@ -184,62 +231,77 @@ copy_file(
     allow_symlink = True,
 )
 
-libstdcxx_cxxconfig_header(
-    name = "cxxconfig_h",
-    basever = "@gcc//:gcc/BASE-VER",
-    config_h = ":config_h_header",
-    cxxconfig_template = "@gcc//:libstdc++-v3/include/bits/c++config",
-    datestamp = "@gcc//:gcc/DATESTAMP",
-    enable_float128 = libstdcxx_enable_float128(),
-    extern_template = libstdcxx_extern_template(),
-    have_attribute_visibility = libstdcxx_have_attribute_visibility(),
-    inline_version = libstdcxx_inline_version(),
-    use_allocator_new = libstdcxx_use_allocator_new(),
-    use_cxx11_abi = libstdcxx_use_cxx11_abi(),
-    use_dual_abi = libstdcxx_use_dual_abi(),
-)
+[
+    libstdcxx_cxxconfig_header(
+        name = "cxxconfig_h_" + gcc_target_suffix(version),
+        basever = gcc_repository_label(version, "gcc/BASE-VER"),
+        config_h = ":config_h_header_" + gcc_target_suffix(version),
+        cxxconfig_template = gcc_repository_label(version, "libstdc++-v3/include/bits/c++config"),
+        datestamp = gcc_repository_label(version, "gcc/DATESTAMP"),
+        enable_float128 = libstdcxx_enable_float128(),
+        extern_template = libstdcxx_extern_template(),
+        have_attribute_visibility = libstdcxx_have_attribute_visibility(),
+        inline_version = libstdcxx_inline_version(),
+        use_allocator_new = libstdcxx_use_allocator_new(),
+        use_cxx11_abi = libstdcxx_use_cxx11_abi(),
+        use_dual_abi = libstdcxx_use_dual_abi(),
+    )
+    for version in GCC_VERSIONS
+]
 
-libstdcxx_gthr_headers(
-    name = "gthr_headers",
-    gthr_default_h = libstdcxx_thread_header_h(),
-    gthr_h = "@gcc//:libgcc/gthr.h",
-    gthr_posix_h = "@gcc//:libgcc/gthr-posix.h",
-    gthr_single_h = "@gcc//:libgcc/gthr-single.h",
+alias(
+    name = "cxxconfig_h",
+    actual = select_for_gcc_version({
+        version: ":cxxconfig_h_" + gcc_target_suffix(version)
+        for version in GCC_VERSIONS
+    }),
 )
 
 # Generated/configured headers must precede raw GCC headers, matching the
 # include overlay order from libstdc++-v3/include/Makefile.am.
-copy_to_directory(
+alias(
     name = "generated_host_headers_include_search_directory",
-    srcs = [
-        ":allocator_h",
-        ":atomic_word_h",
-        ":basic_file_h",
-        ":bits_opt_random_h",
-        ":c_locale_h",
-        ":cpu_defines_h",
-        ":cstdio_h",
-        ":ctype_base_h",
-        ":ctype_inline_h",
-        ":cxxabi_tweaks_h",
-        ":cxxconfig_h",
-        ":error_constants_h",
-        ":ext_opt_random_h",
-        ":gthr_headers",
-        ":messages_members_h",
-        ":os_defines_h",
-        ":precompiled_extcxx_h",
-        ":precompiled_stdcxx_h",
-        ":precompiled_stdtr1cxx_h",
-        ":time_members_h",
-    ],
-    allow_overwrites = True,
-    root_paths = [
-        "runtimes/libstdcxx/public_host_headers",
-        "runtimes/libstdcxx/cxxconfig_h",
-        "runtimes/libstdcxx/gthr_headers",
-    ],
+    actual = select_for_gcc_version({
+        version: ":generated_host_headers_include_search_directory_" + gcc_target_suffix(version)
+        for version in GCC_VERSIONS
+    }),
+    visibility = ["//visibility:public"],
 )
+
+[
+    copy_to_directory(
+        name = "generated_host_headers_include_search_directory_" + gcc_target_suffix(version),
+        srcs = [
+            ":allocator_h",
+            ":atomic_word_h",
+            ":basic_file_h",
+            ":bits_opt_random_h",
+            ":c_locale_h",
+            ":cpu_defines_h",
+            ":cstdio_h",
+            ":ctype_base_h",
+            ":ctype_inline_h",
+            ":cxxabi_tweaks_h",
+            ":cxxconfig_h_" + gcc_target_suffix(version),
+            ":error_constants_h",
+            ":ext_opt_random_h",
+            ":gthr_headers_" + gcc_target_suffix(version),
+            ":messages_members_h",
+            ":os_defines_h",
+            ":precompiled_extcxx_h",
+            ":precompiled_stdcxx_h",
+            ":precompiled_stdtr1cxx_h",
+            ":time_members_h",
+        ],
+        allow_overwrites = True,
+        root_paths = [
+            "runtimes/libstdcxx/public_host_headers",
+            "runtimes/libstdcxx/cxxconfig_h_" + gcc_target_suffix(version),
+            "runtimes/libstdcxx/gthr_headers_" + gcc_target_suffix(version),
+        ],
+    )
+    for version in GCC_VERSIONS
+]
 
 # Build-only private headers mirror libstdc++-v3/include/Makefile.am entries
 # that are needed to compile the library but are not public installed headers.
@@ -257,28 +319,51 @@ copy_file(
     allow_symlink = True,
 )
 
-libstdcxx_largefile_config_header(
+[
+    libstdcxx_largefile_config_header(
+        name = "largefile_config_h_" + gcc_target_suffix(version),
+        config_h = ":config_h_header_" + gcc_target_suffix(version),
+    )
+    for version in GCC_VERSIONS
+]
+
+alias(
     name = "largefile_config_h",
-    config_h = ":config_h_header",
+    actual = select_for_gcc_version({
+        version: ":largefile_config_h_" + gcc_target_suffix(version)
+        for version in GCC_VERSIONS
+    }),
 )
 
 # During the libstdc++ build, private/generated headers override the installed
 # raw headers in the same order GCC arranges its build include directory.
-copy_to_directory(
+alias(
     name = "build_headers_include_search_directory",
-    srcs = [
-        ":c_locale_internal_h",
-        ":compatibility_h",
-        ":generated_host_headers_include_search_directory",
-        ":largefile_config_h",
-    ],
-    allow_overwrites = True,
-    root_paths = [
-        "runtimes/libstdcxx/generated_host_headers_include_search_directory",
-        "runtimes/libstdcxx/private_host_headers",
-        "runtimes/libstdcxx/largefile_config_h",
-    ],
+    actual = select_for_gcc_version({
+        version: ":build_headers_include_search_directory_" + gcc_target_suffix(version)
+        for version in GCC_VERSIONS
+    }),
+    visibility = ["//visibility:public"],
 )
+
+[
+    copy_to_directory(
+        name = "build_headers_include_search_directory_" + gcc_target_suffix(version),
+        srcs = [
+            ":c_locale_internal_h",
+            ":compatibility_h",
+            ":generated_host_headers_include_search_directory_" + gcc_target_suffix(version),
+            ":largefile_config_h_" + gcc_target_suffix(version),
+        ],
+        allow_overwrites = True,
+        root_paths = [
+            "runtimes/libstdcxx/generated_host_headers_include_search_directory_" + gcc_target_suffix(version),
+            "runtimes/libstdcxx/private_host_headers",
+            "runtimes/libstdcxx/largefile_config_h_" + gcc_target_suffix(version),
+        ],
+    )
+    for version in GCC_VERSIONS
+]
 
 # Installed header search directory: raw GCC headers plus the backward ext
 # compatibility aliases from libstdc++-v3/include/Makefile.am.
@@ -297,19 +382,31 @@ copy_to_directory(
     visibility = ["//visibility:public"],
 )
 
-cc_library(
+alias(
     name = "build_headers",
-    hdrs = [
-        ":build_headers_include_search_directory",
-        ":headers_include_search_directory",
-    ],
-    includes = [
-        "build_headers_include_search_directory",
-        "headers_include_search_directory",
-        "headers_include_search_directory/backward",
-    ],
+    actual = select_for_gcc_version({
+        version: ":build_headers_" + gcc_target_suffix(version)
+        for version in GCC_VERSIONS
+    }),
     visibility = ["//visibility:public"],
 )
+
+[
+    cc_library(
+        name = "build_headers_" + gcc_target_suffix(version),
+        hdrs = [
+            ":build_headers_include_search_directory_" + gcc_target_suffix(version),
+            ":headers_include_search_directory",
+        ],
+        includes = [
+            "build_headers_include_search_directory_" + gcc_target_suffix(version),
+            "headers_include_search_directory",
+            "headers_include_search_directory/backward",
+        ],
+        visibility = ["//visibility:public"],
+    )
+    for version in GCC_VERSIONS
+]
 
 alias(
     name = "abi_headers_include_search_directory",
@@ -409,7 +506,10 @@ bzl_library(
 bzl_library(
     name = "target_config",
     srcs = ["target_config.bzl"],
-    deps = ["//runtimes/libstdcxx/autoconf:checks"],
+    deps = [
+        "//3rd_party/gcc:version",
+        "//runtimes/libstdcxx/autoconf:checks",
+    ],
 )
 
 bzl_library(
@@ -439,6 +539,7 @@ bzl_library(
     deps = [
         ":gcc_config_checks",
         ":linkage.m4",
+        "//3rd_party/gcc:version",
         "//runtimes/libstdcxx/autoconf:checks",
     ],
 )
@@ -446,7 +547,10 @@ bzl_library(
 bzl_library(
     name = "linkage.m4",
     srcs = ["linkage.m4.bzl"],
-    deps = ["//runtimes/libstdcxx/autoconf:checks"],
+    deps = [
+        "//3rd_party/gcc:version",
+        "//runtimes/libstdcxx/autoconf:checks",
+    ],
 )
 
 bzl_library(
