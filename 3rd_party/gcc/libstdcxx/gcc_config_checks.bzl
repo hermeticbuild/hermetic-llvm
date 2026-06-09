@@ -6,6 +6,9 @@
 # AC_COMPILE_IFELSE and AC_LINK_IFELSE success branches may define several
 # macros. The check name stays the audit key; defines_on_success records the
 # config.h fan-out for that successful probe.
+#
+# GCC_HEADER_STDINT has no config.h define. GCC 12's private gstdint.h output is
+# modeled by the GCC overlay's generated libstdcxx_gstdint_h header.
 
 load(
     "//3rd_party/gcc/libstdcxx/autoconf:checks.bzl",

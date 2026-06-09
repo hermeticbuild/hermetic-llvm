@@ -18,13 +18,17 @@ Status meanings are defined in `AGENTS.md`.
 - [x] `GLIBCXX_CHECK_C99_TR1` - TR1 C99 probe groups are modeled; `modeled`.
 - [x] `GLIBCXX_CHECK_LFS` - full large-file probe group is modeled; `modeled`.
 - [x] `GLIBCXX_CHECK_GETTIMEOFDAY` - `gettimeofday` probe is modeled; `modeled`.
-- [x] `GLIBCXX_ENABLE_LIBSTDCXX_TIME` - Linux time probes are modeled; `modeled`.
+- [x] `GLIBCXX_ENABLE_LIBSTDCXX_TIME` - Linux time probes are modeled; the
+  Win32 `Sleep` fallback is inactive for supported Linux GNU targets and is
+  version-scoped as GCC 12 `HAVE_WIN32_SLEEP` or GCC 13+
+  `_GLIBCXX_USE_WIN32_SLEEP`; `modeled`.
 - [x] `GLIBCXX_CHECK_STDIO_PROTO` - `gets` declaration probe is modeled; `modeled`.
 - [x] `GLIBCXX_CHECK_MATH11_PROTO` - Linux obsolete `isinf`/`isnan` path is modeled; `modeled`.
 - [x] `GLIBCXX_CHECK_POLL` - `poll` probe is modeled; `modeled`.
 - [x] `GLIBCXX_CHECK_S_ISREG_OR_S_IFREG` - regular-file macro probe is modeled; `modeled`.
 - [x] `GLIBCXX_CHECK_WRITEV` - `writev` probe is modeled; `modeled`.
-- [x] `GLIBCXX_CHECK_UCHAR_H` - C11/C++20 uchar probes are modeled; `modeled`.
+- [x] `GLIBCXX_CHECK_UCHAR_H` - C11 uchar probes are modeled; GCC 12+
+  adds C8 uchar probes; `modeled`.
 - [x] `GLIBCXX_COMPUTE_STDIO_INTEGER_CONSTANTS` - Linux GNU constants are policy-modeled; `modeled`.
 - [x] `GLIBCXX_CHECK_TMPNAM` - `tmpnam` probe is modeled; `modeled`.
 - [x] `GLIBCXX_CHECK_PTHREAD_COND_CLOCKWAIT` - pthread probe is modeled; `modeled`.
@@ -42,14 +46,16 @@ Status meanings are defined in `AGENTS.md`.
 - [x] `GCC_CHECK_TLS` - TLS probe is modeled; `modeled`.
 - [x] `GCC_CHECK_UNWIND_GETIPINFO` - unwind policy is modeled; `modeled`.
 - [x] `GCC_LINUX_FUTEX` - futex probe is modeled; `modeled`.
+- [x] `GCC_HEADER_STDINT` - GCC 12-only `gstdint.h` generator is modeled by a
+  Bazel-generated compatibility header; `modeled`.
 - [x] `GLIBCXX_CHECK_LINKER_FEATURES` - linker/symver policy is modeled for GNU; `modeled`.
 - [x] `GLIBCXX_ENABLE_SYMVERS` - GNU symbol version policy is modeled; `modeled`.
 - [x] `GLIBCXX_CHECK_EXCEPTION_PTR_SYMVER` - exception pointer symbol-version policy is modeled; `modeled`.
 - [x] `GLIBCXX_CHECK_MATH_SUPPORT` - native math probes are modeled; `modeled`.
 - [x] `GLIBCXX_CHECK_STDLIB_SUPPORT` - native stdlib probes are modeled; `modeled`.
 - [x] `GLIBCXX_CHECK_DEV_RANDOM` - Linux random-device policy is modeled; `modeled`.
-- [x] `GLIBCXX_CHECK_ARC4RANDOM` - `arc4random` probe is modeled; `modeled`.
-- [x] `GLIBCXX_CHECK_GETENTROPY` - `getentropy` probe is modeled; `modeled`.
+- [x] `GLIBCXX_CHECK_ARC4RANDOM` - GCC 12+ `arc4random` probe is modeled; `modeled`.
+- [x] `GLIBCXX_CHECK_GETENTROPY` - GCC 12+ `getentropy` probe is modeled; `modeled`.
 - [x] `GLIBCXX_CHECK_FILESYSTEM_DEPS` - filesystem probes are modeled; `modeled`.
 - [x] `GLIBCXX_CHECK_TEXT_ENCODING` - GCC 14+ text encoding probes are modeled; `modeled`.
 - [x] `GLIBCXX_CHECK_DEBUGGING` - GCC 16+ Linux debug probes are modeled; `modeled`.
@@ -94,7 +100,7 @@ Status meanings are defined in `AGENTS.md`.
 
 - [x] `GLIBCXX_ENABLE_VERBOSE` - fixed today; should become a private knob.
 - [x] `GLIBCXX_ENABLE_CONCEPT_CHECKS` - fixed today; should become a private knob if exposed.
-- [x] `GLIBCXX_ENABLE_FLOAT128` - fixed today; needs target/probe knob and version-map work.
+- [x] `GLIBCXX_ENABLE_FLOAT128` - GCC 12+ fixed policy today; needs target/probe knob and version-map work.
 - [x] `GLIBCXX_ENABLE_FULLY_DYNAMIC_STRING` - fixed today; needs ABI knob work.
 - [x] `GLIBCXX_EMERGENCY_EH_ALLOC` - GCC 13+ setting is fixed today; needs EH pool knobs.
 - [x] `nls` / `_GLIBCXX_USE_NLS` - fixed off; needs NLS catalog build policy if exposed.
@@ -133,7 +139,7 @@ Status meanings are defined in `AGENTS.md`.
 ## Inactive Feature Branches
 
 - [x] `GCC_CET_FLAGS` - CET flags not modeled; `unsupported-feature`.
-- [x] `GLIBCXX_ENABLE_BACKTRACE` - libbacktrace and `<stacktrace>` not built; `unsupported-feature`.
+- [x] `GLIBCXX_ENABLE_BACKTRACE` - GCC 12+ libbacktrace and `<stacktrace>` not built; `unsupported-feature`.
 - [x] `GLIBCXX_ENABLE_DEBUG` - debug library variant not built; `unsupported-feature`.
 - [x] `GLIBCXX_ENABLE_DEBUG_FLAGS` - debug library flags not exposed; `unsupported-feature`.
 - [x] `GLIBCXX_ENABLE_PARALLEL` - parallel mode/libgomp integration not built; `unsupported-feature`.

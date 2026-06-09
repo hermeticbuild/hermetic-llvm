@@ -2,7 +2,7 @@ load("@bazel_lib//lib:copy_file.bzl", "copy_file")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
-load("@llvm//3rd_party/gcc:version.bzl", "gcc_version_at_least_for")
+load("@llvm//3rd_party/gcc:version.bzl", "gcc_version_at_least_for", "gcc_version_less_than_for")
 load("@llvm//3rd_party/gcc/libstdcxx:libstdcxx_config_h.bzl", "libstdcxx_config_h")
 load("@llvm//3rd_party/gcc/libstdcxx:libstdcxx_cxxconfig_header.bzl", "libstdcxx_cxxconfig_header")
 load("@llvm//3rd_party/gcc/libstdcxx:libstdcxx_gthr_headers.bzl", "libstdcxx_gthr_headers")
@@ -139,11 +139,28 @@ _GCC_LT_14_CXX11_CHAR8_SOURCES = [
     "libstdc++-v3/src/c++98/localename.cc",
 ]
 
+_GCC_LT_13_LIBRARY_HDRS = [
+    ":libstdcxx_gstdint_h",
+]
+
+_GCC_13_STD_HEADERS = [
+    "libstdc++-v3/include/std/format",
+    "libstdc++-v3/include/std/stdfloat",
+]
+
+_GCC_13_CXX20_SOURCES = [
+    "libstdc++-v3/src/c++20/tzdb.cc",
+]
+
+_GCC_13_CXX11_SOURCES = [
+    "libstdc++-v3/src/c++11/ios_errcat.cc",
+]
+
 _GCC_CXX11_ASSERT_FAIL_SOURCES = [
     ":libstdcxx_cxx11_assert_fail_cc",
 ]
 
-_GCC_CXX11_HAS_ASSERT_FAIL = gcc_version_at_least_for(GCC_VERSION, "13.3.0")
+_GCC_CXX11_HAS_ASSERT_FAIL = (gcc_version_at_least_for(GCC_VERSION, "12.4.0") and gcc_version_less_than_for(GCC_VERSION, "13.0.0")) or gcc_version_at_least_for(GCC_VERSION, "13.3.0")
 
 # Keep this export list in sync with the sparse archive roots in
 # 3rd_party/gcc/extension/gcc.bzl. The libstdc++ configure inputs are exported
@@ -270,7 +287,6 @@ filegroup(
         "libstdc++-v3/include/std/execution",
         "libstdc++-v3/include/std/expected",
         "libstdc++-v3/include/std/filesystem",
-        "libstdc++-v3/include/std/format",
         "libstdc++-v3/include/std/forward_list",
         "libstdc++-v3/include/std/fstream",
         "libstdc++-v3/include/std/functional",
@@ -309,7 +325,6 @@ filegroup(
         "libstdc++-v3/include/std/stack",
         "libstdc++-v3/include/std/stacktrace",
         "libstdc++-v3/include/std/stdexcept",
-        "libstdc++-v3/include/std/stdfloat",
         "libstdc++-v3/include/std/stop_token",
         "libstdc++-v3/include/std/streambuf",
         "libstdc++-v3/include/std/string",
@@ -327,7 +342,7 @@ filegroup(
         "libstdc++-v3/include/std/variant",
         "libstdc++-v3/include/std/vector",
         "libstdc++-v3/include/std/version",
-    ] + (_GCC_14_STD_HEADERS if gcc_version_at_least_for(GCC_VERSION, "14.0.0") else []) + (_GCC_15_STD_HEADERS if gcc_version_at_least_for(GCC_VERSION, "15.0.0") else []) + (_GCC_16_STD_HEADERS if gcc_version_at_least_for(GCC_VERSION, "16.0.0") else []),
+    ] + (_GCC_13_STD_HEADERS if gcc_version_at_least_for(GCC_VERSION, "13.0.0") else []) + (_GCC_14_STD_HEADERS if gcc_version_at_least_for(GCC_VERSION, "14.0.0") else []) + (_GCC_15_STD_HEADERS if gcc_version_at_least_for(GCC_VERSION, "15.0.0") else []) + (_GCC_16_STD_HEADERS if gcc_version_at_least_for(GCC_VERSION, "16.0.0") else []),
 )
 
 filegroup(
@@ -1059,6 +1074,17 @@ expand_template(
     template = "libstdc++-v3/src/c++11/assert_fail.cc",
 )
 
+write_file(
+    name = "libstdcxx_gstdint_h",
+    out = "libstdcxx_generated/c++11/gstdint.h",
+    content = [
+        "#ifndef GCC_GENERATED_STDINT_H",
+        "#define GCC_GENERATED_STDINT_H 1",
+        "#include <stdint.h>",
+        "#endif",
+    ],
+)
+
 # C++ standard-version source partitions follow libstdc++-v3/src/Makefile.am
 # plus the matching libstdc++-v3/src/c++*/Makefile.am files.
 filegroup(
@@ -1155,7 +1181,6 @@ filegroup(
         "libstdc++-v3/src/c++11/hash_c++0x.cc",
         "libstdc++-v3/src/c++11/ios.cc",
         "libstdc++-v3/src/c++11/ios-inst.cc",
-        "libstdc++-v3/src/c++11/ios_errcat.cc",
         "libstdc++-v3/src/c++11/iostream-inst.cc",
         "libstdc++-v3/src/c++11/istream-inst.cc",
         "libstdc++-v3/src/c++11/locale-inst.cc",
@@ -1179,7 +1204,7 @@ filegroup(
         ":libstdcxx_cxx11_basic_file_cc",
         ":libstdcxx_cxx11_ctype_configure_char_cc",
         ":libstdcxx_cxx11_ctype_members_cc",
-    ] + (_GCC_CXX11_ASSERT_FAIL_SOURCES if _GCC_CXX11_HAS_ASSERT_FAIL else []) + (_GCC_15_CXX11_SOURCES if gcc_version_at_least_for(GCC_VERSION, "15.0.0") else []),
+    ] + (_GCC_CXX11_ASSERT_FAIL_SOURCES if _GCC_CXX11_HAS_ASSERT_FAIL else []) + (_GCC_13_CXX11_SOURCES if gcc_version_at_least_for(GCC_VERSION, "13.0.0") else []) + (_GCC_15_CXX11_SOURCES if gcc_version_at_least_for(GCC_VERSION, "15.0.0") else []),
 )
 
 filegroup(
@@ -1226,8 +1251,7 @@ filegroup(
     name = "libstdcxx_cxx20_sources",
     srcs = [
         "libstdc++-v3/src/c++20/sstream-inst.cc",
-        "libstdc++-v3/src/c++20/tzdb.cc",
-    ] + (_GCC_16_CXX20_SOURCES if gcc_version_at_least_for(GCC_VERSION, "16.0.0") else []),
+    ] + (_GCC_13_CXX20_SOURCES if gcc_version_at_least_for(GCC_VERSION, "13.0.0") else []) + (_GCC_16_CXX20_SOURCES if gcc_version_at_least_for(GCC_VERSION, "16.0.0") else []),
 )
 
 filegroup(
@@ -1283,7 +1307,7 @@ LIBSTDCXX_LIBRARY_HDRS = [
     ":libstdcxx_cxx17_string_inst_cc",
     ":libsupcxx_headers",
     ":libstdcxx_src_internal_headers",
-]
+] + (_GCC_LT_13_LIBRARY_HDRS if not gcc_version_at_least_for(GCC_VERSION, "13.0.0") else [])
 
 LIBSTDCXX_LIBRARY_DEPS = LIBSTDCXX_BUILD_HEADER_DEPS
 

@@ -9,6 +9,11 @@ GCC_VERSIONS = [
     "13.3.0",
     "13.2.0",
     "13.1.0",
+    "12.5.0",
+    "12.4.0",
+    "12.3.0",
+    "12.2.0",
+    "12.1.0",
 ]
 
 DEFAULT_GCC_VERSION = "17.0.0"
@@ -53,6 +58,26 @@ GCC_RELEASES = {
     "13.4.0": {
         "commit": "99677969d463d75a562f94460ea75e9f6a016b4f",
         "sha256": "2a061f0d2afe337127d50f607644adfa0f4e1c019c829ade3643f1afb6702191",
+    },
+    "12.1.0": {
+        "commit": "1ea978e3066ac565a1ec28a96a4d61eaf38e2726",
+        "sha256": "37f4815d27485cd84bfd725598a5afe53714ce4ecdfdef4bc266c086ae165367",
+    },
+    "12.2.0": {
+        "commit": "2ee5e4300186a92ad73f1a1a64cb918dc76c8d67",
+        "sha256": "89c4ffb9aac6e10e4896529f608a02171e5b528b7ad91a69710d4e5b151175d1",
+    },
+    "12.3.0": {
+        "commit": "8fc1a49c9312b05d925b7d21f1d2145d70818151",
+        "sha256": "a2b2702a49f9edbf144565ea15b79919a0e970518eee363f246ef11f1dc08d7c",
+    },
+    "12.4.0": {
+        "commit": "2bada4bc59bed4be34fab463bdb3c3ebfd2b41bb",
+        "sha256": "1c53b5a5e16473dd9f7aedfbd70f005c80d83a20e6df0ab975956bebe8f69b9a",
+    },
+    "12.5.0": {
+        "commit": "c17d40bb3778bca5e81595f033df9222b66658eb",
+        "sha256": "9740c1b2b67745629154dc36e1eda4e3c1d6558328a614b75e61f134ac3f5a2b",
     },
 }
 
@@ -138,7 +163,7 @@ def libstdcxx_has_stdio_locking_checks(version):
     return gcc_version_at_least_for(version, "16.0.0")
 
 def libstdcxx_has_networking_o_nonblock_check(version):
-    return (gcc_version_at_least_for(version, "13.4.0") and gcc_version_less_than_for(version, "14.0.0")) or gcc_version_at_least_for(version, "14.3.0")
+    return (gcc_version_at_least_for(version, "12.5.0") and gcc_version_less_than_for(version, "13.0.0")) or (gcc_version_at_least_for(version, "13.4.0") and gcc_version_less_than_for(version, "14.0.0")) or gcc_version_at_least_for(version, "14.3.0")
 
 def libstdcxx_has_struct_tm_tm_zone_check(version):
     return gcc_version_at_least_for(version, "15.0.0")
@@ -150,7 +175,10 @@ def libstdcxx_has_fseeko_ftello_check(version):
     return gcc_version_at_least_for(version, "13.2.0")
 
 def libstdcxx_has_filesystem_chdir_chmod_getcwd_mkdir_checks(version):
-    return gcc_version_at_least_for(version, "13.3.0")
+    return (gcc_version_at_least_for(version, "12.4.0") and gcc_version_less_than_for(version, "13.0.0")) or gcc_version_at_least_for(version, "13.3.0")
+
+def libstdcxx_has_filesystem_openat_check(version):
+    return gcc_version_at_least_for(version, "12.2.0")
 
 def libstdcxx_has_filesystem_copy_file_range_check(version):
     return gcc_version_at_least_for(version, "14.0.0")
@@ -160,3 +188,6 @@ def libstdcxx_has_text_encoding_checks(version):
 
 def libstdcxx_has_alignas_init_priority_checks(version):
     return gcc_version_at_least_for(version, "13.2.0")
+
+def libstdcxx_has_zoneinfo_policy(version):
+    return gcc_version_at_least_for(version, "13.0.0")

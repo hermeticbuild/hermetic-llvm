@@ -75,6 +75,11 @@ atomicity, thread, and header directories from the host triple. Bazel models
 the active Linux GNU result as `target-derived` policy in `target_config.bzl`, the
 generated-header rule files, and `BUILD.bazel`.
 
+GCC 12 calls `GCC_HEADER_STDINT(include/gstdint.h)` to generate a private
+`gstdint.h` header for `src/c++11/compatibility-atomic-c++0x.cc`. That hook has
+no `config.h` output; Bazel models it with a generated compatibility header in
+the GCC overlay for GCC <13.
+
 `GLIBCXX_ENABLE_HOSTED`, `GLIBCXX_ENABLE_LONG_LONG`,
 `GLIBCXX_ENABLE_WCHAR_T`, `GLIBCXX_ENABLE_C99`, `GLIBCXX_CHECK_C99_TR1`,
 `GLIBCXX_CHECK_LFS`, `GLIBCXX_CHECK_GETTIMEOFDAY`, and
@@ -85,7 +90,9 @@ link probe groups. The Linux `SYS_clock_gettime` fallback from
 `GLIBCXX_ENABLE_LIBSTDCXX_TIME` is intentionally left undefined for the current
 hosted Linux GNU matrix, where libc `clock_gettime` is expected. Supporting the
 fallback still requires decision-tree support in the probe model so one
-conditional result can decide which later probe runs.
+conditional result can decide which later probe runs. GCC 12 spells the Win32
+fallback define as `HAVE_WIN32_SLEEP`; GCC 13+ spells it as
+`_GLIBCXX_USE_WIN32_SLEEP`.
 
 TODO: Model autoconf-style fallback decision trees separately from multi-output
 checks. A compile or link probe can emit multiple success defines, matching a
@@ -94,7 +101,7 @@ still needs an ordered decision where one result controls which later probe runs
 
 `GLIBCXX_CHECK_STDIO_PROTO`, `GLIBCXX_CHECK_MATH11_PROTO`,
 `GLIBCXX_CHECK_POLL`, `GLIBCXX_CHECK_S_ISREG_OR_S_IFREG`,
-`GLIBCXX_CHECK_WRITEV`, `GLIBCXX_CHECK_UCHAR_H`,
+`GLIBCXX_CHECK_WRITEV`, `GLIBCXX_CHECK_UCHAR_H` with GCC 12+ C8 probes,
 `GLIBCXX_COMPUTE_STDIO_INTEGER_CONSTANTS`, `GLIBCXX_CHECK_TMPNAM`,
 `GLIBCXX_CHECK_PTHREAD_COND_CLOCKWAIT`,
 `GLIBCXX_CHECK_PTHREAD_MUTEX_CLOCKLOCK`,
@@ -139,7 +146,7 @@ The Bazel port models the Linux GNU dynamic libstdc++ path.
 groups from `acinclude.m4` and `linkage.m4`. The Bazel port represents these
 as grouped link probes in `linkage.m4.bzl`.
 
-`GLIBCXX_CHECK_DEV_RANDOM`, `GLIBCXX_CHECK_ARC4RANDOM`,
+`GLIBCXX_CHECK_DEV_RANDOM`, GCC 12+ `GLIBCXX_CHECK_ARC4RANDOM`, GCC 12+
 `GLIBCXX_CHECK_GETENTROPY`, `GLIBCXX_CHECK_FILESYSTEM_DEPS`,
 GCC 14+ `GLIBCXX_CHECK_TEXT_ENCODING`, GCC 16+ `GLIBCXX_CHECK_DEBUGGING`,
 GCC 16+ `GLIBCXX_CHECK_STDIO_LOCKING`, GCC 15+ `GLIBCXX_STRUCT_TM_TM_ZONE`,
@@ -166,7 +173,7 @@ reference-count ABI even when compare-and-swap builtins exist.
 
 ## Deferred Knobs
 
-`GLIBCXX_ENABLE_VERBOSE`, `GLIBCXX_ENABLE_CONCEPT_CHECKS`,
+`GLIBCXX_ENABLE_VERBOSE`, `GLIBCXX_ENABLE_CONCEPT_CHECKS`, GCC 12+
 `GLIBCXX_ENABLE_FLOAT128`, `GLIBCXX_ENABLE_FULLY_DYNAMIC_STRING`,
 `GLIBCXX_ENABLE_CSTDIO`'s `stdio_pure` mode, `GLIBCXX_ENABLE_ALLOCATOR`'s
 `malloc` mode, NLS, and GCC 13+ `GLIBCXX_EMERGENCY_EH_ALLOC` are currently
@@ -188,9 +195,11 @@ are intentionally left undefined because the supported CPU/version-script
 policy does not enable GCC's long-double compatibility port files. The
 `SYS_clock_gettime` and Win32 sleep fallback defines are left undefined for the
 supported Linux GNU path, where libc `clock_gettime`, `nanosleep`, and
-`sched_yield` probes are expected to decide the active time support. The stdio
-integer constants are policy-modeled to glibc values; this remains acceptable
-only while non-GNU libc support is out of scope.
+`sched_yield` probes are expected to decide the active time support. GCC 12
+spells the Win32 fallback define as `HAVE_WIN32_SLEEP`; GCC 13+ spells it as
+`_GLIBCXX_USE_WIN32_SLEEP`. The stdio integer constants are policy-modeled to
+glibc values; this remains acceptable only while non-GNU libc support is out of
+scope.
 
 ## High-Risk Probe Audit
 
@@ -238,8 +247,8 @@ classified `unsupported-target`.
 ## Inactive Feature Branches
 
 `GCC_CET_FLAGS` is not modeled as a target-library flag policy yet.
-`GLIBCXX_ENABLE_BACKTRACE` is inactive because libbacktrace and `<stacktrace>`
-are not built. `GLIBCXX_ENABLE_DEBUG`, `GLIBCXX_ENABLE_DEBUG_FLAGS`,
+GCC 12+ `GLIBCXX_ENABLE_BACKTRACE` is inactive because libbacktrace and
+`<stacktrace>` are not built. `GLIBCXX_ENABLE_DEBUG`, `GLIBCXX_ENABLE_DEBUG_FLAGS`,
 `GLIBCXX_ENABLE_PARALLEL`, and `GLIBCXX_ENABLE_VTABLE_VERIFY` are optional
 runtime-library feature families not built by this port today.
 

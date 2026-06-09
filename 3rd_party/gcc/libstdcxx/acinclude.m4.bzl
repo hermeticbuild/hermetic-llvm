@@ -12,12 +12,14 @@ load(
     "libstdcxx_has_debugging_checks",
     "libstdcxx_has_filesystem_chdir_chmod_getcwd_mkdir_checks",
     "libstdcxx_has_filesystem_copy_file_range_check",
+    "libstdcxx_has_filesystem_openat_check",
     "libstdcxx_has_fseeko_ftello_check",
     "libstdcxx_has_networking_o_nonblock_check",
     "libstdcxx_has_posix_semaphore_check",
     "libstdcxx_has_stdio_locking_checks",
     "libstdcxx_has_struct_tm_tm_zone_check",
     "libstdcxx_has_text_encoding_checks",
+    "libstdcxx_has_zoneinfo_policy",
 )
 load(
     "//3rd_party/gcc/libstdcxx/autoconf:checks.bzl",
@@ -1238,7 +1240,6 @@ int main() {
         checks.extend([
             function_link_check("HAVE_FDOPENDIR", "dirent.h", "DIR *dir = fdopendir(1)", compile_flags = CXX_FILESYSTEM_FLAGS),
             function_link_check("HAVE_DIRFD", "dirent.h", "int fd = dirfd((DIR *)0)", compile_flags = CXX_FILESYSTEM_FLAGS),
-            function_link_check("HAVE_OPENAT", "fcntl.h", 'int fd = openat(AT_FDCWD, "", 0)', compile_flags = CXX_FILESYSTEM_FLAGS),
             link_check(
                 name = "HAVE_UNLINKAT",
                 compile_flags = CXX_FILESYSTEM_FLAGS,
@@ -1249,6 +1250,8 @@ int main() { unlinkat(AT_FDCWD, "", AT_REMOVEDIR); return 0; }
 """,
             ),
         ])
+    if libstdcxx_has_filesystem_openat_check(gcc_version):
+        checks.append(function_link_check("HAVE_OPENAT", "fcntl.h", 'int fd = openat(AT_FDCWD, "", 0)', compile_flags = CXX_FILESYSTEM_FLAGS))
     if libstdcxx_has_filesystem_chdir_chmod_getcwd_mkdir_checks(gcc_version):
         checks.extend([
             function_link_check("_GLIBCXX_USE_CHMOD", "sys/stat.h", 'int i = chmod("", S_IRUSR)', compile_flags = CXX_FILESYSTEM_FLAGS),
@@ -1550,7 +1553,7 @@ def glibcxx_random_policy(gcc_version):
     ]
 
 def glibcxx_zoneinfo_policy(gcc_version):
-    if not gcc_version_at_least_for(gcc_version, "13.0.0"):
+    if not libstdcxx_has_zoneinfo_policy(gcc_version):
         return []
     return [
         policy_string_define("_GLIBCXX_ZONEINFO_DIR", "/usr/share/zoneinfo"),
