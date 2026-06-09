@@ -71,6 +71,24 @@ def gcc_repository(gcc_version):
         "libstdc++-v3/src/c++20/syncbuf.cc",
     ]
 
+    _GCC_15_STD_HEADERS = [
+        "libstdc++-v3/include/std/flat_map",
+        "libstdc++-v3/include/std/flat_set",
+    ]
+
+    _GCC_15_C_COMPATIBILITY_HEADERS = [
+        "libstdc++-v3/include/c_compatibility/stdbit.h",
+        "libstdc++-v3/include/c_compatibility/stdckdint.h",
+    ]
+
+    _GCC_15_CXX20_FORMAT_SOURCES = [
+        "libstdc++-v3/src/c++20/format.cc",
+    ]
+
+    _GCC_15_CXX11_SOURCES = [
+        "libstdc++-v3/src/c++11/cow-system_error.cc",
+    ]
+
     # Keep this export list in sync with the sparse archive roots in
     # 3rd_party/gcc/extension/gcc.bzl. The libstdc++ configure inputs are exported
     # for the audit test; the config/include/libsupc++ entries are the files
@@ -196,8 +214,6 @@ def gcc_repository(gcc_version):
             "libstdc++-v3/include/std/execution",
             "libstdc++-v3/include/std/expected",
             "libstdc++-v3/include/std/filesystem",
-            "libstdc++-v3/include/std/flat_map",
-            "libstdc++-v3/include/std/flat_set",
             "libstdc++-v3/include/std/format",
             "libstdc++-v3/include/std/forward_list",
             "libstdc++-v3/include/std/fstream",
@@ -258,7 +274,7 @@ def gcc_repository(gcc_version):
             "libstdc++-v3/include/std/variant",
             "libstdc++-v3/include/std/vector",
             "libstdc++-v3/include/std/version",
-        ] + (_GCC_16_STD_HEADERS if gcc_version_at_least("16.0.0") else []),
+        ] + (_GCC_15_STD_HEADERS if gcc_version_at_least("15.0.0") else []) + (_GCC_16_STD_HEADERS if gcc_version_at_least("16.0.0") else []),
     )
 
     native.filegroup(
@@ -300,11 +316,9 @@ def gcc_repository(gcc_version):
             "libstdc++-v3/include/c_compatibility/fenv.h",
             "libstdc++-v3/include/c_compatibility/math.h",
             "libstdc++-v3/include/c_compatibility/stdatomic.h",
-            "libstdc++-v3/include/c_compatibility/stdbit.h",
-            "libstdc++-v3/include/c_compatibility/stdckdint.h",
             "libstdc++-v3/include/c_compatibility/stdlib.h",
             "libstdc++-v3/include/c_compatibility/tgmath.h",
-        ],
+        ] + (_GCC_15_C_COMPATIBILITY_HEADERS if gcc_version_at_least("15.0.0") else []),
     )
 
     native.filegroup(
@@ -832,7 +846,6 @@ def gcc_repository(gcc_version):
             "libstdc++-v3/src/c++11/cow-stdexcept.cc",
             "libstdc++-v3/src/c++11/cow-string-inst.cc",
             "libstdc++-v3/src/c++11/cow-string-io-inst.cc",
-            "libstdc++-v3/src/c++11/cow-system_error.cc",
             "libstdc++-v3/src/c++11/cow-wstring-inst.cc",
             "libstdc++-v3/src/c++11/cow-wstring-io-inst.cc",
             "libstdc++-v3/src/c++11/ctype.cc",
@@ -877,7 +890,7 @@ def gcc_repository(gcc_version):
             ":libstdcxx_cxx11_basic_file_cc",
             ":libstdcxx_cxx11_ctype_configure_char_cc",
             ":libstdcxx_cxx11_ctype_members_cc",
-        ],
+        ] + (_GCC_15_CXX11_SOURCES if gcc_version_at_least("15.0.0") else []),
     )
 
     native.filegroup(
@@ -1115,7 +1128,7 @@ def gcc_repository(gcc_version):
 
     cc_library(
         name = "libstdcxx_cxx20_format",
-        srcs = ["libstdc++-v3/src/c++20/format.cc"],
+        srcs = _GCC_15_CXX20_FORMAT_SOURCES if gcc_version_at_least("15.0.0") else [],
         hdrs = LIBSTDCXX_LIBRARY_HDRS,
         copts = LIBSTDCXX_LIBRARY_COPTS + [
             "-std=gnu++26",
