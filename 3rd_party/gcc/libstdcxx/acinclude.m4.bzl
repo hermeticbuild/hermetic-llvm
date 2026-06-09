@@ -7,18 +7,25 @@ load(
     "gcc_version_at_least_for",
     "gcc_version_less_than_for",
     "libstdcxx_has_alignas_init_priority_checks",
+    "libstdcxx_has_arc4random_getentropy_checks",
     "libstdcxx_has_atomic_builtins_define",
     "libstdcxx_has_c99_cxx11_detail_checks",
+    "libstdcxx_has_cxx11_no_sleep_define",
     "libstdcxx_has_debugging_checks",
+    "libstdcxx_has_decl_strnlen_check",
     "libstdcxx_has_filesystem_chdir_chmod_getcwd_mkdir_checks",
     "libstdcxx_has_filesystem_copy_file_range_check",
+    "libstdcxx_has_filesystem_dirfd_checks",
     "libstdcxx_has_filesystem_openat_check",
     "libstdcxx_has_fseeko_ftello_check",
+    "libstdcxx_has_int128_float128_checks",
+    "libstdcxx_has_int64_t_checks",
     "libstdcxx_has_networking_o_nonblock_check",
     "libstdcxx_has_posix_semaphore_check",
     "libstdcxx_has_stdio_locking_checks",
     "libstdcxx_has_struct_tm_tm_zone_check",
     "libstdcxx_has_text_encoding_checks",
+    "libstdcxx_has_uchar_char8_checks",
     "libstdcxx_has_zoneinfo_policy",
 )
 load(
@@ -109,7 +116,7 @@ int main() {
     ]
 
 def glibcxx_enable_int128_float128(gcc_version):
-    if not gcc_version_less_than_for(gcc_version, "12.0.0"):
+    if not libstdcxx_has_int128_float128_checks(gcc_version):
         return []
     return [
         compile_check(
@@ -783,7 +790,7 @@ int main() { return 0; }
 """,
         ),
     ]
-    if gcc_version_at_least_for(gcc_version, "12.0.0"):
+    if libstdcxx_has_uchar_char8_checks(gcc_version):
         checks.extend([
             compile_check(
                 name = "_GLIBCXX_USE_UCHAR_C8RTOMB_MBRTOC8_FCHAR8_T",
@@ -815,7 +822,7 @@ int main() { return 0; }
     return checks
 
 def glibcxx_check_int64_t(gcc_version):
-    if not gcc_version_less_than_for(gcc_version, "12.0.0"):
+    if not libstdcxx_has_int64_t_checks(gcc_version):
         return []
     return [
         compile_check(
@@ -942,7 +949,7 @@ int main() {
         policy_undef("_GLIBCXX_USE_WIN32_SLEEP"),
     ]
     if gcc_version_at_least_for(gcc_version, "11.0.0"):
-        checks.append(policy_undef("_GLIBCXX_NO_SLEEP"))
+        checks.append(policy_undef("_GLIBCXX_NO_SLEEP" if libstdcxx_has_cxx11_no_sleep_define(gcc_version) else "NO_SLEEP"))
     return checks
 
 def glibcxx_check_stdio_proto():
@@ -1236,7 +1243,7 @@ int main() {
             function_link_check("HAVE_SYMLINK", "unistd.h", 'symlink("", "")', compile_flags = CXX_FILESYSTEM_FLAGS),
             function_link_check("HAVE_TRUNCATE", "unistd.h", 'truncate("", 99)', compile_flags = CXX_FILESYSTEM_FLAGS),
         ])
-    if gcc_version_at_least_for(gcc_version, "11.0.0"):
+    if libstdcxx_has_filesystem_dirfd_checks(gcc_version):
         checks.extend([
             function_link_check("HAVE_FDOPENDIR", "dirent.h", "DIR *dir = fdopendir(1)", compile_flags = CXX_FILESYSTEM_FLAGS),
             function_link_check("HAVE_DIRFD", "dirent.h", "int fd = dirfd((DIR *)0)", compile_flags = CXX_FILESYSTEM_FLAGS),
@@ -1410,7 +1417,7 @@ int main() { unsigned int v; asm("rdrand %eax"); return __builtin_ia32_rdrand32_
 """,
         ),
     ]
-    if gcc_version_at_least_for(gcc_version, "12.0.0"):
+    if libstdcxx_has_decl_strnlen_check(gcc_version):
         checks.append(compile_check(
             name = "HAVE_DECL_STRNLEN",
             language = "c++",
@@ -1491,7 +1498,7 @@ int main() { return __cxa_thread_atexit_impl((void (*)(void *))0, (void *)0, (vo
     ]
     if gcc_version_at_least_for(gcc_version, "11.0.0"):
         checks.append(function_link_check("HAVE_USELOCALE", "locale.h", "locale_t loc = uselocale((locale_t)0)"))
-    if gcc_version_at_least_for(gcc_version, "12.0.0"):
+    if libstdcxx_has_arc4random_getentropy_checks(gcc_version):
         checks.extend([
             function_link_check("HAVE_ARC4RANDOM", "stdlib.h", "unsigned x = arc4random()"),
             function_link_check("HAVE_GETENTROPY", "unistd.h", "char buf[8]; getentropy(buf, sizeof(buf))"),

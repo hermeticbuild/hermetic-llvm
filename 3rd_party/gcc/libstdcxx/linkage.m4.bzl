@@ -12,7 +12,11 @@
 # GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_2 are represented by
 # gcc_check_math_support() and gcc_check_stdlib_support().
 
-load("//3rd_party/gcc:version.bzl", "gcc_version_at_least_for")
+load(
+    "//3rd_party/gcc:version.bzl",
+    "gcc_version_at_least_for",
+    "libstdcxx_has_stdlib_secure_getenv_check",
+)
 load(
     "//3rd_party/gcc/libstdcxx/autoconf:checks.bzl",
     "function_link_check",
@@ -130,6 +134,6 @@ def gcc_check_stdlib_support(gcc_version):
     ]
     if gcc_version_at_least_for(gcc_version, "9.0.0"):
         checks.append(function_link_check("HAVE_TIMESPEC_GET", "time.h", "struct timespec ts; timespec_get(&ts, TIME_UTC)"))
-    if gcc_version_at_least_for(gcc_version, "11.0.0"):
+    if libstdcxx_has_stdlib_secure_getenv_check(gcc_version):
         checks.append(function_link_check("HAVE_SECURE_GETENV", "stdlib.h", 'char *p = secure_getenv("PATH")'))
     return checks

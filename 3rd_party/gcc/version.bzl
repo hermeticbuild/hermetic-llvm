@@ -14,6 +14,11 @@ GCC_VERSIONS = [
     "12.3.0",
     "12.2.0",
     "12.1.0",
+    "11.5.0",
+    "11.4.0",
+    "11.3.0",
+    "11.2.0",
+    "11.1.0",
 ]
 
 DEFAULT_GCC_VERSION = "17.0.0"
@@ -78,6 +83,26 @@ GCC_RELEASES = {
     "12.5.0": {
         "commit": "c17d40bb3778bca5e81595f033df9222b66658eb",
         "sha256": "9740c1b2b67745629154dc36e1eda4e3c1d6558328a614b75e61f134ac3f5a2b",
+    },
+    "11.1.0": {
+        "commit": "50bc9185c2821350f0b785d6e23a6e9dcde58466",
+        "sha256": "b632d97861ca71dd79e762e7e41b255a6bf0725b829c064873ce9013792c6856",
+    },
+    "11.2.0": {
+        "commit": "7ca388565af176bd4efd4f8db1e5e9e11e98ef45",
+        "sha256": "25d3e7e5df3ad89eaa07bb0ca523e0e42438d8f5ccda0bb8d9d4e5cd3688510a",
+    },
+    "11.3.0": {
+        "commit": "2d280e7eafc086e9df85f50ed1a6526d6a3a204d",
+        "sha256": "53b26b1c6bb35162a43e1260450407a39e833f770c8deb5a5a3b55da48687041",
+    },
+    "11.4.0": {
+        "commit": "ff4bf326d03e750a8d4905ea49425fe7d15a04b8",
+        "sha256": "4eb72119b70179379add1897bd3dad6aa24b2d36f683a4bf27e36bbcc785309b",
+    },
+    "11.5.0": {
+        "commit": "5cc4c42a0d4de08715c2eef8715ad5b2e92a23b6",
+        "sha256": "f74980dd3928f79376ca0ac9f53fe98e6509511ea53de8476465bf095d297c5b",
     },
 }
 
@@ -178,7 +203,7 @@ def libstdcxx_has_filesystem_chdir_chmod_getcwd_mkdir_checks(version):
     return (gcc_version_at_least_for(version, "12.4.0") and gcc_version_less_than_for(version, "13.0.0")) or gcc_version_at_least_for(version, "13.3.0")
 
 def libstdcxx_has_filesystem_openat_check(version):
-    return gcc_version_at_least_for(version, "12.2.0")
+    return (gcc_version_at_least_for(version, "11.5.0") and gcc_version_less_than_for(version, "12.0.0")) or gcc_version_at_least_for(version, "12.2.0")
 
 def libstdcxx_has_filesystem_copy_file_range_check(version):
     return gcc_version_at_least_for(version, "14.0.0")
@@ -191,3 +216,27 @@ def libstdcxx_has_alignas_init_priority_checks(version):
 
 def libstdcxx_has_zoneinfo_policy(version):
     return gcc_version_at_least_for(version, "13.0.0")
+
+def libstdcxx_has_int128_float128_checks(version):
+    return gcc_version_less_than_for(version, "12.0.0")
+
+def libstdcxx_has_uchar_char8_checks(version):
+    return gcc_version_at_least_for(version, "12.0.0")
+
+def libstdcxx_has_int64_t_checks(version):
+    return gcc_version_less_than_for(version, "12.0.0")
+
+def libstdcxx_has_cxx11_no_sleep_define(version):
+    return gcc_version_at_least_for(version, "11.3.0")
+
+def libstdcxx_has_filesystem_dirfd_checks(version):
+    return gcc_version_at_least_for(version, "11.5.0")
+
+def libstdcxx_has_decl_strnlen_check(version):
+    return gcc_version_at_least_for(version, "12.0.0")
+
+def libstdcxx_has_arc4random_getentropy_checks(version):
+    return gcc_version_at_least_for(version, "12.0.0")
+
+def libstdcxx_has_stdlib_secure_getenv_check(version):
+    return gcc_version_at_least_for(version, "11.4.0")

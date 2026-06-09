@@ -102,6 +102,7 @@ still needs an ordered decision where one result controls which later probe runs
 `GLIBCXX_CHECK_STDIO_PROTO`, `GLIBCXX_CHECK_MATH11_PROTO`,
 `GLIBCXX_CHECK_POLL`, `GLIBCXX_CHECK_S_ISREG_OR_S_IFREG`,
 `GLIBCXX_CHECK_WRITEV`, `GLIBCXX_CHECK_UCHAR_H` with GCC 12+ C8 probes,
+GCC 11 and older `GLIBCXX_CHECK_INT64_T`,
 `GLIBCXX_COMPUTE_STDIO_INTEGER_CONSTANTS`, `GLIBCXX_CHECK_TMPNAM`,
 `GLIBCXX_CHECK_PTHREAD_COND_CLOCKWAIT`,
 `GLIBCXX_CHECK_PTHREAD_MUTEX_CLOCKLOCK`,
@@ -119,11 +120,13 @@ compiler/linker probes; unwind IP info is modeled as GCC target policy for the
 supported Linux GNU configuration.
 
 `GLIBCXX_CHECK_COMPILER_FEATURES`, `GLIBCXX_ENABLE_ATOMIC_BUILTINS`,
-`GLIBCXX_ENABLE_DECIMAL_FLOAT`, and `GLIBCXX_CHECK_GTHREADS` cover compiler
+`GLIBCXX_ENABLE_DECIMAL_FLOAT`, GCC 11 and older
+`GLIBCXX_ENABLE_INT128_FLOAT128`, and `GLIBCXX_CHECK_GTHREADS` cover compiler
 section flags, lock-free atomic word support, decimal floating-point support,
-and gthreads support. The active Linux GNU behavior is modeled, with some
-answers represented as target policy where GCC's result is target-derived. The
-decimal floating-point check is a compile probe. The gthreads availability and
+int128 support, and gthreads support. The active Linux GNU behavior is modeled,
+with some answers represented as target policy where GCC's result is
+target-derived. Decimal floating point and GCC 11 int128 support are compile
+probes. Float128 remains deferred. The gthreads availability and
 pthread read/write lock checks compile against the generated `bits/gthr.h`
 overlay so they follow the staged header context used by this Bazel port.
 
