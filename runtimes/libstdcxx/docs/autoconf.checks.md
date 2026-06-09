@@ -48,7 +48,7 @@ Status meanings are defined in `AGENTS.md`.
 - [x] `GLIBCXX_CHECK_SC_NPROC_ONLN` - `sysconf` processor-count probe.
 - [x] `GLIBCXX_CHECK_SDT_H` - systemtap header probe.
 - [x] `GLIBCXX_CHECK_SIZE_T_MANGLING` - `size_t` ABI mangling policy.
-- [x] `GLIBCXX_CHECK_STDIO_LOCKING` - stdio locking probe.
+- [x] `GLIBCXX_CHECK_STDIO_LOCKING` - GCC 16+ stdio locking probe.
 - [x] `GLIBCXX_CHECK_STDIO_PROTO` - `gets` declaration probe.
 - [x] `GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_1` - `linkage.m4` stdlib helper.
 - [x] `GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_2` - `linkage.m4` stdlib helper.

@@ -1,5 +1,6 @@
 GCC_VERSIONS = [
     "17.0.0",
+    "16.1.0",
 ]
 
 DEFAULT_GCC_VERSION = "17.0.0"
@@ -8,6 +9,10 @@ GCC_RELEASES = {
     "17.0.0": {
         "commit": "2bfd402f8569511901ec8fe7628f57471e6d240a",
         "sha256": "dc033fdfd79caf199113446af6d082004534437b6ebd276f9732815d86cbe723",
+    },
+    "16.1.0": {
+        "commit": "6afcc4f6da931eb93f3ab001a0dd9650ea71d1ea",
+        "sha256": "b62f8feee8f9f6e3c9bb60e09546c869dacd2b1e2948a2da2c610ce76a3e5e89",
     },
 }
 

@@ -52,8 +52,8 @@ Status meanings are defined in `AGENTS.md`.
 - [x] `GLIBCXX_CHECK_GETENTROPY` - `getentropy` probe is modeled; `modeled`.
 - [x] `GLIBCXX_CHECK_FILESYSTEM_DEPS` - filesystem probes are modeled; `modeled`.
 - [x] `GLIBCXX_CHECK_TEXT_ENCODING` - text encoding probes are modeled; `modeled`.
-- [x] `GLIBCXX_CHECK_DEBUGGING` - Linux debug probes are modeled; `modeled`.
-- [x] `GLIBCXX_CHECK_STDIO_LOCKING` - stdio locking probe is modeled; `modeled`.
+- [x] `GLIBCXX_CHECK_DEBUGGING` - GCC 16+ Linux debug probes are modeled; `modeled`.
+- [x] `GLIBCXX_CHECK_STDIO_LOCKING` - GCC 16+ stdio locking probe is modeled; `modeled`.
 - [x] `GLIBCXX_STRUCT_TM_TM_ZONE` - `tm_zone` probe is modeled; `modeled`.
 - [x] `GLIBCXX_ZONEINFO_DIR` - zoneinfo policy is modeled; `modeled`.
 - [x] `GLIBCXX_CHECK_ALIGNAS_CACHELINE` - cacheline alignment probe is modeled; `modeled`.

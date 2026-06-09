@@ -20,6 +20,7 @@ _FACADE_TARGETS = [
     "libstdcxx",
     "libstdcxx.shared",
     "libstdcxx_autoconf_audit_inputs",
+    "libstdcxx_cxx26",
     "libstdcxxfs",
     "libstdcxxfs.static",
 ]
