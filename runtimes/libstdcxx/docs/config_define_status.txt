@@ -11,6 +11,8 @@
 # intentionally-defaulted: deliberately left undefined for supported targets.
 # unsupported-feature: optional libstdc++ feature not built by this port today.
 # unsupported-target: target family not supported by this libstdc++ port today.
+HAVE___CXA_THREAD_ATEXIT probe-modeled
+HAVE___CXA_THREAD_ATEXIT_IMPL probe-modeled
 HAVE_ACOSF probe-modeled
 HAVE_ACOSL probe-modeled
 HAVE_ALIGNED_ALLOC probe-modeled
@@ -31,6 +33,7 @@ HAVE_COSF probe-modeled
 HAVE_COSHF probe-modeled
 HAVE_COSHL probe-modeled
 HAVE_COSL probe-modeled
+HAVE_DECL_STRNLEN probe-modeled gcc_ge_12
 HAVE_DIRFD probe-modeled
 HAVE_EXCEPTION_PTR_SINCE_GCC46 policy-modeled
 HAVE_EXPF probe-modeled
@@ -83,11 +86,13 @@ HAVE_OBSOLETE_ISNAN probe-modeled
 HAVE_OPENAT probe-modeled
 HAVE_O_NONBLOCK probe-modeled
 HAVE_POLL probe-modeled
+HAVE_POSIX_MEMALIGN probe-modeled
 HAVE_POWF probe-modeled
 HAVE_POWL probe-modeled
 HAVE_QFPCLASS probe-modeled
 HAVE_QUICK_EXIT probe-modeled
 HAVE_READLINK probe-modeled
+HAVE_SECURE_GETENV probe-modeled gcc_ge_11
 HAVE_SETENV probe-modeled
 HAVE_SINCOSL probe-modeled
 HAVE_SINCOS probe-modeled
@@ -119,6 +124,7 @@ HAVE_TANF probe-modeled
 HAVE_TANHF probe-modeled
 HAVE_TANHL probe-modeled
 HAVE_TANL probe-modeled
+HAVE_TIMESPEC_GET probe-modeled gcc_ge_9
 HAVE_TLS probe-modeled
 HAVE_TRUNCATE probe-modeled
 HAVE_UNISTD_H header-probe
@@ -130,7 +136,9 @@ HAVE_VSWSCANF probe-modeled
 HAVE_VWSCANF probe-modeled
 HAVE_WCSTOF probe-modeled
 HAVE_WRITEV probe-modeled
+HAVE__ALIGNED_MALLOC probe-modeled
 HAVE__BOOL not-needed
+HAVE__WFOPEN probe-modeled gcc_ge_16
 HAVE_CC_TLS probe-modeled
 ICONV_CONST intentionally-defaulted
 STRING_WITH_STRINGS not-needed

@@ -129,7 +129,7 @@ extract_defines() {
         token = substr(line, RSTART, RLENGTH)
         sub(/^AC_DEFINE(_UNQUOTED)?[ \t]*\(?[ \t]*\[?/, "", token)
         token = trim(token)
-        if (token != "AS_TR_CPP" && token !~ /\$/ && token ~ /^([A-Z_]|__)/) {
+        if (token != "AS_TR_CPP" && token != "HAVE_" && token !~ /\$/ && token ~ /^([A-Z_]|__)/) {
           print token
         }
         line = substr(line, RSTART + RLENGTH)
@@ -138,7 +138,7 @@ extract_defines() {
         token = substr(line, RSTART, RLENGTH)
         sub(/^AH_VERBATIM\(\[?/, "", token)
         token = trim(token)
-        if (token ~ /^([A-Z_]|__)/) {
+        if (token != "_" && token ~ /^([A-Z_]|__)/) {
           print token
         }
         line = substr(line, RSTART + RLENGTH)
@@ -254,7 +254,7 @@ extract_check_arguments() {
         if (item == "" || item ~ /^dnl$/ || item ~ /^#/ || item ~ /^\$/) {
           continue
         }
-        if (item ~ /^[A-Za-z0-9_./+-]+$/) {
+        if (item ~ /^[A-Za-z0-9_.+\/-]+$/) {
           print kind ":" item
         }
       }
@@ -289,10 +289,85 @@ extract_check_arguments() {
   ' "${all_sources[@]}" | sort -u
 }
 
+extract_check_generated_defines() {
+  extract_check_arguments | awk -F: '
+    function emit(prefix, item,    symbol) {
+      if (item == "" || item == "funclist" || item ~ /^\$/ || item ~ /[()\\&]/ || item ~ /^patsubst/) {
+        return
+      }
+      symbol = toupper(item)
+      gsub(/[^A-Z0-9_]/, "_", symbol)
+      print prefix symbol
+    }
+    $1 == "AC_CHECK_FUNCS" {
+      emit("HAVE_", $2)
+    }
+    $1 == "AC_CHECK_DECLS" {
+      emit("HAVE_DECL_", $2)
+    }
+  '
+}
+
+extract_linkage_generated_defines() {
+  awk '
+    function emit(item,    symbol) {
+      if (item == "" || item ~ /^\$/) {
+        return
+      }
+      symbol = toupper(item)
+      gsub(/[^A-Z0-9_]/, "_", symbol)
+      print "HAVE_" symbol
+    }
+    match($0, /GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_[12]\([A-Za-z_][A-Za-z0-9_]*/) {
+      token = substr($0, RSTART, RLENGTH)
+      sub(/^GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_[12]\(/, "", token)
+      emit(token)
+    }
+  ' "${all_sources[@]}" | sort -u
+}
+
+extract_constructed_defines() {
+  awk '
+    function flush_syserr(    n, i, items, item) {
+      sub(/\].*$/, "", syserrs)
+      gsub(/[,\[]/, " ", syserrs)
+      n = split(syserrs, items, /[ \t\r\n]+/)
+      for (i = 1; i <= n; ++i) {
+        item = items[i]
+        if (item ~ /^[A-Z][A-Z0-9_]+$/) {
+          print "HAVE_" item
+        }
+      }
+      syserrs = ""
+      collecting_syserrs = 0
+    }
+    /m4_foreach\(\[syserr\]/ {
+      collecting_syserrs = 1
+      syserrs = $0
+      sub(/^.*m4_foreach\(\[syserr\],[ \t]*\[/, "", syserrs)
+      if (syserrs ~ /\]/) {
+        flush_syserr()
+      }
+      next
+    }
+    collecting_syserrs {
+      syserrs = syserrs " " $0
+      if ($0 ~ /\]/) {
+        flush_syserr()
+      }
+    }
+  ' "${all_sources[@]}" | sort -u
+}
+
 write_gcc_defines() {
   output="$1"
-  extract_defines > "${output}"
-  printf '%s\n' HAVE_FPCLASS HAVE_QFPCLASS >> "${output}"
+  {
+    extract_defines
+    extract_check_generated_defines
+    extract_linkage_generated_defines
+    extract_constructed_defines
+    printf '%s\n' HAVE_FPCLASS HAVE_QFPCLASS
+  } > "${output}"
   sort -u -o "${output}" "${output}"
 }
 
