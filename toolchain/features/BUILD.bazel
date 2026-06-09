@@ -21,6 +21,16 @@ _DSYM_COMPILE_ACTIONS = [
 # [x] static_link_cpp_runtimes
 
 cc_feature(
+    name = "static_linking_mode",
+    overrides = "@rules_cc//cc/toolchains/features:static_linking_mode",
+)
+
+cc_feature(
+    name = "dynamic_linking_mode",
+    overrides = "@rules_cc//cc/toolchains/features:dynamic_linking_mode",
+)
+
+cc_feature(
     name = "static_link_cpp_runtimes",
     overrides = "@rules_cc//cc/toolchains/features:static_link_cpp_runtimes",
 )
@@ -325,6 +335,8 @@ cc_feature_set(
         ":opt_stub",
         ":dbg",
         ":dbg_stub",
+        ":static_linking_mode",
+        ":dynamic_linking_mode",
         ":static_link_cpp_runtimes",
         ":parse_headers",
         # TODO: Re-enable once coverage is supported

@@ -181,7 +181,6 @@ cc_args_list(
     }),
 )
 
-# Those are stubs since we link against static_runtime_libs / dynamic_runtime_libs.
 cc_args_list(
     name = "cxxstdlib_library_search_paths",
     args = select({
@@ -197,7 +196,6 @@ cc_args_list(
     }),
 )
 
-# Those are stubs since we link against static_runtime_libs / dynamic_runtime_libs.
 cc_args_list(
     name = "libunwind_library_search_paths",
     args = select({
@@ -259,7 +257,7 @@ cc_args_list(
 cc_args_list(
     name = "unwindlib",
     args = [
-        "//toolchain/args:unwindlib_none",
+        "//toolchain/args:unwindlib_libunwind",
     ],
 )
 
@@ -281,19 +279,13 @@ cc_args_list(
         "//toolchain/args:cxxstdlib_headers_include_search_paths",
     ] + select({
         "//platforms/config:musl": [
+            "//toolchain/args:static_link_executable",
             "//toolchain/args/linux:kernel_headers_include_search_paths",
             "//toolchain/args/linux:musl_libc_headers_include_search_paths",
         ],
         "//platforms/config:gnu": [
             "//toolchain/args/linux:kernel_headers_include_search_paths",
             "//toolchain/args/linux:glibc_headers_include_search_paths",
-        ],
-        "//conditions:default": [],
-    }) + select({
-        "//platforms/config:musl": [
-            #TODO: Handle musl dynamic linking
-            # musl implies static linking for now
-            "//toolchain/args:static_link_executable",
         ],
         "//conditions:default": [],
     }) + [

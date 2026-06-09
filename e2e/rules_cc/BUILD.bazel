@@ -102,9 +102,7 @@ cc_binary(
     srcs = ["main.cc"],
     linkstatic = False,
     target_compatible_with = select({
-        # We do not support musl libc.so
         "@platforms//os:windows": ["@platforms//:incompatible"],
-        "@llvm//constraints/libc:musl": ["@platforms//:incompatible"],
         "//conditions:default": [],
     }),
 )
@@ -148,6 +146,35 @@ cc_binary(
     }),
 )
 
+cc_binary(
+    name = "libstdcxx_main_default",
+    srcs = ["main.cc"],
+    target_compatible_with = select({
+        "@llvm//constraints/cxxstdlib:libstdcxx": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }) + select({
+        "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)
+
+cc_binary(
+    name = "libstdcxx_main_default_with_linkopts",
+    srcs = ["main.cc"],
+    linkopts = [
+        "-lstdc++",
+        "-lstdc++fs",
+        "-lsupc++",
+    ],
+    target_compatible_with = select({
+        "@llvm//constraints/cxxstdlib:libstdcxx": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }) + select({
+        "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)
+
 LIBSTDCXX_PLATFORMS = [
     ("linux_x86_64_libstdcxx", "@platforms//cpu:x86_64", "@llvm//constraints/libc:gnu.2.28"),
     ("linux_aarch64_libstdcxx", "@platforms//cpu:aarch64", "@llvm//constraints/libc:gnu.2.28"),
@@ -186,6 +213,20 @@ platform_transition_filegroup(
 platform_transition_filegroup(
     name = "libstdcxx_main_dynamic_with_linkopts_linux_x86_64",
     srcs = [":libstdcxx_main_dynamic_with_linkopts"],
+    target_compatible_with = _LIBSTDCXX_E2E_TARGET_COMPATIBLE_WITH,
+    target_platform = ":linux_x86_64_libstdcxx",
+)
+
+platform_transition_filegroup(
+    name = "libstdcxx_main_default_linux_x86_64",
+    srcs = [":libstdcxx_main_default"],
+    target_compatible_with = _LIBSTDCXX_E2E_TARGET_COMPATIBLE_WITH,
+    target_platform = ":linux_x86_64_libstdcxx",
+)
+
+platform_transition_filegroup(
+    name = "libstdcxx_main_default_with_linkopts_linux_x86_64",
+    srcs = [":libstdcxx_main_default_with_linkopts"],
     target_compatible_with = _LIBSTDCXX_E2E_TARGET_COMPATIBLE_WITH,
     target_platform = ":linux_x86_64_libstdcxx",
 )

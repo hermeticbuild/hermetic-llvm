@@ -41,6 +41,8 @@ def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
             #"@rules_cc//cc/toolchains/args/layering_check:use_module_maps",
             "@llvm//toolchain/features:archive_param_file",
             "@llvm//toolchain/features:prefer_pic_for_opt_binaries",
+            "@llvm//toolchain/features:static_linking_mode",
+            "@llvm//toolchain/features:dynamic_linking_mode",
             # Always last (contains user_compile_flags and user_link_flags who should apply last).
             "@llvm//toolchain/features/legacy:experimental_replace_legacy_action_config_features",
         ],
@@ -126,13 +128,13 @@ def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
             "@llvm//toolchain:runtimes_none": "@llvm//runtimes:none",
             "@llvm//toolchain:runtimes_stage1": "@llvm//runtimes:none",
             "@llvm//toolchain:runtimes_stage1_hosted": "@llvm//runtimes:none",
-            "//conditions:default": "@llvm//runtimes:static_runtime_lib",
+            "//conditions:default": "@llvm//runtimes:none",
         }),
         dynamic_runtime_lib = select({
             "@llvm//toolchain:runtimes_none": "@llvm//runtimes:none",
             "@llvm//toolchain:runtimes_stage1": "@llvm//runtimes:none",
             "@llvm//toolchain:runtimes_stage1_hosted": "@llvm//runtimes:none",
-            "//conditions:default": "@llvm//runtimes:dynamic_runtime_lib",
+            "//conditions:default": "@llvm//runtimes:none",
         }),
         compiler = "clang",
     )
