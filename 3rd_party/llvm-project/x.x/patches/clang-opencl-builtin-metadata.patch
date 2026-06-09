@@ -1,0 +1,424 @@
+diff --git a/clang/lib/Sema/SemaLookup.cpp b/clang/lib/Sema/SemaLookup.cpp
+index 65b60964d119..54ded9af9ffb 100644
+--- a/clang/lib/Sema/SemaLookup.cpp
++++ b/clang/lib/Sema/SemaLookup.cpp
+@@ -844,20 +844,20 @@ static void InsertOCLBuiltinDeclarationsFromTable(Sema &S, LookupResult &LR,
+     // Ignore this builtin function if it carries an extension macro that is
+     // not defined. This indicates that the extension is not supported by the
+     // target, so the builtin function should not be available.
+-    StringRef Extensions = FunctionExtensionTable[OpenCLBuiltin.Extension];
+-    if (!Extensions.empty()) {
+-      SmallVector<StringRef, 2> ExtVec;
+-      Extensions.split(ExtVec, " ");
+-      bool AllExtensionsDefined = true;
+-      for (StringRef Ext : ExtVec) {
+-        if (!S.getPreprocessor().isMacroDefined(Ext)) {
+-          AllExtensionsDefined = false;
+-          break;
+-        }
++    const OpenCLFunctionExtension &Extensions =
++        FunctionExtensionTable[OpenCLBuiltin.Extension];
++    bool AllExtensionsDefined = true;
++    for (unsigned I = 0; I < Extensions.Count; ++I) {
++      unsigned ExtensionIndex =
++          FunctionExtensionSequence[Extensions.Offset + I];
++      const char *Extension = FunctionExtensionNames[ExtensionIndex];
++      if (!S.getPreprocessor().isMacroDefined(Extension)) {
++        AllExtensionsDefined = false;
++        break;
+       }
+-      if (!AllExtensionsDefined)
+-        continue;
+     }
++    if (!AllExtensionsDefined)
++      continue;
+ 
+     SmallVector<QualType, 1> RetTypes;
+     SmallVector<SmallVector<QualType, 1>, 5> ArgTypes;
+diff --git a/clang/utils/TableGen/ClangOpenCLBuiltinEmitter.cpp b/clang/utils/TableGen/ClangOpenCLBuiltinEmitter.cpp
+index 720afea8b096..17a470cac50f 100644
+--- a/clang/utils/TableGen/ClangOpenCLBuiltinEmitter.cpp
++++ b/clang/utils/TableGen/ClangOpenCLBuiltinEmitter.cpp
+@@ -28,6 +28,7 @@
+ #include "llvm/TableGen/Record.h"
+ #include "llvm/TableGen/StringMatcher.h"
+ #include "llvm/TableGen/TableGenBackend.h"
++#include <algorithm>
+ 
+ using namespace llvm;
+ 
+@@ -177,24 +178,21 @@ private:
+   // the TableGen Record Type.
+   void EmitQualTypeFinder();
+ 
+-  // Contains a list of the available signatures, without the name of the
+-  // function. Each pair consists of a signature and a cumulative index.
+-  // E.g.:  <<float, float>, 0>,
+-  //        <<float, int, int, 2>>,
+-  //        <<float>, 5>,
+-  //        ...
+-  //        <<double, double>, 35>.
+-  std::vector<std::pair<std::vector<const Record *>, unsigned>> SignaturesList;
++  // Contains the unique signatures, without the name of the function.
++  std::vector<std::vector<const Record *>> SignaturesList;
++
++  // Maps a SignaturesList index to its offset in the emitted SignatureTable.
++  std::vector<unsigned> SignatureOffsets;
+ 
+   // Map the name of a builtin function to its prototypes (instances of the
+   // TableGen "Builtin" class).
+   // Each prototype is registered as a pair of:
+   //   <pointer to the "Builtin" instance,
+-  //    cumulative index of the associated signature in the SignaturesList>
++  //    index of the associated signature in SignaturesList>
+   // E.g.:  The function cos: (float cos(float), double cos(double), ...)
+-  //        <"cos", <<ptrToPrototype0, 5>,
+-  //                 <ptrToPrototype1, 35>,
+-  //                 <ptrToPrototype2, 79>>
++  //        <"cos", <<ptrToPrototype0, 0>,
++  //                 <ptrToPrototype1, 1>,
++  //                 <ptrToPrototype2, 2>>
+   // ptrToPrototype1 has the following signature: <double, double>
+   MapVector<StringRef, std::vector<std::pair<const Record *, unsigned>>>
+       FctOverloadMap;
+@@ -398,7 +396,7 @@ void BuiltinNameEmitter::EmitDeclarations() {
+ 
+   OS << TypeEnums;
+   OS << GenTypeEnums;
+-  OS << "};\n";
++  OS << "  OCLT_Count\n};\n";
+ 
+   // Structure definitions.
+   OS << R"(
+@@ -410,43 +408,77 @@ enum OpenCLAccessQual : unsigned char {
+   OCLAQ_ReadWrite
+ };
+ 
++// Bit widths used by the compact table entries below. The generated table
++// contents are checked against these bounds.
++static constexpr unsigned OpenCLTypeIDBits = 7;
++static constexpr unsigned OpenCLTypeVectorWidthBits = 5;
++static constexpr unsigned OpenCLTypeAccessQualifierBits = 2;
++static constexpr unsigned OpenCLTypeAddressSpaceBits = 3;
++static constexpr unsigned OpenCLFunctionExtensionOffsetBits = 9;
++static constexpr unsigned OpenCLFunctionExtensionCountBits = 3;
++static constexpr unsigned OpenCLFunctionExtensionIDBits = 8;
++static constexpr unsigned OpenCLBuiltinSigTableIndexBits = 14;
++static constexpr unsigned OpenCLBuiltinNumTypesBits = 3;
++static constexpr unsigned OpenCLBuiltinExtensionBits = 7;
++static constexpr unsigned OpenCLBuiltinVersionsBits = 5;
++
+ // Represents a return type or argument type.
+ struct OpenCLTypeStruct {
+   // A type (e.g. float, int, ...).
+-  const OpenCLTypeID ID;
++  const unsigned ID : OpenCLTypeIDBits;
+   // Vector size (if applicable; 0 for scalars and generic types).
+-  const unsigned VectorWidth;
++  const unsigned VectorWidth : OpenCLTypeVectorWidthBits;
+   // 0 if the type is not a pointer.
+-  const bool IsPointer : 1;
++  const unsigned IsPointer : 1;
+   // 0 if the type is not const.
+-  const bool IsConst : 1;
++  const unsigned IsConst : 1;
+   // 0 if the type is not volatile.
+-  const bool IsVolatile : 1;
++  const unsigned IsVolatile : 1;
+   // Access qualifier.
+-  const OpenCLAccessQual AccessQualifier;
++  const unsigned AccessQualifier : OpenCLTypeAccessQualifierBits;
+   // Address space of the pointer (if applicable).
+-  const LangAS AS;
++  const unsigned AS : OpenCLTypeAddressSpaceBits;
+ };
++static_assert(sizeof(OpenCLTypeStruct) == 4,
++              "OpenCLTypeStruct must remain compact");
++
++// A sequence of extension names required by an OpenCL builtin.
++struct OpenCLFunctionExtension {
++  const unsigned short Offset : OpenCLFunctionExtensionOffsetBits;
++  const unsigned short Count : OpenCLFunctionExtensionCountBits;
++};
++static_assert(sizeof(OpenCLFunctionExtension) == 2,
++              "OpenCLFunctionExtension must remain compact");
+ 
+ // One overload of an OpenCL builtin function.
+ struct OpenCLBuiltinStruct {
+   // Index of the signature in the OpenCLTypeStruct table.
+-  const unsigned SigTableIndex;
++  const unsigned SigTableIndex : OpenCLBuiltinSigTableIndexBits;
+   // Entries between index SigTableIndex and (SigTableIndex + NumTypes - 1) in
+   // the SignatureTable represent the complete signature.  The first type at
+   // index SigTableIndex is the return type.
+-  const unsigned NumTypes;
++  const unsigned NumTypes : OpenCLBuiltinNumTypesBits;
+   // Function attribute __attribute__((pure))
+-  const bool IsPure : 1;
++  const unsigned IsPure : 1;
+   // Function attribute __attribute__((const))
+-  const bool IsConst : 1;
++  const unsigned IsConst : 1;
+   // Function attribute __attribute__((convergent))
+-  const bool IsConv : 1;
++  const unsigned IsConv : 1;
+   // OpenCL extension(s) required for this overload.
+-  const unsigned short Extension;
++  const unsigned Extension : OpenCLBuiltinExtensionBits;
+   // OpenCL versions in which this overload is available.
+-  const unsigned short Versions;
++  const unsigned Versions : OpenCLBuiltinVersionsBits;
+ };
++static_assert(sizeof(OpenCLBuiltinStruct) == 4,
++              "OpenCLBuiltinStruct must remain compact");
++
++static_assert(OCLT_Count <= (1u << OpenCLTypeIDBits),
++              "OpenCLTypeStruct::ID is too narrow");
++static_assert(OCLAQ_ReadWrite < (1u << OpenCLTypeAccessQualifierBits),
++              "OpenCLTypeStruct::AccessQualifier is too narrow");
++static_assert(static_cast<unsigned>(LangAS::opencl_global_host) <
++                  (1u << OpenCLTypeAddressSpaceBits),
++              "OpenCLTypeStruct::AS is too narrow");
+ 
+ )";
+ }
+@@ -503,7 +535,6 @@ void BuiltinNameEmitter::GetOverloads() {
+   }
+ 
+   // Populate the SignaturesList and the FctOverloadMap.
+-  unsigned CumulativeSignIndex = 0;
+   ArrayRef<const Record *> Builtins =
+       Records.getAllDerivedDefinitions("Builtin");
+   for (const auto *B : Builtins) {
+@@ -514,40 +545,85 @@ void BuiltinNameEmitter::GetOverloads() {
+     // Reuse signatures to avoid unnecessary duplicates.
+     auto it =
+         find_if(SignaturesList,
+-                [&](const std::pair<std::vector<const Record *>, unsigned> &a) {
+-                  return a.first == Signature;
++                [&](const std::vector<const Record *> &ExistingSignature) {
++                  return llvm::equal(ExistingSignature, Signature);
+                 });
+     unsigned SignIndex;
+     if (it == SignaturesList.end()) {
+       VerifySignature(Signature, B);
+-      SignaturesList.push_back(std::make_pair(Signature, CumulativeSignIndex));
+-      SignIndex = CumulativeSignIndex;
+-      CumulativeSignIndex += Signature.size();
++      SignIndex = SignaturesList.size();
++      SignaturesList.emplace_back(Signature.begin(), Signature.end());
+     } else {
+-      SignIndex = it->second;
++      SignIndex = it - SignaturesList.begin();
+     }
+     FctOverloadMap[BName].push_back(std::make_pair(B, SignIndex));
+   }
+ }
+ 
+ void BuiltinNameEmitter::EmitExtensionTable() {
+-  OS << "static const char *FunctionExtensionTable[] = {\n";
+-  unsigned Index = 0;
+   ArrayRef<const Record *> FuncExtensions =
+       Records.getAllDerivedDefinitions("FunctionExtension");
++  StringMap<unsigned> ExtensionNameIndex;
++  std::vector<std::string> ExtensionNames;
++  std::vector<std::vector<unsigned>> ExtensionLists;
+ 
+   for (const auto &FE : FuncExtensions) {
+-    // Emit OpenCL extension table entry.
+-    OS << "  // " << Index << ": " << FE->getName() << "\n"
+-       << "  \"" << FE->getValueAsString("ExtName") << "\",\n";
++    SmallVector<StringRef, 5> Names;
++    FE->getValueAsString("ExtName").split(Names, " ", -1, false);
++
++    std::vector<unsigned> NameIndices;
++    for (StringRef Name : Names) {
++      auto [It, Inserted] =
++          ExtensionNameIndex.try_emplace(Name, ExtensionNames.size());
++      if (Inserted)
++        ExtensionNames.push_back(Name.str());
++      NameIndices.push_back(It->second);
++    }
+ 
+     // Record index of this extension.
+-    FunctionExtensionIndex[FE->getName()] = Index++;
++    FunctionExtensionIndex[FE->getName()] = ExtensionLists.size();
++    ExtensionLists.push_back(std::move(NameIndices));
+   }
++
++  OS << "static const char *FunctionExtensionNames[] = {\n";
++  for (const std::string &Name : ExtensionNames)
++    OS << "  \"" << Name << "\",\n";
+   OS << "};\n\n";
++
++  OS << "static const unsigned char FunctionExtensionSequence[] = {\n  ";
++  for (const auto &List : ExtensionLists)
++    for (unsigned NameIndex : List)
++      OS << NameIndex << ", ";
++  OS << "\n};\n\n";
++
++  unsigned Offset = 0;
++  unsigned MaxOffset = 0;
++  unsigned MaxCount = 0;
++  OS << "static const OpenCLFunctionExtension FunctionExtensionTable[] = {\n";
++  for (auto [Index, List] : enumerate(ExtensionLists)) {
++    OS << "  // " << Index << ": " << FuncExtensions[Index]->getName() << "\n"
++       << "  {" << Offset << ", " << List.size() << "},\n";
++    MaxOffset = std::max(MaxOffset, Offset);
++    Offset += List.size();
++    MaxCount = std::max<unsigned>(MaxCount, List.size());
++  }
++  OS << "};\n\n"
++     << "static_assert(" << ExtensionNames.size()
++     << " <= (1u << OpenCLFunctionExtensionIDBits),\n"
++     << "              \"FunctionExtensionSequence entries are too narrow\");\n"
++     << "static_assert(" << MaxOffset
++     << " < (1u << OpenCLFunctionExtensionOffsetBits),\n"
++     << "              \"OpenCLFunctionExtension::Offset is too narrow\");\n"
++     << "static_assert(" << MaxCount
++     << " < (1u << OpenCLFunctionExtensionCountBits),\n"
++     << "              \"OpenCLFunctionExtension::Count is too narrow\");\n"
++     << "static_assert(" << FuncExtensions.size()
++     << " <= (1u << OpenCLBuiltinExtensionBits),\n"
++     << "              \"OpenCLBuiltinStruct::Extension is too narrow\");\n\n";
+ }
+ 
+ void BuiltinNameEmitter::EmitTypeTable() {
++  unsigned MaxVectorWidth = 0;
+   OS << "static const OpenCLTypeStruct TypeTable[] = {\n";
+   for (const auto &T : TypeMap) {
+     const char *AccessQual =
+@@ -556,27 +632,61 @@ void BuiltinNameEmitter::EmitTypeTable() {
+             .Case("WO", "OCLAQ_WriteOnly")
+             .Case("RW", "OCLAQ_ReadWrite")
+             .Default("OCLAQ_None");
++    unsigned VectorWidth = T.first->getValueAsInt("VecWidth");
++    MaxVectorWidth = std::max(MaxVectorWidth, VectorWidth);
+ 
+     OS << "  // " << T.second << "\n"
+        << "  {OCLT_" << T.first->getValueAsString("Name") << ", "
+-       << T.first->getValueAsInt("VecWidth") << ", "
++       << VectorWidth << ", "
+        << T.first->getValueAsBit("IsPointer") << ", "
+        << T.first->getValueAsBit("IsConst") << ", "
+        << T.first->getValueAsBit("IsVolatile") << ", "
+        << AccessQual << ", "
+-       << T.first->getValueAsString("AddrSpace") << "},\n";
++       << "static_cast<unsigned>(" << T.first->getValueAsString("AddrSpace")
++       << ")},\n";
+   }
+-  OS << "};\n\n";
++  OS << "};\n\n"
++     << "static_assert(" << MaxVectorWidth
++     << " < (1u << OpenCLTypeVectorWidthBits),\n"
++     << "              \"OpenCLTypeStruct::VectorWidth is too narrow\");\n\n";
+ }
+ 
+ void BuiltinNameEmitter::EmitSignatureTable() {
++  SmallVector<unsigned> SignatureIDs;
++  SignatureIDs.reserve(SignaturesList.size());
++  for (unsigned ID = 0; ID < SignaturesList.size(); ++ID)
++    SignatureIDs.push_back(ID);
++  llvm::sort(SignatureIDs, [&](unsigned LHS, unsigned RHS) {
++    if (SignaturesList[LHS].size() != SignaturesList[RHS].size())
++      return SignaturesList[LHS].size() > SignaturesList[RHS].size();
++    return LHS < RHS;
++  });
++
++  SignatureOffsets.assign(SignaturesList.size(), 0);
++  std::vector<const Record *> PooledSignatures;
++  SmallVector<unsigned> EmittedSignatureIDs;
++  for (unsigned ID : SignatureIDs) {
++    const auto &Signature = SignaturesList[ID];
++    auto It = std::search(PooledSignatures.begin(), PooledSignatures.end(),
++                          Signature.begin(), Signature.end());
++    if (It != PooledSignatures.end()) {
++      SignatureOffsets[ID] = It - PooledSignatures.begin();
++      continue;
++    }
++
++    SignatureOffsets[ID] = PooledSignatures.size();
++    PooledSignatures.insert(PooledSignatures.end(), Signature.begin(),
++                            Signature.end());
++    EmittedSignatureIDs.push_back(ID);
++  }
++
+   // Store a type (e.g. int, float, int2, ...). The type is stored as an index
+   // of a struct OpenCLType table. Multiple entries following each other form a
+   // signature.
+   OS << "static const unsigned short SignatureTable[] = {\n";
+-  for (const auto &P : SignaturesList) {
+-    OS << "  // " << P.second << "\n  ";
+-    for (const Record *R : P.first) {
++  for (unsigned ID : EmittedSignatureIDs) {
++    OS << "  // " << SignatureOffsets[ID] << "\n  ";
++    for (const Record *R : SignaturesList[ID]) {
+       unsigned Entry = TypeMap.find(R)->second;
+       if (Entry > USHRT_MAX) {
+         // Report an error when seeing an entry that is too large for the
+@@ -588,7 +698,10 @@ void BuiltinNameEmitter::EmitSignatureTable() {
+     }
+     OS << "\n";
+   }
+-  OS << "};\n\n";
++  OS << "};\n\n"
++     << "static_assert(" << PooledSignatures.size()
++     << " <= (1u << OpenCLBuiltinSigTableIndexBits),\n"
++     << "              \"OpenCLBuiltinStruct::SigTableIndex is too narrow\");\n\n";
+ }
+ 
+ // Encode a range MinVersion..MaxVersion into a single bit mask that can be
+@@ -616,6 +729,8 @@ static unsigned short EncodeVersions(unsigned int MinVersion,
+ 
+ void BuiltinNameEmitter::EmitBuiltinTable() {
+   unsigned Index = 0;
++  unsigned MaxNumTypes = 0;
++  unsigned MaxVersions = 0;
+ 
+   OS << "static const OpenCLBuiltinStruct BuiltinTable[] = {\n";
+   for (const auto &SLM : SignatureListMap) {
+@@ -632,18 +747,29 @@ void BuiltinNameEmitter::EmitBuiltinTable() {
+           Overload.first->getValueAsDef("MinVersion")->getValueAsInt("ID");
+       unsigned int MaxVersion =
+           Overload.first->getValueAsDef("MaxVersion")->getValueAsInt("ID");
+-
+-      OS << "  { " << Overload.second << ", "
+-         << Overload.first->getValueAsListOfDefs("Signature").size() << ", "
++      unsigned NumTypes =
++          Overload.first->getValueAsListOfDefs("Signature").size();
++      unsigned Versions = EncodeVersions(MinVersion, MaxVersion);
++      MaxNumTypes = std::max(MaxNumTypes, NumTypes);
++      MaxVersions = std::max(MaxVersions, Versions);
++
++      OS << "  { " << SignatureOffsets[Overload.second] << ", " << NumTypes
++         << ", "
+          << (Overload.first->getValueAsBit("IsPure")) << ", "
+          << (Overload.first->getValueAsBit("IsConst")) << ", "
+          << (Overload.first->getValueAsBit("IsConv")) << ", "
+          << FunctionExtensionIndex[ExtName] << ", "
+-         << EncodeVersions(MinVersion, MaxVersion) << " },\n";
++         << Versions << " },\n";
+       Index++;
+     }
+   }
+-  OS << "};\n\n";
++  OS << "};\n\n"
++     << "static_assert(" << MaxNumTypes
++     << " < (1u << OpenCLBuiltinNumTypesBits),\n"
++     << "              \"OpenCLBuiltinStruct::NumTypes is too narrow\");\n"
++     << "static_assert(" << MaxVersions
++     << " < (1u << OpenCLBuiltinVersionsBits),\n"
++     << "              \"OpenCLBuiltinStruct::Versions is too narrow\");\n\n";
+ }
+ 
+ bool BuiltinNameEmitter::CanReuseSignature(
+@@ -964,7 +1090,8 @@ static void OCL2Qual(Sema &S, const OpenCLTypeStruct &Ty,
+   // [const|volatile] pointers, so this is ok to do it as a last step.
+   if (Ty.IsPointer != 0) {
+     for (unsigned Index = 0; Index < QT.size(); Index++) {
+-      QT[Index] = Context.getAddrSpaceQualType(QT[Index], Ty.AS);
++      QT[Index] =
++          Context.getAddrSpaceQualType(QT[Index], static_cast<LangAS>(Ty.AS));
+       QT[Index] = Context.getPointerType(QT[Index]);
+     }
+   }
