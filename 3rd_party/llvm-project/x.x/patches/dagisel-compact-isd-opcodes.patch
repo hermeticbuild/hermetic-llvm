@@ -1,0 +1,237 @@
+diff --git a/llvm/include/llvm/CodeGen/SelectionDAGISel.h b/llvm/include/llvm/CodeGen/SelectionDAGISel.h
+index 1256dd6..589021b 100644
+--- a/llvm/include/llvm/CodeGen/SelectionDAGISel.h
++++ b/llvm/include/llvm/CodeGen/SelectionDAGISel.h
+@@ -197,6 +197,39 @@ public:
+     OPC_CheckPredicate7,
+     OPC_CheckPredicateWithOperands,
+     OPC_CheckOpcode,
++    // Space-optimized forms for the most frequent built-in ISD opcodes.
++    OPC_CheckOpcodeISD_SRL,
++    OPC_CheckOpcodeISD_SIGN_EXTEND_INREG,
++    OPC_CheckOpcodeISD_TargetConstant,
++    OPC_CheckOpcodeISD_LOAD,
++    OPC_CheckOpcodeISD_Constant,
++    OPC_CheckOpcodeISD_INTRINSIC_WO_CHAIN,
++    OPC_CheckOpcodeISD_SRA,
++    OPC_CheckOpcodeISD_ADD,
++    OPC_CheckOpcodeISD_EXTRACT_SUBVECTOR,
++    OPC_CheckOpcodeISD_SPLAT_VECTOR,
++    OPC_CheckOpcodeISD_EXTRACT_VECTOR_ELT,
++    OPC_CheckOpcodeISD_XOR,
++    OPC_CheckOpcodeISD_MUL,
++    OPC_CheckOpcodeISD_AND,
++    OPC_CheckOpcodeISD_ZERO_EXTEND,
++    OPC_CheckOpcodeISD_BITCAST,
++    OPC_CheckOpcodeISD_SIGN_EXTEND,
++    OPC_CheckOpcodeISD_UNDEF,
++    OPC_CheckOpcodeISD_CONDCODE,
++    OPC_CheckOpcodeISD_FMINNUM,
++    OPC_CheckOpcodeISD_FMAXNUM,
++    OPC_CheckOpcodeISD_FMINNUM_IEEE,
++    OPC_CheckOpcodeISD_FMAXNUM_IEEE,
++    OPC_CheckOpcodeISD_ConstantFP,
++    OPC_CheckOpcodeISD_VSELECT,
++    OPC_CheckOpcodeISD_TRUNCATE,
++    OPC_CheckOpcodeISD_FNEG,
++    OPC_CheckOpcodeISD_SHL,
++    OPC_CheckOpcodeISD_BasicBlock,
++    OPC_CheckOpcodeISD_SMAX,
++    OPC_CheckOpcodeISD_SMIN,
++    OPC_CheckOpcodeISD_BUILD_VECTOR,
+     OPC_SwitchOpcode,
+     OPC_CheckType,
+     // Space-optimized forms that implicitly encode VT.
+diff --git a/llvm/lib/CodeGen/SelectionDAG/SelectionDAGISel.cpp b/llvm/lib/CodeGen/SelectionDAG/SelectionDAGISel.cpp
+index af60b7e..7d49e1f 100644
+--- a/llvm/lib/CodeGen/SelectionDAG/SelectionDAGISel.cpp
++++ b/llvm/lib/CodeGen/SelectionDAG/SelectionDAGISel.cpp
+@@ -2995,6 +2995,53 @@ CheckOpcode(const uint8_t *MatcherTable, unsigned &MatcherIndex, SDNode *N) {
+   return N->getOpcode() == Opc;
+ }
+ 
++static constexpr uint16_t CompactISDOpcodes[] = {
++    ISD::SRL,
++    ISD::SIGN_EXTEND_INREG,
++    ISD::TargetConstant,
++    ISD::LOAD,
++    ISD::Constant,
++    ISD::INTRINSIC_WO_CHAIN,
++    ISD::SRA,
++    ISD::ADD,
++    ISD::EXTRACT_SUBVECTOR,
++    ISD::SPLAT_VECTOR,
++    ISD::EXTRACT_VECTOR_ELT,
++    ISD::XOR,
++    ISD::MUL,
++    ISD::AND,
++    ISD::ZERO_EXTEND,
++    ISD::BITCAST,
++    ISD::SIGN_EXTEND,
++    ISD::UNDEF,
++    ISD::CONDCODE,
++    ISD::FMINNUM,
++    ISD::FMAXNUM,
++    ISD::FMINNUM_IEEE,
++    ISD::FMAXNUM_IEEE,
++    ISD::ConstantFP,
++    ISD::VSELECT,
++    ISD::TRUNCATE,
++    ISD::FNEG,
++    ISD::SHL,
++    ISD::BasicBlock,
++    ISD::SMAX,
++    ISD::SMIN,
++    ISD::BUILD_VECTOR,
++};
++
++static_assert(sizeof(CompactISDOpcodes) / sizeof(*CompactISDOpcodes) ==
++              SelectionDAGISel::OPC_CheckOpcodeISD_BUILD_VECTOR -
++                      SelectionDAGISel::OPC_CheckOpcodeISD_SRL +
++                  1);
++
++LLVM_ATTRIBUTE_ALWAYS_INLINE static bool
++CheckCompactISDOpcode(unsigned MatcherOpcode, SDNode *N) {
++  return N->getOpcode() ==
++         CompactISDOpcodes[MatcherOpcode -
++                           SelectionDAGISel::OPC_CheckOpcodeISD_SRL];
++}
++
+ LLVM_ATTRIBUTE_ALWAYS_INLINE static bool CheckType(MVT::SimpleValueType VT,
+                                                    SDValue N,
+                                                    const TargetLowering *TLI,
+@@ -3092,6 +3139,12 @@ static unsigned IsPredicateKnownToFail(
+     const SelectionDAGISel &SDISel,
+     SmallVectorImpl<std::pair<SDValue, SDNode *>> &RecordedNodes) {
+   unsigned Opcode = Table[Index++];
++  if (Opcode >= SelectionDAGISel::OPC_CheckOpcodeISD_SRL &&
++      Opcode <= SelectionDAGISel::OPC_CheckOpcodeISD_BUILD_VECTOR) {
++    Result = !::CheckCompactISDOpcode(Opcode, N.getNode());
++    return Index;
++  }
++
+   switch (Opcode) {
+   default:
+     Result = false;
+@@ -3698,6 +3751,41 @@ void SelectionDAGISel::SelectCodeCommon(SDNode *NodeToMatch,
+     case OPC_CheckOpcode:
+       if (!::CheckOpcode(MatcherTable, MatcherIndex, N.getNode())) break;
+       continue;
++    case OPC_CheckOpcodeISD_SRL:
++    case OPC_CheckOpcodeISD_SIGN_EXTEND_INREG:
++    case OPC_CheckOpcodeISD_TargetConstant:
++    case OPC_CheckOpcodeISD_LOAD:
++    case OPC_CheckOpcodeISD_Constant:
++    case OPC_CheckOpcodeISD_INTRINSIC_WO_CHAIN:
++    case OPC_CheckOpcodeISD_SRA:
++    case OPC_CheckOpcodeISD_ADD:
++    case OPC_CheckOpcodeISD_EXTRACT_SUBVECTOR:
++    case OPC_CheckOpcodeISD_SPLAT_VECTOR:
++    case OPC_CheckOpcodeISD_EXTRACT_VECTOR_ELT:
++    case OPC_CheckOpcodeISD_XOR:
++    case OPC_CheckOpcodeISD_MUL:
++    case OPC_CheckOpcodeISD_AND:
++    case OPC_CheckOpcodeISD_ZERO_EXTEND:
++    case OPC_CheckOpcodeISD_BITCAST:
++    case OPC_CheckOpcodeISD_SIGN_EXTEND:
++    case OPC_CheckOpcodeISD_UNDEF:
++    case OPC_CheckOpcodeISD_CONDCODE:
++    case OPC_CheckOpcodeISD_FMINNUM:
++    case OPC_CheckOpcodeISD_FMAXNUM:
++    case OPC_CheckOpcodeISD_FMINNUM_IEEE:
++    case OPC_CheckOpcodeISD_FMAXNUM_IEEE:
++    case OPC_CheckOpcodeISD_ConstantFP:
++    case OPC_CheckOpcodeISD_VSELECT:
++    case OPC_CheckOpcodeISD_TRUNCATE:
++    case OPC_CheckOpcodeISD_FNEG:
++    case OPC_CheckOpcodeISD_SHL:
++    case OPC_CheckOpcodeISD_BasicBlock:
++    case OPC_CheckOpcodeISD_SMAX:
++    case OPC_CheckOpcodeISD_SMIN:
++    case OPC_CheckOpcodeISD_BUILD_VECTOR:
++      if (!::CheckCompactISDOpcode(Opcode, N.getNode()))
++        break;
++      continue;
+ 
+     case OPC_CheckType:
+     case OPC_CheckTypeI32:
+diff --git a/llvm/utils/TableGen/DAGISelMatcherEmitter.cpp b/llvm/utils/TableGen/DAGISelMatcherEmitter.cpp
+index 0c9863a..936aa99 100644
+--- a/llvm/utils/TableGen/DAGISelMatcherEmitter.cpp
++++ b/llvm/utils/TableGen/DAGISelMatcherEmitter.cpp
+@@ -19,6 +19,7 @@
+ #include "llvm/ADT/DenseMap.h"
+ #include "llvm/ADT/MapVector.h"
+ #include "llvm/ADT/StringMap.h"
++#include "llvm/ADT/StringSwitch.h"
+ #include "llvm/ADT/TinyPtrVector.h"
+ #include "llvm/Support/CommandLine.h"
+ #include "llvm/Support/Format.h"
+@@ -436,6 +437,47 @@ static unsigned emitMVT(MVT VT, raw_ostream &OS) {
+   return EmitVBRValue(VT.SimpleTy, OS);
+ }
+ 
++static StringRef getCompactISDOpcode(StringRef Opcode) {
++  return StringSwitch<StringRef>(Opcode)
++      .Case("ISD::SRL", "OPC_CheckOpcodeISD_SRL")
++      .Case("ISD::SIGN_EXTEND_INREG",
++            "OPC_CheckOpcodeISD_SIGN_EXTEND_INREG")
++      .Case("ISD::TargetConstant", "OPC_CheckOpcodeISD_TargetConstant")
++      .Case("ISD::LOAD", "OPC_CheckOpcodeISD_LOAD")
++      .Case("ISD::Constant", "OPC_CheckOpcodeISD_Constant")
++      .Case("ISD::INTRINSIC_WO_CHAIN",
++            "OPC_CheckOpcodeISD_INTRINSIC_WO_CHAIN")
++      .Case("ISD::SRA", "OPC_CheckOpcodeISD_SRA")
++      .Case("ISD::ADD", "OPC_CheckOpcodeISD_ADD")
++      .Case("ISD::EXTRACT_SUBVECTOR",
++            "OPC_CheckOpcodeISD_EXTRACT_SUBVECTOR")
++      .Case("ISD::SPLAT_VECTOR", "OPC_CheckOpcodeISD_SPLAT_VECTOR")
++      .Case("ISD::EXTRACT_VECTOR_ELT",
++            "OPC_CheckOpcodeISD_EXTRACT_VECTOR_ELT")
++      .Case("ISD::XOR", "OPC_CheckOpcodeISD_XOR")
++      .Case("ISD::MUL", "OPC_CheckOpcodeISD_MUL")
++      .Case("ISD::AND", "OPC_CheckOpcodeISD_AND")
++      .Case("ISD::ZERO_EXTEND", "OPC_CheckOpcodeISD_ZERO_EXTEND")
++      .Case("ISD::BITCAST", "OPC_CheckOpcodeISD_BITCAST")
++      .Case("ISD::SIGN_EXTEND", "OPC_CheckOpcodeISD_SIGN_EXTEND")
++      .Case("ISD::UNDEF", "OPC_CheckOpcodeISD_UNDEF")
++      .Case("ISD::CONDCODE", "OPC_CheckOpcodeISD_CONDCODE")
++      .Case("ISD::FMINNUM", "OPC_CheckOpcodeISD_FMINNUM")
++      .Case("ISD::FMAXNUM", "OPC_CheckOpcodeISD_FMAXNUM")
++      .Case("ISD::FMINNUM_IEEE", "OPC_CheckOpcodeISD_FMINNUM_IEEE")
++      .Case("ISD::FMAXNUM_IEEE", "OPC_CheckOpcodeISD_FMAXNUM_IEEE")
++      .Case("ISD::ConstantFP", "OPC_CheckOpcodeISD_ConstantFP")
++      .Case("ISD::VSELECT", "OPC_CheckOpcodeISD_VSELECT")
++      .Case("ISD::TRUNCATE", "OPC_CheckOpcodeISD_TRUNCATE")
++      .Case("ISD::FNEG", "OPC_CheckOpcodeISD_FNEG")
++      .Case("ISD::SHL", "OPC_CheckOpcodeISD_SHL")
++      .Case("ISD::BasicBlock", "OPC_CheckOpcodeISD_BasicBlock")
++      .Case("ISD::SMAX", "OPC_CheckOpcodeISD_SMAX")
++      .Case("ISD::SMIN", "OPC_CheckOpcodeISD_SMIN")
++      .Case("ISD::BUILD_VECTOR", "OPC_CheckOpcodeISD_BUILD_VECTOR")
++      .Default("");
++}
++
+ /// EmitMatcher - Emit bytes for the specified matcher and return
+ /// the number of bytes emitted.
+ unsigned MatcherTableEmitter::EmitMatcher(const Matcher *N,
+@@ -591,10 +633,16 @@ unsigned MatcherTableEmitter::EmitMatcher(const Matcher *N,
+     return 2 + OperandBytes;
+   }
+ 
+-  case Matcher::CheckOpcode:
+-    OS << "OPC_CheckOpcode, TARGET_VAL("
+-       << cast<CheckOpcodeMatcher>(N)->getOpcode().getEnumName() << "),\n";
++  case Matcher::CheckOpcode: {
++    StringRef Opcode = cast<CheckOpcodeMatcher>(N)->getOpcode().getEnumName();
++    if (StringRef CompactOpcode = getCompactISDOpcode(Opcode);
++        !CompactOpcode.empty()) {
++      OS << CompactOpcode << ",\n";
++      return 1;
++    }
++    OS << "OPC_CheckOpcode, TARGET_VAL(" << Opcode << "),\n";
+     return 3;
++  }
+ 
+   case Matcher::SwitchOpcode:
+   case Matcher::SwitchType: {
