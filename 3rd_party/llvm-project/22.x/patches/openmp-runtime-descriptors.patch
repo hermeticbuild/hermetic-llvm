@@ -1,0 +1,1137 @@
+diff --git a/llvm/include/llvm/Frontend/OpenMP/OMPIRBuilder.h b/llvm/include/llvm/Frontend/OpenMP/OMPIRBuilder.h
+index 15d48c84dc33..ef4e0f46718e 100644
+--- a/llvm/include/llvm/Frontend/OpenMP/OMPIRBuilder.h
++++ b/llvm/include/llvm/Frontend/OpenMP/OMPIRBuilder.h
+@@ -548,6 +548,13 @@ public:
+   /// \return true if the finalize function has already run
+   LLVM_ABI bool isFinalized();
+
++  /// Return the runtime function name for \p FnID.
++  LLVM_ABI StringRef getRuntimeFunctionName(omp::RuntimeFunction FnID) const;
++
++  /// Return the runtime function type for \p FnID.
++  LLVM_ABI FunctionType *
++  getRuntimeFunctionType(omp::RuntimeFunction FnID) const;
++
+   /// Add attributes known for \p FnID to \p Fn.
+   LLVM_ABI void addAttributes(omp::RuntimeFunction FnID, Function &Fn);
+
+diff --git a/llvm/include/llvm/Frontend/OpenMP/OMPKinds.def b/llvm/include/llvm/Frontend/OpenMP/OMPKinds.def
+index 152a8f727310..cf52212b2300 100644
+--- a/llvm/include/llvm/Frontend/OpenMP/OMPKinds.def
++++ b/llvm/include/llvm/Frontend/OpenMP/OMPKinds.def
+@@ -520,7 +520,10 @@ __OMP_RTL(__last, false, Void, )
+ #undef __OMP_RTL
+ #undef OMP_RTL
+
+-#define ParamAttrs(...) ArrayRef<AttributeSet>({__VA_ARGS__})
++#ifndef OMP_PARAM_ATTRS
++#define OMP_PARAM_ATTRS(...) ArrayRef<AttributeSet>({__VA_ARGS__})
++#endif
++#define ParamAttrs(...) OMP_PARAM_ATTRS(__VA_ARGS__)
+ #define EnumAttr(Kind) Attribute::get(Ctx, Attribute::AttrKind::Kind)
+ #define EnumAttrInt(Kind, N) Attribute::get(Ctx, Attribute::AttrKind::Kind, N)
+ #define AllocSizeAttr(N, M) Attribute::getWithAllocSizeArgs(Ctx, N, M)
+@@ -643,6 +646,17 @@ __OMP_ATTRS_SET(SizeTyExt,
+                 M.getDataLayout().getIntPtrType(Ctx)->getBitWidth() < 64
+                     ? AttributeSet(EnumAttr(ZExt))
+                     : AttributeSet())
++__OMP_ATTRS_SET(EmptyAttrs, AttributeSet())
++__OMP_ATTRS_SET(NoCaptureWriteOnlyAttrs,
++                AttributeSet(NoCaptureAttr, EnumAttr(WriteOnly)))
++__OMP_ATTRS_SET(NoCaptureAllocatedPointerAttrs,
++                AttributeSet(NoCaptureAttr, EnumAttr(AllocatedPointer)))
++__OMP_ATTRS_SET(
++    AllocSharedAttrs,
++    AttributeSet(EnumAttr(NoUnwind), EnumAttr(NoSync),
++                 AllocSizeAttr(0, std::nullopt)))
++__OMP_ATTRS_SET(FreeSharedAttrs,
++                AttributeSet(EnumAttr(NoUnwind), EnumAttr(NoSync)))
+
+ #if 0
+ __OMP_ATTRS_SET(ReturnAlignedPtrAttrs,
+@@ -662,60 +676,60 @@ __OMP_ATTRS_SET(ReturnAlignedPtrAttrs,
+ #define __OMP_RTL_ATTRS(Name, FnAttrSet, RetAttrSet, ArgAttrSets)              \
+   OMP_RTL_ATTRS(OMPRTL_##Name, FnAttrSet, RetAttrSet, ArgAttrSets)
+
+-__OMP_RTL_ATTRS(__kmpc_barrier, BarrierAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_barrier, BarrierAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt))
+-__OMP_RTL_ATTRS(__kmpc_barrier_simple_spmd, BarrierAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_barrier_simple_spmd, BarrierAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt))
+-__OMP_RTL_ATTRS(__kmpc_barrier_simple_generic, BarrierAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_barrier_simple_generic, BarrierAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt))
+-__OMP_RTL_ATTRS(__kmpc_warp_active_thread_mask, BarrierAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_warp_active_thread_mask, BarrierAttrs, EmptyAttrs,
+                 ParamAttrs())
+-__OMP_RTL_ATTRS(__kmpc_syncwarp, BarrierAttrs, AttributeSet(), ParamAttrs())
++__OMP_RTL_ATTRS(__kmpc_syncwarp, BarrierAttrs, EmptyAttrs, ParamAttrs())
+ __OMP_RTL_ATTRS(__kmpc_cancel, InaccessibleArgOnlyAttrs, SExt,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt))
+ __OMP_RTL_ATTRS(__kmpc_cancel_barrier, BarrierAttrs, SExt,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt))
+-__OMP_RTL_ATTRS(__kmpc_distribute_for_static_loop_4, AlwaysInlineAttrs, AttributeSet(),
+-                ParamAttrs(ReadOnlyPtrAttrs, AttributeSet(), AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_distribute_for_static_loop_4, AlwaysInlineAttrs, EmptyAttrs,
++                ParamAttrs(ReadOnlyPtrAttrs, EmptyAttrs, EmptyAttrs,
+                            SExt, SExt, SExt, SExt, ZExt))
+-__OMP_RTL_ATTRS(__kmpc_distribute_for_static_loop_4u, AlwaysInlineAttrs, AttributeSet(),
+-                ParamAttrs(ReadOnlyPtrAttrs, AttributeSet(), AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_distribute_for_static_loop_4u, AlwaysInlineAttrs, EmptyAttrs,
++                ParamAttrs(ReadOnlyPtrAttrs, EmptyAttrs, EmptyAttrs,
+                            ZExt, ZExt, ZExt, ZExt, ZExt))
+-__OMP_RTL_ATTRS(__kmpc_distribute_static_loop_4, AlwaysInlineAttrs, AttributeSet(),
+-                ParamAttrs(ReadOnlyPtrAttrs, AttributeSet(), AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_distribute_static_loop_4, AlwaysInlineAttrs, EmptyAttrs,
++                ParamAttrs(ReadOnlyPtrAttrs, EmptyAttrs, EmptyAttrs,
+                            SExt, SExt, ZExt))
+-__OMP_RTL_ATTRS(__kmpc_distribute_static_loop_4u, AlwaysInlineAttrs, AttributeSet(),
+-                ParamAttrs(ReadOnlyPtrAttrs, AttributeSet(), AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_distribute_static_loop_4u, AlwaysInlineAttrs, EmptyAttrs,
++                ParamAttrs(ReadOnlyPtrAttrs, EmptyAttrs, EmptyAttrs,
+                            ZExt, ZExt, ZExt))
+-__OMP_RTL_ATTRS(__kmpc_for_static_loop_4, AlwaysInlineAttrs, AttributeSet(),
+-                ParamAttrs(ReadOnlyPtrAttrs, AttributeSet(), AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_for_static_loop_4, AlwaysInlineAttrs, EmptyAttrs,
++                ParamAttrs(ReadOnlyPtrAttrs, EmptyAttrs, EmptyAttrs,
+                            SExt, SExt, SExt, ZExt))
+-__OMP_RTL_ATTRS(__kmpc_for_static_loop_4u, AlwaysInlineAttrs, AttributeSet(),
+-                ParamAttrs(ReadOnlyPtrAttrs, AttributeSet(), AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_for_static_loop_4u, AlwaysInlineAttrs, EmptyAttrs,
++                ParamAttrs(ReadOnlyPtrAttrs, EmptyAttrs, EmptyAttrs,
+                            ZExt, ZExt, ZExt, ZExt))
+-__OMP_RTL_ATTRS(__kmpc_error, AttributeSet(), AttributeSet(),
+-                ParamAttrs(AttributeSet(), SExt))
+-__OMP_RTL_ATTRS(__kmpc_flush, BarrierAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_error, EmptyAttrs, EmptyAttrs,
++                ParamAttrs(EmptyAttrs, SExt))
++__OMP_RTL_ATTRS(__kmpc_flush, BarrierAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs))
+ __OMP_RTL_ATTRS(__kmpc_global_thread_num, GetterArgReadAttrs, SExt,
+                 ParamAttrs(ReadOnlyPtrAttrs))
+ __OMP_RTL_ATTRS(__kmpc_get_hardware_thread_id_in_block, GetterAttrs, ZExt,
+                 ParamAttrs())
+-__OMP_RTL_ATTRS(__kmpc_fork_call, ForkAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_fork_call, ForkAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, ReadOnlyPtrAttrs))
+-__OMP_RTL_ATTRS(__kmpc_fork_call_if, AttributeSet(), AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_fork_call_if, EmptyAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, ReadOnlyPtrAttrs, SExt))
+ __OMP_RTL_ATTRS(__kmpc_omp_taskwait, BarrierAttrs, SExt,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt))
+ __OMP_RTL_ATTRS(__kmpc_omp_taskyield, InaccessibleArgOnlyAttrs, SExt,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt))
+ __OMP_RTL_ATTRS(__kmpc_push_num_threads, InaccessibleArgOnlyAttrs,
+-                AttributeSet(), ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt))
++                EmptyAttrs, ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt))
+ __OMP_RTL_ATTRS(__kmpc_push_num_threads_strict, InaccessibleArgOnlyAttrs,
+-                AttributeSet(),
++                EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt, SExt,
+                            ReadOnlyPtrAttrs))
+-__OMP_RTL_ATTRS(__kmpc_push_proc_bind, InaccessibleArgOnlyAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_push_proc_bind, InaccessibleArgOnlyAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt))
+ __OMP_RTL_ATTRS(__kmpc_omp_reg_task_with_affinity, DefaultAttrs, SExt,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, ReadOnlyPtrAttrs,
+@@ -733,9 +747,8 @@ __OMP_RTL_ATTRS(omp_get_dynamic, GetterAttrs, SExt, ParamAttrs())
+ __OMP_RTL_ATTRS(omp_get_cancellation, GetterAttrs, SExt, ParamAttrs())
+ __OMP_RTL_ATTRS(omp_get_nested, GetterAttrs, SExt, ParamAttrs())
+ __OMP_RTL_ATTRS(
+-    omp_get_schedule, GetterArgWriteAttrs, AttributeSet(),
+-    ParamAttrs(AttributeSet(NoCaptureAttr, EnumAttr(WriteOnly)),
+-               AttributeSet(NoCaptureAttr, EnumAttr(WriteOnly))))
++    omp_get_schedule, GetterArgWriteAttrs, EmptyAttrs,
++    ParamAttrs(NoCaptureWriteOnlyAttrs, NoCaptureWriteOnlyAttrs))
+ __OMP_RTL_ATTRS(omp_get_thread_limit, GetterAttrs, SExt, ParamAttrs())
+ __OMP_RTL_ATTRS(omp_get_supported_active_levels, GetterAttrs, SExt, ParamAttrs())
+ __OMP_RTL_ATTRS(omp_get_max_active_levels, GetterAttrs, SExt, ParamAttrs())
+@@ -747,117 +760,116 @@ __OMP_RTL_ATTRS(omp_in_final, GetterAttrs, SExt, ParamAttrs())
+ __OMP_RTL_ATTRS(omp_get_proc_bind, GetterAttrs, SExt, ParamAttrs())
+ __OMP_RTL_ATTRS(omp_get_num_places, GetterAttrs, SExt, ParamAttrs())
+ __OMP_RTL_ATTRS(omp_get_num_procs, GetterAttrs, SExt, ParamAttrs())
+-__OMP_RTL_ATTRS(omp_get_place_proc_ids, GetterArgWriteAttrs, AttributeSet(),
+-                ParamAttrs(SExt, AttributeSet(NoCaptureAttr,
+-                                              EnumAttr(WriteOnly))))
++__OMP_RTL_ATTRS(omp_get_place_proc_ids, GetterArgWriteAttrs, EmptyAttrs,
++                ParamAttrs(SExt, NoCaptureWriteOnlyAttrs))
+ __OMP_RTL_ATTRS(omp_get_place_num, GetterAttrs, SExt, ParamAttrs())
+ __OMP_RTL_ATTRS(omp_get_partition_num_places, GetterAttrs, SExt, ParamAttrs())
+-__OMP_RTL_ATTRS(omp_get_partition_place_nums, GetterArgWriteAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(omp_get_partition_place_nums, GetterArgWriteAttrs, EmptyAttrs,
+                 ParamAttrs())
+-__OMP_RTL_ATTRS(omp_get_wtime, GetterAttrs, AttributeSet(), ParamAttrs())
++__OMP_RTL_ATTRS(omp_get_wtime, GetterAttrs, EmptyAttrs, ParamAttrs())
+
+-__OMP_RTL_ATTRS(omp_set_num_threads, SetterAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(omp_set_num_threads, SetterAttrs, EmptyAttrs,
+                 ParamAttrs(SExt))
+-__OMP_RTL_ATTRS(omp_set_dynamic, SetterAttrs, AttributeSet(), ParamAttrs(SExt))
+-__OMP_RTL_ATTRS(omp_set_nested, SetterAttrs, AttributeSet(), ParamAttrs(SExt))
+-__OMP_RTL_ATTRS(omp_set_schedule, SetterAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(omp_set_dynamic, SetterAttrs, EmptyAttrs, ParamAttrs(SExt))
++__OMP_RTL_ATTRS(omp_set_nested, SetterAttrs, EmptyAttrs, ParamAttrs(SExt))
++__OMP_RTL_ATTRS(omp_set_schedule, SetterAttrs, EmptyAttrs,
+                 ParamAttrs(SExt, SExt))
+-__OMP_RTL_ATTRS(omp_set_max_active_levels, SetterAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(omp_set_max_active_levels, SetterAttrs, EmptyAttrs,
+                 ParamAttrs(SExt))
+
+ __OMP_RTL_ATTRS(__kmpc_master, InaccessibleArgOnlyAttrs, SExt,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt))
+-__OMP_RTL_ATTRS(__kmpc_end_master, InaccessibleArgOnlyAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_end_master, InaccessibleArgOnlyAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt))
+ __OMP_RTL_ATTRS(__kmpc_masked, InaccessibleArgOnlyAttrs, SExt,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt))
+-__OMP_RTL_ATTRS(__kmpc_end_masked, InaccessibleArgOnlyAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_end_masked, InaccessibleArgOnlyAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt))
+-__OMP_RTL_ATTRS(__kmpc_critical, BarrierAttrs, AttributeSet(),
+-                ParamAttrs(ReadOnlyPtrAttrs, SExt, AttributeSet()))
+-__OMP_RTL_ATTRS(__kmpc_critical_with_hint, BarrierAttrs, AttributeSet(),
+-                ParamAttrs(ReadOnlyPtrAttrs, SExt, AttributeSet(), ZExt))
+-__OMP_RTL_ATTRS(__kmpc_end_critical, BarrierAttrs, AttributeSet(),
+-                ParamAttrs(ReadOnlyPtrAttrs, SExt, AttributeSet()))
+-
+-__OMP_RTL_ATTRS(__kmpc_begin, DefaultAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_critical, BarrierAttrs, EmptyAttrs,
++                ParamAttrs(ReadOnlyPtrAttrs, SExt, EmptyAttrs))
++__OMP_RTL_ATTRS(__kmpc_critical_with_hint, BarrierAttrs, EmptyAttrs,
++                ParamAttrs(ReadOnlyPtrAttrs, SExt, EmptyAttrs, ZExt))
++__OMP_RTL_ATTRS(__kmpc_end_critical, BarrierAttrs, EmptyAttrs,
++                ParamAttrs(ReadOnlyPtrAttrs, SExt, EmptyAttrs))
++
++__OMP_RTL_ATTRS(__kmpc_begin, DefaultAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt))
+-__OMP_RTL_ATTRS(__kmpc_end, DefaultAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_end, DefaultAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs))
+
+ __OMP_RTL_ATTRS(__kmpc_reduce, BarrierAttrs, SExt,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt, SizeTyExt,
+-                           ReadOnlyPtrAttrs, AttributeSet()))
++                           ReadOnlyPtrAttrs, EmptyAttrs))
+ __OMP_RTL_ATTRS(__kmpc_reduce_nowait, BarrierAttrs, SExt,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt, SizeTyExt,
+-                           ReadOnlyPtrAttrs, AttributeSet()))
+-__OMP_RTL_ATTRS(__kmpc_end_reduce, BarrierAttrs, AttributeSet(),
+-                ParamAttrs(ReadOnlyPtrAttrs, SExt, AttributeSet()))
+-__OMP_RTL_ATTRS(__kmpc_end_reduce_nowait, BarrierAttrs, AttributeSet(),
+-                ParamAttrs(ReadOnlyPtrAttrs, SExt, AttributeSet()))
++                           ReadOnlyPtrAttrs, EmptyAttrs))
++__OMP_RTL_ATTRS(__kmpc_end_reduce, BarrierAttrs, EmptyAttrs,
++                ParamAttrs(ReadOnlyPtrAttrs, SExt, EmptyAttrs))
++__OMP_RTL_ATTRS(__kmpc_end_reduce_nowait, BarrierAttrs, EmptyAttrs,
++                ParamAttrs(ReadOnlyPtrAttrs, SExt, EmptyAttrs))
+
+-__OMP_RTL_ATTRS(__kmpc_ordered, BarrierAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_ordered, BarrierAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt))
+-__OMP_RTL_ATTRS(__kmpc_end_ordered, BarrierAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_end_ordered, BarrierAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt))
+
+-__OMP_RTL_ATTRS(__kmpc_for_static_init_4, GetterArgWriteAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_for_static_init_4, GetterArgWriteAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt, ArgPtrAttrs,
+                            ArgPtrAttrs, ArgPtrAttrs, ArgPtrAttrs, SExt, SExt))
+-__OMP_RTL_ATTRS(__kmpc_for_static_init_4u, GetterArgWriteAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_for_static_init_4u, GetterArgWriteAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt, ArgPtrAttrs,
+                            ArgPtrAttrs, ArgPtrAttrs, ArgPtrAttrs, SExt, SExt))
+-__OMP_RTL_ATTRS(__kmpc_for_static_init_8, GetterArgWriteAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_for_static_init_8, GetterArgWriteAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt, ArgPtrAttrs,
+                            ArgPtrAttrs, ArgPtrAttrs, ArgPtrAttrs,
+-                           AttributeSet(), AttributeSet()))
+-__OMP_RTL_ATTRS(__kmpc_for_static_init_8u, GetterArgWriteAttrs, AttributeSet(),
++                           EmptyAttrs, EmptyAttrs))
++__OMP_RTL_ATTRS(__kmpc_for_static_init_8u, GetterArgWriteAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt, ArgPtrAttrs,
+                            ArgPtrAttrs, ArgPtrAttrs, ArgPtrAttrs,
+-                           AttributeSet(), AttributeSet()))
++                           EmptyAttrs, EmptyAttrs))
+ __OMP_RTL_ATTRS(__kmpc_for_static_fini, InaccessibleArgOnlyAttrs,
+-                AttributeSet(), ParamAttrs(ReadOnlyPtrAttrs, SExt))
++                EmptyAttrs, ParamAttrs(ReadOnlyPtrAttrs, SExt))
+ __OMP_RTL_ATTRS(__kmpc_distribute_static_init_4, GetterArgWriteAttrs,
+-                AttributeSet(),
++                EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt, ArgPtrAttrs,
+                            ArgPtrAttrs, ArgPtrAttrs, ArgPtrAttrs, SExt, SExt))
+ __OMP_RTL_ATTRS(__kmpc_distribute_static_init_4u, GetterArgWriteAttrs,
+-                AttributeSet(),
++                EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt, ArgPtrAttrs,
+                            ArgPtrAttrs, ArgPtrAttrs, ArgPtrAttrs, SExt, SExt))
+ __OMP_RTL_ATTRS(__kmpc_distribute_static_init_8, GetterArgWriteAttrs,
+-                AttributeSet(),
++                EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt, ArgPtrAttrs,
+                            ArgPtrAttrs, ArgPtrAttrs, ArgPtrAttrs,
+-                           AttributeSet(), AttributeSet()))
++                           EmptyAttrs, EmptyAttrs))
+ __OMP_RTL_ATTRS(__kmpc_distribute_static_init_8u, GetterArgWriteAttrs,
+-                AttributeSet(),
++                EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt, ArgPtrAttrs,
+                            ArgPtrAttrs, ArgPtrAttrs, ArgPtrAttrs,
+-                           AttributeSet(), AttributeSet()))
++                           EmptyAttrs, EmptyAttrs))
+ __OMP_RTL_ATTRS(__kmpc_distribute_static_fini, InaccessibleArgOnlyAttrs,
+-                AttributeSet(), ParamAttrs(ReadOnlyPtrAttrs, SExt))
++                EmptyAttrs, ParamAttrs(ReadOnlyPtrAttrs, SExt))
+ __OMP_RTL_ATTRS(__kmpc_dist_dispatch_init_4, GetterArgWriteAttrs,
+-                AttributeSet(),
++                EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt, ArgPtrAttrs, SExt,
+                            SExt, SExt, SExt))
+ __OMP_RTL_ATTRS(__kmpc_dist_dispatch_init_4u, GetterArgWriteAttrs,
+-                AttributeSet(),
++                EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt, ArgPtrAttrs, ZExt,
+                            ZExt, SExt, SExt))
+ __OMP_RTL_ATTRS(__kmpc_dist_dispatch_init_8, GetterArgWriteAttrs,
+-                AttributeSet(),
++                EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt, ArgPtrAttrs))
+ __OMP_RTL_ATTRS(__kmpc_dist_dispatch_init_8u, GetterArgWriteAttrs,
+-                AttributeSet(),
++                EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt, ArgPtrAttrs))
+-__OMP_RTL_ATTRS(__kmpc_dispatch_init_4, GetterArgWriteAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_dispatch_init_4, GetterArgWriteAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt, SExt, SExt, SExt, SExt))
+-__OMP_RTL_ATTRS(__kmpc_dispatch_init_4u, GetterArgWriteAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_dispatch_init_4u, GetterArgWriteAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt, ZExt, ZExt, SExt, SExt))
+-__OMP_RTL_ATTRS(__kmpc_dispatch_init_8, GetterArgWriteAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_dispatch_init_8, GetterArgWriteAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt))
+-__OMP_RTL_ATTRS(__kmpc_dispatch_init_8u, GetterArgWriteAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_dispatch_init_8u, GetterArgWriteAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt))
+ __OMP_RTL_ATTRS(__kmpc_dispatch_next_4, GetterArgWriteAttrs, SExt,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, ArgPtrAttrs, ArgPtrAttrs,
+@@ -872,239 +884,236 @@ __OMP_RTL_ATTRS(__kmpc_dispatch_next_8u, GetterArgWriteAttrs, SExt,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, ArgPtrAttrs, ArgPtrAttrs,
+                            ArgPtrAttrs, ArgPtrAttrs))
+ __OMP_RTL_ATTRS(__kmpc_dispatch_fini_4, InaccessibleArgOnlyAttrs,
+-                AttributeSet(), ParamAttrs(ReadOnlyPtrAttrs, SExt))
++                EmptyAttrs, ParamAttrs(ReadOnlyPtrAttrs, SExt))
+ __OMP_RTL_ATTRS(__kmpc_dispatch_fini_4u, InaccessibleArgOnlyAttrs,
+-                AttributeSet(), ParamAttrs(ReadOnlyPtrAttrs, SExt))
++                EmptyAttrs, ParamAttrs(ReadOnlyPtrAttrs, SExt))
+ __OMP_RTL_ATTRS(__kmpc_dispatch_fini_8, InaccessibleArgOnlyAttrs,
+-                AttributeSet(), ParamAttrs(ReadOnlyPtrAttrs, SExt))
++                EmptyAttrs, ParamAttrs(ReadOnlyPtrAttrs, SExt))
+ __OMP_RTL_ATTRS(__kmpc_dispatch_fini_8u, InaccessibleArgOnlyAttrs,
+-                AttributeSet(), ParamAttrs(ReadOnlyPtrAttrs, SExt))
++                EmptyAttrs, ParamAttrs(ReadOnlyPtrAttrs, SExt))
+ __OMP_RTL_ATTRS(__kmpc_dispatch_deinit, InaccessibleArgOnlyAttrs,
+-                AttributeSet(), ParamAttrs(ReadOnlyPtrAttrs, SExt))
+-__OMP_RTL_ATTRS(__kmpc_team_static_init_4, GetterArgWriteAttrs, AttributeSet(),
++                EmptyAttrs, ParamAttrs(ReadOnlyPtrAttrs, SExt))
++__OMP_RTL_ATTRS(__kmpc_team_static_init_4, GetterArgWriteAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, ArgPtrAttrs, ArgPtrAttrs,
+                            ArgPtrAttrs, ArgPtrAttrs, SExt, SExt))
+-__OMP_RTL_ATTRS(__kmpc_team_static_init_4u, GetterArgWriteAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_team_static_init_4u, GetterArgWriteAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, ArgPtrAttrs, ArgPtrAttrs,
+                            ArgPtrAttrs, ArgPtrAttrs, SExt, SExt))
+-__OMP_RTL_ATTRS(__kmpc_team_static_init_8, GetterArgWriteAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_team_static_init_8, GetterArgWriteAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, ArgPtrAttrs, ArgPtrAttrs,
+                            ArgPtrAttrs, ArgPtrAttrs))
+-__OMP_RTL_ATTRS(__kmpc_team_static_init_8u, GetterArgWriteAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_team_static_init_8u, GetterArgWriteAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, ArgPtrAttrs, ArgPtrAttrs,
+                            ArgPtrAttrs, ArgPtrAttrs))
+ __OMP_RTL_ATTRS(__kmpc_dist_for_static_init_4, GetterArgWriteAttrs,
+-                AttributeSet(),
++                EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt, ArgPtrAttrs,
+                            ArgPtrAttrs, ArgPtrAttrs, ArgPtrAttrs,
+                            ArgPtrAttrs, SExt, SExt))
+ __OMP_RTL_ATTRS(__kmpc_dist_for_static_init_4u, GetterArgWriteAttrs,
+-                AttributeSet(),
++                EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt, ArgPtrAttrs,
+                            ArgPtrAttrs, ArgPtrAttrs, ArgPtrAttrs,
+                            ArgPtrAttrs, SExt, SExt))
+ __OMP_RTL_ATTRS(__kmpc_dist_for_static_init_8, GetterArgWriteAttrs,
+-                AttributeSet(),
++                EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt, ArgPtrAttrs,
+                            ArgPtrAttrs, ArgPtrAttrs, ArgPtrAttrs, ArgPtrAttrs))
+ __OMP_RTL_ATTRS(__kmpc_dist_for_static_init_8u, GetterArgWriteAttrs,
+-                AttributeSet(),
++                EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt, ArgPtrAttrs,
+                            ArgPtrAttrs, ArgPtrAttrs, ArgPtrAttrs, ArgPtrAttrs))
+
+ __OMP_RTL_ATTRS(__kmpc_single, BarrierAttrs, SExt,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt))
+-__OMP_RTL_ATTRS(__kmpc_end_single, BarrierAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_end_single, BarrierAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt))
+
+ __OMP_RTL_ATTRS(__kmpc_omp_task_alloc, DefaultAttrs, ReturnPtrAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt, SizeTyExt, SizeTyExt,
+                            ReadOnlyPtrAttrs))
+ __OMP_RTL_ATTRS(__kmpc_omp_task, DefaultAttrs, SExt,
+-                ParamAttrs(ReadOnlyPtrAttrs, SExt, AttributeSet()))
+-__OMP_RTL_ATTRS(__kmpc_end_taskgroup, BarrierAttrs, AttributeSet(),
++                ParamAttrs(ReadOnlyPtrAttrs, SExt, EmptyAttrs))
++__OMP_RTL_ATTRS(__kmpc_end_taskgroup, BarrierAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt))
+-__OMP_RTL_ATTRS(__kmpc_taskgroup, BarrierAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_taskgroup, BarrierAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt))
+-__OMP_RTL_ATTRS(__kmpc_omp_task_begin_if0, DefaultAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_omp_task_begin_if0, DefaultAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt))
+-__OMP_RTL_ATTRS(__kmpc_omp_task_complete_if0, DefaultAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_omp_task_complete_if0, DefaultAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt))
+ __OMP_RTL_ATTRS(__kmpc_omp_task_with_deps, DefaultAttrs, SExt,
+-                ParamAttrs(ReadOnlyPtrAttrs, SExt, AttributeSet(), SExt,
++                ParamAttrs(ReadOnlyPtrAttrs, SExt, EmptyAttrs, SExt,
+                            ReadOnlyPtrAttrs, SExt, ReadOnlyPtrAttrs))
+-__OMP_RTL_ATTRS(__kmpc_taskloop, DefaultAttrs, AttributeSet(),
+-                ParamAttrs(ReadOnlyPtrAttrs, SExt, AttributeSet(), SExt,
+-                           ArgPtrAttrs, ArgPtrAttrs, AttributeSet(), SExt, SExt))
++__OMP_RTL_ATTRS(__kmpc_taskloop, DefaultAttrs, EmptyAttrs,
++                ParamAttrs(ReadOnlyPtrAttrs, SExt, EmptyAttrs, SExt,
++                           ArgPtrAttrs, ArgPtrAttrs, EmptyAttrs, SExt, SExt))
+ __OMP_RTL_ATTRS(__kmpc_omp_target_task_alloc, DefaultAttrs, ReturnPtrAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt, SizeTyExt, SizeTyExt,
+-                           ReadOnlyPtrAttrs, AttributeSet()))
+-__OMP_RTL_ATTRS(__kmpc_taskred_modifier_init, DefaultAttrs, AttributeSet(),
++                           ReadOnlyPtrAttrs, EmptyAttrs))
++__OMP_RTL_ATTRS(__kmpc_taskred_modifier_init, DefaultAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt, SExt))
+-__OMP_RTL_ATTRS(__kmpc_taskred_init, DefaultAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_taskred_init, DefaultAttrs, EmptyAttrs,
+                 ParamAttrs(SExt, SExt))
+ __OMP_RTL_ATTRS(__kmpc_task_reduction_modifier_fini, BarrierAttrs,
+-                AttributeSet(), ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt))
+-__OMP_RTL_ATTRS(__kmpc_task_reduction_get_th_data, DefaultAttrs, AttributeSet(),
++                EmptyAttrs, ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt))
++__OMP_RTL_ATTRS(__kmpc_task_reduction_get_th_data, DefaultAttrs, EmptyAttrs,
+                 ParamAttrs(SExt))
+-__OMP_RTL_ATTRS(__kmpc_task_reduction_init, DefaultAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_task_reduction_init, DefaultAttrs, EmptyAttrs,
+                 ParamAttrs(SExt, SExt))
+ __OMP_RTL_ATTRS(__kmpc_task_reduction_modifier_init, DefaultAttrs,
+-                AttributeSet(), ParamAttrs(AttributeSet(), SExt, SExt, SExt))
+-__OMP_RTL_ATTRS(__kmpc_proxy_task_completed_ooo, DefaultAttrs, AttributeSet(),
++                EmptyAttrs, ParamAttrs(EmptyAttrs, SExt, SExt, SExt))
++__OMP_RTL_ATTRS(__kmpc_proxy_task_completed_ooo, DefaultAttrs, EmptyAttrs,
+                 ParamAttrs())
+
+-__OMP_RTL_ATTRS(__kmpc_omp_wait_deps, BarrierAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_omp_wait_deps, BarrierAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt, ReadOnlyPtrAttrs, SExt))
+-__OMP_RTL_ATTRS(__kmpc_omp_taskwait_deps_51, BarrierAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_omp_taskwait_deps_51, BarrierAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt, ReadOnlyPtrAttrs, SExt,
+-                           AttributeSet(), SExt))
++                           EmptyAttrs, SExt))
+ __OMP_RTL_ATTRS(__kmpc_cancellationpoint, DefaultAttrs, SExt,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt))
+
+-__OMP_RTL_ATTRS(__kmpc_fork_teams, ForkAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_fork_teams, ForkAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, ReadOnlyPtrAttrs))
+-__OMP_RTL_ATTRS(__kmpc_push_num_teams, InaccessibleArgOnlyAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_push_num_teams, InaccessibleArgOnlyAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt, SExt))
+-__OMP_RTL_ATTRS(__kmpc_set_thread_limit, InaccessibleArgOnlyAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_set_thread_limit, InaccessibleArgOnlyAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt))
+
+-__OMP_RTL_ATTRS(__kmpc_copyprivate, DefaultAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_copyprivate, DefaultAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SizeTyExt,
+-                           ReadOnlyPtrAttrs, AttributeSet(), SExt))
+-__OMP_RTL_ATTRS(__kmpc_threadprivate_cached, DefaultAttrs, AttributeSet(),
+-                ParamAttrs(ReadOnlyPtrAttrs, SExt, AttributeSet(), SizeTyExt))
+-__OMP_RTL_ATTRS(__kmpc_threadprivate_register, DefaultAttrs, AttributeSet(),
+-                ParamAttrs(ReadOnlyPtrAttrs, AttributeSet(), ReadOnlyPtrAttrs,
++                           ReadOnlyPtrAttrs, EmptyAttrs, SExt))
++__OMP_RTL_ATTRS(__kmpc_threadprivate_cached, DefaultAttrs, EmptyAttrs,
++                ParamAttrs(ReadOnlyPtrAttrs, SExt, EmptyAttrs, SizeTyExt))
++__OMP_RTL_ATTRS(__kmpc_threadprivate_register, DefaultAttrs, EmptyAttrs,
++                ParamAttrs(ReadOnlyPtrAttrs, EmptyAttrs, ReadOnlyPtrAttrs,
+                            ReadOnlyPtrAttrs, ReadOnlyPtrAttrs))
+
+-__OMP_RTL_ATTRS(__kmpc_doacross_init, BarrierAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_doacross_init, BarrierAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, SExt))
+-__OMP_RTL_ATTRS(__kmpc_doacross_post, BarrierAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_doacross_post, BarrierAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, ReadOnlyPtrAttrs))
+-__OMP_RTL_ATTRS(__kmpc_doacross_wait, BarrierAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_doacross_wait, BarrierAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt, ReadOnlyPtrAttrs))
+-__OMP_RTL_ATTRS(__kmpc_doacross_fini, BarrierAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_doacross_fini, BarrierAttrs, EmptyAttrs,
+                 ParamAttrs(ReadOnlyPtrAttrs, SExt))
+
+-__OMP_RTL_ATTRS(__kmpc_alloc_shared,
+-                AttributeSet(EnumAttr(NoUnwind), EnumAttr(NoSync),
+-                             AllocSizeAttr(0, std::nullopt)),
++__OMP_RTL_ATTRS(__kmpc_alloc_shared, AllocSharedAttrs,
+                 ReturnPtrAttrs, ParamAttrs(SizeTyExt))
+-__OMP_RTL_ATTRS(__kmpc_free_shared, DeviceAllocAttrs, AttributeSet(),
+-                ParamAttrs(AttributeSet(NoCaptureAttr,
+-                                        EnumAttr(AllocatedPointer)),
+-                           SizeTyExt))
+-__OMP_RTL_ATTRS(__kmpc_begin_sharing_variables, AttributeSet(), AttributeSet(),
+-                ParamAttrs(AttributeSet(), SizeTyExt))
++__OMP_RTL_ATTRS(__kmpc_free_shared, FreeSharedAttrs, EmptyAttrs,
++                ParamAttrs(NoCaptureAllocatedPointerAttrs, SizeTyExt))
++__OMP_RTL_ATTRS(__kmpc_begin_sharing_variables, EmptyAttrs, EmptyAttrs,
++                ParamAttrs(EmptyAttrs, SizeTyExt))
+
+ __OMP_RTL_ATTRS(__kmpc_alloc, DefaultAttrs, ReturnPtrAttrs,
+                 ParamAttrs(SExt, SizeTyExt))
+ __OMP_RTL_ATTRS(__kmpc_aligned_alloc, DefaultAttrs, ReturnPtrAttrs,
+                 ParamAttrs(SExt, SizeTyExt, SizeTyExt))
+-__OMP_RTL_ATTRS(__kmpc_free, AllocAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_free, AllocAttrs, EmptyAttrs,
+                 ParamAttrs(SExt))
+
+-__OMP_RTL_ATTRS(__tgt_interop_init, AttributeSet(), AttributeSet(),
+-                ParamAttrs(AttributeSet(), SExt, AttributeSet(), SExt,
+-                           SExt, AttributeSet(), AttributeSet(), SExt))
+-__OMP_RTL_ATTRS(__tgt_interop_destroy, AttributeSet(), AttributeSet(),
+-                ParamAttrs(AttributeSet(), SExt, AttributeSet(), SExt, SExt,
+-                           AttributeSet(), SExt))
+-__OMP_RTL_ATTRS(__tgt_interop_use, AttributeSet(), AttributeSet(),
+-                ParamAttrs(AttributeSet(), SExt, AttributeSet(), SExt, SExt,
+-                           AttributeSet(), SExt))
+-
+-__OMP_RTL_ATTRS(__kmpc_init_allocator, DefaultAttrs, AttributeSet(),
+-                ParamAttrs(SExt, AttributeSet(), SExt))
+-__OMP_RTL_ATTRS(__kmpc_destroy_allocator, AllocAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__tgt_interop_init, EmptyAttrs, EmptyAttrs,
++                ParamAttrs(EmptyAttrs, SExt, EmptyAttrs, SExt,
++                           SExt, EmptyAttrs, EmptyAttrs, SExt))
++__OMP_RTL_ATTRS(__tgt_interop_destroy, EmptyAttrs, EmptyAttrs,
++                ParamAttrs(EmptyAttrs, SExt, EmptyAttrs, SExt, SExt,
++                           EmptyAttrs, SExt))
++__OMP_RTL_ATTRS(__tgt_interop_use, EmptyAttrs, EmptyAttrs,
++                ParamAttrs(EmptyAttrs, SExt, EmptyAttrs, SExt, SExt,
++                           EmptyAttrs, SExt))
++
++__OMP_RTL_ATTRS(__kmpc_init_allocator, DefaultAttrs, EmptyAttrs,
++                ParamAttrs(SExt, EmptyAttrs, SExt))
++__OMP_RTL_ATTRS(__kmpc_destroy_allocator, AllocAttrs, EmptyAttrs,
+                 ParamAttrs(SExt))
+
+ __OMP_RTL_ATTRS(__kmpc_push_target_tripcount_mapper, SetterAttrs,
+-                AttributeSet(), ParamAttrs())
++                EmptyAttrs, ParamAttrs())
+ __OMP_RTL_ATTRS(__tgt_target_mapper, ForkAttrs, SExt,
+-                ParamAttrs(AttributeSet(),AttributeSet(),AttributeSet(), SExt))
++                ParamAttrs(EmptyAttrs,EmptyAttrs,EmptyAttrs, SExt))
+ __OMP_RTL_ATTRS(__tgt_target_nowait_mapper, ForkAttrs, SExt,
+-                ParamAttrs(AttributeSet(), AttributeSet(), AttributeSet(), SExt,
+-                           AttributeSet(), AttributeSet(), AttributeSet(),
+-                           AttributeSet(), AttributeSet(), AttributeSet(),
+-                           SExt, AttributeSet(), SExt))
++                ParamAttrs(EmptyAttrs, EmptyAttrs, EmptyAttrs, SExt,
++                           EmptyAttrs, EmptyAttrs, EmptyAttrs,
++                           EmptyAttrs, EmptyAttrs, EmptyAttrs,
++                           SExt, EmptyAttrs, SExt))
+ __OMP_RTL_ATTRS(__tgt_target_teams_mapper, ForkAttrs, SExt,
+-                ParamAttrs(AttributeSet(), AttributeSet(), AttributeSet(), SExt,
+-                           AttributeSet(), AttributeSet(), AttributeSet(),
+-                           AttributeSet(), AttributeSet(), AttributeSet(), SExt,
++                ParamAttrs(EmptyAttrs, EmptyAttrs, EmptyAttrs, SExt,
++                           EmptyAttrs, EmptyAttrs, EmptyAttrs,
++                           EmptyAttrs, EmptyAttrs, EmptyAttrs, SExt,
+                            SExt))
+ __OMP_RTL_ATTRS(__tgt_target_teams_nowait_mapper, ForkAttrs, SExt,
+-                ParamAttrs(AttributeSet(), AttributeSet(), AttributeSet(), SExt,
+-                           AttributeSet(), AttributeSet(), AttributeSet(),
+-                           AttributeSet(), AttributeSet(), AttributeSet(),
+-                           SExt, SExt, SExt, AttributeSet(), SExt))
++                ParamAttrs(EmptyAttrs, EmptyAttrs, EmptyAttrs, SExt,
++                           EmptyAttrs, EmptyAttrs, EmptyAttrs,
++                           EmptyAttrs, EmptyAttrs, EmptyAttrs,
++                           SExt, SExt, SExt, EmptyAttrs, SExt))
+ __OMP_RTL_ATTRS(__tgt_target_kernel, ForkAttrs, SExt,
+-                ParamAttrs(AttributeSet(), AttributeSet(), SExt, SExt))
++                ParamAttrs(EmptyAttrs, EmptyAttrs, SExt, SExt))
+ __OMP_RTL_ATTRS(__tgt_target_kernel_nowait, ForkAttrs, SExt,
+-                ParamAttrs(AttributeSet(), AttributeSet(), SExt, SExt,
+-                           AttributeSet(), AttributeSet(), SExt, AttributeSet(),
++                ParamAttrs(EmptyAttrs, EmptyAttrs, SExt, SExt,
++                           EmptyAttrs, EmptyAttrs, SExt, EmptyAttrs,
+                            SExt))
+-__OMP_RTL_ATTRS(__tgt_target_data_begin_mapper, ForkAttrs, AttributeSet(),
+-                ParamAttrs(AttributeSet(), AttributeSet(), SExt))
++__OMP_RTL_ATTRS(__tgt_target_data_begin_mapper, ForkAttrs, EmptyAttrs,
++                ParamAttrs(EmptyAttrs, EmptyAttrs, SExt))
+ __OMP_RTL_ATTRS(__tgt_target_data_begin_nowait_mapper, ForkAttrs,
+-                AttributeSet(),
+-                ParamAttrs(AttributeSet(), AttributeSet(), SExt, AttributeSet(),
+-                           AttributeSet(), AttributeSet(), AttributeSet(),
+-                           AttributeSet(), AttributeSet(), SExt, AttributeSet(),
+-                           SExt, AttributeSet()))
+-__OMP_RTL_ATTRS(__tgt_target_data_begin_mapper_issue, AttributeSet(),
+-                AttributeSet(),
+-                ParamAttrs(AttributeSet(), AttributeSet(), SExt))
+-__OMP_RTL_ATTRS(__tgt_target_data_end_mapper, ForkAttrs, AttributeSet(),
+-                ParamAttrs(AttributeSet(), AttributeSet(), SExt))
+-__OMP_RTL_ATTRS(__tgt_target_data_end_nowait_mapper, ForkAttrs, AttributeSet(),
+-                ParamAttrs(AttributeSet(), AttributeSet(), SExt, AttributeSet(),
+-                           AttributeSet(), AttributeSet(), AttributeSet(),
+-                           AttributeSet(), AttributeSet(), SExt, AttributeSet(),
+-                           SExt, AttributeSet()))
+-__OMP_RTL_ATTRS(__tgt_target_data_update_mapper, ForkAttrs, AttributeSet(),
+-                ParamAttrs(AttributeSet(), AttributeSet(), SExt))
++                EmptyAttrs,
++                ParamAttrs(EmptyAttrs, EmptyAttrs, SExt, EmptyAttrs,
++                           EmptyAttrs, EmptyAttrs, EmptyAttrs,
++                           EmptyAttrs, EmptyAttrs, SExt, EmptyAttrs,
++                           SExt, EmptyAttrs))
++__OMP_RTL_ATTRS(__tgt_target_data_begin_mapper_issue, EmptyAttrs,
++                EmptyAttrs,
++                ParamAttrs(EmptyAttrs, EmptyAttrs, SExt))
++__OMP_RTL_ATTRS(__tgt_target_data_end_mapper, ForkAttrs, EmptyAttrs,
++                ParamAttrs(EmptyAttrs, EmptyAttrs, SExt))
++__OMP_RTL_ATTRS(__tgt_target_data_end_nowait_mapper, ForkAttrs, EmptyAttrs,
++                ParamAttrs(EmptyAttrs, EmptyAttrs, SExt, EmptyAttrs,
++                           EmptyAttrs, EmptyAttrs, EmptyAttrs,
++                           EmptyAttrs, EmptyAttrs, SExt, EmptyAttrs,
++                           SExt, EmptyAttrs))
++__OMP_RTL_ATTRS(__tgt_target_data_update_mapper, ForkAttrs, EmptyAttrs,
++                ParamAttrs(EmptyAttrs, EmptyAttrs, SExt))
+ __OMP_RTL_ATTRS(__tgt_target_data_update_nowait_mapper, ForkAttrs,
+-                AttributeSet(),
+-                ParamAttrs(AttributeSet(), AttributeSet(), SExt, AttributeSet(),
+-                           AttributeSet(), AttributeSet(), AttributeSet(),
+-                           AttributeSet(), AttributeSet(), SExt, AttributeSet(),
+-                           SExt, AttributeSet()))
+-__OMP_RTL_ATTRS(__tgt_mapper_num_components, ForkAttrs, AttributeSet(),
++                EmptyAttrs,
++                ParamAttrs(EmptyAttrs, EmptyAttrs, SExt, EmptyAttrs,
++                           EmptyAttrs, EmptyAttrs, EmptyAttrs,
++                           EmptyAttrs, EmptyAttrs, SExt, EmptyAttrs,
++                           SExt, EmptyAttrs))
++__OMP_RTL_ATTRS(__tgt_mapper_num_components, ForkAttrs, EmptyAttrs,
+                 ParamAttrs())
+-__OMP_RTL_ATTRS(__tgt_push_mapper_component, ForkAttrs, AttributeSet(),
++__OMP_RTL_ATTRS(__tgt_push_mapper_component, ForkAttrs, EmptyAttrs,
+                 ParamAttrs())
+ __OMP_RTL_ATTRS(__kmpc_task_allow_completion_event, DefaultAttrs,
+-                AttributeSet(), ParamAttrs(ReadOnlyPtrAttrs, SExt))
++                EmptyAttrs, ParamAttrs(ReadOnlyPtrAttrs, SExt))
+
+-__OMP_RTL_ATTRS(__kmpc_target_init, AttributeSet(), SExt,
+-                ParamAttrs(AttributeSet()))
+-__OMP_RTL_ATTRS(__kmpc_target_deinit, AttributeSet(), AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_target_init, EmptyAttrs, SExt,
++                ParamAttrs(EmptyAttrs))
++__OMP_RTL_ATTRS(__kmpc_target_deinit, EmptyAttrs, EmptyAttrs,
+                 ParamAttrs())
+-__OMP_RTL_ATTRS(__kmpc_parallel_60, AlwaysInlineAttrs, AttributeSet(),
+-                ParamAttrs(AttributeSet(), SExt, SExt, SExt, SExt,
+-                           AttributeSet(), AttributeSet(), AttributeSet(),
++__OMP_RTL_ATTRS(__kmpc_parallel_60, AlwaysInlineAttrs, EmptyAttrs,
++                ParamAttrs(EmptyAttrs, SExt, SExt, SExt, SExt,
++                           EmptyAttrs, EmptyAttrs, EmptyAttrs,
+                            SizeTyExt))
+ __OMP_RTL_ATTRS(__kmpc_serialized_parallel, InaccessibleArgOnlyAttrs,
+-                AttributeSet(), ParamAttrs(ReadOnlyPtrAttrs, SExt))
++                EmptyAttrs, ParamAttrs(ReadOnlyPtrAttrs, SExt))
+ __OMP_RTL_ATTRS(__kmpc_end_serialized_parallel, InaccessibleArgOnlyAttrs,
+-                AttributeSet(), ParamAttrs(ReadOnlyPtrAttrs, SExt))
+-__OMP_RTL_ATTRS(__kmpc_shuffle_int32, AttributeSet(), SExt,
++                EmptyAttrs, ParamAttrs(ReadOnlyPtrAttrs, SExt))
++__OMP_RTL_ATTRS(__kmpc_shuffle_int32, EmptyAttrs, SExt,
+                 ParamAttrs(SExt, SExt, SExt))
+-__OMP_RTL_ATTRS(__kmpc_nvptx_parallel_reduce_nowait_v2, AttributeSet(), SExt,
++__OMP_RTL_ATTRS(__kmpc_nvptx_parallel_reduce_nowait_v2, EmptyAttrs, SExt,
+                 ParamAttrs())
+-__OMP_RTL_ATTRS(__kmpc_nvptx_teams_reduce_nowait_v2, AttributeSet(), SExt,
+-                ParamAttrs(AttributeSet(), AttributeSet(), ZExt))
+-__OMP_RTL_ATTRS(__kmpc_reduction_get_fixed_buffer, GetterAttrs, AttributeSet(), ParamAttrs())
++__OMP_RTL_ATTRS(__kmpc_nvptx_teams_reduce_nowait_v2, EmptyAttrs, SExt,
++                ParamAttrs(EmptyAttrs, EmptyAttrs, ZExt))
++__OMP_RTL_ATTRS(__kmpc_reduction_get_fixed_buffer, GetterAttrs, EmptyAttrs, ParamAttrs())
+
+-__OMP_RTL_ATTRS(__kmpc_shuffle_int64, AttributeSet(), AttributeSet(),
+-                ParamAttrs(AttributeSet(), SExt, SExt))
++__OMP_RTL_ATTRS(__kmpc_shuffle_int64, EmptyAttrs, EmptyAttrs,
++                ParamAttrs(EmptyAttrs, SExt, SExt))
+
+-__OMP_RTL_ATTRS(__kmpc_is_spmd_exec_mode, AttributeSet(), SExt, ParamAttrs())
++__OMP_RTL_ATTRS(__kmpc_is_spmd_exec_mode, EmptyAttrs, SExt, ParamAttrs())
+
+ #undef __OMP_RTL_ATTRS
+ #undef OMP_RTL_ATTRS
++#undef OMP_PARAM_ATTRS
+ #undef AttributeSet
+ #undef EnumAttr
+ #undef EnumAttrInt
+diff --git a/llvm/lib/Frontend/OpenMP/OMPIRBuilder.cpp b/llvm/lib/Frontend/OpenMP/OMPIRBuilder.cpp
+index 50b1bcb1bb9a..57f1cbde984a 100644
+--- a/llvm/lib/Frontend/OpenMP/OMPIRBuilder.cpp
++++ b/llvm/lib/Frontend/OpenMP/OMPIRBuilder.cpp
+@@ -62,7 +62,10 @@
+ #include "llvm/Transforms/Utils/LoopPeel.h"
+ #include "llvm/Transforms/Utils/UnrollLoop.h"
+
++#include <array>
++#include <cstddef>
+ #include <cstdint>
++#include <limits>
+ #include <optional>
+
+ #define DEBUG_TYPE "openmp-ir-builder"
+@@ -577,6 +580,241 @@ void OpenMPIRBuilder::getKernelArgsVector(TargetKernelArgs &KernelArgs,
+                 KernelArgs.DynCGroupMem};
+ }
+
++namespace {
++
++namespace RuntimeFunctions {
++
++enum class TypeKind : uint8_t {
++#define OMP_TYPE(Name, ...) Name,
++#define OMP_ARRAY_TYPE(Name, ...) Name##Ty, Name##PtrTy,
++#define OMP_FUNCTION_TYPE(Name, ...) Name, Name##Ptr,
++#define OMP_STRUCT_TYPE(Name, ...) Name, Name##Ptr,
++#include "llvm/Frontend/OpenMP/OMPKinds.def"
++  Last
++};
++
++static_assert(sizeof(TypeKind) == 1,
++              "OpenMP runtime type kinds must remain compact");
++
++#define OMP_TYPE(Name, ...) constexpr TypeKind Name = TypeKind::Name;
++#define OMP_ARRAY_TYPE(Name, ...)                                              \
++  constexpr TypeKind Name##Ty = TypeKind::Name##Ty;                            \
++  constexpr TypeKind Name##PtrTy = TypeKind::Name##PtrTy;
++#define OMP_FUNCTION_TYPE(Name, ...)                                           \
++  constexpr TypeKind Name = TypeKind::Name;                                    \
++  constexpr TypeKind Name##Ptr = TypeKind::Name##Ptr;
++#define OMP_STRUCT_TYPE(Name, ...)                                             \
++  constexpr TypeKind Name = TypeKind::Name;                                    \
++  constexpr TypeKind Name##Ptr = TypeKind::Name##Ptr;
++#include "llvm/Frontend/OpenMP/OMPKinds.def"
++
++struct NameTable {
++#define OMP_RTL(Enum, Str, ...) char Enum[sizeof(Str)];
++#include "llvm/Frontend/OpenMP/OMPKinds.def"
++};
++
++constexpr NameTable Names = {
++#define OMP_RTL(Enum, Str, ...) Str,
++#include "llvm/Frontend/OpenMP/OMPKinds.def"
++};
++
++constexpr size_t TypeCount = 0
++#define OMP_RTL(Enum, Str, IsVarArg, ReturnType, ...)                          \
++  +std::array{ReturnType, __VA_ARGS__}.size()
++#include "llvm/Frontend/OpenMP/OMPKinds.def"
++    ;
++
++constexpr auto Types = [] {
++  std::array<TypeKind, TypeCount> Result{};
++  size_t Offset = 0;
++#define OMP_RTL(Enum, Str, IsVarArg, ReturnType, ...)                          \
++  {                                                                            \
++    constexpr auto Entry = std::array{ReturnType, __VA_ARGS__};                \
++    for (TypeKind Kind : Entry)                                                \
++      Result[Offset++] = Kind;                                                 \
++  }
++#include "llvm/Frontend/OpenMP/OMPKinds.def"
++  return Result;
++}();
++
++struct Descriptor {
++  uint16_t NameOffset;
++  uint16_t TypeOffset;
++  uint8_t ArgumentCount;
++  uint8_t IsVarArg;
++};
++
++static_assert(sizeof(Descriptor) == 6,
++              "OpenMP runtime function descriptors must remain compact");
++
++constexpr auto Descriptors = [] {
++  std::array<Descriptor,
++             static_cast<size_t>(omp::RuntimeFunction::OMPRTL___last) + 1>
++      Result{};
++  uint16_t TypeOffset = 0;
++#define OMP_RTL(Enum, Str, IsVarArg, ReturnType, ...)                          \
++  {                                                                            \
++    constexpr auto Entry = std::array{ReturnType, __VA_ARGS__};                \
++    static_assert(Entry.size() - 1 <= std::numeric_limits<uint8_t>::max());    \
++    Result[static_cast<size_t>(omp::RuntimeFunction::Enum)] = {                \
++        static_cast<uint16_t>(offsetof(NameTable, Enum)), TypeOffset,          \
++        static_cast<uint8_t>(Entry.size() - 1), IsVarArg};                     \
++    TypeOffset = static_cast<uint16_t>(TypeOffset + Entry.size());             \
++  }
++#include "llvm/Frontend/OpenMP/OMPKinds.def"
++  return Result;
++}();
++
++static_assert(Types.size() <= std::numeric_limits<uint16_t>::max());
++static_assert(sizeof(Names) <= std::numeric_limits<uint16_t>::max());
++
++static Type *getType(const OpenMPIRBuilder &Builder, TypeKind Kind) {
++  switch (Kind) {
++#define OMP_TYPE(Name, ...)                                                    \
++  case TypeKind::Name:                                                         \
++    return Builder.Name;
++#define OMP_ARRAY_TYPE(Name, ...)                                              \
++  case TypeKind::Name##Ty:                                                     \
++    return Builder.Name##Ty;                                                   \
++  case TypeKind::Name##PtrTy:                                                  \
++    return Builder.Name##PtrTy;
++#define OMP_FUNCTION_TYPE(Name, ...)                                           \
++  case TypeKind::Name:                                                         \
++    return Builder.Name;                                                       \
++  case TypeKind::Name##Ptr:                                                    \
++    return Builder.Name##Ptr;
++#define OMP_STRUCT_TYPE(Name, ...)                                             \
++  case TypeKind::Name:                                                         \
++    return Builder.Name;                                                       \
++  case TypeKind::Name##Ptr:                                                    \
++    return Builder.Name##Ptr;
++#include "llvm/Frontend/OpenMP/OMPKinds.def"
++  case TypeKind::Last:
++    break;
++  }
++  llvm_unreachable("invalid OpenMP runtime type kind");
++}
++
++} // namespace RuntimeFunctions
++
++namespace RuntimeAttributes {
++
++enum class SetKind : uint8_t {
++#define OMP_ATTRS_SET(Name, ...) Name,
++#include "llvm/Frontend/OpenMP/OMPKinds.def"
++  Last
++};
++
++static_assert(sizeof(SetKind) == 1,
++              "OpenMP runtime attribute set kinds must remain compact");
++
++#define OMP_ATTRS_SET(Name, ...) constexpr SetKind Name = SetKind::Name;
++#include "llvm/Frontend/OpenMP/OMPKinds.def"
++
++constexpr size_t AttributeSetCount = 0
++#define OMP_PARAM_ATTRS(...) (std::array{EmptyAttrs, __VA_ARGS__})
++#define OMP_RTL_ATTRS(Enum, FnAttrSet, RetAttrSet, ArgAttrSets)                \
++  +2 + ArgAttrSets.size()
++#include "llvm/Frontend/OpenMP/OMPKinds.def"
++    ;
++
++constexpr auto AttributeSets = [] {
++  std::array<SetKind, AttributeSetCount> Result{};
++  size_t Offset = 0;
++#define OMP_PARAM_ATTRS(...) (std::array{EmptyAttrs, __VA_ARGS__})
++#define OMP_RTL_ATTRS(Enum, FnAttrSet, RetAttrSet, ArgAttrSets)                \
++  {                                                                            \
++    Result[Offset++] = FnAttrSet;                                              \
++    Result[Offset++] = RetAttrSet;                                             \
++    constexpr auto ArgumentAttributes = ArgAttrSets;                           \
++    for (SetKind Kind : ArgumentAttributes)                                    \
++      Result[Offset++] = Kind;                                                 \
++  }
++#include "llvm/Frontend/OpenMP/OMPKinds.def"
++  return Result;
++}();
++
++constexpr uint16_t NoAttributes = std::numeric_limits<uint16_t>::max();
++
++struct Descriptor {
++  uint16_t AttributeOffset;
++  uint8_t ArgumentCount;
++};
++
++static_assert(sizeof(Descriptor) == 4,
++              "OpenMP runtime attribute descriptors must remain compact");
++
++constexpr auto Descriptors = [] {
++  std::array<Descriptor,
++             static_cast<size_t>(omp::RuntimeFunction::OMPRTL___last)>
++      Result{};
++  for (Descriptor &D : Result)
++    D.AttributeOffset = NoAttributes;
++
++  uint16_t AttributeOffset = 0;
++#define OMP_PARAM_ATTRS(...) (std::array{EmptyAttrs, __VA_ARGS__})
++#define OMP_RTL_ATTRS(Enum, FnAttrSet, RetAttrSet, ArgAttrSets)                \
++  {                                                                            \
++    constexpr auto ArgumentAttributes = ArgAttrSets;                           \
++    static_assert(ArgumentAttributes.size() - 1 <=                             \
++                  std::numeric_limits<uint8_t>::max());                        \
++    Result[static_cast<size_t>(omp::RuntimeFunction::Enum)] = {                \
++        AttributeOffset, static_cast<uint8_t>(ArgumentAttributes.size() - 1)}; \
++    AttributeOffset = static_cast<uint16_t>(AttributeOffset + 2 +              \
++                                            ArgumentAttributes.size());        \
++  }
++#include "llvm/Frontend/OpenMP/OMPKinds.def"
++  return Result;
++}();
++
++static_assert(AttributeSets.size() < NoAttributes);
++
++static AttributeSet getAttributeSet(Module &M, LLVMContext &Ctx, SetKind Kind) {
++  switch (Kind) {
++#define OMP_ATTRS_SET(Name, AttrSet)                                           \
++  case SetKind::Name:                                                          \
++    return AttrSet;
++#include "llvm/Frontend/OpenMP/OMPKinds.def"
++  case SetKind::Last:
++    break;
++  }
++  llvm_unreachable("invalid OpenMP runtime attribute set kind");
++}
++
++} // namespace RuntimeAttributes
++
++} // namespace
++
++StringRef
++OpenMPIRBuilder::getRuntimeFunctionName(omp::RuntimeFunction FnID) const {
++  const size_t Index = static_cast<size_t>(FnID);
++  assert(Index < static_cast<size_t>(omp::RuntimeFunction::OMPRTL___last));
++
++  const auto &Descriptor = RuntimeFunctions::Descriptors[Index];
++  const auto &NextDescriptor = RuntimeFunctions::Descriptors[Index + 1];
++  const char *Name = reinterpret_cast<const char *>(&RuntimeFunctions::Names) +
++                     Descriptor.NameOffset;
++  return StringRef(Name, NextDescriptor.NameOffset - Descriptor.NameOffset - 1);
++}
++
++FunctionType *
++OpenMPIRBuilder::getRuntimeFunctionType(omp::RuntimeFunction FnID) const {
++  const size_t Index = static_cast<size_t>(FnID);
++  assert(Index < static_cast<size_t>(omp::RuntimeFunction::OMPRTL___last));
++
++  const auto &Descriptor = RuntimeFunctions::Descriptors[Index];
++  SmallVector<Type *, 8> ArgumentTypes;
++  ArgumentTypes.reserve(Descriptor.ArgumentCount);
++  for (size_t I = 0; I < Descriptor.ArgumentCount; ++I)
++    ArgumentTypes.push_back(RuntimeFunctions::getType(
++        *this, RuntimeFunctions::Types[Descriptor.TypeOffset + I + 1]));
++
++  return FunctionType::get(
++      RuntimeFunctions::getType(*this,
++                                RuntimeFunctions::Types[Descriptor.TypeOffset]),
++      ArgumentTypes, Descriptor.IsVarArg);
++}
++
+ void OpenMPIRBuilder::addAttributes(omp::RuntimeFunction FnID, Function &Fn) {
+   LLVMContext &Ctx = Fn.getContext();
+
+@@ -607,51 +845,41 @@ void OpenMPIRBuilder::addAttributes(omp::RuntimeFunction FnID, Function &Fn) {
+     }
+   };
+
+-#define OMP_ATTRS_SET(VarName, AttrSet) AttributeSet VarName = AttrSet;
+-#include "llvm/Frontend/OpenMP/OMPKinds.def"
++  const size_t Index = static_cast<size_t>(FnID);
++  if (Index >= RuntimeAttributes::Descriptors.size())
++    return;
+
+-  // Add attributes to the function declaration.
+-  switch (FnID) {
+-#define OMP_RTL_ATTRS(Enum, FnAttrSet, RetAttrSet, ArgAttrSets)                \
+-  case Enum:                                                                   \
+-    FnAttrs = FnAttrs.addAttributes(Ctx, FnAttrSet);                           \
+-    addAttrSet(RetAttrs, RetAttrSet, /*Param*/ false);                         \
+-    for (size_t ArgNo = 0; ArgNo < ArgAttrSets.size(); ++ArgNo)                \
+-      addAttrSet(ArgAttrs[ArgNo], ArgAttrSets[ArgNo]);                         \
+-    Fn.setAttributes(AttributeList::get(Ctx, FnAttrs, RetAttrs, ArgAttrs));    \
+-    break;
+-#include "llvm/Frontend/OpenMP/OMPKinds.def"
+-  default:
+-    // Attributes are optional.
+-    break;
+-  }
++  const auto &Descriptor = RuntimeAttributes::Descriptors[Index];
++  if (Descriptor.AttributeOffset == RuntimeAttributes::NoAttributes)
++    return;
++
++  assert(Descriptor.ArgumentCount <= ArgAttrs.size());
++  assert(Descriptor.AttributeOffset + Descriptor.ArgumentCount + 3 <=
++         RuntimeAttributes::AttributeSets.size());
++  const auto *AttributeKinds =
++      RuntimeAttributes::AttributeSets.data() + Descriptor.AttributeOffset;
++
++  FnAttrs = FnAttrs.addAttributes(
++      Ctx, RuntimeAttributes::getAttributeSet(M, Ctx, AttributeKinds[0]));
++  addAttrSet(RetAttrs,
++             RuntimeAttributes::getAttributeSet(M, Ctx, AttributeKinds[1]),
++             /*Param=*/false);
++  for (size_t ArgNo = 0; ArgNo < Descriptor.ArgumentCount; ++ArgNo)
++    addAttrSet(ArgAttrs[ArgNo], RuntimeAttributes::getAttributeSet(
++                                    M, Ctx, AttributeKinds[ArgNo + 3]));
++
++  Fn.setAttributes(AttributeList::get(Ctx, FnAttrs, RetAttrs, ArgAttrs));
+ }
+
+ FunctionCallee
+ OpenMPIRBuilder::getOrCreateRuntimeFunction(Module &M, RuntimeFunction FnID) {
+-  FunctionType *FnTy = nullptr;
+-  Function *Fn = nullptr;
+-
+-  // Try to find the declation in the module first.
+-  switch (FnID) {
+-#define OMP_RTL(Enum, Str, IsVarArg, ReturnType, ...)                          \
+-  case Enum:                                                                   \
+-    FnTy = FunctionType::get(ReturnType, ArrayRef<Type *>{__VA_ARGS__},        \
+-                             IsVarArg);                                        \
+-    Fn = M.getFunction(Str);                                                   \
+-    break;
+-#include "llvm/Frontend/OpenMP/OMPKinds.def"
+-  }
++  FunctionType *FnTy = getRuntimeFunctionType(FnID);
++  StringRef Name = getRuntimeFunctionName(FnID);
++  Function *Fn = M.getFunction(Name);
+
+   if (!Fn) {
+     // Create a new declaration if we need one.
+-    switch (FnID) {
+-#define OMP_RTL(Enum, Str, ...)                                                \
+-  case Enum:                                                                   \
+-    Fn = Function::Create(FnTy, GlobalValue::ExternalLinkage, Str, M);         \
+-    break;
+-#include "llvm/Frontend/OpenMP/OMPKinds.def"
+-    }
++    Fn = Function::Create(FnTy, GlobalValue::ExternalLinkage, Name, M);
+     Fn->setCallingConv(Config.getRuntimeCC());
+     // Add information if the runtime function takes a callback function
+     if (FnID == OMPRTL___kmpc_fork_call || FnID == OMPRTL___kmpc_fork_teams) {
+diff --git a/llvm/lib/Transforms/IPO/OpenMPOpt.cpp b/llvm/lib/Transforms/IPO/OpenMPOpt.cpp
+index 1f52f9a78b90..fa3cb118f217 100644
+--- a/llvm/lib/Transforms/IPO/OpenMPOpt.cpp
++++ b/llvm/lib/Transforms/IPO/OpenMPOpt.cpp
+@@ -485,21 +485,19 @@ struct OMPInformationCache : public InformationCache {
+   }
+
+   /// Returns true if the function declaration \p F matches the runtime
+-  /// function types, that is, return type \p RTFRetType, and argument types
+-  /// \p RTFArgTypes.
+-  static bool declMatchesRTFTypes(Function *F, Type *RTFRetType,
+-                                  SmallVector<Type *, 8> &RTFArgTypes) {
++  /// function type \p RTFTy.
++  static bool declMatchesRTFTypes(Function *F, FunctionType *RTFTy) {
+     // TODO: We should output information to the user (under debug output
+     //       and via remarks).
+
+     if (!F)
+       return false;
+-    if (F->getReturnType() != RTFRetType)
++    if (F->getReturnType() != RTFTy->getReturnType())
+       return false;
+-    if (F->arg_size() != RTFArgTypes.size())
++    if (F->arg_size() != RTFTy->getNumParams())
+       return false;
+
+-    auto *RTFTyIt = RTFArgTypes.begin();
++    auto *RTFTyIt = RTFTy->param_begin();
+     for (Argument &Arg : F->args()) {
+       if (Arg.getType() != *RTFTyIt)
+         return false;
+@@ -577,57 +575,34 @@ struct OMPInformationCache : public InformationCache {
+   /// Helper to initialize all runtime function information for those defined
+   /// in OpenMPKinds.def.
+   void initializeRuntimeFunctions(Module &M) {
+-
+-    // Helper macros for handling __VA_ARGS__ in OMP_RTL
+-#define OMP_TYPE(VarName, ...)                                                 \
+-  Type *VarName = OMPBuilder.VarName;                                          \
+-  (void)VarName;
+-
+-#define OMP_ARRAY_TYPE(VarName, ...)                                           \
+-  ArrayType *VarName##Ty = OMPBuilder.VarName##Ty;                             \
+-  (void)VarName##Ty;                                                           \
+-  PointerType *VarName##PtrTy = OMPBuilder.VarName##PtrTy;                     \
+-  (void)VarName##PtrTy;
+-
+-#define OMP_FUNCTION_TYPE(VarName, ...)                                        \
+-  FunctionType *VarName = OMPBuilder.VarName;                                  \
+-  (void)VarName;                                                               \
+-  PointerType *VarName##Ptr = OMPBuilder.VarName##Ptr;                         \
+-  (void)VarName##Ptr;
+-
+-#define OMP_STRUCT_TYPE(VarName, ...)                                          \
+-  StructType *VarName = OMPBuilder.VarName;                                    \
+-  (void)VarName;                                                               \
+-  PointerType *VarName##Ptr = OMPBuilder.VarName##Ptr;                         \
+-  (void)VarName##Ptr;
+-
+-#define OMP_RTL(_Enum, _Name, _IsVarArg, _ReturnType, ...)                     \
+-  {                                                                            \
+-    SmallVector<Type *, 8> ArgsTypes({__VA_ARGS__});                           \
+-    Function *F = M.getFunction(_Name);                                        \
+-    RTLFunctions.insert(F);                                                    \
+-    if (declMatchesRTFTypes(F, OMPBuilder._ReturnType, ArgsTypes)) {           \
+-      RuntimeFunctionIDMap[F] = _Enum;                                         \
+-      auto &RFI = RFIs[_Enum];                                                 \
+-      RFI.Kind = _Enum;                                                        \
+-      RFI.Name = _Name;                                                        \
+-      RFI.IsVarArg = _IsVarArg;                                                \
+-      RFI.ReturnType = OMPBuilder._ReturnType;                                 \
+-      RFI.ArgumentTypes = std::move(ArgsTypes);                                \
+-      RFI.Declaration = F;                                                     \
+-      unsigned NumUses = collectUses(RFI);                                     \
+-      (void)NumUses;                                                           \
+-      LLVM_DEBUG({                                                             \
+-        dbgs() << TAG << RFI.Name << (RFI.Declaration ? "" : " not")           \
+-               << " found\n";                                                  \
+-        if (RFI.Declaration)                                                   \
+-          dbgs() << TAG << "-> got " << NumUses << " uses in "                 \
+-                 << RFI.getNumFunctionsWithUses()                              \
+-                 << " different functions.\n";                                 \
+-      });                                                                      \
+-    }                                                                          \
+-  }
+-#include "llvm/Frontend/OpenMP/OMPKinds.def"
++    for (unsigned I = 0;
++         I < static_cast<unsigned>(RuntimeFunction::OMPRTL___last); ++I) {
++      RuntimeFunction RTF = static_cast<RuntimeFunction>(I);
++      StringRef Name = OMPBuilder.getRuntimeFunctionName(RTF);
++      FunctionType *RTFTy = OMPBuilder.getRuntimeFunctionType(RTF);
++      Function *F = M.getFunction(Name);
++      RTLFunctions.insert(F);
++      if (declMatchesRTFTypes(F, RTFTy)) {
++        RuntimeFunctionIDMap[F] = RTF;
++        auto &RFI = RFIs[RTF];
++        RFI.Kind = RTF;
++        RFI.Name = Name;
++        RFI.IsVarArg = RTFTy->isVarArg();
++        RFI.ReturnType = RTFTy->getReturnType();
++        RFI.ArgumentTypes.assign(RTFTy->param_begin(), RTFTy->param_end());
++        RFI.Declaration = F;
++        unsigned NumUses = collectUses(RFI);
++        (void)NumUses;
++        LLVM_DEBUG({
++          dbgs() << TAG << RFI.Name << (RFI.Declaration ? "" : " not")
++                 << " found\n";
++          if (RFI.Declaration)
++            dbgs() << TAG << "-> got " << NumUses << " uses in "
++                   << RFI.getNumFunctionsWithUses()
++                   << " different functions.\n";
++        });
++      }
++    }
+
+     // Remove the `noinline` attribute from `__kmpc`, `ompx::` and `omp_`
+     // functions, except if `optnone` is present.

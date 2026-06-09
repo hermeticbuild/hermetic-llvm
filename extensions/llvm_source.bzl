@@ -57,6 +57,7 @@ _DEFAULT_SOURCE_PATCHES = [
 ]
 
 _LLVM_21_SOURCE_PATCHES = _DEFAULT_SOURCE_PATCHES + [
+    "//3rd_party/llvm-project/21.x/patches:openmp-runtime-descriptors.patch",
     "//3rd_party/llvm-project/21.x/patches:llvm-link-multicall.patch",
     "//3rd_party/llvm-project/21.x/patches:llvm-bazel9.patch",
     "//3rd_party/llvm-project/21.x/patches:windows_link_and_genrule.patch",
@@ -70,6 +71,7 @@ _LLVM_21_SOURCE_PATCHES = _DEFAULT_SOURCE_PATCHES + [
 ]
 
 _LLVM_22_SOURCE_PATCHES = _DEFAULT_SOURCE_PATCHES + [
+    "//3rd_party/llvm-project/22.x/patches:openmp-runtime-descriptors.patch",
     "//3rd_party/llvm-project/22.x/patches:llvm-link-multicall.patch",
     "//3rd_party/llvm-project/22.x/patches:llvm-profdata-multicall.patch",
     "//3rd_party/llvm-project/22.x/patches:clang-format-multicall.patch",
