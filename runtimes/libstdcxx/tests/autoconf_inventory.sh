@@ -129,7 +129,7 @@ extract_defines() {
         token = substr(line, RSTART, RLENGTH)
         sub(/^AC_DEFINE(_UNQUOTED)?[ \t]*\(?[ \t]*\[?/, "", token)
         token = trim(token)
-        if (token != "AS_TR_CPP" && token !~ /\$/ && token ~ /^([A-Z_]|__)/) {
+        if (token != "AS_TR_CPP" && token != "HAVE_" && token !~ /\$/ && token ~ /^([A-Z_]|__)/) {
           print token
         }
         line = substr(line, RSTART + RLENGTH)
@@ -138,7 +138,7 @@ extract_defines() {
         token = substr(line, RSTART, RLENGTH)
         sub(/^AH_VERBATIM\(\[?/, "", token)
         token = trim(token)
-        if (token ~ /^([A-Z_]|__)/) {
+        if (token != "_" && token ~ /^([A-Z_]|__)/) {
           print token
         }
         line = substr(line, RSTART + RLENGTH)
@@ -254,7 +254,7 @@ extract_check_arguments() {
         if (item == "" || item ~ /^dnl$/ || item ~ /^#/ || item ~ /^\$/) {
           continue
         }
-        if (item ~ /^[A-Za-z0-9_./+-]+$/) {
+        if (item ~ /^[A-Za-z0-9_.+\/-]+$/) {
           print kind ":" item
         }
       }
@@ -289,10 +289,85 @@ extract_check_arguments() {
   ' "${all_sources[@]}" | sort -u
 }
 
+extract_check_generated_defines() {
+  extract_check_arguments | awk -F: '
+    function emit(prefix, item,    symbol) {
+      if (item == "" || item == "funclist" || item ~ /^\$/ || item ~ /[()\\&]/ || item ~ /^patsubst/) {
+        return
+      }
+      symbol = toupper(item)
+      gsub(/[^A-Z0-9_]/, "_", symbol)
+      print prefix symbol
+    }
+    $1 == "AC_CHECK_FUNCS" {
+      emit("HAVE_", $2)
+    }
+    $1 == "AC_CHECK_DECLS" {
+      emit("HAVE_DECL_", $2)
+    }
+  '
+}
+
+extract_linkage_generated_defines() {
+  awk '
+    function emit(item,    symbol) {
+      if (item == "" || item ~ /^\$/) {
+        return
+      }
+      symbol = toupper(item)
+      gsub(/[^A-Z0-9_]/, "_", symbol)
+      print "HAVE_" symbol
+    }
+    match($0, /GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_[12]\([A-Za-z_][A-Za-z0-9_]*/) {
+      token = substr($0, RSTART, RLENGTH)
+      sub(/^GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_[12]\(/, "", token)
+      emit(token)
+    }
+  ' "${all_sources[@]}" | sort -u
+}
+
+extract_constructed_defines() {
+  awk '
+    function flush_syserr(    n, i, items, item) {
+      sub(/\].*$/, "", syserrs)
+      gsub(/[,\[]/, " ", syserrs)
+      n = split(syserrs, items, /[ \t\r\n]+/)
+      for (i = 1; i <= n; ++i) {
+        item = items[i]
+        if (item ~ /^[A-Z][A-Z0-9_]+$/) {
+          print "HAVE_" item
+        }
+      }
+      syserrs = ""
+      collecting_syserrs = 0
+    }
+    /m4_foreach\(\[syserr\]/ {
+      collecting_syserrs = 1
+      syserrs = $0
+      sub(/^.*m4_foreach\(\[syserr\],[ \t]*\[/, "", syserrs)
+      if (syserrs ~ /\]/) {
+        flush_syserr()
+      }
+      next
+    }
+    collecting_syserrs {
+      syserrs = syserrs " " $0
+      if ($0 ~ /\]/) {
+        flush_syserr()
+      }
+    }
+  ' "${all_sources[@]}" | sort -u
+}
+
 write_gcc_defines() {
   output="$1"
-  extract_defines > "${output}"
-  printf '%s\n' HAVE_FPCLASS HAVE_QFPCLASS >> "${output}"
+  {
+    extract_defines
+    extract_check_generated_defines
+    extract_linkage_generated_defines
+    extract_constructed_defines
+    printf '%s\n' HAVE_FPCLASS HAVE_QFPCLASS
+  } > "${output}"
   sort -u -o "${output}" "${output}"
 }
 
@@ -342,8 +417,11 @@ check_status() {
   write_gcc_macro_uses "${gcc_macros}"
 
   gcc_major="${GCC_VERSION%%.*}"
+  gcc_minor_patch="${GCC_VERSION#*.}"
+  gcc_minor="${gcc_minor_patch%%.*}"
+  gcc_patch="${GCC_VERSION##*.}"
 
-  awk -v modeled="${modeled_defines}" -v invalid="${invalid_statuses}" -v gcc_major="${gcc_major}" '
+  awk -v modeled="${modeled_defines}" -v invalid="${invalid_statuses}" -v gcc_major="${gcc_major}" -v gcc_minor="${gcc_minor}" -v gcc_patch="${gcc_patch}" '
 BEGIN {
   known["probe-modeled"] = 1
   known["policy-modeled"] = 1
@@ -355,7 +433,60 @@ BEGIN {
   known["unsupported-feature"] = 1
   known["unsupported-target"] = 1
 }
+function version_ge(major, minor, patch) {
+  return gcc_major > major || (gcc_major == major && (gcc_minor > minor || (gcc_minor == minor && gcc_patch >= patch)))
+}
+function version_lt(major, minor, patch) {
+  return !version_ge(major, minor, patch)
+}
+function parse_version_token(token, parts,    n) {
+  parts[1] = 0
+  parts[2] = 0
+  parts[3] = 0
+  n = split(token, parts, "_")
+  if (n < 2) {
+    parts[2] = 0
+  }
+  if (n < 3) {
+    parts[3] = 0
+  }
+}
+function token_ge(token,    parts) {
+  parse_version_token(token, parts)
+  return version_ge(parts[1], parts[2], parts[3])
+}
+function token_lt(token,    parts) {
+  parse_version_token(token, parts)
+  return version_lt(parts[1], parts[2], parts[3])
+}
+function range_condition_applies(condition,    rest, bounds) {
+  if (condition ~ /^gcc_ge_[0-9]/) {
+    rest = substr(condition, 8)
+    if (rest ~ /_lt_/) {
+      split(rest, bounds, /_lt_/)
+      return token_ge(bounds[1]) && token_lt(bounds[2])
+    }
+    return token_ge(rest)
+  }
+  if (condition ~ /^gcc_lt_[0-9]/) {
+    return token_lt(substr(condition, 8))
+  }
+  return -1
+}
 function condition_applies(condition) {
+  if (condition ~ /,/) {
+    split(condition, conditions, ",")
+    for (i in conditions) {
+      if (condition_applies(conditions[i])) {
+        return 1
+      }
+    }
+    return 0
+  }
+  range_result = range_condition_applies(condition)
+  if (range_result >= 0) {
+    return range_result
+  }
   if (condition == "" || condition == "all") {
     return 1
   }
@@ -421,7 +552,7 @@ function condition_applies(condition) {
 ' "${STATUS_FILE}" | sort > "${status_defines}"
   sort -o "${modeled_defines}" "${modeled_defines}"
 
-  awk -v modeled="${modeled_macros}" -v invalid="${invalid_statuses}" -v gcc_major="${gcc_major}" '
+  awk -v modeled="${modeled_macros}" -v invalid="${invalid_statuses}" -v gcc_major="${gcc_major}" -v gcc_minor="${gcc_minor}" -v gcc_patch="${gcc_patch}" '
 BEGIN {
   known["modeled"] = 1
   known["target-derived"] = 1
@@ -430,7 +561,60 @@ BEGIN {
   known["unsupported-feature"] = 1
   known["unsupported-target"] = 1
 }
+function version_ge(major, minor, patch) {
+  return gcc_major > major || (gcc_major == major && (gcc_minor > minor || (gcc_minor == minor && gcc_patch >= patch)))
+}
+function version_lt(major, minor, patch) {
+  return !version_ge(major, minor, patch)
+}
+function parse_version_token(token, parts,    n) {
+  parts[1] = 0
+  parts[2] = 0
+  parts[3] = 0
+  n = split(token, parts, "_")
+  if (n < 2) {
+    parts[2] = 0
+  }
+  if (n < 3) {
+    parts[3] = 0
+  }
+}
+function token_ge(token,    parts) {
+  parse_version_token(token, parts)
+  return version_ge(parts[1], parts[2], parts[3])
+}
+function token_lt(token,    parts) {
+  parse_version_token(token, parts)
+  return version_lt(parts[1], parts[2], parts[3])
+}
+function range_condition_applies(condition,    rest, bounds) {
+  if (condition ~ /^gcc_ge_[0-9]/) {
+    rest = substr(condition, 8)
+    if (rest ~ /_lt_/) {
+      split(rest, bounds, /_lt_/)
+      return token_ge(bounds[1]) && token_lt(bounds[2])
+    }
+    return token_ge(rest)
+  }
+  if (condition ~ /^gcc_lt_[0-9]/) {
+    return token_lt(substr(condition, 8))
+  }
+  return -1
+}
 function condition_applies(condition) {
+  if (condition ~ /,/) {
+    split(condition, conditions, ",")
+    for (i in conditions) {
+      if (condition_applies(conditions[i])) {
+        return 1
+      }
+    }
+    return 0
+  }
+  range_result = range_condition_applies(condition)
+  if (range_result >= 0) {
+    return range_result
+  }
   if (condition == "" || condition == "all") {
     return 1
   }
