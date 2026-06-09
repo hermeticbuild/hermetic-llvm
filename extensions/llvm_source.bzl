@@ -27,6 +27,7 @@ _DEFAULT_SOURCE_PATCHES = [
     "//3rd_party/llvm-project/x.x/patches:mcsched-class-layout.patch",
     "//3rd_party/llvm-project/x.x/patches:instr-info-pack-operand-sequences.patch",
     "//3rd_party/llvm-project/x.x/patches:instr-name-table-compression.patch",
+    "//3rd_party/llvm-project/x.x/patches:mcinstrdesc-layout.patch",
     "//3rd_party/llvm-project/x.x/patches:globalisel-match-table-compaction.patch",
     "//3rd_party/llvm-project/x.x/patches:dagisel-small-integer-opcodes.patch",
     "//3rd_party/llvm-project/x.x/patches:clang-diagnostic-description-table.patch",

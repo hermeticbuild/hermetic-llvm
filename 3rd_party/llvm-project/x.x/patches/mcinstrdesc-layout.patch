@@ -1,0 +1,513 @@
+diff --git a/llvm/include/llvm/MC/MCInstrDesc.h b/llvm/include/llvm/MC/MCInstrDesc.h
+index 69dd3e2848832f475be947f9a22b89e1b8c4210d..1c828e2306c9effa6a95403d284c9e6f92381056 100644
+--- a/llvm/include/llvm/MC/MCInstrDesc.h
++++ b/llvm/include/llvm/MC/MCInstrDesc.h
+@@ -188,6 +188,7 @@ enum Flag {
+   Trap,
+   VariadicOpsAreDefs,
+   Authenticated,
++  NumFlags,
+ };
+ } // namespace MCID
+ 
+@@ -203,23 +204,43 @@ public:
+   // the <Target>Insts table because they rely on knowing their own address to
+   // find other information elsewhere in the same table.
+ 
+-  unsigned short Opcode;         // The opcode number
+-  unsigned short NumOperands;    // Num of args (may be more if variable_ops)
+-  unsigned char NumDefs;         // Num of args that are definitions
+-  unsigned char Size;            // Number of bytes in encoding.
+-  unsigned short SchedClass;     // enum identifying instr sched class
+-  unsigned char NumImplicitUses; // Num of regs implicitly used
+-  unsigned char NumImplicitDefs; // Num of regs implicitly defined
+-  unsigned short OpInfoOffset;   // Offset to info about operands
+-  unsigned short ImplicitOffset; // Offset to start of implicit op list
+-  uint64_t Flags;                // Flags identifying machine instr class
+-  uint64_t TSFlags;              // Target Specific Flag values
++  uint64_t TSFlags; // Target-specific flag values.
++  uint64_t Flags : 41; // Flags identifying machine instruction classes.
++  uint64_t Opcode : 16; // The opcode number.
++  uint64_t EncodedSize : 7; // Half the encoded size, or 127 for size 3.
++
++  // Operand counts 126 through 128 are unused. Use 126 and 127 to encode
++  // counts 129 and 130.
++  uint64_t EncodedNumOperands : 7;
++  // Definition count 127 is unused. Use it to encode 128 definitions.
++  uint64_t EncodedNumDefs : 7;
++  uint64_t SchedClass : 13;     // enum identifying instr sched class
++  uint64_t NumImplicitUses : 6; // Num of regs implicitly used
++  uint64_t NumImplicitDefs : 6; // Num of regs implicitly defined
++  uint64_t OpInfoOffset : 15;   // Offset to info about operands
++  uint64_t ImplicitOffset : 10; // Offset to start of implicit op list
++
++  constexpr MCInstrDesc(uint32_t Opcode = 0, uint16_t NumOperands = 0,
++                        uint8_t NumDefs = 0, uint8_t Size = 0,
++                        uint16_t SchedClass = 0,
++                        uint8_t NumImplicitUses = 0,
++                        uint8_t NumImplicitDefs = 0,
++                        uint16_t OpInfoOffset = 0,
++                        uint16_t ImplicitOffset = 0, uint64_t Flags = 0,
++                        uint64_t TSFlags = 0)
++      : TSFlags(TSFlags), Flags(Flags), Opcode(Opcode),
++        EncodedSize(Size == 3 ? 127 : Size / 2),
++        EncodedNumOperands(NumOperands >= 129 ? NumOperands - 3 : NumOperands),
++        EncodedNumDefs(NumDefs == 128 ? 127 : NumDefs),
++        SchedClass(SchedClass), NumImplicitUses(NumImplicitUses),
++        NumImplicitDefs(NumImplicitDefs), OpInfoOffset(OpInfoOffset),
++        ImplicitOffset(ImplicitOffset) {}
+ 
+   /// Returns the value of the specified operand constraint if
+   /// it is present. Returns -1 if it is not present.
+   int getOperandConstraint(unsigned OpNum,
+                            MCOI::OperandConstraint Constraint) const {
+-    if (OpNum < NumOperands &&
++    if (OpNum < getNumOperands() &&
+         (operands()[OpNum].Constraints & (1 << Constraint))) {
+       unsigned ValuePos = 4 + Constraint * 4;
+       return (int)(operands()[OpNum].Constraints >> ValuePos) & 0x0f;
+@@ -235,18 +256,23 @@ public:
+   /// instructions may have additional operands at the end of the list, and note
+   /// that the machine instruction may include implicit register def/uses as
+   /// well.
+-  unsigned getNumOperands() const { return NumOperands; }
++  unsigned getNumOperands() const {
++    return EncodedNumOperands >= 126 ? EncodedNumOperands + 3
++                                     : EncodedNumOperands;
++  }
+ 
+   ArrayRef<MCOperandInfo> operands() const {
+     auto OpInfo = reinterpret_cast<const MCOperandInfo *>(this + Opcode + 1);
+-    return ArrayRef(OpInfo + OpInfoOffset, NumOperands);
++    return ArrayRef(OpInfo + OpInfoOffset, getNumOperands());
+   }
+ 
+   /// Return the number of MachineOperands that are register
+   /// definitions.  Register definitions always occur at the start of the
+   /// machine operand list.  This is the number of "outs" in the .td file,
+   /// and does not include implicit defs.
+-  unsigned getNumDefs() const { return NumDefs; }
++  unsigned getNumDefs() const {
++    return EncodedNumDefs == 127 ? 128 : EncodedNumDefs;
++  }
+ 
+   /// Return flags of this instruction.
+   uint64_t getFlags() const { return Flags; }
+@@ -604,7 +630,9 @@ public:
+ 
+   /// Return the number of bytes in the encoding of this instruction,
+   /// or zero if the encoding size cannot be known from the opcode.
+-  unsigned getSize() const { return Size; }
++  unsigned getSize() const {
++    return EncodedSize == 127 ? 3 : EncodedSize * 2;
++  }
+ 
+   /// Find the index of the first operand in the
+   /// operand list that is used to represent the predicate. It returns -1 if
+@@ -624,6 +652,9 @@ public:
+                                 const MCRegisterInfo &RI) const;
+ };
+ 
++static_assert(MCID::NumFlags <= 41);
++static_assert(sizeof(MCInstrDesc) == 24);
++
+ } // end namespace llvm
+ 
+ #endif
+diff --git a/llvm/lib/MC/MCInstrDesc.cpp b/llvm/lib/MC/MCInstrDesc.cpp
+index f54db55804d3db86e11aacc773dcf274e1393600..5a7cf7ec6efde80e94616575278c64419fe2dd19 100644
+--- a/llvm/lib/MC/MCInstrDesc.cpp
++++ b/llvm/lib/MC/MCInstrDesc.cpp
+@@ -39,12 +39,12 @@ bool MCInstrDesc::hasImplicitDefOfPhysReg(MCRegister Reg,
+ 
+ bool MCInstrDesc::hasDefOfPhysReg(const MCInst &MI, MCRegister Reg,
+                                   const MCRegisterInfo &RI) const {
+-  for (int i = 0, e = NumDefs; i != e; ++i)
++  for (int i = 0, e = getNumDefs(); i != e; ++i)
+     if (MI.getOperand(i).isReg() && MI.getOperand(i).getReg() &&
+         RI.isSubRegisterEq(Reg, MI.getOperand(i).getReg()))
+       return true;
+   if (variadicOpsAreDefs())
+-    for (int i = NumOperands - 1, e = MI.getNumOperands(); i != e; ++i)
++    for (int i = getNumOperands() - 1, e = MI.getNumOperands(); i != e; ++i)
+       if (MI.getOperand(i).isReg() &&
+           RI.isSubRegisterEq(Reg, MI.getOperand(i).getReg()))
+         return true;
+diff --git a/llvm/lib/Target/AMDGPU/AsmParser/AMDGPUAsmParser.cpp b/llvm/lib/Target/AMDGPU/AsmParser/AMDGPUAsmParser.cpp
+index fa4b790b88a7902b10204f6fb6c02cbfde0d5e86..6cdec80c1585d2b1faa10aee44cda3f363326e67 100644
+--- a/llvm/lib/Target/AMDGPU/AsmParser/AMDGPUAsmParser.cpp
++++ b/llvm/lib/Target/AMDGPU/AsmParser/AMDGPUAsmParser.cpp
+@@ -1366,7 +1366,7 @@ class AMDGPUAsmParser : public MCTargetAsmParser {
+ 
+   /// Get size of register operand
+   unsigned getRegOperandSize(const MCInstrDesc &Desc, unsigned OpNo) const {
+-    assert(OpNo < Desc.NumOperands);
++    assert(OpNo < Desc.getNumOperands());
+     int16_t RCID = MII.getOpRegClassID(Desc.operands()[OpNo], HwMode);
+     return getRegBitWidth(RCID) / 8;
+   }
+@@ -9248,7 +9248,7 @@ static bool isRegOrImmWithInputMods(const MCInstrDesc &Desc, unsigned OpNum) {
+       // 1. This operand is input modifiers
+       Desc.operands()[OpNum].OperandType == AMDGPU::OPERAND_INPUT_MODS
+       // 2. This is not last operand
+-      && Desc.NumOperands > (OpNum + 1)
++      && Desc.getNumOperands() > (OpNum + 1)
+       // 3. Next operand is register class
+       && Desc.operands()[OpNum + 1].RegClass != -1
+       // 4. Next register is not tied to any other operand
+diff --git a/llvm/lib/Target/AMDGPU/SIInstrInfo.cpp b/llvm/lib/Target/AMDGPU/SIInstrInfo.cpp
+index 69bc9810782747a5c75d687f2176558b6b4958d4..cbf7ba205e2e88dcd6f2c5d9601d7fb56090604f 100644
+--- a/llvm/lib/Target/AMDGPU/SIInstrInfo.cpp
++++ b/llvm/lib/Target/AMDGPU/SIInstrInfo.cpp
+@@ -275,8 +275,8 @@ bool SIInstrInfo::areLoadsFromSameBasePtr(SDNode *Load0, SDNode *Load1,
+     // getNamedOperandIdx returns the index for MachineInstrs.  Since they
+     // include the output in the operand list, but SDNodes don't, we need to
+     // subtract the index by one.
+-    Offset0Idx -= get(Opc0).NumDefs;
+-    Offset1Idx -= get(Opc1).NumDefs;
++    Offset0Idx -= get(Opc0).getNumDefs();
++    Offset1Idx -= get(Opc1).getNumDefs();
+     Offset0 = Load0->getConstantOperandVal(Offset0Idx);
+     Offset1 = Load1->getConstantOperandVal(Offset1Idx);
+     return true;
+@@ -332,8 +332,8 @@ bool SIInstrInfo::areLoadsFromSameBasePtr(SDNode *Load0, SDNode *Load1,
+     // getNamedOperandIdx returns the index for MachineInstrs.  Since they
+     // include the output in the operand list, but SDNodes don't, we need to
+     // subtract the index by one.
+-    OffIdx0 -= get(Opc0).NumDefs;
+-    OffIdx1 -= get(Opc1).NumDefs;
++    OffIdx0 -= get(Opc0).getNumDefs();
++    OffIdx1 -= get(Opc1).getNumDefs();
+ 
+     SDValue Off0 = Load0->getOperand(OffIdx0);
+     SDValue Off1 = Load1->getOperand(OffIdx1);
+diff --git a/llvm/lib/Target/AMDGPU/SIInstrInfo.h b/llvm/lib/Target/AMDGPU/SIInstrInfo.h
+index bd4029ca970147326bc9728466c2468f8a0b47d1..ce14a4b987482ba9de743dd9c0a9cc60790fdb8e 100644
+--- a/llvm/lib/Target/AMDGPU/SIInstrInfo.h
++++ b/llvm/lib/Target/AMDGPU/SIInstrInfo.h
+@@ -1252,7 +1252,7 @@ public:
+                         const MachineOperand &DefMO) const {
+     assert(UseMO.getParent() == &MI);
+     int OpIdx = UseMO.getOperandNo();
+-    if (OpIdx >= MI.getDesc().NumOperands)
++    if (OpIdx >= MI.getDesc().getNumOperands())
+       return false;
+ 
+     return isInlineConstant(DefMO, MI.getDesc().operands()[OpIdx]);
+@@ -1267,7 +1267,7 @@ public:
+ 
+   bool isInlineConstant(const MachineInstr &MI, unsigned OpIdx,
+                         int64_t ImmVal) const {
+-    if (OpIdx >= MI.getDesc().NumOperands)
++    if (OpIdx >= MI.getDesc().getNumOperands())
+       return false;
+ 
+     if (isCopyInstr(MI)) {
+diff --git a/llvm/lib/Target/AMDGPU/Utils/AMDGPUBaseInfo.cpp b/llvm/lib/Target/AMDGPU/Utils/AMDGPUBaseInfo.cpp
+index 10cdae63d602f1331bf3d99b8add538a2edbb75d..f5fb387bbc99628e2d2b153dd51a04c451230e0f 100644
+--- a/llvm/lib/Target/AMDGPU/Utils/AMDGPUBaseInfo.cpp
++++ b/llvm/lib/Target/AMDGPU/Utils/AMDGPUBaseInfo.cpp
+@@ -2793,14 +2793,14 @@ bool isInlineValue(MCRegister Reg) {
+ #undef MAP_REG2REG
+ 
+ bool isKImmOperand(const MCInstrDesc &Desc, unsigned OpNo) {
+-  assert(OpNo < Desc.NumOperands);
++  assert(OpNo < Desc.getNumOperands());
+   unsigned OpType = Desc.operands()[OpNo].OperandType;
+   return OpType >= AMDGPU::OPERAND_KIMM_FIRST &&
+          OpType <= AMDGPU::OPERAND_KIMM_LAST;
+ }
+ 
+ bool isSISrcFPOperand(const MCInstrDesc &Desc, unsigned OpNo) {
+-  assert(OpNo < Desc.NumOperands);
++  assert(OpNo < Desc.getNumOperands());
+   unsigned OpType = Desc.operands()[OpNo].OperandType;
+   switch (OpType) {
+   case AMDGPU::OPERAND_REG_IMM_FP32:
+@@ -2823,7 +2823,7 @@ bool isSISrcFPOperand(const MCInstrDesc &Desc, unsigned OpNo) {
+ }
+ 
+ bool isSISrcInlinableOperand(const MCInstrDesc &Desc, unsigned OpNo) {
+-  assert(OpNo < Desc.NumOperands);
++  assert(OpNo < Desc.getNumOperands());
+   unsigned OpType = Desc.operands()[OpNo].OperandType;
+   return (OpType >= AMDGPU::OPERAND_REG_INLINE_C_FIRST &&
+           OpType <= AMDGPU::OPERAND_REG_INLINE_C_LAST) ||
+diff --git a/llvm/lib/Target/ARM/AsmParser/ARMAsmParser.cpp b/llvm/lib/Target/ARM/AsmParser/ARMAsmParser.cpp
+index 1bb670d195a981664a1468f4c0455ece690001f1..3236777c7a767c1347c03dcaac3b2a1119d86527 100644
+--- a/llvm/lib/Target/ARM/AsmParser/ARMAsmParser.cpp
++++ b/llvm/lib/Target/ARM/AsmParser/ARMAsmParser.cpp
+@@ -7637,7 +7637,7 @@ bool ARMAsmParser::validateLDRDSTRD(MCInst &Inst, const OperandVector &Operands,
+ }
+ 
+ static int findFirstVectorPredOperandIdx(const MCInstrDesc &MCID) {
+-  for (unsigned i = 0; i < MCID.NumOperands; ++i) {
++  for (unsigned i = 0; i < MCID.getNumOperands(); ++i) {
+     if (ARM::isVpred(MCID.operands()[i].OperandType))
+       return i;
+   }
+@@ -11207,11 +11207,11 @@ unsigned ARMAsmParser::checkTargetMatchPredicate(MCInst &Inst) {
+   if (MCID.TSFlags & ARMII::ThumbArithFlagSetting) {
+     assert(MCID.hasOptionalDef() &&
+            "optionally flag setting instruction missing optional def operand");
+-    assert(MCID.NumOperands == Inst.getNumOperands() &&
++    assert(MCID.getNumOperands() == Inst.getNumOperands() &&
+            "operand count mismatch!");
+     bool IsCPSR = false;
+     // Check if the instruction has CPSR set.
+-    for (unsigned OpNo = 0; OpNo < MCID.NumOperands; ++OpNo) {
++    for (unsigned OpNo = 0; OpNo < MCID.getNumOperands(); ++OpNo) {
+       if (MCID.operands()[OpNo].isOptionalDef() &&
+           Inst.getOperand(OpNo).isReg() &&
+           Inst.getOperand(OpNo).getReg() == ARM::CPSR)
+@@ -11298,7 +11298,7 @@ unsigned ARMAsmParser::checkTargetMatchPredicate(MCInst &Inst) {
+     break;
+   }
+ 
+-  for (unsigned I = 0; I < MCID.NumOperands; ++I)
++  for (unsigned I = 0; I < MCID.getNumOperands(); ++I)
+     if (MCID.operands()[I].RegClass == ARM::rGPRRegClassID) {
+       // rGPRRegClass excludes PC, and also excluded SP before ARMv8
+       const auto &Op = Inst.getOperand(I);
+diff --git a/llvm/lib/Target/ARM/Disassembler/ARMDisassembler.cpp b/llvm/lib/Target/ARM/Disassembler/ARMDisassembler.cpp
+index 44f50dd03e54f7693dea62fdeef41daffeec6993..2b67d82b33e2f5f68e9202daebb375aafb00ad2b 100644
+--- a/llvm/lib/Target/ARM/Disassembler/ARMDisassembler.cpp
++++ b/llvm/lib/Target/ARM/Disassembler/ARMDisassembler.cpp
+@@ -6242,7 +6242,7 @@ DecodeStatus ARMDisassembler::getARMInstruction(MCInst &MI, uint64_t &Size,
+ 
+ bool ARMDisassembler::isVectorPredicable(const MCInst &MI) const {
+   const MCInstrDesc &MCID = MCII->get(MI.getOpcode());
+-  for (unsigned i = 0; i < MCID.NumOperands; ++i) {
++  for (unsigned i = 0; i < MCID.getNumOperands(); ++i) {
+     if (ARM::isVpred(MCID.operands()[i].OperandType))
+       return true;
+   }
+@@ -6332,7 +6332,7 @@ void ARMDisassembler::UpdateThumbPredicate(DecodeStatus &S, MCInst &MI) const {
+   const MCInstrDesc &MCID = MCII->get(MI.getOpcode());
+   ArrayRef<MCOperandInfo> OpInfo = MCID.operands();
+   MCInst::iterator I = MI.begin();
+-  unsigned short NumOps = MCID.NumOperands;
++  unsigned short NumOps = MCID.getNumOperands();
+   for (unsigned i = 0; i < NumOps; ++i, ++I) {
+     if (OpInfo[i].isPredicate() ) {
+       if (CC != ARMCC::AL && !MCID.isPredicable())
+diff --git a/llvm/lib/Target/ARM/MCTargetDesc/ARMMCTargetDesc.cpp b/llvm/lib/Target/ARM/MCTargetDesc/ARMMCTargetDesc.cpp
+index e84aaaad3750df0df8d262661c4347040137006c..1e14a377bff2da3ff8cc43a2d45ad88a6bfa5062 100644
+--- a/llvm/lib/Target/ARM/MCTargetDesc/ARMMCTargetDesc.cpp
++++ b/llvm/lib/Target/ARM/MCTargetDesc/ARMMCTargetDesc.cpp
+@@ -572,7 +572,7 @@ std::optional<uint64_t> ARMMCInstrAnalysis::evaluateMemoryOperandAddress(
+     return std::nullopt;
+ 
+   // Find the memory addressing operand in the instruction.
+-  unsigned OpIndex = Desc.NumDefs;
++  unsigned OpIndex = Desc.getNumDefs();
+   while (OpIndex < Desc.getNumOperands() &&
+          Desc.operands()[OpIndex].OperandType != MCOI::OPERAND_MEMORY)
+     ++OpIndex;
+diff --git a/llvm/lib/Target/Mips/MipsSEInstrInfo.cpp b/llvm/lib/Target/Mips/MipsSEInstrInfo.cpp
+index 36953ecd1f5326fcb9ee3939040ca3f649e6d929..52a02b48fa0a1cc6ad81098eeab5cc5e8a74d2c2 100644
+--- a/llvm/lib/Target/Mips/MipsSEInstrInfo.cpp
++++ b/llvm/lib/Target/Mips/MipsSEInstrInfo.cpp
+@@ -771,7 +771,7 @@ std::pair<bool, bool>
+ MipsSEInstrInfo::compareOpndSize(unsigned Opc,
+                                  const MachineFunction &MF) const {
+   const MCInstrDesc &Desc = get(Opc);
+-  assert(Desc.NumOperands == 2 && "Unary instruction expected.");
++  assert(Desc.getNumOperands() == 2 && "Unary instruction expected.");
+   const MipsRegisterInfo *RI = &getRegisterInfo();
+   unsigned DstRegSize = RI->getRegSizeInBits(*getRegClass(Desc, 0));
+   unsigned SrcRegSize = RI->getRegSizeInBits(*getRegClass(Desc, 1));
+diff --git a/llvm/lib/Target/WebAssembly/MCTargetDesc/WebAssemblyInstPrinter.cpp b/llvm/lib/Target/WebAssembly/MCTargetDesc/WebAssemblyInstPrinter.cpp
+index 651f631c1ee554e1770840669c7dcd00270c70c1..fa04c50038ff867f4081fea2210809cd4ec4aef1 100644
+--- a/llvm/lib/Target/WebAssembly/MCTargetDesc/WebAssemblyInstPrinter.cpp
++++ b/llvm/lib/Target/WebAssembly/MCTargetDesc/WebAssemblyInstPrinter.cpp
+@@ -267,7 +267,7 @@ void WebAssemblyInstPrinter::printInst(const MCInst *MI, uint64_t Address,
+ 
+     // Annotate any control flow label references.
+ 
+-    unsigned NumFixedOperands = Desc.NumOperands;
++    unsigned NumFixedOperands = Desc.getNumOperands();
+     SmallSet<uint64_t, 8> Printed;
+     for (unsigned I = 0, E = MI->getNumOperands(); I < E; ++I) {
+       // See if this operand denotes a basic block target.
+diff --git a/llvm/lib/Target/WebAssembly/WebAssemblyMCInstLower.cpp b/llvm/lib/Target/WebAssembly/WebAssemblyMCInstLower.cpp
+index e48283aadb43793dd1377b870d65a18fc090c034..faf43140e57cd05ce10e76d0a34a672c6e585660 100644
+--- a/llvm/lib/Target/WebAssembly/WebAssemblyMCInstLower.cpp
++++ b/llvm/lib/Target/WebAssembly/WebAssemblyMCInstLower.cpp
+@@ -234,7 +234,8 @@ void WebAssemblyMCInstLower::lower(const MachineInstr *MI,
+       // Currently this is the only way that CImmediates show up so panic if we
+       // get confused.
+       unsigned DescIndex = I - NumVariadicDefs;
+-      assert(DescIndex < Desc.NumOperands && "unexpected CImmediate operand");
++      assert(DescIndex < Desc.getNumOperands() &&
++             "unexpected CImmediate operand");
+       auto Operands = Desc.operands();
+       const MCOperandInfo &Info = Operands[DescIndex];
+       assert(Info.OperandType == WebAssembly::OPERAND_TYPEINDEX &&
+@@ -245,7 +246,7 @@ void WebAssemblyMCInstLower::lower(const MachineInstr *MI,
+     }
+     case MachineOperand::MO_Immediate: {
+       unsigned DescIndex = I - NumVariadicDefs;
+-      if (DescIndex < Desc.NumOperands) {
++      if (DescIndex < Desc.getNumOperands()) {
+         auto Operands = Desc.operands();
+         const MCOperandInfo &Info = Operands[DescIndex];
+         // Replace type index placeholder with actual type index. The type index
+diff --git a/llvm/lib/Target/X86/X86InstrInfo.cpp b/llvm/lib/Target/X86/X86InstrInfo.cpp
+index 53b148c11c4e136b16cc5fc6879358af97a4552c..99624ba4e6ed7b93811b3c5445209eeea2caba50 100644
+--- a/llvm/lib/Target/X86/X86InstrInfo.cpp
++++ b/llvm/lib/Target/X86/X86InstrInfo.cpp
+@@ -8705,7 +8705,7 @@ bool X86InstrInfo::unfoldMemoryOperand(
+   MachineFunction &MF = DAG.getMachineFunction();
+   const TargetRegisterInfo &TRI = *MF.getSubtarget().getRegisterInfo();
+   const TargetRegisterClass *RC = getRegClass(MCID, Index);
+-  unsigned NumDefs = MCID.NumDefs;
++  unsigned NumDefs = MCID.getNumDefs();
+   std::vector<SDValue> AddrOps;
+   std::vector<SDValue> BeforeOps;
+   std::vector<SDValue> AfterOps;
+diff --git a/llvm/test/TableGen/InstrInfoEmitterErrors.td b/llvm/test/TableGen/InstrInfoEmitterErrors.td
+new file mode 100644
+index 0000000000000000000000000000000000000000..32ea972c28a53b04c6b050c55745d97fe43dac7d
+--- /dev/null
++++ b/llvm/test/TableGen/InstrInfoEmitterErrors.td
+@@ -0,0 +1,20 @@
++// RUN: not llvm-tblgen -gen-instr-info -I %p/../../include %s 2>&1 | FileCheck %s
++
++include "llvm/Target/Target.td"
++
++def Reg : Register<"reg">;
++def Regs : RegisterClass<"test", [i32], 0, (add Reg)>;
++
++def TestInstrInfo : InstrInfo;
++def TestTarget : Target {
++  let InstructionSet = TestInstrInfo;
++}
++
++// CHECK: error: instruction size cannot be encoded in 7 bits
++def InvalidSize : Instruction {
++  let Namespace = "Test";
++  let OutOperandList = (outs);
++  let InOperandList = (ins);
++  let AsmString = "";
++  let Size = 254;
++}
+diff --git a/llvm/unittests/MC/CMakeLists.txt b/llvm/unittests/MC/CMakeLists.txt
+index da8e219113f465f9e39ce0a370e2a514d7f34c9c..7064be5479f371a1019accb09cfba266d6e91059 100644
+--- a/llvm/unittests/MC/CMakeLists.txt
++++ b/llvm/unittests/MC/CMakeLists.txt
+@@ -18,8 +18,8 @@ add_llvm_unittest(MCTests
+   DwarfLineTables.cpp
+   DwarfLineTableHeaders.cpp
+   MCInstPrinter.cpp
++  MCInstrDescTest.cpp
+   StringTableBuilderTest.cpp
+   TargetRegistry.cpp
+   MCDisassemblerTest.cpp
+   )
+-
+diff --git a/llvm/unittests/MC/MCInstrDescTest.cpp b/llvm/unittests/MC/MCInstrDescTest.cpp
+new file mode 100644
+index 0000000000000000000000000000000000000000..7228614945e1e7d92b7326415427ed0f125a9e62
+--- /dev/null
++++ b/llvm/unittests/MC/MCInstrDescTest.cpp
+@@ -0,0 +1,41 @@
++//===- MCInstrDescTest.cpp - MCInstrDesc unit tests -----------------------===//
++//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// See https://llvm.org/LICENSE.txt for license information.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++//
++//===----------------------------------------------------------------------===//
++
++#include "llvm/MC/MCInstrDesc.h"
++#include "gtest/gtest.h"
++
++using namespace llvm;
++
++namespace {
++
++TEST(MCInstrDescTest, PackedFields) {
++  for (unsigned NumOperands : {0U, 1U, 125U, 129U, 130U}) {
++    for (unsigned NumDefs : {0U, 1U, 126U, 128U}) {
++      for (unsigned Size : {0U, 2U, 3U, 4U, 252U}) {
++        MCInstrDesc Desc(65535, NumOperands, NumDefs, Size, 8191, 63, 63,
++                         32767, 1023,
++                         (1ULL << MCID::Authenticated) | 1, UINT64_MAX);
++
++        EXPECT_EQ(Desc.getOpcode(), 65535U);
++        EXPECT_EQ(Desc.getNumOperands(), NumOperands);
++        EXPECT_EQ(Desc.getNumDefs(), NumDefs);
++        EXPECT_EQ(Desc.getSize(), Size);
++        EXPECT_EQ(Desc.getSchedClass(), 8191U);
++        EXPECT_EQ(Desc.NumImplicitUses, 63U);
++        EXPECT_EQ(Desc.NumImplicitDefs, 63U);
++        EXPECT_EQ(Desc.OpInfoOffset, 32767U);
++        EXPECT_EQ(Desc.ImplicitOffset, 1023U);
++        EXPECT_TRUE(Desc.isPreISelOpcode());
++        EXPECT_TRUE(Desc.isAuthenticated());
++        EXPECT_EQ(Desc.TSFlags, UINT64_MAX);
++      }
++    }
++  }
++}
++
++} // namespace
+diff --git a/llvm/utils/TableGen/InstrInfoEmitter.cpp b/llvm/utils/TableGen/InstrInfoEmitter.cpp
+index 8442ad0dc0eddae1dffe86bd16003c2238016495..27cf83816e535708762783b7c662cbce89a4500b 100644
+--- a/llvm/utils/TableGen/InstrInfoEmitter.cpp
++++ b/llvm/utils/TableGen/InstrInfoEmitter.cpp
+@@ -950,6 +950,8 @@ void InstrInfoEmitter::run(raw_ostream &OS) {
+       ImplicitListSize += ImplicitOps.size();
+     }
+   }
++  if (!isUInt<10>(ImplicitListSize))
++    PrintFatalError("implicit operand table does not fit in 10-bit offsets");
+ 
+   {
+     IfGuardEmitter IfGuard(
+@@ -1002,7 +1004,10 @@ void InstrInfoEmitter::run(raw_ostream &OS) {
+        << "InstrTable::Padding) % sizeof(MCOperandInfo) == 0);\n";
+     OS << "static constexpr unsigned " << TargetName << "OpInfoBase = (sizeof "
+        << TargetName << "InstrTable::ImplicitOps + sizeof " << TargetName
+-       << "InstrTable::Padding) / sizeof(MCOperandInfo);\n\n";
++       << "InstrTable::Padding) / sizeof(MCOperandInfo);\n";
++    OS << "static_assert(" << TargetName << "OpInfoBase + " << OperandInfoSize
++       << " <= (1U << 15), "
++          "\"operand info table does not fit in 15-bit offsets\");\n\n";
+ 
+     OS << "extern const " << TargetName << "InstrTable " << TargetName
+        << "Descs = {\n  {\n";
+@@ -1295,10 +1300,30 @@ void InstrInfoEmitter::emitRecord(
+     DefOperands = Opnd.MIOperandNo + Opnd.MINumOperands;
+   }
+ 
++  int64_t Size = Inst.TheDef->getValueAsInt("Size");
++  unsigned SchedClass = SchedModels.getSchedClassIdx(Inst);
++  if (!isUInt<16>(Num))
++    PrintFatalError(Inst.TheDef, "instruction opcode does not fit in 16 bits");
++  if (MinOperands > 125 && MinOperands != 129 && MinOperands != 130)
++    PrintFatalError(Inst.TheDef,
++                    "instruction operand count cannot be encoded in 7 bits");
++  if (DefOperands > 126 && DefOperands != 128)
++    PrintFatalError(Inst.TheDef,
++                    "instruction definition count cannot be encoded in 7 bits");
++  if (Size != 3 && (Size < 0 || Size > 252 || Size % 2 != 0))
++    PrintFatalError(Inst.TheDef,
++                    "instruction size cannot be encoded in 7 bits");
++  if (!isUInt<13>(SchedClass))
++    PrintFatalError(Inst.TheDef,
++                    "instruction scheduling class does not fit in 13 bits");
++  if (!isUInt<6>(Inst.ImplicitUses.size()) ||
++      !isUInt<6>(Inst.ImplicitDefs.size()))
++    PrintFatalError(Inst.TheDef,
++                    "implicit register count does not fit in 6 bits");
++
+   OS << "    { ";
+   OS << Num << ",\t" << MinOperands << ",\t" << DefOperands << ",\t"
+-     << Inst.TheDef->getValueAsInt("Size") << ",\t"
+-     << SchedModels.getSchedClassIdx(Inst) << ",\t";
++     << Size << ",\t" << SchedClass << ",\t";
+ 
+   const CodeGenTarget &Target = CDP.getTargetInfo();
+ 
