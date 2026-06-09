@@ -23,12 +23,14 @@ load(
     "libstdcxx_has_networking_o_nonblock_check",
     "libstdcxx_has_no_sleep_policy",
     "libstdcxx_has_posix_semaphore_check",
+    "libstdcxx_has_pthread_clock_checks",
     "libstdcxx_has_stdio_locking_checks",
     "libstdcxx_has_struct_tm_tm_zone_check",
     "libstdcxx_has_system_error_check",
     "libstdcxx_has_text_encoding_checks",
     "libstdcxx_has_uchar_char8_checks",
     "libstdcxx_has_uselocale_check",
+    "libstdcxx_has_x86_rdseed_check",
     "libstdcxx_has_zoneinfo_policy",
 )
 load(
@@ -1007,7 +1009,7 @@ def glibcxx_check_tmpnam():
     return [function_link_check("_GLIBCXX_USE_TMPNAM", "stdio.h", "char buf[L_tmpnam]; tmpnam(buf)")]
 
 def glibcxx_check_pthread_clock_apis(gcc_version):
-    if gcc_version_less_than_for(gcc_version, "10.0.0"):
+    if not libstdcxx_has_pthread_clock_checks(gcc_version):
         return []
     return [
         link_check(
@@ -1430,7 +1432,7 @@ int main() { unsigned int v; asm("rdrand %eax"); return __builtin_ia32_rdrand32_
 int main() { return strnlen("", 1); }
 """,
         ))
-    if gcc_version_at_least_for(gcc_version, "10.0.0"):
+    if libstdcxx_has_x86_rdseed_check(gcc_version):
         checks.append(compile_check(
             name = "_GLIBCXX_X86_RDSEED",
             language = "c++",

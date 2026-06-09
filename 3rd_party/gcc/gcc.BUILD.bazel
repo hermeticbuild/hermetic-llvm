@@ -2,7 +2,7 @@ load("@bazel_lib//lib:copy_file.bzl", "copy_file")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
-load("@llvm//3rd_party/gcc:version.bzl", "gcc_version_at_least_for", "gcc_version_less_than_for")
+load("@llvm//3rd_party/gcc:version.bzl", "gcc_config_toolexeclibdir_target", "gcc_version_at_least_for", "gcc_version_less_than_for")
 load("@llvm//3rd_party/gcc/libstdcxx:libstdcxx_config_h.bzl", "libstdcxx_config_h")
 load("@llvm//3rd_party/gcc/libstdcxx:libstdcxx_cxxconfig_header.bzl", "libstdcxx_cxxconfig_header")
 load("@llvm//3rd_party/gcc/libstdcxx:libstdcxx_gthr_headers.bzl", "libstdcxx_gthr_headers")
@@ -58,6 +58,12 @@ package(default_visibility = ["//visibility:public"])
 filegroup(
     name = "empty",
     srcs = [],
+)
+
+write_file(
+    name = "gcc_config_toolexeclibdir_m4",
+    out = "gcc_config_generated/toolexeclibdir.m4",
+    content = [],
 )
 
 write_file(
@@ -223,6 +229,19 @@ _GCC_11_CXX17_SOURCES = [
     "libstdc++-v3/src/c++17/floating_to_chars.cc",
 ]
 
+_GCC_10_STD_HEADERS = [
+    "libstdc++-v3/include/std/concepts",
+    "libstdc++-v3/include/std/coroutine",
+    "libstdc++-v3/include/std/numbers",
+    "libstdc++-v3/include/std/ranges",
+    "libstdc++-v3/include/std/span",
+    "libstdc++-v3/include/std/stop_token",
+]
+
+_GCC_10_LIBSUPCXX_HEADERS = [
+    "libstdc++-v3/libsupc++/compare",
+]
+
 _GCC_EXPERIMENTAL_FS_PATH_STRUCTURED_HEADER_EXCLUDES = [
     "libstdc++-v3/include/experimental/bits/fs_path.h",
 ]
@@ -253,6 +272,10 @@ _GCC_LT_11_CXX17_COW_STRING_SOURCES = [
 _GCC_11_CXX17_COW_STRING_SOURCES = [
     ":libstdcxx_cxx17_cow_string_inst_cc",
     ":libstdcxx_cxx17_cow_string_inst_inc",
+]
+
+_GCC_9_LIBSUPCXX_PRIVATE_HEADERS = [
+    "libstdc++-v3/libsupc++/eh_term_handler.h",
 ]
 
 # Keep this export list in sync with the sparse archive roots in
@@ -372,9 +395,7 @@ filegroup(
         "libstdc++-v3/include/std/chrono",
         "libstdc++-v3/include/std/codecvt",
         "libstdc++-v3/include/std/complex",
-        "libstdc++-v3/include/std/concepts",
         "libstdc++-v3/include/std/condition_variable",
-        "libstdc++-v3/include/std/coroutine",
         "libstdc++-v3/include/std/deque",
         "libstdc++-v3/include/std/execution",
         "libstdc++-v3/include/std/filesystem",
@@ -395,23 +416,19 @@ filegroup(
         "libstdc++-v3/include/std/memory",
         "libstdc++-v3/include/std/memory_resource",
         "libstdc++-v3/include/std/mutex",
-        "libstdc++-v3/include/std/numbers",
         "libstdc++-v3/include/std/numeric",
         "libstdc++-v3/include/std/optional",
         "libstdc++-v3/include/std/ostream",
         "libstdc++-v3/include/std/queue",
         "libstdc++-v3/include/std/random",
-        "libstdc++-v3/include/std/ranges",
         "libstdc++-v3/include/std/ratio",
         "libstdc++-v3/include/std/regex",
         "libstdc++-v3/include/std/scoped_allocator",
         "libstdc++-v3/include/std/set",
         "libstdc++-v3/include/std/shared_mutex",
-        "libstdc++-v3/include/std/span",
         "libstdc++-v3/include/std/sstream",
         "libstdc++-v3/include/std/stack",
         "libstdc++-v3/include/std/stdexcept",
-        "libstdc++-v3/include/std/stop_token",
         "libstdc++-v3/include/std/streambuf",
         "libstdc++-v3/include/std/string",
         "libstdc++-v3/include/std/string_view",
@@ -427,7 +444,7 @@ filegroup(
         "libstdc++-v3/include/std/variant",
         "libstdc++-v3/include/std/vector",
         "libstdc++-v3/include/std/version",
-    ] + (_GCC_11_STD_HEADERS if gcc_version_at_least_for(GCC_VERSION, "11.0.0") else []) + (_GCC_12_STD_HEADERS if gcc_version_at_least_for(GCC_VERSION, "12.0.0") else []) + (_GCC_13_STD_HEADERS if gcc_version_at_least_for(GCC_VERSION, "13.0.0") else []) + (_GCC_14_STD_HEADERS if gcc_version_at_least_for(GCC_VERSION, "14.0.0") else []) + (_GCC_15_STD_HEADERS if gcc_version_at_least_for(GCC_VERSION, "15.0.0") else []) + (_GCC_16_STD_HEADERS if gcc_version_at_least_for(GCC_VERSION, "16.0.0") else []),
+    ] + (_GCC_10_STD_HEADERS if gcc_version_at_least_for(GCC_VERSION, "10.0.0") else []) + (_GCC_11_STD_HEADERS if gcc_version_at_least_for(GCC_VERSION, "11.0.0") else []) + (_GCC_12_STD_HEADERS if gcc_version_at_least_for(GCC_VERSION, "12.0.0") else []) + (_GCC_13_STD_HEADERS if gcc_version_at_least_for(GCC_VERSION, "13.0.0") else []) + (_GCC_14_STD_HEADERS if gcc_version_at_least_for(GCC_VERSION, "14.0.0") else []) + (_GCC_15_STD_HEADERS if gcc_version_at_least_for(GCC_VERSION, "15.0.0") else []) + (_GCC_16_STD_HEADERS if gcc_version_at_least_for(GCC_VERSION, "16.0.0") else []),
 )
 
 filegroup(
@@ -507,7 +524,6 @@ filegroup(
     name = "libsupcxx_headers",
     srcs = [
         "libstdc++-v3/libsupc++/atomic_lockfree_defines.h",
-        "libstdc++-v3/libsupc++/compare",
         "libstdc++-v3/libsupc++/cxxabi.h",
         "libstdc++-v3/libsupc++/cxxabi_forced.h",
         "libstdc++-v3/libsupc++/cxxabi_init_exception.h",
@@ -520,7 +536,7 @@ filegroup(
         "libstdc++-v3/libsupc++/nested_exception.h",
         "libstdc++-v3/libsupc++/new",
         "libstdc++-v3/libsupc++/typeinfo",
-    ],
+    ] + (_GCC_10_LIBSUPCXX_HEADERS if gcc_version_at_least_for(GCC_VERSION, "10.0.0") else []),
 )
 
 filegroup(
@@ -599,10 +615,9 @@ filegroup(
     srcs = [
         "libgcc/unwind-pe.h",
         "libstdc++-v3/libsupc++/eh_atomics.h",
-        "libstdc++-v3/libsupc++/eh_term_handler.h",
         "libstdc++-v3/libsupc++/tinfo.h",
         "libstdc++-v3/libsupc++/unwind-cxx.h",
-    ],
+    ] + (_GCC_9_LIBSUPCXX_PRIVATE_HEADERS if gcc_version_at_least_for(GCC_VERSION, "9.3.0") else []),
 )
 
 # cp-demangle.c is pulled from libiberty by libsupc++/Makefile.am; the minimal
@@ -1818,7 +1833,7 @@ copy_to_directory(
         "config/multi.m4",
         "config/no-executables.m4",
         "config/tls.m4",
-        "config/toolexeclibdir.m4",
+        gcc_config_toolexeclibdir_target(GCC_VERSION),
         "config/unwind_ipinfo.m4",
         "libstdc++-v3/acinclude.m4",
         "libstdc++-v3/configure.ac",
@@ -1826,4 +1841,7 @@ copy_to_directory(
         "libstdc++-v3/crossconfig.m4",
         "libstdc++-v3/linkage.m4",
     ],
+    replace_prefixes = {
+        "gcc_config_generated": "config",
+    },
 )

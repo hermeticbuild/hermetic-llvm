@@ -5,9 +5,9 @@ load(
     "//3rd_party/gcc:version.bzl",
     "GCC_RELEASES",
     "GCC_VERSIONS",
+    "gcc_has_config_toolexeclibdir_m4",
     "gcc_patches",
     "gcc_repo_name",
-    "gcc_version_at_least_for",
 )
 
 # Sparse archive roots required by 3rd_party/gcc/gcc.BUILD.bazel. Before
@@ -102,7 +102,7 @@ def _gcc_impl(module_ctx):
                 generated_files = {
                     "version.bzl": "GCC_VERSION = \"{}\"\n".format(version),
                 },
-                includes = _GCC_ARCHIVE_INCLUDES + (_GCC_10_ARCHIVE_INCLUDES if gcc_version_at_least_for(version, "10.0.0") else []),
+                includes = _GCC_ARCHIVE_INCLUDES + (_GCC_10_ARCHIVE_INCLUDES if gcc_has_config_toolexeclibdir_m4(version) else []),
                 patch_args = ["-p1"],
                 patches = [Label(patch) for patch in gcc_patches(version)],
                 sha256 = release["sha256"],

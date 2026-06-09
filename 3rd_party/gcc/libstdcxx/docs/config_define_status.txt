@@ -36,25 +36,25 @@ HAVE_COSHL probe-modeled
 HAVE_COSL probe-modeled
 HAVE_DIRFD probe-modeled gcc_ge_11_5
 HAVE_DECL_STRNLEN probe-modeled gcc_ge_12
-HAVE_EBADMSG policy-modeled gcc_lt_10_3
-HAVE_ECANCELED policy-modeled gcc_lt_10_3
-HAVE_ECHILD policy-modeled gcc_lt_10_3
-HAVE_EIDRM policy-modeled gcc_lt_10_3
-HAVE_ENODATA policy-modeled gcc_lt_10_3
-HAVE_ENOLINK policy-modeled gcc_lt_10_3
-HAVE_ENOSPC policy-modeled gcc_lt_10_3
-HAVE_ENOSR policy-modeled gcc_lt_10_3
-HAVE_ENOSTR policy-modeled gcc_lt_10_3
-HAVE_ENOTRECOVERABLE policy-modeled gcc_lt_10_3
-HAVE_ENOTSUP policy-modeled gcc_lt_10_3
-HAVE_EOVERFLOW policy-modeled gcc_lt_10_3
-HAVE_EOWNERDEAD policy-modeled gcc_lt_10_3
-HAVE_EPERM policy-modeled gcc_lt_10_3
-HAVE_EPROTO policy-modeled gcc_lt_10_3
-HAVE_ETIME policy-modeled gcc_lt_10_3
-HAVE_ETIMEDOUT policy-modeled gcc_lt_10_3
-HAVE_ETXTBSY policy-modeled gcc_lt_10_3
-HAVE_EWOULDBLOCK policy-modeled gcc_lt_10_3
+HAVE_EBADMSG policy-modeled gcc_lt_9_5,gcc_ge_10_1_lt_10_3
+HAVE_ECANCELED policy-modeled gcc_lt_9_5,gcc_ge_10_1_lt_10_3
+HAVE_ECHILD policy-modeled gcc_lt_9_5,gcc_ge_10_1_lt_10_3
+HAVE_EIDRM policy-modeled gcc_lt_9_5,gcc_ge_10_1_lt_10_3
+HAVE_ENODATA policy-modeled gcc_lt_9_5,gcc_ge_10_1_lt_10_3
+HAVE_ENOLINK policy-modeled gcc_lt_9_5,gcc_ge_10_1_lt_10_3
+HAVE_ENOSPC policy-modeled gcc_lt_9_5,gcc_ge_10_1_lt_10_3
+HAVE_ENOSR policy-modeled gcc_lt_9_5,gcc_ge_10_1_lt_10_3
+HAVE_ENOSTR policy-modeled gcc_lt_9_5,gcc_ge_10_1_lt_10_3
+HAVE_ENOTRECOVERABLE policy-modeled gcc_lt_9_5,gcc_ge_10_1_lt_10_3
+HAVE_ENOTSUP policy-modeled gcc_lt_9_5,gcc_ge_10_1_lt_10_3
+HAVE_EOVERFLOW policy-modeled gcc_lt_9_5,gcc_ge_10_1_lt_10_3
+HAVE_EOWNERDEAD policy-modeled gcc_lt_9_5,gcc_ge_10_1_lt_10_3
+HAVE_EPERM policy-modeled gcc_lt_9_5,gcc_ge_10_1_lt_10_3
+HAVE_EPROTO policy-modeled gcc_lt_9_5,gcc_ge_10_1_lt_10_3
+HAVE_ETIME policy-modeled gcc_lt_9_5,gcc_ge_10_1_lt_10_3
+HAVE_ETIMEDOUT policy-modeled gcc_lt_9_5,gcc_ge_10_1_lt_10_3
+HAVE_ETXTBSY policy-modeled gcc_lt_9_5,gcc_ge_10_1_lt_10_3
+HAVE_EWOULDBLOCK policy-modeled gcc_lt_9_5,gcc_ge_10_1_lt_10_3
 HAVE_EXCEPTION_PTR_SINCE_GCC46 policy-modeled
 HAVE_EXPF probe-modeled
 HAVE_EXPL probe-modeled
@@ -245,9 +245,9 @@ _GLIBCXX_USE_NLS build-setting-later
 _GLIBCXX_USE_NL_LANGINFO_L probe-modeled gcc_ge_14
 _GLIBCXX_USE_PROC_SELF_STATUS policy-modeled gcc_ge_16
 _GLIBCXX_USE_PTHREADS_NUM_PROCESSORS_NP probe-modeled
-_GLIBCXX_USE_PTHREAD_COND_CLOCKWAIT probe-modeled
-_GLIBCXX_USE_PTHREAD_MUTEX_CLOCKLOCK probe-modeled
-_GLIBCXX_USE_PTHREAD_RWLOCK_CLOCKLOCK probe-modeled
+_GLIBCXX_USE_PTHREAD_COND_CLOCKWAIT probe-modeled gcc_ge_10
+_GLIBCXX_USE_PTHREAD_MUTEX_CLOCKLOCK probe-modeled gcc_ge_10
+_GLIBCXX_USE_PTHREAD_RWLOCK_CLOCKLOCK probe-modeled gcc_ge_10
 _GLIBCXX_USE_PTHREAD_RWLOCK_T probe-modeled
 _GLIBCXX_USE_PTRACE probe-modeled gcc_ge_16
 _GLIBCXX_USE_RANDOM_TR1 policy-modeled
@@ -271,7 +271,7 @@ _GLIBCXX_USE_WIN32_SLEEP policy-modeled gcc_ge_13
 _GLIBCXX_USE__GET_OSFHANDLE unsupported-target gcc_ge_14
 _GLIBCXX_VERBOSE policy-modeled
 _GLIBCXX_X86_RDRAND probe-modeled
-_GLIBCXX_X86_RDSEED probe-modeled
+_GLIBCXX_X86_RDSEED probe-modeled gcc_ge_10
 _GLIBCXX_ZONEINFO_DIR policy-modeled gcc_ge_13
 _GTHREAD_USE_MUTEX_TIMEDLOCK probe-modeled
 __CORRECT_ISO_CPP11_MATH_H_PROTO_FP unsupported-target

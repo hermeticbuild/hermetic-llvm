@@ -24,6 +24,11 @@ GCC_VERSIONS = [
     "10.3.0",
     "10.2.0",
     "10.1.0",
+    "9.5.0",
+    "9.4.0",
+    "9.3.0",
+    "9.2.0",
+    "9.1.0",
 ]
 
 DEFAULT_GCC_VERSION = "17.0.0"
@@ -129,6 +134,26 @@ GCC_RELEASES = {
         "commit": "d04fe5541c53cb16d1ca5c80da044b4c7633dbc6",
         "sha256": "ecace41b1e79da90f87d71c2bb6fce5c53eb126ec3a4c376bbc8d296c77753e9",
     },
+    "9.1.0": {
+        "commit": "c8913260b0756f977ab5e6e6392c51a83657fffc",
+        "sha256": "b4ade971adfc94650c2af6d7daf7bac6dbf6c8c8131b1d63e139a6dc3160ecbb",
+    },
+    "9.2.0": {
+        "commit": "a0c06cc27d2146b7d86758ffa236516c6143d62c",
+        "sha256": "75871cd2d0fb91f108253bf271e0063fe68f5ad7fee4d2931f8ea2102b09dd5e",
+    },
+    "9.3.0": {
+        "commit": "4212a6a3e44f870412d9025eeb323fd4f50a61da",
+        "sha256": "e15f544b409cd90fe281989fad7d06475486961e553080ec0852153e7e7fa21f",
+    },
+    "9.4.0": {
+        "commit": "13c83c4cc679ad5383ed57f359e53e8d518b7842",
+        "sha256": "efc27f0a4a83f7bb534c195e16e63a367e109878ab98975f2731b47cbb35287a",
+    },
+    "9.5.0": {
+        "commit": "7a15b5060a83ea8282323d92043c6152e6a3e22d",
+        "sha256": "a41dba755e4cbcb96a984cd2284c37df4ddf0db094a9af3acd4e4647cd416848",
+    },
 }
 
 GCC_VERSION = DEFAULT_GCC_VERSION
@@ -206,6 +231,30 @@ GCC_PATCHES = {
         _libstdcxx_patch("10.1-10.2/libstdcxx-filesystem-source-noexcept.patch"),
         _libstdcxx_patch("10.x/libstdcxx-constinit.patch"),
     ],
+    "9.5.0": [
+        _libstdcxx_patch("9.3-9.5/libstdcxx-cow-string-inst.patch"),
+        _libstdcxx_patch("9.5.0/libstdcxx-experimental-fs-path-noexcept.patch"),
+        _libstdcxx_patch("9.x/libstdcxx-pstl-disable-parallel-policies.patch"),
+    ],
+    "9.4.0": [
+        _libstdcxx_patch("9.3-9.5/libstdcxx-cow-string-inst.patch"),
+        _libstdcxx_patch("9.x/libstdcxx-pstl-disable-parallel-policies.patch"),
+    ],
+    "9.3.0": [
+        _libstdcxx_patch("9.3-9.5/libstdcxx-cow-string-inst.patch"),
+        _libstdcxx_patch("9.3.0/libstdcxx-filesystem-source-noexcept.patch"),
+        _libstdcxx_patch("9.x/libstdcxx-pstl-disable-parallel-policies.patch"),
+    ],
+    "9.2.0": [
+        _libstdcxx_patch("9.1-9.2/libstdcxx-cow-string-inst.patch"),
+        _libstdcxx_patch("9.1-9.2/libstdcxx-filesystem-source-noexcept.patch"),
+        _libstdcxx_patch("9.x/libstdcxx-pstl-disable-parallel-policies.patch"),
+    ],
+    "9.1.0": [
+        _libstdcxx_patch("9.1-9.2/libstdcxx-cow-string-inst.patch"),
+        _libstdcxx_patch("9.1-9.2/libstdcxx-filesystem-source-noexcept.patch"),
+        _libstdcxx_patch("9.x/libstdcxx-pstl-disable-parallel-policies.patch"),
+    ],
 }
 
 def gcc_patches(version):
@@ -230,6 +279,9 @@ def select_gcc_version_at_least(version, then, otherwise):
         gcc_version: then if gcc_version_at_least_for(gcc_version, version) else otherwise
         for gcc_version in GCC_VERSIONS
     })
+
+def gcc_has_config_toolexeclibdir_m4(version):
+    return gcc_version_at_least_for(version, "10.0.0")
 
 def libstdcxx_has_atomic_builtins_define(version):
     return gcc_version_less_than_for(version, "16.0.0")
@@ -304,4 +356,10 @@ def libstdcxx_has_uselocale_check(version):
     return gcc_version_at_least_for(version, "11.0.0")
 
 def libstdcxx_has_system_error_check(version):
-    return gcc_version_at_least_for(version, "10.1.0") and gcc_version_less_than_for(version, "10.3.0")
+    return (gcc_version_at_least_for(version, "9.0.0") and gcc_version_less_than_for(version, "9.5.0")) or (gcc_version_at_least_for(version, "10.1.0") and gcc_version_less_than_for(version, "10.3.0"))
+
+def libstdcxx_has_pthread_clock_checks(version):
+    return gcc_version_at_least_for(version, "10.0.0")
+
+def libstdcxx_has_x86_rdseed_check(version):
+    return gcc_version_at_least_for(version, "10.0.0")
