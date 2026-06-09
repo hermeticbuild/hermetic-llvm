@@ -2,23 +2,50 @@ load("@bazel_lib//lib:copy_file.bzl", "copy_file")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("@llvm//runtimes/libstdcxx:libstdcxx_config_h.bzl", "libstdcxx_config_h")
+load("@llvm//runtimes/libstdcxx:libstdcxx_cxxconfig_header.bzl", "libstdcxx_cxxconfig_header")
+load("@llvm//runtimes/libstdcxx:libstdcxx_gthr_headers.bzl", "libstdcxx_gthr_headers")
+load("@llvm//runtimes/libstdcxx:libstdcxx_largefile_config_header.bzl", "libstdcxx_largefile_config_header")
 load("@llvm//runtimes/libstdcxx:libstdcxx_symbols_version_script.bzl", "libstdcxx_symbols_version_script")
 load(
     "@llvm//runtimes/libstdcxx:target_config.bzl",
+    "libstdcxx_atomic_word_h",
     "libstdcxx_atomicity_h",
+    "libstdcxx_bits_opt_random_h",
     "libstdcxx_c_locale_cc",
+    "libstdcxx_c_locale_h",
+    "libstdcxx_c_locale_internal_h",
     "libstdcxx_codecvt_members_cc",
     "libstdcxx_collate_members_cc",
+    "libstdcxx_config_h_policy_defines",
+    "libstdcxx_cpu_defines_h",
+    "libstdcxx_ctype_base_h",
     "libstdcxx_ctype_configure_char_cc",
+    "libstdcxx_ctype_inline_h",
     "libstdcxx_ctype_members_cc",
+    "libstdcxx_cxxabi_tweaks_h",
+    "libstdcxx_enable_float128",
+    "libstdcxx_error_constants_h",
+    "libstdcxx_ext_opt_random_h",
+    "libstdcxx_extern_template",
+    "libstdcxx_have_attribute_visibility",
+    "libstdcxx_inline_version",
     "libstdcxx_messages_members_cc",
+    "libstdcxx_messages_members_h",
     "libstdcxx_monetary_members_cc",
     "libstdcxx_numeric_members_cc",
+    "libstdcxx_os_defines_h",
     "libstdcxx_port_symver_files",
+    "libstdcxx_thread_header_h",
     "libstdcxx_time_members_cc",
+    "libstdcxx_time_members_h",
+    "libstdcxx_use_allocator_new",
+    "libstdcxx_use_cxx11_abi",
+    "libstdcxx_use_dual_abi",
 )
 load("@llvm//toolchain/runtimes:cc_runtime_shared_library.bzl", "cc_runtime_stage1_shared_library")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load(":version.bzl", "GCC_VERSION")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -83,26 +110,46 @@ exports_files([
     "libstdc++-v3/config/cpu/generic/opt/ext/opt_random.h",
     "libstdc++-v3/config/cpu/i486/opt/bits/opt_random.h",
     "libstdc++-v3/config/cpu/i486/opt/ext/opt_random.h",
+    "libstdc++-v3/config/io/basic_file_stdio.cc",
     "libstdc++-v3/config/io/basic_file_stdio.h",
     "libstdc++-v3/config/io/c_io_stdio.h",
     "libstdc++-v3/config/locale/generic/c++locale_internal.h",
     "libstdc++-v3/config/locale/generic/c_locale.h",
+    "libstdc++-v3/config/locale/generic/c_locale.cc",
+    "libstdc++-v3/config/locale/generic/codecvt_members.cc",
+    "libstdc++-v3/config/locale/generic/collate_members.cc",
+    "libstdc++-v3/config/locale/generic/ctype_members.cc",
     "libstdc++-v3/config/locale/generic/messages_members.h",
+    "libstdc++-v3/config/locale/generic/messages_members.cc",
+    "libstdc++-v3/config/locale/generic/monetary_members.cc",
+    "libstdc++-v3/config/locale/generic/numeric_members.cc",
     "libstdc++-v3/config/locale/generic/time_members.h",
+    "libstdc++-v3/config/locale/generic/time_members.cc",
     "libstdc++-v3/config/locale/gnu/c++locale_internal.h",
     "libstdc++-v3/config/locale/gnu/c_locale.h",
+    "libstdc++-v3/config/locale/gnu/c_locale.cc",
+    "libstdc++-v3/config/locale/gnu/codecvt_members.cc",
+    "libstdc++-v3/config/locale/gnu/collate_members.cc",
+    "libstdc++-v3/config/locale/gnu/ctype_members.cc",
     "libstdc++-v3/config/locale/gnu/messages_members.h",
+    "libstdc++-v3/config/locale/gnu/messages_members.cc",
+    "libstdc++-v3/config/locale/gnu/monetary_members.cc",
+    "libstdc++-v3/config/locale/gnu/numeric_members.cc",
     "libstdc++-v3/config/locale/gnu/time_members.h",
+    "libstdc++-v3/config/locale/gnu/time_members.cc",
     "libstdc++-v3/config/abi/compatibility.h",
+    "libstdc++-v3/config/os/generic/ctype_configure_char.cc",
     "libstdc++-v3/config/os/generic/ctype_base.h",
     "libstdc++-v3/config/os/generic/ctype_inline.h",
     "libstdc++-v3/config/os/generic/error_constants.h",
     "libstdc++-v3/config/os/generic/os_defines.h",
     "libstdc++-v3/config/os/gnu-linux/ctype_base.h",
+    "libstdc++-v3/config/os/gnu-linux/ctype_configure_char.cc",
     "libstdc++-v3/config/os/gnu-linux/ctype_inline.h",
     "libstdc++-v3/config/os/gnu-linux/arm-eabi-extra.ver",
     "libstdc++-v3/config/os/gnu-linux/os_defines.h",
     "libstdc++-v3/config/os/mingw32-w64/ctype_base.h",
+    "libstdc++-v3/config/os/mingw32-w64/ctype_configure_char.cc",
     "libstdc++-v3/config/os/mingw32-w64/ctype_inline.h",
     "libstdc++-v3/config/os/mingw32-w64/error_constants.h",
     "libstdc++-v3/config/os/mingw32-w64/os_defines.h",
@@ -399,6 +446,243 @@ filegroup(
     ],
 )
 
+libstdcxx_gthr_headers(
+    name = "gthr_headers",
+    gthr_default_h = libstdcxx_thread_header_h(local = True),
+    gthr_h = "libgcc/gthr.h",
+    gthr_posix_h = "libgcc/gthr-posix.h",
+    gthr_single_h = "libgcc/gthr-single.h",
+)
+
+libstdcxx_config_h(
+    name = "config_h",
+    config_defines = libstdcxx_config_h_policy_defines(GCC_VERSION),
+    gcc_version = GCC_VERSION,
+    gthr_headers = ":gthr_headers",
+)
+
+filegroup(
+    name = "config_h_header",
+    srcs = [":config_h"],
+    output_group = "config_h",
+)
+
+# Configured public headers mirror libstdc++-v3/include/Makefile.am. The
+# selected source labels come from configure.host fields in target_config.bzl.
+copy_file(
+    name = "ctype_base_h",
+    src = libstdcxx_ctype_base_h(local = True),
+    out = "public_host_headers/bits/ctype_base.h",
+    allow_symlink = True,
+)
+
+copy_file(
+    name = "ctype_inline_h",
+    src = libstdcxx_ctype_inline_h(local = True),
+    out = "public_host_headers/bits/ctype_inline.h",
+    allow_symlink = True,
+)
+
+copy_file(
+    name = "os_defines_h",
+    src = libstdcxx_os_defines_h(local = True),
+    out = "public_host_headers/bits/os_defines.h",
+    allow_symlink = True,
+)
+
+copy_file(
+    name = "atomic_word_h",
+    src = libstdcxx_atomic_word_h(local = True),
+    out = "public_host_headers/bits/atomic_word.h",
+    allow_symlink = True,
+)
+
+copy_file(
+    name = "cxxabi_tweaks_h",
+    src = libstdcxx_cxxabi_tweaks_h(local = True),
+    out = "public_host_headers/bits/cxxabi_tweaks.h",
+    allow_symlink = True,
+)
+
+copy_file(
+    name = "cpu_defines_h",
+    src = libstdcxx_cpu_defines_h(local = True),
+    out = "public_host_headers/bits/cpu_defines.h",
+    allow_symlink = True,
+)
+
+copy_file(
+    name = "error_constants_h",
+    src = libstdcxx_error_constants_h(local = True),
+    out = "public_host_headers/bits/error_constants.h",
+    allow_symlink = True,
+)
+
+copy_file(
+    name = "basic_file_h",
+    src = "libstdc++-v3/config/io/basic_file_stdio.h",
+    out = "public_host_headers/bits/basic_file.h",
+    allow_symlink = True,
+)
+
+copy_file(
+    name = "allocator_h",
+    src = "libstdc++-v3/config/allocator/new_allocator_base.h",
+    out = "public_host_headers/bits/c++allocator.h",
+    allow_symlink = True,
+)
+
+copy_file(
+    name = "cstdio_h",
+    src = "libstdc++-v3/config/io/c_io_stdio.h",
+    out = "public_host_headers/bits/c++io.h",
+    allow_symlink = True,
+)
+
+copy_file(
+    name = "c_locale_h",
+    src = libstdcxx_c_locale_h(local = True),
+    out = "public_host_headers/bits/c++locale.h",
+    allow_symlink = True,
+)
+
+copy_file(
+    name = "messages_members_h",
+    src = libstdcxx_messages_members_h(local = True),
+    out = "public_host_headers/bits/messages_members.h",
+    allow_symlink = True,
+)
+
+copy_file(
+    name = "time_members_h",
+    src = libstdcxx_time_members_h(local = True),
+    out = "public_host_headers/bits/time_members.h",
+    allow_symlink = True,
+)
+
+copy_file(
+    name = "precompiled_stdcxx_h",
+    src = "libstdc++-v3/include/precompiled/stdc++.h",
+    out = "public_host_headers/bits/stdc++.h",
+    allow_symlink = True,
+)
+
+copy_file(
+    name = "precompiled_stdtr1cxx_h",
+    src = "libstdc++-v3/include/precompiled/stdtr1c++.h",
+    out = "public_host_headers/bits/stdtr1c++.h",
+    allow_symlink = True,
+)
+
+copy_file(
+    name = "precompiled_extcxx_h",
+    src = "libstdc++-v3/include/precompiled/extc++.h",
+    out = "public_host_headers/bits/extc++.h",
+    allow_symlink = True,
+)
+
+copy_file(
+    name = "bits_opt_random_h",
+    src = libstdcxx_bits_opt_random_h(local = True),
+    out = "public_host_headers/bits/opt_random.h",
+    allow_symlink = True,
+)
+
+copy_file(
+    name = "ext_opt_random_h",
+    src = libstdcxx_ext_opt_random_h(local = True),
+    out = "public_host_headers/ext/opt_random.h",
+    allow_symlink = True,
+)
+
+libstdcxx_cxxconfig_header(
+    name = "cxxconfig_h",
+    basever = "gcc/BASE-VER",
+    config_h = ":config_h_header",
+    cxxconfig_template = "libstdc++-v3/include/bits/c++config",
+    datestamp = "gcc/DATESTAMP",
+    enable_float128 = libstdcxx_enable_float128(),
+    extern_template = libstdcxx_extern_template(),
+    have_attribute_visibility = libstdcxx_have_attribute_visibility(),
+    inline_version = libstdcxx_inline_version(),
+    use_allocator_new = libstdcxx_use_allocator_new(),
+    use_cxx11_abi = libstdcxx_use_cxx11_abi(),
+    use_dual_abi = libstdcxx_use_dual_abi(),
+)
+
+# Generated/configured headers must precede raw GCC headers, matching the
+# include overlay order from libstdc++-v3/include/Makefile.am.
+copy_to_directory(
+    name = "generated_host_headers_include_search_directory",
+    srcs = [
+        ":allocator_h",
+        ":atomic_word_h",
+        ":basic_file_h",
+        ":bits_opt_random_h",
+        ":c_locale_h",
+        ":cpu_defines_h",
+        ":cstdio_h",
+        ":ctype_base_h",
+        ":ctype_inline_h",
+        ":cxxabi_tweaks_h",
+        ":cxxconfig_h",
+        ":error_constants_h",
+        ":ext_opt_random_h",
+        ":gthr_headers",
+        ":messages_members_h",
+        ":os_defines_h",
+        ":precompiled_extcxx_h",
+        ":precompiled_stdcxx_h",
+        ":precompiled_stdtr1cxx_h",
+        ":time_members_h",
+    ],
+    allow_overwrites = True,
+    root_paths = [
+        "public_host_headers",
+        "cxxconfig_h",
+        "gthr_headers",
+    ],
+)
+
+# Build-only private headers mirror libstdc++-v3/include/Makefile.am entries
+# that are needed to compile the library but are not public installed headers.
+copy_file(
+    name = "c_locale_internal_h",
+    src = libstdcxx_c_locale_internal_h(local = True),
+    out = "private_host_headers/bits/c++locale_internal.h",
+    allow_symlink = True,
+)
+
+copy_file(
+    name = "compatibility_h",
+    src = "libstdc++-v3/config/abi/compatibility.h",
+    out = "private_host_headers/bits/compatibility.h",
+    allow_symlink = True,
+)
+
+libstdcxx_largefile_config_header(
+    name = "largefile_config_h",
+    config_h = ":config_h_header",
+)
+
+# During the libstdc++ build, private/generated headers override the installed
+# raw headers in the same order GCC arranges its build include directory.
+copy_to_directory(
+    name = "build_headers_include_search_directory",
+    srcs = [
+        ":c_locale_internal_h",
+        ":compatibility_h",
+        ":generated_host_headers_include_search_directory",
+        ":largefile_config_h",
+    ],
+    allow_overwrites = True,
+    root_paths = [
+        "generated_host_headers_include_search_directory",
+        "private_host_headers",
+        "largefile_config_h",
+    ],
+)
+
 LIBSTDCXX_BUILD_COPTS = [
     "-nostdinc++",
     "-fno-implicit-templates",
@@ -418,7 +702,7 @@ LIBSTDCXX_COMPATIBILITY_COPTS = select({
 LIBSTDCXX_BUILD_HEADER_DEPS = [
     # Keep the libstdc++ overlay first. It contains the C compatibility headers
     # that must wrap the target libc headers during the libstdc++ build.
-    "@llvm//runtimes/libstdcxx:build_headers",
+    ":build_headers",
 ] + select({
     "@platforms//os:linux": [
         "@kernel_headers",
@@ -452,7 +736,7 @@ write_file(
 # source to mirror the libsupc++/Makefile.am atomicity.cc substitution.
 copy_file(
     name = "libsupcxx_atomicity_cc",
-    src = libstdcxx_atomicity_h(),
+    src = libstdcxx_atomicity_h(local = True),
     out = "libsupcxx_generated/atomicity.cc",
     allow_symlink = True,
 )
@@ -562,91 +846,91 @@ filegroup(
 # libstdc++-v3/src/c++11/Makefile.am.
 copy_file(
     name = "libstdcxx_cxx98_cxxlocale_cc",
-    src = libstdcxx_c_locale_cc(),
+    src = libstdcxx_c_locale_cc(local = True),
     out = "libstdcxx_generated/c++98/c++locale.cc",
     allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx98_codecvt_members_cc",
-    src = libstdcxx_codecvt_members_cc(),
+    src = libstdcxx_codecvt_members_cc(local = True),
     out = "libstdcxx_generated/c++98/codecvt_members.cc",
     allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx98_collate_members_cc",
-    src = libstdcxx_collate_members_cc(),
+    src = libstdcxx_collate_members_cc(local = True),
     out = "libstdcxx_generated/c++98/collate_members.cc",
     allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx98_messages_members_cc",
-    src = libstdcxx_messages_members_cc(),
+    src = libstdcxx_messages_members_cc(local = True),
     out = "libstdcxx_generated/c++98/messages_members.cc",
     allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx98_monetary_members_cc",
-    src = libstdcxx_monetary_members_cc(),
+    src = libstdcxx_monetary_members_cc(local = True),
     out = "libstdcxx_generated/c++98/monetary_members.cc",
     allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx98_numeric_members_cc",
-    src = libstdcxx_numeric_members_cc(),
+    src = libstdcxx_numeric_members_cc(local = True),
     out = "libstdcxx_generated/c++98/numeric_members.cc",
     allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx98_time_members_cc",
-    src = libstdcxx_time_members_cc(),
+    src = libstdcxx_time_members_cc(local = True),
     out = "libstdcxx_generated/c++98/time_members.cc",
     allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx98_collate_members_cow_cc",
-    src = libstdcxx_collate_members_cc(),
+    src = libstdcxx_collate_members_cc(local = True),
     out = "libstdcxx_generated/c++98/collate_members_cow.cc",
     allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx98_messages_members_cow_cc",
-    src = libstdcxx_messages_members_cc(),
+    src = libstdcxx_messages_members_cc(local = True),
     out = "libstdcxx_generated/c++98/messages_members_cow.cc",
     allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx98_monetary_members_cow_cc",
-    src = libstdcxx_monetary_members_cc(),
+    src = libstdcxx_monetary_members_cc(local = True),
     out = "libstdcxx_generated/c++98/monetary_members_cow.cc",
     allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx98_numeric_members_cow_cc",
-    src = libstdcxx_numeric_members_cc(),
+    src = libstdcxx_numeric_members_cc(local = True),
     out = "libstdcxx_generated/c++98/numeric_members_cow.cc",
     allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx11_ctype_configure_char_cc",
-    src = libstdcxx_ctype_configure_char_cc(),
+    src = libstdcxx_ctype_configure_char_cc(local = True),
     out = "libstdcxx_generated/c++11/ctype_configure_char.cc",
     allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx11_ctype_members_cc",
-    src = libstdcxx_ctype_members_cc(),
+    src = libstdcxx_ctype_members_cc(local = True),
     out = "libstdcxx_generated/c++11/ctype_members.cc",
     allow_symlink = True,
 )
@@ -920,7 +1204,7 @@ LIBSTDCXX_LIBRARY_INCLUDES = [
 ]
 
 # Shared private headers for the libstdc++ library objects. Public installed
-# headers come through @llvm//runtimes/libstdcxx:build_headers instead.
+# headers come through the generated build_headers tree instead.
 LIBSTDCXX_LIBRARY_HDRS = [
     ":libstdcxx_cxx17_string_inst_cc",
     ":libsupcxx_headers",
@@ -1086,18 +1370,6 @@ cc_library(
 )
 
 cc_library(
-    name = "libstdcxx_cxx23_print",
-    srcs = ["libstdc++-v3/src/c++23/print.cc"],
-    hdrs = LIBSTDCXX_LIBRARY_HDRS,
-    copts = LIBSTDCXX_LIBRARY_COPTS + [
-        "-std=gnu++26",
-        "-fimplicit-templates",
-    ],
-    implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
-    includes = LIBSTDCXX_LIBRARY_INCLUDES,
-)
-
-cc_library(
     name = "libstdcxx_cxx98_compat",
     srcs = [":libstdcxx_cxx98_compat_sources"],
     hdrs = LIBSTDCXX_LIBRARY_HDRS,
@@ -1120,8 +1392,20 @@ cc_library(
 libstdcxx_symbols_version_script(
     name = "libstdcxx_symbols_ver",
     base_version_script = "libstdc++-v3/config/abi/pre/gnu.ver",
-    config_h = "@llvm//runtimes/libstdcxx:config_h_header",
-    port_version_scripts = libstdcxx_port_symver_files(),
+    config_h = ":config_h_header",
+    port_version_scripts = libstdcxx_port_symver_files(local = True),
+)
+
+cc_library(
+    name = "libstdcxx_cxx23_print",
+    srcs = ["libstdc++-v3/src/c++23/print.cc"],
+    hdrs = LIBSTDCXX_LIBRARY_HDRS,
+    copts = LIBSTDCXX_LIBRARY_COPTS + [
+        "-std=gnu++26",
+        "-fimplicit-templates",
+    ],
+    implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
+    includes = LIBSTDCXX_LIBRARY_INCLUDES,
 )
 
 cc_library(
@@ -1252,4 +1536,63 @@ copy_to_directory(
         "hash_set": "ext/hash_set",
     },
     root_paths = ["libstdc++-v3/include/backward"],
+)
+
+# Installed header search directory: raw GCC headers plus the backward ext
+# compatibility aliases from libstdc++-v3/include/Makefile.am.
+copy_to_directory(
+    name = "headers_include_search_directory",
+    srcs = [
+        ":libstdcxx_ext_compat_headers_include_search_directory",
+        ":libstdcxx_raw_headers_include_search_directory",
+    ],
+    allow_overwrites = True,
+    replace_prefixes = {
+        "libstdcxx_ext_compat_headers_include_search_directory": "",
+        "libstdcxx_raw_headers_include_search_directory": "",
+    },
+)
+
+cc_library(
+    name = "build_headers",
+    hdrs = [
+        ":build_headers_include_search_directory",
+        ":headers_include_search_directory",
+    ],
+    includes = [
+        "build_headers_include_search_directory",
+        "headers_include_search_directory",
+        "headers_include_search_directory/backward",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "abi_headers_include_search_directory",
+    actual = ":generated_host_headers_include_search_directory",
+    visibility = ["//visibility:public"],
+)
+
+copy_to_directory(
+    name = "libstdcxx_autoconf_audit_inputs",
+    srcs = [
+        "config/acx.m4",
+        "config/cet.m4",
+        "config/futex.m4",
+        "config/gc++filt.m4",
+        "config/gthr.m4",
+        "config/hwcaps.m4",
+        "config/iconv.m4",
+        "config/lthostflags.m4",
+        "config/multi.m4",
+        "config/no-executables.m4",
+        "config/tls.m4",
+        "config/toolexeclibdir.m4",
+        "config/unwind_ipinfo.m4",
+        "libstdc++-v3/acinclude.m4",
+        "libstdc++-v3/configure.ac",
+        "libstdc++-v3/configure.host",
+        "libstdc++-v3/crossconfig.m4",
+        "libstdc++-v3/linkage.m4",
+    ],
 )

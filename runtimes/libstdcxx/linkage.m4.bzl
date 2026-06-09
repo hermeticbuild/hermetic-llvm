@@ -12,6 +12,7 @@
 # GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_2 are represented by
 # gcc_check_math_support() and gcc_check_stdlib_support().
 
+load("//3rd_party/gcc:version.bzl", "gcc_version_at_least_for")
 load(
     "//runtimes/libstdcxx/autoconf:checks.bzl",
     "function_link_check",
@@ -115,17 +116,20 @@ int main() {{
         for name, expression in _MATH_FUNCTIONS
     ]
 
-def gcc_check_stdlib_support():
-    return [
-        function_link_check("HAVE_ALIGNED_ALLOC", "stdlib.h", "void *p = aligned_alloc(16, 16)"),
+def gcc_check_stdlib_support(gcc_version):
+    checks = [
         function_link_check("HAVE_POSIX_MEMALIGN", "stdlib.h", "void *p = 0; posix_memalign(&p, 16, 16)"),
         function_link_check("HAVE_MEMALIGN", "malloc.h", "void *p = memalign(16, 16)"),
         function_link_check("HAVE__ALIGNED_MALLOC", "malloc.h", "void *p = _aligned_malloc(16, 16)"),
+        function_link_check("HAVE_ALIGNED_ALLOC", "stdlib.h", "void *p = aligned_alloc(16, 16)"),
         function_link_check("HAVE_AT_QUICK_EXIT", "stdlib.h", "at_quick_exit((void (*)(void))0)"),
         function_link_check("HAVE_QUICK_EXIT", "stdlib.h", "quick_exit(0)"),
-        function_link_check("HAVE_SECURE_GETENV", "stdlib.h", 'char *p = secure_getenv("PATH")'),
         function_link_check("HAVE_SETENV", "stdlib.h", 'setenv("A", "B", 1)'),
         function_link_check("HAVE_STRTOF", "stdlib.h", 'float f = strtof("1", (char **)0)'),
         function_link_check("HAVE_STRTOLD", "stdlib.h", 'long double ld = strtold("1", (char **)0)'),
-        function_link_check("HAVE_TIMESPEC_GET", "time.h", "struct timespec ts; timespec_get(&ts, TIME_UTC)"),
     ]
+    if gcc_version_at_least_for(gcc_version, "9.0.0"):
+        checks.append(function_link_check("HAVE_TIMESPEC_GET", "time.h", "struct timespec ts; timespec_get(&ts, TIME_UTC)"))
+    if gcc_version_at_least_for(gcc_version, "11.0.0"):
+        checks.append(function_link_check("HAVE_SECURE_GETENV", "stdlib.h", 'char *p = secure_getenv("PATH")'))
+    return checks

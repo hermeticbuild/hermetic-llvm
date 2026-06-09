@@ -2,6 +2,7 @@
 # libstdc++-v3/crossconfig.m4. Only the Linux GNU-relevant branch is active in
 # this Bazel port; other target branches remain documented as unsupported.
 
+load("//3rd_party/gcc:version.bzl", "gcc_version_at_least_for")
 load("//runtimes/libstdcxx/autoconf:checks.bzl", "policy_define")
 load(
     ":gcc_config_checks.bzl",
@@ -15,15 +16,13 @@ load(
     "gcc_check_stdlib_support",
 )
 
-def glibcxx_crossconfig_linux_gnu():
+def glibcxx_crossconfig_linux_gnu(gcc_version):
     # libstdc++-v3/crossconfig.m4 uses this branch for *-linux*, *-uclinux*,
     # *-gnu*, *-kfreebsd*-gnu, *-cygwin*, and *-solaris*. Only Linux GNU is
     # active in this Bazel port; cygwin/solaris and non-glibc targets are out
     # of scope.
-    return (
-        gcc_check_math_support() +
-        gcc_check_stdlib_support() +
-        [
+    if gcc_version_at_least_for(gcc_version, "9.0.0"):
+        random_policy = [
             # crossconfig.m4 hardcodes the same GLIBCXX_CHECK_DEV_RANDOM
             # feature pair for Linux-family targets.
             policy_define(
@@ -33,7 +32,13 @@ def glibcxx_crossconfig_linux_gnu():
                     "_GLIBCXX_USE_RANDOM_TR1",
                 ],
             ),
-        ] +
+        ]
+    else:
+        random_policy = [policy_define("_GLIBCXX_USE_RANDOM_TR1")]
+    return (
+        gcc_check_math_support() +
+        gcc_check_stdlib_support(gcc_version) +
+        random_policy +
         gcc_check_tls() +
         am_iconv() +
         gcc_linux_futex()

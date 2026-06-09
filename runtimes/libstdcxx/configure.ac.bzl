@@ -13,12 +13,14 @@ load(
     "glibcxx_check_gettimeofday",
     "glibcxx_check_gthreads",
     "glibcxx_check_hardware_concurrency",
+    "glibcxx_check_int64_t",
     "glibcxx_check_lfs",
     "glibcxx_check_math11_proto",
     "glibcxx_check_networking_deps",
     "glibcxx_check_pthread_clock_apis",
     "glibcxx_check_stdio_locking",
     "glibcxx_check_stdio_proto",
+    "glibcxx_check_system_error",
     "glibcxx_check_text_encoding",
     "glibcxx_check_tmpnam",
     "glibcxx_check_uchar_h",
@@ -30,6 +32,7 @@ load(
     "glibcxx_enable_cstdio",
     "glibcxx_enable_decimal_float",
     "glibcxx_enable_hosted",
+    "glibcxx_enable_int128_float128",
     "glibcxx_enable_libstdcxx_time",
     "glibcxx_enable_lock_policy",
     "glibcxx_enable_long_long",
@@ -111,7 +114,7 @@ _HEADER_CHECKS = [
     "xlocale.h",
 ]
 
-def _linux_gnu_entries():
+def config_entries(gcc_version):
     # This function mirrors libstdc++-v3/configure.ac order for the supported
     # hosted Linux GNU configuration. Unsupported configure branches are kept
     # below as comments so future target work has an obvious source anchor.
@@ -119,50 +122,58 @@ def _linux_gnu_entries():
         glibcxx_enable_hosted() +
         glibcxx_enable_verbose() +
         glibcxx_enable_pch() +
-        glibcxx_enable_atomic_builtins() +
+        glibcxx_enable_atomic_builtins(gcc_version) +
         glibcxx_enable_lock_policy() +
         glibcxx_enable_decimal_float() +
+        glibcxx_enable_int128_float128(gcc_version) +
         glibcxx_check_compiler_features() +
         glibcxx_enable_cstdio() +
         glibcxx_enable_clocale() +
         glibcxx_enable_allocator() +
         glibcxx_enable_long_long() +
         glibcxx_enable_wchar_t() +
-        glibcxx_enable_c99() +
+        glibcxx_enable_c99(gcc_version) +
         glibcxx_check_c99_tr1() +
         glibcxx_check_stdio_proto() +
         glibcxx_check_math11_proto() +
-        glibcxx_check_uchar_h() +
-        glibcxx_check_lfs() +
+        glibcxx_check_uchar_h(gcc_version) +
+        glibcxx_check_int64_t(gcc_version) +
+        glibcxx_check_lfs(gcc_version) +
         glibcxx_check_gettimeofday() +
         ac_check_headers(["sys/ioctl.h", "sys/filio.h"]) +
-        glibcxx_misc_compile_checks() +
+        glibcxx_misc_compile_checks(gcc_version) +
         ac_check_headers(["sys/uio.h", "fenv.h", "complex.h"]) +
         glibcxx_compute_stdio_integer_constants() +
         glibcxx_check_tmpnam() +
-        glibcxx_check_pthread_clock_apis() +
+        glibcxx_check_pthread_clock_apis(gcc_version) +
         ac_check_headers(["sys/sysinfo.h", "unistd.h"]) +
         glibcxx_check_hardware_concurrency() +
         ac_check_headers(_HEADER_CHECKS) +
         gcc_check_math_support() +
-        gcc_check_stdlib_support() +
-        glibcxx_random_policy() +
+        gcc_check_stdlib_support(gcc_version) +
+        glibcxx_check_system_error(gcc_version) +
+        glibcxx_random_policy(gcc_version) +
         gcc_check_tls() +
-        glibcxx_misc_link_checks() +
+        glibcxx_misc_link_checks(gcc_version) +
         am_iconv() +
         gcc_check_unwind_getipinfo() +
         gcc_linux_futex() +
-        glibcxx_check_gthreads() +
+        glibcxx_check_gthreads(gcc_version) +
         glibcxx_abi_policies() +
-        glibcxx_check_filesystem_deps() +
-        glibcxx_check_networking_deps() +
-        glibcxx_enable_libstdcxx_time() +
-        glibcxx_zoneinfo_policy() +
-        glibcxx_check_text_encoding() +
-        glibcxx_check_debugging() +
-        glibcxx_check_stdio_locking() +
+        glibcxx_check_filesystem_deps(gcc_version) +
+        glibcxx_check_networking_deps(gcc_version) +
+        glibcxx_enable_libstdcxx_time(gcc_version) +
+        glibcxx_zoneinfo_policy(gcc_version) +
+        glibcxx_check_text_encoding(gcc_version) +
+        glibcxx_check_debugging(gcc_version) +
+        glibcxx_check_stdio_locking(gcc_version) +
         glibcxx_resource_limits_policy()
     )
+
+# GCC 12's GCC_HEADER_STDINT(include/gstdint.h) generates a compatibility
+# header for src/c++11/compatibility-atomic-c++0x.cc. That hook has no config.h
+# output; the file-generation part is modeled in the GCC BUILD overlay for
+# GCC <13.
 
 # configure.ac branches intentionally inactive for the current port:
 #
@@ -179,5 +190,3 @@ def _linux_gnu_entries():
 #
 # Build-only docs/testsuite/install probes are intentionally omitted from the
 # active config.h model.
-
-CONFIG_ENTRIES = _linux_gnu_entries()

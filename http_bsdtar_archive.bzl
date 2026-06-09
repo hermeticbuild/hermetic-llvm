@@ -199,6 +199,8 @@ def _http_bsdtar_archive_impl(rctx):
     remote_files_info = download_remote_files(rctx)
     remote_patches_info = patch(rctx)
     symlink_files(rctx)
+    for path, content in rctx.attr.generated_files.items():
+        rctx.file(path, content)
 
     return _update_integrity_attrs(rctx, _http_bsdtar_archive_attrs, archive_info, remote_files_info, remote_patches_info)
 
@@ -228,6 +230,7 @@ _http_bsdtar_archive_attrs = {
     "patch_cmds_win": attr.string_list(default = []),
     "build_file": attr.label(allow_single_file = True),
     "build_file_content": attr.string(),
+    "generated_files": attr.string_dict(default = {}),
     "workspace_file": attr.label(),
     "workspace_file_content": attr.string(),
     "includes": attr.string_list(default = []),

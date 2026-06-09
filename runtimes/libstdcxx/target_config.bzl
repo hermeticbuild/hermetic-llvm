@@ -3,6 +3,7 @@
 # fields, compare against configure.host plus configure.ac's *_SRCDIR
 # substitutions for the generated include/source paths.
 
+load("//3rd_party/gcc:version.bzl", "gcc_repository_label", "gcc_version_at_least_for")
 load("//runtimes/libstdcxx/autoconf:checks.bzl", "policy_define", "policy_undef")
 
 _SUPPORTED_TARGETS = {
@@ -299,7 +300,7 @@ def libstdcxx_use_dual_abi():
 def libstdcxx_symver_style():
     return _select_field("symver_style")
 
-def libstdcxx_config_h_policy_defines():
+def libstdcxx_config_h_policy_defines(gcc_version):
     return select({
         Label(config): (
             ([
@@ -309,7 +310,7 @@ def libstdcxx_config_h_policy_defines():
                 policy_define("HAVE_SYMVER_SYMBOL_RENAMING_RUNTIME_SUPPORT"),
                 policy_define("HAVE_EXCEPTION_PTR_SINCE_GCC46"),
             ] if _field_value(values, "symver_style") == "gnu" else []) +
-            ([policy_define("HAVE_ATOMIC_LOCK_POLICY")] if values["atomic_lock_policy"] else []) +
+            ([policy_define("HAVE_ATOMIC_LOCK_POLICY")] if gcc_version_at_least_for(gcc_version, "9.0.0") and values["atomic_lock_policy"] else []) +
             [policy_define("_GLIBCXX_MANGLE_SIZE_T", _field_value(values, "size_t_mangling"))] +
             ([
                 policy_define("_GLIBCXX_PTRDIFF_T_IS_INT"),
@@ -328,113 +329,120 @@ def libstdcxx_config_h_policy_defines():
 # These adapters turn configure.host-style directory fields into the exact
 # config headers and sources consumed by libstdc++-v3/include/Makefile.am and
 # libstdc++-v3/src/*/Makefile.am.
-def _gcc_config_header_label(field, basename):
+def _gcc_source_label(target, gcc_version = None, local = False):
+    if local:
+        return target
+    if gcc_version:
+        return gcc_repository_label(gcc_version, target)
+    return "@gcc//:{}".format(target)
+
+def _gcc_config_header_label(field, basename, gcc_version = None, local = False):
     return select({
-        Label(config): "@gcc//:libstdc++-v3/config/{}/{}".format(_field_value(values, field), basename)
+        Label(config): _gcc_source_label("libstdc++-v3/config/{}/{}".format(_field_value(values, field), basename), gcc_version, local)
         for config, values in _SUPPORTED_TARGETS.items()
     }, no_match_error = _NO_MATCH_ERROR)
 
-def _gcc_config_source_label(field, basename):
+def _gcc_config_source_label(field, basename, gcc_version = None, local = False):
     return select({
-        Label(config): "@gcc//:libstdc++-v3/config/{}/{}".format(_field_value(values, field), basename)
+        Label(config): _gcc_source_label("libstdc++-v3/config/{}/{}".format(_field_value(values, field), basename), gcc_version, local)
         for config, values in _SUPPORTED_TARGETS.items()
     }, no_match_error = _NO_MATCH_ERROR)
 
-def _gcc_config_path_label(field):
+def _gcc_config_path_label(field, gcc_version = None, local = False):
     return select({
-        Label(config): "@gcc//:libstdc++-v3/config/{}".format(_field_value(values, field))
+        Label(config): _gcc_source_label("libstdc++-v3/config/{}".format(_field_value(values, field)), gcc_version, local)
         for config, values in _SUPPORTED_TARGETS.items()
     }, no_match_error = _NO_MATCH_ERROR)
 
-def _gcc_config_path_labels(field):
+def _gcc_config_path_labels(field, gcc_version = None, local = False):
     return select({
         Label(config): [
-            "@gcc//:libstdc++-v3/config/{}".format(path)
+            _gcc_source_label("libstdc++-v3/config/{}".format(path), gcc_version, local)
             for path in _field_value(values, field)
         ]
         for config, values in _SUPPORTED_TARGETS.items()
     }, no_match_error = _NO_MATCH_ERROR)
 
-def _gcc_libgcc_header_label(field):
+def _gcc_libgcc_header_label(field, gcc_version = None, local = False):
     return select({
-        Label(config): "@gcc//:libgcc/{}".format(values[field])
+        Label(config): _gcc_source_label("libgcc/{}".format(values[field]), gcc_version, local)
         for config, values in _SUPPORTED_TARGETS.items()
     }, no_match_error = _NO_MATCH_ERROR)
 
-def libstdcxx_ctype_base_h():
-    return _gcc_config_header_label("os_include_dir", "ctype_base.h")
+def libstdcxx_ctype_base_h(local = False):
+    return _gcc_config_header_label("os_include_dir", "ctype_base.h", local = local)
 
-def libstdcxx_ctype_inline_h():
-    return _gcc_config_header_label("os_include_dir", "ctype_inline.h")
+def libstdcxx_ctype_inline_h(local = False):
+    return _gcc_config_header_label("os_include_dir", "ctype_inline.h", local = local)
 
-def libstdcxx_os_defines_h():
-    return _gcc_config_header_label("os_include_dir", "os_defines.h")
+def libstdcxx_os_defines_h(local = False):
+    return _gcc_config_header_label("os_include_dir", "os_defines.h", local = local)
 
-def libstdcxx_atomic_word_h():
-    return _gcc_config_header_label("atomic_word_dir", "atomic_word.h")
+def libstdcxx_atomic_word_h(local = False):
+    return _gcc_config_header_label("atomic_word_dir", "atomic_word.h", local = local)
 
-def libstdcxx_atomicity_h():
-    return _gcc_config_header_label("atomicity_dir", "atomicity.h")
+def libstdcxx_atomicity_h(gcc_version = None, local = False):
+    return _gcc_config_header_label("atomicity_dir", "atomicity.h", gcc_version, local)
 
-def libstdcxx_cxxabi_tweaks_h():
-    return _gcc_config_header_label("abi_tweaks_dir", "cxxabi_tweaks.h")
+def libstdcxx_cxxabi_tweaks_h(local = False):
+    return _gcc_config_header_label("abi_tweaks_dir", "cxxabi_tweaks.h", local = local)
 
-def libstdcxx_cpu_defines_h():
-    return _gcc_config_header_label("cpu_defines_dir", "cpu_defines.h")
+def libstdcxx_cpu_defines_h(local = False):
+    return _gcc_config_header_label("cpu_defines_dir", "cpu_defines.h", local = local)
 
-def libstdcxx_error_constants_h():
-    return _gcc_config_header_label("error_constants_dir", "error_constants.h")
+def libstdcxx_error_constants_h(local = False):
+    return _gcc_config_header_label("error_constants_dir", "error_constants.h", local = local)
 
-def libstdcxx_bits_opt_random_h():
-    return _gcc_config_header_label("cpu_opt_dir", "bits/opt_random.h")
+def libstdcxx_bits_opt_random_h(local = False):
+    return _gcc_config_header_label("cpu_opt_dir", "bits/opt_random.h", local = local)
 
-def libstdcxx_ext_opt_random_h():
-    return _gcc_config_header_label("cpu_opt_dir", "ext/opt_random.h")
+def libstdcxx_ext_opt_random_h(local = False):
+    return _gcc_config_header_label("cpu_opt_dir", "ext/opt_random.h", local = local)
 
-def libstdcxx_c_locale_h():
-    return _gcc_config_header_label("locale_dir", "c_locale.h")
+def libstdcxx_c_locale_h(local = False):
+    return _gcc_config_header_label("locale_dir", "c_locale.h", local = local)
 
-def libstdcxx_c_locale_internal_h():
-    return _gcc_config_header_label("locale_dir", "c++locale_internal.h")
+def libstdcxx_c_locale_internal_h(local = False):
+    return _gcc_config_header_label("locale_dir", "c++locale_internal.h", local = local)
 
-def libstdcxx_messages_members_h():
-    return _gcc_config_header_label("locale_dir", "messages_members.h")
+def libstdcxx_messages_members_h(local = False):
+    return _gcc_config_header_label("locale_dir", "messages_members.h", local = local)
 
-def libstdcxx_time_members_h():
-    return _gcc_config_header_label("locale_dir", "time_members.h")
+def libstdcxx_time_members_h(local = False):
+    return _gcc_config_header_label("locale_dir", "time_members.h", local = local)
 
-def libstdcxx_ctype_configure_char_cc():
-    return _gcc_config_source_label("os_include_dir", "ctype_configure_char.cc")
+def libstdcxx_ctype_configure_char_cc(gcc_version = None, local = False):
+    return _gcc_config_source_label("os_include_dir", "ctype_configure_char.cc", gcc_version, local)
 
-def libstdcxx_c_locale_cc():
-    return _gcc_config_source_label("locale_dir", "c_locale.cc")
+def libstdcxx_c_locale_cc(gcc_version = None, local = False):
+    return _gcc_config_source_label("locale_dir", "c_locale.cc", gcc_version, local)
 
-def libstdcxx_codecvt_members_cc():
-    return _gcc_config_source_label("locale_dir", "codecvt_members.cc")
+def libstdcxx_codecvt_members_cc(gcc_version = None, local = False):
+    return _gcc_config_source_label("locale_dir", "codecvt_members.cc", gcc_version, local)
 
-def libstdcxx_collate_members_cc():
-    return _gcc_config_source_label("locale_dir", "collate_members.cc")
+def libstdcxx_collate_members_cc(gcc_version = None, local = False):
+    return _gcc_config_source_label("locale_dir", "collate_members.cc", gcc_version, local)
 
-def libstdcxx_ctype_members_cc():
-    return _gcc_config_source_label("locale_dir", "ctype_members.cc")
+def libstdcxx_ctype_members_cc(gcc_version = None, local = False):
+    return _gcc_config_source_label("locale_dir", "ctype_members.cc", gcc_version, local)
 
-def libstdcxx_messages_members_cc():
-    return _gcc_config_source_label("locale_dir", "messages_members.cc")
+def libstdcxx_messages_members_cc(gcc_version = None, local = False):
+    return _gcc_config_source_label("locale_dir", "messages_members.cc", gcc_version, local)
 
-def libstdcxx_monetary_members_cc():
-    return _gcc_config_source_label("locale_dir", "monetary_members.cc")
+def libstdcxx_monetary_members_cc(gcc_version = None, local = False):
+    return _gcc_config_source_label("locale_dir", "monetary_members.cc", gcc_version, local)
 
-def libstdcxx_numeric_members_cc():
-    return _gcc_config_source_label("locale_dir", "numeric_members.cc")
+def libstdcxx_numeric_members_cc(gcc_version = None, local = False):
+    return _gcc_config_source_label("locale_dir", "numeric_members.cc", gcc_version, local)
 
-def libstdcxx_time_members_cc():
-    return _gcc_config_source_label("locale_dir", "time_members.cc")
+def libstdcxx_time_members_cc(gcc_version = None, local = False):
+    return _gcc_config_source_label("locale_dir", "time_members.cc", gcc_version, local)
 
-def libstdcxx_thread_header_h():
-    return _gcc_libgcc_header_label("thread_header")
+def libstdcxx_thread_header_h(gcc_version = None, local = False):
+    return _gcc_libgcc_header_label("thread_header", gcc_version, local)
 
-def libstdcxx_symver_file():
-    return _gcc_config_path_label("symver_file")
+def libstdcxx_symver_file(gcc_version = None, local = False):
+    return _gcc_config_path_label("symver_file", gcc_version, local)
 
-def libstdcxx_port_symver_files():
-    return _gcc_config_path_labels("port_symver_files")
+def libstdcxx_port_symver_files(gcc_version = None, local = False):
+    return _gcc_config_path_labels("port_symver_files", gcc_version, local)

@@ -5,7 +5,7 @@
 
 load(
     "//runtimes/libstdcxx:configure.ac.bzl",
-    "CONFIG_ENTRIES",
+    "config_entries",
 )
 load(
     "//runtimes/libstdcxx/autoconf:autoconf_config.bzl",
@@ -18,13 +18,14 @@ load(
 
 def libstdcxx_config_h(
         name,
+        gcc_version,
         config_defines,
         gthr_headers,
         **kwargs):
     checks_name = name + "_checks"
     autoconf_config(
         name = checks_name,
-        checks = config_defines + CONFIG_ENTRIES,
+        checks = config_defines + config_entries(gcc_version),
         probe_context_include_root_markers = {
             "gthreads": "bits/gthr.h",
         },

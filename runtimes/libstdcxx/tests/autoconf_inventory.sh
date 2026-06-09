@@ -14,6 +14,7 @@ required_env=(
   GCC_CONFIGURE_AC
   GCC_CONFIGURE_HOST
   GCC_CROSSCONFIG
+  GCC_VERSION
   GCC_CONFIG_ACX
   GCC_CONFIG_CET
   GCC_CONFIG_FUTEX
@@ -340,7 +341,9 @@ check_status() {
   write_gcc_defines "${gcc_defines}"
   write_gcc_macro_uses "${gcc_macros}"
 
-  awk -v modeled="${modeled_defines}" -v invalid="${invalid_statuses}" '
+  gcc_major="${GCC_VERSION%%.*}"
+
+  awk -v modeled="${modeled_defines}" -v invalid="${invalid_statuses}" -v gcc_major="${gcc_major}" '
 BEGIN {
   known["probe-modeled"] = 1
   known["policy-modeled"] = 1
@@ -352,10 +355,62 @@ BEGIN {
   known["unsupported-feature"] = 1
   known["unsupported-target"] = 1
 }
+function condition_applies(condition) {
+  if (condition == "" || condition == "all") {
+    return 1
+  }
+  if (condition == "gcc_lt_16") {
+    return gcc_major < 16
+  }
+  if (condition == "gcc_lt_9") {
+    return gcc_major < 9
+  }
+  if (condition == "gcc_lt_12") {
+    return gcc_major < 12
+  }
+  if (condition == "gcc_lt_13") {
+    return gcc_major < 13
+  }
+  if (condition == "gcc_lt_14") {
+    return gcc_major < 14
+  }
+  if (condition == "gcc_ge_13") {
+    return gcc_major >= 13
+  }
+  if (condition == "gcc_ge_9") {
+    return gcc_major >= 9
+  }
+  if (condition == "gcc_ge_10") {
+    return gcc_major >= 10
+  }
+  if (condition == "gcc_ge_11") {
+    return gcc_major >= 11
+  }
+  if (condition == "gcc_ge_11_lt_16") {
+    return gcc_major >= 11 && gcc_major < 16
+  }
+  if (condition == "gcc_ge_12") {
+    return gcc_major >= 12
+  }
+  if (condition == "gcc_ge_14") {
+    return gcc_major >= 14
+  }
+  if (condition == "gcc_ge_15") {
+    return gcc_major >= 15
+  }
+  if (condition == "gcc_ge_16") {
+    return gcc_major >= 16
+  }
+  print FILENAME ":" FNR ": unknown version condition: " condition > invalid
+  return 0
+}
 /^[ \t]*(#|$)/ { next }
 {
   if (NF < 2 || !known[$2]) {
     print FILENAME ":" FNR ": " $0 > invalid
+    next
+  }
+  if (!condition_applies($3)) {
     next
   }
   print $1
@@ -366,7 +421,7 @@ BEGIN {
 ' "${STATUS_FILE}" | sort > "${status_defines}"
   sort -o "${modeled_defines}" "${modeled_defines}"
 
-  awk -v modeled="${modeled_macros}" -v invalid="${invalid_statuses}" '
+  awk -v modeled="${modeled_macros}" -v invalid="${invalid_statuses}" -v gcc_major="${gcc_major}" '
 BEGIN {
   known["modeled"] = 1
   known["target-derived"] = 1
@@ -375,10 +430,62 @@ BEGIN {
   known["unsupported-feature"] = 1
   known["unsupported-target"] = 1
 }
+function condition_applies(condition) {
+  if (condition == "" || condition == "all") {
+    return 1
+  }
+  if (condition == "gcc_lt_16") {
+    return gcc_major < 16
+  }
+  if (condition == "gcc_lt_9") {
+    return gcc_major < 9
+  }
+  if (condition == "gcc_lt_12") {
+    return gcc_major < 12
+  }
+  if (condition == "gcc_lt_13") {
+    return gcc_major < 13
+  }
+  if (condition == "gcc_lt_14") {
+    return gcc_major < 14
+  }
+  if (condition == "gcc_ge_13") {
+    return gcc_major >= 13
+  }
+  if (condition == "gcc_ge_9") {
+    return gcc_major >= 9
+  }
+  if (condition == "gcc_ge_10") {
+    return gcc_major >= 10
+  }
+  if (condition == "gcc_ge_11") {
+    return gcc_major >= 11
+  }
+  if (condition == "gcc_ge_11_lt_16") {
+    return gcc_major >= 11 && gcc_major < 16
+  }
+  if (condition == "gcc_ge_12") {
+    return gcc_major >= 12
+  }
+  if (condition == "gcc_ge_14") {
+    return gcc_major >= 14
+  }
+  if (condition == "gcc_ge_15") {
+    return gcc_major >= 15
+  }
+  if (condition == "gcc_ge_16") {
+    return gcc_major >= 16
+  }
+  print FILENAME ":" FNR ": unknown version condition: " condition > invalid
+  return 0
+}
 /^[ \t]*(#|$)/ { next }
 {
   if (NF < 2 || !known[$2]) {
     print FILENAME ":" FNR ": " $0 > invalid
+    next
+  }
+  if (!condition_applies($3)) {
     next
   }
   print $1

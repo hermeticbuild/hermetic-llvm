@@ -1,9 +1,13 @@
 load("@bazel_features//:features.bzl", "bazel_features")
 load("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")
 load("//:http_bsdtar_archive.bzl", "http_bsdtar_archive")
-
-GCC_COMMIT = "2bfd402f8569511901ec8fe7628f57471e6d240a"
-GCC_SHA256 = "dc033fdfd79caf199113446af6d082004534437b6ebd276f9732815d86cbe723"
+load(
+    "//3rd_party/gcc:version.bzl",
+    "GCC_RELEASES",
+    "GCC_VERSIONS",
+    "gcc_repo_name",
+    "gcc_version_at_least_for",
+)
 
 # Sparse archive roots required by 3rd_party/gcc/gcc.BUILD.bazel. Before
 # trimming or extending this list, check the BUILD file against GCC's
@@ -24,7 +28,6 @@ _GCC_ARCHIVE_INCLUDES = [
     "config/multi.m4",
     "config/no-executables.m4",
     "config/tls.m4",
-    "config/toolexeclibdir.m4",
     "config/unwind_ipinfo.m4",
     "include/ansidecl.h",
     "include/demangle.h",
@@ -50,9 +53,16 @@ _GCC_ARCHIVE_INCLUDES = [
     "libstdc++-v3/src/**",
 ]
 
+_GCC_10_ARCHIVE_INCLUDES = [
+    "config/toolexeclibdir.m4",
+]
+
 _from_path = tag_class(
     attrs = {
-        "path": attr.string(mandatory = True),
+        "path": attr.string(
+            doc = "Local GCC source tree. The tree must include version.bzl defining GCC_VERSION.",
+            mandatory = True,
+        ),
     },
 )
 
@@ -74,24 +84,33 @@ def _gcc_impl(module_ctx):
 
     metadata_kwargs = {}
 
-    if path != None:
-        new_local_repository(
-            name = "gcc",
-            build_file = "//3rd_party/gcc:gcc.BUILD.bazel",
-            path = path,
-        )
-    else:
-        http_bsdtar_archive(
-            name = "gcc",
-            build_file = "//3rd_party/gcc:gcc.BUILD.bazel",
-            includes = _GCC_ARCHIVE_INCLUDES,
-            sha256 = GCC_SHA256,
-            strip_prefix = "gcc-{}".format(GCC_COMMIT),
-            urls = ["https://github.com/gcc-mirror/gcc/archive/{}.tar.gz".format(GCC_COMMIT)],
-        )
+    for version in GCC_VERSIONS:
+        repo_name = gcc_repo_name(version)
 
-        if bazel_features.external_deps.extension_metadata_has_reproducible:
-            metadata_kwargs["reproducible"] = True
+        if path != None:
+            new_local_repository(
+                name = repo_name,
+                build_file = Label("//3rd_party/gcc:gcc.BUILD.bazel"),
+                path = path,
+            )
+        else:
+            release = GCC_RELEASES[version]
+            http_bsdtar_archive(
+                name = repo_name,
+                build_file = Label("//3rd_party/gcc:gcc.BUILD.bazel"),
+                generated_files = {
+                    "version.bzl": "GCC_VERSION = \"{}\"\n".format(version),
+                },
+                includes = _GCC_ARCHIVE_INCLUDES + (_GCC_10_ARCHIVE_INCLUDES if gcc_version_at_least_for(version, "10.0.0") else []),
+                sha256 = release["sha256"],
+                strip_prefix = "gcc-{}".format(release["commit"]),
+                urls = ["https://github.com/gcc-mirror/gcc/archive/{}.tar.gz".format(release["commit"])],
+            )
+
+    _gcc_trampoline_repository(name = "gcc")
+
+    if bazel_features.external_deps.extension_metadata_has_reproducible:
+        metadata_kwargs["reproducible"] = True
 
     return module_ctx.extension_metadata(
         root_module_direct_deps = ["gcc"],
@@ -103,5 +122,18 @@ gcc = module_extension(
     implementation = _gcc_impl,
     tag_classes = {
         "from_path": _from_path,
+    },
+)
+
+def _gcc_trampoline_repository_impl(repository_ctx):
+    repository_ctx.template("BUILD.bazel", repository_ctx.attr._build_file)
+
+_gcc_trampoline_repository = repository_rule(
+    implementation = _gcc_trampoline_repository_impl,
+    attrs = {
+        "_build_file": attr.label(
+            allow_single_file = True,
+            default = ":trampoline.BUILD.bazel",
+        ),
     },
 )

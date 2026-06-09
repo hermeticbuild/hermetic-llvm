@@ -2,6 +2,7 @@
 # function names and grouping close to the GLIBCXX_* macros in that file so GCC
 # updates can be reviewed by comparing acinclude.m4 against this module.
 
+load("//3rd_party/gcc:version.bzl", "gcc_version_at_least_for", "gcc_version_less_than_for")
 load(
     "//runtimes/libstdcxx/autoconf:checks.bzl",
     "compile_check",
@@ -35,15 +36,19 @@ CXX_FILESYSTEM_FLAGS = ["-fno-exceptions"]
 # GLIBCXX_CHECK_PTHREAD_COND_CLOCKWAIT, GLIBCXX_CHECK_PTHREAD_MUTEX_CLOCKLOCK,
 # and GLIBCXX_CHECK_PTHREAD_RWLOCK_CLOCKLOCK are represented by
 # glibcxx_check_pthread_clock_apis().
-# GLIBCXX_CHECK_X86_RDRAND, GLIBCXX_CHECK_X86_RDSEED,
+# GLIBCXX_CHECK_SYSTEM_ERROR, GLIBCXX_CHECK_X86_RDRAND, GLIBCXX_CHECK_X86_RDSEED,
 # GLIBCXX_CHECK_ALIGNAS_CACHELINE, GLIBCXX_CHECK_INIT_PRIORITY,
 # GLIBCXX_STRUCT_TM_TM_ZONE, GLIBCXX_CHECK_POLL, GLIBCXX_CHECK_ARC4RANDOM,
-# GLIBCXX_CHECK_GETENTROPY, GLIBCXX_CHECK_DEV_RANDOM, GLIBCXX_CHECK_WRITEV,
-# GLIBCXX_CHECK_S_ISREG_OR_S_IFREG, GLIBCXX_CHECK_SDT_H,
+# GLIBCXX_CHECK_GETENTROPY, GLIBCXX_CHECK_DEV_RANDOM, GCC 8
+# GLIBCXX_CHECK_RANDOM_TR1, GLIBCXX_CHECK_WRITEV, GLIBCXX_CHECK_S_ISREG_OR_S_IFREG, GLIBCXX_CHECK_SDT_H,
 # GLIBCXX_CHECK_LINKER_FEATURES and GLIBCXX_CHECK_EXCEPTION_PTR_SYMVER are
 # represented by grouped checks below. GLIBCXX_CHECK_SIZE_T_MANGLING plus the
 # compatibility size_t/ptrdiff_t checks from GLIBCXX_ENABLE_SYMVERS are
 # target-derived in target_config.bzl.
+# GCC 11 and older GLIBCXX_CHECK_INT64_T is represented by
+# glibcxx_check_int64_t(); GCC 11 and older GLIBCXX_ENABLE_INT128_FLOAT128 is
+# represented by glibcxx_enable_int128_float128() for int128 while float128
+# remains a deferred build setting.
 # GLIBCXX_ENABLE_EXTERN_TEMPLATE, GLIBCXX_ENABLE_FILESYSTEM_TS,
 # GLIBCXX_ENABLE_LIBSTDCXX_DUAL_ABI, GLIBCXX_ENABLE_LIBSTDCXX_VISIBILITY, and
 # GLIBCXX_DEFAULT_ABI are represented by glibcxx_abi_policies().
@@ -60,7 +65,9 @@ def glibcxx_enable_verbose():
 def glibcxx_enable_pch():
     return []
 
-def glibcxx_enable_atomic_builtins():
+def glibcxx_enable_atomic_builtins(gcc_version):
+    if gcc_version_less_than_for(gcc_version, "16.0.0"):
+        return [policy_define("_GLIBCXX_ATOMIC_BUILTINS")]
     return [policy_define("_GLIBCXX_ATOMIC_WORD_BUILTINS")]
 
 def glibcxx_enable_lock_policy():
@@ -78,6 +85,26 @@ int main() {
     _Decimal64 d2;
     _Decimal128 d3;
     return 0;
+}
+""",
+        ),
+    ]
+
+def glibcxx_enable_int128_float128(gcc_version):
+    if not gcc_version_less_than_for(gcc_version, "12.0.0"):
+        return []
+    return [
+        compile_check(
+            name = "_GLIBCXX_USE_INT128",
+            language = "c++",
+            source = """
+template<typename T1, typename T2> struct same { typedef T1 type; };
+template<typename T> struct same<T, T> { };
+int main() {
+    typename same<long, __int128>::type i1 = 0;
+    typename same<long long, __int128>::type i2 = 0;
+    unsigned __int128 u = 0;
+    return (int)(i1 + i2 + u);
 }
 """,
         ),
@@ -598,32 +625,43 @@ int main() {{
 """.format(includes = includes, body = body),
     )
 
-def glibcxx_enable_c99():
-    return [
+def glibcxx_enable_c99(gcc_version):
+    checks = [
         _link_body_check("_GLIBCXX98_USE_C99_MATH", ["math.h"], _C99_MATH_GENERIC_BODY, "c++98", MATH_LINK_FLAGS),
         _link_body_check("_GLIBCXX98_USE_C99_COMPLEX", ["complex.h"], _C99_COMPLEX_BODY, "c++98", MATH_LINK_FLAGS),
         _link_body_check("_GLIBCXX98_USE_C99_STDIO", ["stdarg.h", "stdio.h"], _C99_STDIO_BODY, "c++98"),
         _link_body_check("_GLIBCXX98_USE_C99_STDLIB", ["stdlib.h"], _C99_STDLIB_BODY, "c++98"),
         _compile_body_check("_GLIBCXX98_USE_C99_WCHAR", "wchar.h", _C99_WCHAR_BODY, "c++98"),
         _link_body_check("_GLIBCXX_USE_C99", ["complex.h", "math.h", "stdarg.h", "stdio.h", "stdlib.h", "wchar.h", "wctype.h"], _scoped(_C99_MATH_GENERIC_BODY) + _scoped(_C99_COMPLEX_BODY) + _scoped(_C99_STDIO_BODY) + _scoped(_C99_STDLIB_BODY) + _scoped(_C99_WCHAR_BODY), "c++98", MATH_LINK_FLAGS),
-        _stdint_compile_check("_GLIBCXX_USE_C99_STDINT", "c++11"),
-        _compile_body_check("_GLIBCXX_USE_C99_INTTYPES", "inttypes.h", _C99_INTTYPES_BODY, "c++11"),
-        _compile_body_check("_GLIBCXX_USE_C99_INTTYPES_WCHAR_T", "inttypes.h", _C99_INTTYPES_WCHAR_BODY, "c++11"),
-        _link_body_check("_GLIBCXX11_USE_C99_MATH", ["math.h"], _C99_MATH_GENERIC_BODY, "c++11", MATH_LINK_FLAGS),
-        compile_check(
-            name = "HAVE_C99_FLT_EVAL_TYPES",
-            language = "c++",
-            flags = ["-std=c++11", "-nostdinc++"],
-            source = """
+    ]
+    if gcc_version_at_least_for(gcc_version, "14.0.0"):
+        checks.extend([
+            _stdint_compile_check("_GLIBCXX_USE_C99_STDINT", "c++11"),
+            _compile_body_check("_GLIBCXX_USE_C99_INTTYPES", "inttypes.h", _C99_INTTYPES_BODY, "c++11"),
+            _compile_body_check("_GLIBCXX_USE_C99_INTTYPES_WCHAR_T", "inttypes.h", _C99_INTTYPES_WCHAR_BODY, "c++11"),
+        ])
+    checks.append(_link_body_check("_GLIBCXX11_USE_C99_MATH", ["math.h"], _C99_MATH_GENERIC_BODY, "c++11", MATH_LINK_FLAGS))
+    if gcc_version_at_least_for(gcc_version, "14.0.0"):
+        checks.extend([
+            compile_check(
+                name = "HAVE_C99_FLT_EVAL_TYPES",
+                language = "c++",
+                flags = ["-std=c++11", "-nostdinc++"],
+                source = """
 #include <math.h>
 float_t f;
 double_t d;
 int main() { return sizeof(f) == sizeof(d); }
 """,
-        ),
-        _compile_body_check("_GLIBCXX_USE_C99_MATH_FUNCS", "math.h", _C99_MATH_FUNCS_BODY, "c++11"),
+            ),
+            _compile_body_check("_GLIBCXX_USE_C99_MATH_FUNCS", "math.h", _C99_MATH_FUNCS_BODY, "c++11"),
+        ])
+    checks.extend([
         _link_body_check("_GLIBCXX11_USE_C99_COMPLEX", ["complex.h"], _C99_COMPLEX_BODY, "c++11", MATH_LINK_FLAGS),
-        _compile_body_check("_GLIBCXX_USE_C99_COMPLEX_ARC", "complex.h", _C99_COMPLEX_ARC_BODY, "c++11"),
+    ])
+    if gcc_version_at_least_for(gcc_version, "14.0.0"):
+        checks.append(_compile_body_check("_GLIBCXX_USE_C99_COMPLEX_ARC", "complex.h", _C99_COMPLEX_ARC_BODY, "c++11"))
+    checks.extend([
         _link_body_check("_GLIBCXX11_USE_C99_STDIO", ["stdarg.h", "stdio.h"], _C99_STDIO_BODY, "c++11"),
         _link_body_check("_GLIBCXX11_USE_C99_STDLIB", ["stdlib.h"], _C99_STDLIB_BODY, "c++11"),
         _compile_body_check("_GLIBCXX11_USE_C99_WCHAR", "wchar.h", _C99_WCHAR_BODY, "c++11"),
@@ -683,10 +721,14 @@ int main() { return 0; }
 """,
         ),
         function_link_check("HAVE_WCSTOF", "wchar.h", "float f = wcstof(L\"1\", (wchar_t **)0)"),
-        _compile_body_check("_GLIBCXX_USE_C99_CTYPE", "ctype.h", "int ch;\nint ret;\nret = isblank(ch);", "c++11"),
-        _compile_body_check("_GLIBCXX_USE_C99_FENV", "fenv.h", _C99_FENV_BODY, "c++11"),
         policy_undef("_GLIBCXX_NO_C99_ROUNDING_FUNCS"),
-    ]
+    ])
+    if gcc_version_at_least_for(gcc_version, "14.0.0"):
+        checks.extend([
+            _compile_body_check("_GLIBCXX_USE_C99_CTYPE", "ctype.h", "int ch;\nint ret;\nret = isblank(ch);", "c++11"),
+            _compile_body_check("_GLIBCXX_USE_C99_FENV", "fenv.h", _C99_FENV_BODY, "c++11"),
+        ])
+    return checks
 
 def glibcxx_check_c99_tr1():
     return [
@@ -699,8 +741,8 @@ def glibcxx_check_c99_tr1():
         _compile_body_check("_GLIBCXX_USE_C99_INTTYPES_WCHAR_T_TR1", "inttypes.h", _C99_INTTYPES_WCHAR_BODY, "c++98"),
     ]
 
-def glibcxx_check_uchar_h():
-    return [
+def glibcxx_check_uchar_h(gcc_version):
+    checks = [
         compile_check(
             name = "_GLIBCXX_USE_C11_UCHAR_CXX11",
             language = "c++",
@@ -722,11 +764,14 @@ namespace test {
 int main() { return 0; }
 """,
         ),
-        compile_check(
-            name = "_GLIBCXX_USE_UCHAR_C8RTOMB_MBRTOC8_FCHAR8_T",
-            language = "c++",
-            flags = ["-std=c++11", "-fchar8_t"],
-            source = """
+    ]
+    if gcc_version_at_least_for(gcc_version, "12.0.0"):
+        checks.extend([
+            compile_check(
+                name = "_GLIBCXX_USE_UCHAR_C8RTOMB_MBRTOC8_FCHAR8_T",
+                language = "c++",
+                flags = ["-std=c++11", "-fchar8_t"],
+                source = """
 #include <uchar.h>
 namespace test {
     using ::c8rtomb;
@@ -734,24 +779,67 @@ namespace test {
 }
 int main() { return 0; }
 """,
-        ),
-        compile_check(
-            name = "_GLIBCXX_USE_UCHAR_C8RTOMB_MBRTOC8_CXX20",
-            language = "c++",
-            flags = ["-std=c++20"],
-            source = """
+            ),
+            compile_check(
+                name = "_GLIBCXX_USE_UCHAR_C8RTOMB_MBRTOC8_CXX20",
+                language = "c++",
+                flags = ["-std=c++20"],
+                source = """
 #include <uchar.h>
 namespace test {
     using ::c8rtomb;
     using ::mbrtoc8;
 }
 int main() { return 0; }
+""",
+            ),
+        ])
+    return checks
+
+def glibcxx_check_int64_t(gcc_version):
+    if not gcc_version_less_than_for(gcc_version, "12.0.0"):
+        return []
+    return [
+        compile_check(
+            name = "HAVE_INT64_T",
+            language = "c++",
+            flags = ["-nostdinc++"],
+            source = """
+#include <stdint.h>
+int main() {
+    int64_t value = 0;
+    return (int)value;
+}
+""",
+        ),
+        compile_check(
+            name = "HAVE_INT64_T_LONG",
+            language = "c++",
+            flags = ["-nostdinc++"],
+            source = """
+#include <stdint.h>
+template<typename T1, typename T2> struct same { enum { value = -1 }; };
+template<typename T> struct same<T, T> { enum { value = 1 }; };
+int check[same<int64_t, long>::value];
+int main() { return check[0]; }
+""",
+        ),
+        compile_check(
+            name = "HAVE_INT64_T_LONG_LONG",
+            language = "c++",
+            flags = ["-nostdinc++"],
+            source = """
+#include <stdint.h>
+template<typename T1, typename T2> struct same { enum { value = -1 }; };
+template<typename T> struct same<T, T> { enum { value = 1 }; };
+int check[same<int64_t, long long>::value];
+int main() { return check[0]; }
 """,
         ),
     ]
 
-def glibcxx_check_lfs():
-    return [
+def glibcxx_check_lfs(gcc_version):
+    checks = [
         link_check(
             name = "_GLIBCXX_USE_LFS",
             compile_flags = CXX_NO_EXCEPTIONS_FLAGS,
@@ -772,8 +860,10 @@ int main() {
 }
 """,
         ),
-        function_link_check("_GLIBCXX_USE_FSEEKO_FTELLO", "stdio.h", "fseeko((FILE *)0, 0, SEEK_SET); ftello((FILE *)0)"),
     ]
+    if gcc_version_at_least_for(gcc_version, "13.0.0"):
+        checks.append(function_link_check("_GLIBCXX_USE_FSEEKO_FTELLO", "stdio.h", "fseeko((FILE *)0, 0, SEEK_SET); ftello((FILE *)0)"))
+    return checks
 
 def glibcxx_check_gettimeofday():
     return [
@@ -791,8 +881,8 @@ int main() {
         ),
     ]
 
-def glibcxx_enable_libstdcxx_time():
-    return [
+def glibcxx_enable_libstdcxx_time(gcc_version):
+    checks = [
         link_check(
             name = "_GLIBCXX_USE_CLOCK_MONOTONIC",
             compile_flags = CXX_NO_EXCEPTIONS_FLAGS,
@@ -830,10 +920,12 @@ int main() {
 """,
         ),
         function_link_check("_GLIBCXX_USE_SCHED_YIELD", "sched.h", "sched_yield()", compile_flags = CXX_NO_EXCEPTIONS_FLAGS),
-        policy_undef("_GLIBCXX_NO_SLEEP"),
         policy_undef("_GLIBCXX_USE_CLOCK_GETTIME_SYSCALL"),
         policy_undef("_GLIBCXX_USE_WIN32_SLEEP"),
     ]
+    if gcc_version_at_least_for(gcc_version, "11.0.0"):
+        checks.append(policy_undef("_GLIBCXX_NO_SLEEP"))
+    return checks
 
 def glibcxx_check_stdio_proto():
     return [function_link_check("HAVE_GETS", "stdio.h", "char buf[8]; gets(buf)")]
@@ -886,7 +978,9 @@ def glibcxx_compute_stdio_integer_constants():
 def glibcxx_check_tmpnam():
     return [function_link_check("_GLIBCXX_USE_TMPNAM", "stdio.h", "char buf[L_tmpnam]; tmpnam(buf)")]
 
-def glibcxx_check_pthread_clock_apis():
+def glibcxx_check_pthread_clock_apis(gcc_version):
+    if gcc_version_less_than_for(gcc_version, "10.0.0"):
+        return []
     return [
         link_check(
             name = "_GLIBCXX_USE_PTHREAD_COND_CLOCKWAIT",
@@ -943,8 +1037,8 @@ def glibcxx_check_hardware_concurrency():
         function_link_check("_GLIBCXX_USE_PTHREADS_NUM_PROCESSORS_NP", "pthread.h", "int n = pthread_num_processors_np()", compile_flags = CXX_NO_EXCEPTIONS_FLAGS, link_flags = PTHREAD_LINK_FLAGS),
     ]
 
-def glibcxx_check_gthreads():
-    return [
+def glibcxx_check_gthreads(gcc_version):
+    checks = [
         compile_check(
             name = "_GTHREAD_USE_MUTEX_TIMEDLOCK",
             language = "c++",
@@ -991,9 +1085,43 @@ int main() {
 """,
         ),
     ]
+    if gcc_version_at_least_for(gcc_version, "11.0.0") and gcc_version_less_than_for(gcc_version, "16.0.0"):
+        checks.append(
+            compile_check(
+                name = "HAVE_POSIX_SEMAPHORE",
+                language = "c++",
+                flags = CXX_NO_EXCEPTIONS_FLAGS,
+                source = """
+#include <limits.h>
+#include <semaphore.h>
+#include <unistd.h>
+int main() {
+#if !defined _POSIX_TIMEOUTS || _POSIX_TIMEOUTS <= 0
+#error POSIX timeouts option not supported
+#elif !defined _POSIX_SEMAPHORES || _POSIX_SEMAPHORES <= 0
+#error POSIX semaphores option not supported
+#else
+#if defined SEM_VALUE_MAX
+    constexpr int sem_value_max = SEM_VALUE_MAX;
+#elif defined _POSIX_SEM_VALUE_MAX
+    constexpr int sem_value_max = _POSIX_SEM_VALUE_MAX;
+#else
+#error SEM_VALUE_MAX not available
+#endif
+    sem_t sem;
+    sem_init(&sem, 0, sem_value_max);
+    struct timespec ts = {0};
+    sem_timedwait(&sem, &ts);
+#endif
+    return 0;
+}
+""",
+            ),
+        )
+    return checks
 
-def glibcxx_check_filesystem_deps():
-    return [
+def glibcxx_check_filesystem_deps(gcc_version):
+    checks = [
         compile_check(
             name = "HAVE_STRUCT_DIRENT_D_TYPE",
             language = "c++",
@@ -1004,10 +1132,6 @@ int test(dirent *entry) { return entry->d_type; }
 int main(void) { return 0; }
 """,
         ),
-        function_link_check("_GLIBCXX_USE_CHMOD", "sys/stat.h", 'int i = chmod("", S_IRUSR)', compile_flags = CXX_FILESYSTEM_FLAGS),
-        function_link_check("_GLIBCXX_USE_MKDIR", "sys/stat.h", 'int i = mkdir("", S_IRUSR)', compile_flags = CXX_FILESYSTEM_FLAGS),
-        function_link_check("_GLIBCXX_USE_CHDIR", "unistd.h", 'int i = chdir("")', compile_flags = CXX_FILESYSTEM_FLAGS),
-        function_link_check("_GLIBCXX_USE_GETCWD", "unistd.h", "char *s = getcwd((char *)0, 1)", compile_flags = CXX_FILESYSTEM_FLAGS),
         link_check(
             name = "_GLIBCXX_USE_REALPATH",
             compile_flags = CXX_FILESYSTEM_FLAGS,
@@ -1041,30 +1165,6 @@ int main() {
 """,
         ),
         link_check(
-            name = "_GLIBCXX_USE_UTIME",
-            compile_flags = CXX_FILESYSTEM_FLAGS,
-            source = """
-#include <utime.h>
-int main() {
-    utimbuf t = {1, 1};
-    int i = utime("path", &t);
-    return i;
-}
-""",
-        ),
-        link_check(
-            name = "_GLIBCXX_USE_LSTAT",
-            compile_flags = CXX_FILESYSTEM_FLAGS,
-            source = """
-#include <sys/stat.h>
-int main() {
-    struct stat st;
-    int i = lstat("path", &st);
-    return i;
-}
-""",
-        ),
-        link_check(
             name = "_GLIBCXX_USE_ST_MTIM",
             compile_flags = CXX_FILESYSTEM_FLAGS,
             source = """
@@ -1085,15 +1185,68 @@ int main() {
 int main() { fchmodat(AT_FDCWD, "", 0, AT_SYMLINK_NOFOLLOW); return 0; }
 """,
         ),
-        function_link_check("HAVE_LINK", "unistd.h", 'link("", "")', compile_flags = CXX_FILESYSTEM_FLAGS),
-        function_link_check("HAVE_LSEEK", "unistd.h", "lseek(1, 0, SEEK_SET)", compile_flags = CXX_FILESYSTEM_FLAGS),
-        function_link_check("HAVE_READLINK", "unistd.h", 'char buf[32]; readlink("", buf, sizeof(buf))', compile_flags = CXX_FILESYSTEM_FLAGS),
-        function_link_check("HAVE_SYMLINK", "unistd.h", 'symlink("", "")', compile_flags = CXX_FILESYSTEM_FLAGS),
-        function_link_check("HAVE_TRUNCATE", "unistd.h", 'truncate("", 99)', compile_flags = CXX_FILESYSTEM_FLAGS),
-        link_check(
-            name = "_GLIBCXX_USE_COPY_FILE_RANGE",
-            compile_flags = CXX_FILESYSTEM_FLAGS,
-            source = """
+        function_link_check("_GLIBCXX_USE_SENDFILE", "sys/sendfile.h", "sendfile(1, 2, (off_t *)0, sizeof 1)", compile_flags = CXX_FILESYSTEM_FLAGS),
+    ]
+    if gcc_version_at_least_for(gcc_version, "9.0.0"):
+        checks.extend([
+            link_check(
+                name = "_GLIBCXX_USE_UTIME",
+                compile_flags = CXX_FILESYSTEM_FLAGS,
+                source = """
+#include <utime.h>
+int main() {
+    utimbuf t = {1, 1};
+    int i = utime("path", &t);
+    return i;
+}
+""",
+            ),
+            link_check(
+                name = "_GLIBCXX_USE_LSTAT",
+                compile_flags = CXX_FILESYSTEM_FLAGS,
+                source = """
+#include <sys/stat.h>
+int main() {
+    struct stat st;
+    int i = lstat("path", &st);
+    return i;
+}
+""",
+            ),
+            function_link_check("HAVE_LINK", "unistd.h", 'link("", "")', compile_flags = CXX_FILESYSTEM_FLAGS),
+            function_link_check("HAVE_READLINK", "unistd.h", 'char buf[32]; readlink("", buf, sizeof(buf))', compile_flags = CXX_FILESYSTEM_FLAGS),
+            function_link_check("HAVE_SYMLINK", "unistd.h", 'symlink("", "")', compile_flags = CXX_FILESYSTEM_FLAGS),
+            function_link_check("HAVE_TRUNCATE", "unistd.h", 'truncate("", 99)', compile_flags = CXX_FILESYSTEM_FLAGS),
+        ])
+    if gcc_version_at_least_for(gcc_version, "11.0.0"):
+        checks.extend([
+            function_link_check("HAVE_FDOPENDIR", "dirent.h", "DIR *dir = fdopendir(1)", compile_flags = CXX_FILESYSTEM_FLAGS),
+            function_link_check("HAVE_DIRFD", "dirent.h", "int fd = dirfd((DIR *)0)", compile_flags = CXX_FILESYSTEM_FLAGS),
+            function_link_check("HAVE_OPENAT", "fcntl.h", 'int fd = openat(AT_FDCWD, "", 0)', compile_flags = CXX_FILESYSTEM_FLAGS),
+            link_check(
+                name = "HAVE_UNLINKAT",
+                compile_flags = CXX_FILESYSTEM_FLAGS,
+                source = """
+#include <fcntl.h>
+#include <unistd.h>
+int main() { unlinkat(AT_FDCWD, "", AT_REMOVEDIR); return 0; }
+""",
+            ),
+        ])
+    if gcc_version_at_least_for(gcc_version, "12.0.0"):
+        checks.extend([
+            function_link_check("_GLIBCXX_USE_CHMOD", "sys/stat.h", 'int i = chmod("", S_IRUSR)', compile_flags = CXX_FILESYSTEM_FLAGS),
+            function_link_check("_GLIBCXX_USE_MKDIR", "sys/stat.h", 'int i = mkdir("", S_IRUSR)', compile_flags = CXX_FILESYSTEM_FLAGS),
+            function_link_check("_GLIBCXX_USE_CHDIR", "unistd.h", 'int i = chdir("")', compile_flags = CXX_FILESYSTEM_FLAGS),
+            function_link_check("_GLIBCXX_USE_GETCWD", "unistd.h", "char *s = getcwd((char *)0, 1)", compile_flags = CXX_FILESYSTEM_FLAGS),
+        ])
+    if gcc_version_at_least_for(gcc_version, "14.0.0"):
+        checks.extend([
+            function_link_check("HAVE_LSEEK", "unistd.h", "lseek(1, 0, SEEK_SET)", compile_flags = CXX_FILESYSTEM_FLAGS),
+            link_check(
+                name = "_GLIBCXX_USE_COPY_FILE_RANGE",
+                compile_flags = CXX_FILESYSTEM_FLAGS,
+                source = """
 #define _GNU_SOURCE 1
 #include <sys/types.h>
 #include <unistd.h>
@@ -1102,23 +1255,13 @@ int main() {
     return 0;
 }
 """,
-        ),
-        function_link_check("_GLIBCXX_USE_SENDFILE", "sys/sendfile.h", "sendfile(1, 2, (off_t *)0, sizeof 1)", compile_flags = CXX_FILESYSTEM_FLAGS),
-        function_link_check("HAVE_FDOPENDIR", "dirent.h", "DIR *dir = fdopendir(1)", compile_flags = CXX_FILESYSTEM_FLAGS),
-        function_link_check("HAVE_DIRFD", "dirent.h", "int fd = dirfd((DIR *)0)", compile_flags = CXX_FILESYSTEM_FLAGS),
-        function_link_check("HAVE_OPENAT", "fcntl.h", 'int fd = openat(AT_FDCWD, "", 0)', compile_flags = CXX_FILESYSTEM_FLAGS),
-        link_check(
-            name = "HAVE_UNLINKAT",
-            compile_flags = CXX_FILESYSTEM_FLAGS,
-            source = """
-#include <fcntl.h>
-#include <unistd.h>
-int main() { unlinkat(AT_FDCWD, "", AT_REMOVEDIR); return 0; }
-""",
-        ),
-    ]
+            ),
+        ])
+    return checks
 
-def glibcxx_check_networking_deps():
+def glibcxx_check_networking_deps(gcc_version):
+    if gcc_version_less_than_for(gcc_version, "12.0.0"):
+        return []
     return [
         compile_check(
             name = "HAVE_O_NONBLOCK",
@@ -1132,7 +1275,9 @@ int main(void) { return O_NONBLOCK == 0; }
         ),
     ]
 
-def glibcxx_check_text_encoding():
+def glibcxx_check_text_encoding(gcc_version):
+    if not gcc_version_at_least_for(gcc_version, "14.0.0"):
+        return []
     return [
         link_check(
             name = "_GLIBCXX_USE_NL_LANGINFO_L",
@@ -1150,7 +1295,9 @@ int main() {
         ),
     ]
 
-def glibcxx_check_debugging():
+def glibcxx_check_debugging(gcc_version):
+    if not gcc_version_at_least_for(gcc_version, "16.0.0"):
+        return []
     return [
         link_check(
             name = "_GLIBCXX_USE_PTRACE",
@@ -1164,7 +1311,9 @@ int main() { return ptrace(PTRACE_TRACEME, (pid_t)0, 1, 0); }
         policy_define("_GLIBCXX_USE_PROC_SELF_STATUS"),
     ]
 
-def glibcxx_check_stdio_locking():
+def glibcxx_check_stdio_locking(gcc_version):
+    if not gcc_version_at_least_for(gcc_version, "16.0.0"):
+        return []
     return [
         function_link_check("HAVE_FWRITE_UNLOCKED", "stdio.h", 'fwrite_unlocked("", 1, 1, stdout)'),
         link_check(
@@ -1211,8 +1360,8 @@ int main() {
         ),
     ]
 
-def glibcxx_misc_compile_checks():
-    return [
+def glibcxx_misc_compile_checks(gcc_version):
+    checks = [
         compile_check(
             name = "HAVE_S_IFREG",
             source = """
@@ -1234,15 +1383,6 @@ int main(void) { return S_ISREG(0); }
 """,
         ),
         compile_check(
-            name = "HAVE_DECL_STRNLEN",
-            language = "c++",
-            flags = ["-nostdinc++"],
-            source = """
-#include <string.h>
-int main() { return strnlen("", 1); }
-""",
-        ),
-        compile_check(
             name = "_GLIBCXX_X86_RDRAND",
             language = "c++",
             flags = CXX_NO_EXCEPTIONS_FLAGS,
@@ -1250,50 +1390,67 @@ int main() { return strnlen("", 1); }
 int main() { unsigned int v; asm("rdrand %eax"); return __builtin_ia32_rdrand32_step(&v); }
 """,
         ),
-        compile_check(
+    ]
+    if gcc_version_at_least_for(gcc_version, "12.0.0"):
+        checks.append(compile_check(
+            name = "HAVE_DECL_STRNLEN",
+            language = "c++",
+            flags = ["-nostdinc++"],
+            source = """
+#include <string.h>
+int main() { return strnlen("", 1); }
+""",
+        ))
+    if gcc_version_at_least_for(gcc_version, "10.0.0"):
+        checks.append(compile_check(
             name = "_GLIBCXX_X86_RDSEED",
             language = "c++",
             flags = CXX_NO_EXCEPTIONS_FLAGS,
             source = """
 int main() { unsigned int v; asm("rdseed %eax"); return __builtin_ia32_rdseed_si_step(&v); }
 """,
-        ),
-        compile_check(
-            name = "_GLIBCXX_CAN_ALIGNAS_DESTRUCTIVE_SIZE",
-            language = "c++",
-            flags = CXX_NO_EXCEPTIONS_FLAGS,
-            source = """
+        ))
+    if gcc_version_at_least_for(gcc_version, "13.0.0"):
+        checks.extend([
+            compile_check(
+                name = "_GLIBCXX_CAN_ALIGNAS_DESTRUCTIVE_SIZE",
+                language = "c++",
+                flags = CXX_NO_EXCEPTIONS_FLAGS,
+                source = """
 struct alignas(__GCC_DESTRUCTIVE_SIZE) Aligned {};
 alignas(Aligned) static char buf[sizeof(Aligned) * 16];
 int main() { return sizeof(buf) == 0; }
 """,
-        ),
-        compile_check(
-            name = "_GLIBCXX_USE_INIT_PRIORITY_ATTRIBUTE",
-            language = "c++",
-            flags = CXX_NO_EXCEPTIONS_FLAGS,
-            source = """
+            ),
+            compile_check(
+                name = "_GLIBCXX_USE_INIT_PRIORITY_ATTRIBUTE",
+                language = "c++",
+                flags = CXX_NO_EXCEPTIONS_FLAGS,
+                source = """
 #if !__has_attribute(init_priority)
 #error init_priority not supported
 #endif
 int main() { return 0; }
 """,
-        ),
-        compile_check(
-            name = "_GLIBCXX_USE_STRUCT_TM_TM_ZONE",
-            language = "c++",
-            flags = ["-std=c++20"],
-            source = """
+            ),
+        ])
+    if gcc_version_at_least_for(gcc_version, "15.0.0"):
+        checks.append(
+            compile_check(
+                name = "_GLIBCXX_USE_STRUCT_TM_TM_ZONE",
+                language = "c++",
+                flags = ["-std=c++20"],
+                source = """
 #include <time.h>
 int main() { struct tm t{}; t.tm_zone = (char *)0; return 0; }
 """,
-        ),
-    ]
+            ),
+        )
+    return checks
 
-def glibcxx_misc_link_checks():
-    return [
+def glibcxx_misc_link_checks(gcc_version):
+    checks = [
         function_link_check("HAVE_POLL", "poll.h", "struct pollfd pfd; poll(&pfd, 1, 0)"),
-        function_link_check("HAVE_USELOCALE", "locale.h", "locale_t loc = uselocale((locale_t)0)"),
         function_link_check("HAVE_LC_MESSAGES", "locale.h", "int i = LC_MESSAGES"),
         link_check(
             name = "HAVE___CXA_THREAD_ATEXIT",
@@ -1309,14 +1466,22 @@ extern "C" int __cxa_thread_atexit_impl(void (*)(void *), void *, void *);
 int main() { return __cxa_thread_atexit_impl((void (*)(void *))0, (void *)0, (void *)0); }
 """,
         ),
-        function_link_check("HAVE_ARC4RANDOM", "stdlib.h", "unsigned x = arc4random()"),
-        function_link_check("HAVE_GETENTROPY", "unistd.h", "char buf[8]; getentropy(buf, sizeof(buf))"),
-        function_link_check("HAVE_SOCKATMARK", "sys/socket.h", "int i = sockatmark(0)"),
         function_link_check("HAVE_SLEEP", "unistd.h", "sleep(0)"),
         function_link_check("HAVE_USLEEP", "unistd.h", "usleep(0)"),
         function_link_check("HAVE_WRITEV", "sys/uio.h", "struct iovec iov; writev(1, &iov, 1)"),
-        function_link_check("HAVE__WFOPEN", "wchar.h", 'FILE *f = _wfopen(L"", L"r")'),
     ]
+    if gcc_version_at_least_for(gcc_version, "11.0.0"):
+        checks.append(function_link_check("HAVE_USELOCALE", "locale.h", "locale_t loc = uselocale((locale_t)0)"))
+    if gcc_version_at_least_for(gcc_version, "12.0.0"):
+        checks.extend([
+            function_link_check("HAVE_ARC4RANDOM", "stdlib.h", "unsigned x = arc4random()"),
+            function_link_check("HAVE_GETENTROPY", "unistd.h", "char buf[8]; getentropy(buf, sizeof(buf))"),
+        ])
+    if gcc_version_at_least_for(gcc_version, "9.0.0"):
+        checks.append(function_link_check("HAVE_SOCKATMARK", "sys/socket.h", "int i = sockatmark(0)"))
+    if gcc_version_at_least_for(gcc_version, "9.0.0"):
+        checks.append(function_link_check("HAVE__WFOPEN", "wchar.h", 'FILE *f = _wfopen(L"", L"r")'))
+    return checks
 
 def glibcxx_abi_policies():
     return [
@@ -1326,7 +1491,36 @@ def glibcxx_abi_policies():
         policy_undef("_GLIBCXX_CONCEPT_CHECKS"),
     ]
 
-def glibcxx_random_policy():
+def glibcxx_check_system_error(gcc_version):
+    if gcc_version_at_least_for(gcc_version, "9.0.0"):
+        return []
+    return [
+        policy_define("HAVE_EBADMSG"),
+        policy_define("HAVE_ECANCELED"),
+        policy_define("HAVE_ECHILD"),
+        policy_define("HAVE_EIDRM"),
+        policy_define("HAVE_ENODATA"),
+        policy_define("HAVE_ENOLINK"),
+        policy_define("HAVE_ENOSPC"),
+        policy_define("HAVE_ENOSR"),
+        policy_define("HAVE_ENOSTR"),
+        policy_define("HAVE_ENOTRECOVERABLE"),
+        policy_define("HAVE_ENOTSUP"),
+        policy_define("HAVE_EOVERFLOW"),
+        policy_define("HAVE_EOWNERDEAD"),
+        policy_define("HAVE_EPERM"),
+        policy_define("HAVE_EPROTO"),
+        policy_define("HAVE_ETIME"),
+        policy_define("HAVE_ETIMEDOUT"),
+        policy_define("HAVE_ETXTBSY"),
+        policy_define("HAVE_EWOULDBLOCK"),
+    ]
+
+def glibcxx_random_policy(gcc_version):
+    if gcc_version_less_than_for(gcc_version, "9.0.0"):
+        return [
+            policy_define("_GLIBCXX_USE_RANDOM_TR1"),
+        ]
     return [
         # GLIBCXX_CHECK_DEV_RANDOM uses one host/filesystem decision to define
         # both the C++11 and TR1 random_device feature macros.
@@ -1339,7 +1533,9 @@ def glibcxx_random_policy():
         ),
     ]
 
-def glibcxx_zoneinfo_policy():
+def glibcxx_zoneinfo_policy(gcc_version):
+    if not gcc_version_at_least_for(gcc_version, "13.0.0"):
+        return []
     return [
         policy_string_define("_GLIBCXX_ZONEINFO_DIR", "/usr/share/zoneinfo"),
         policy_undef("_GLIBCXX_STATIC_TZDATA"),
