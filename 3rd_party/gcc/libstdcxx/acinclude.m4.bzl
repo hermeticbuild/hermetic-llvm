@@ -6,12 +6,18 @@ load(
     "//3rd_party/gcc:version.bzl",
     "gcc_version_at_least_for",
     "gcc_version_less_than_for",
+    "libstdcxx_has_alignas_init_priority_checks",
     "libstdcxx_has_atomic_builtins_define",
+    "libstdcxx_has_c99_cxx11_detail_checks",
     "libstdcxx_has_debugging_checks",
+    "libstdcxx_has_filesystem_chdir_chmod_getcwd_mkdir_checks",
+    "libstdcxx_has_filesystem_copy_file_range_check",
+    "libstdcxx_has_fseeko_ftello_check",
     "libstdcxx_has_networking_o_nonblock_check",
     "libstdcxx_has_posix_semaphore_check",
     "libstdcxx_has_stdio_locking_checks",
     "libstdcxx_has_struct_tm_tm_zone_check",
+    "libstdcxx_has_text_encoding_checks",
 )
 load(
     "//3rd_party/gcc/libstdcxx/autoconf:checks.bzl",
@@ -644,14 +650,14 @@ def glibcxx_enable_c99(gcc_version):
         _compile_body_check("_GLIBCXX98_USE_C99_WCHAR", "wchar.h", _C99_WCHAR_BODY, "c++98"),
         _link_body_check("_GLIBCXX_USE_C99", ["complex.h", "math.h", "stdarg.h", "stdio.h", "stdlib.h", "wchar.h", "wctype.h"], _scoped(_C99_MATH_GENERIC_BODY) + _scoped(_C99_COMPLEX_BODY) + _scoped(_C99_STDIO_BODY) + _scoped(_C99_STDLIB_BODY) + _scoped(_C99_WCHAR_BODY), "c++98", MATH_LINK_FLAGS),
     ]
-    if gcc_version_at_least_for(gcc_version, "14.0.0"):
+    if libstdcxx_has_c99_cxx11_detail_checks(gcc_version):
         checks.extend([
             _stdint_compile_check("_GLIBCXX_USE_C99_STDINT", "c++11"),
             _compile_body_check("_GLIBCXX_USE_C99_INTTYPES", "inttypes.h", _C99_INTTYPES_BODY, "c++11"),
             _compile_body_check("_GLIBCXX_USE_C99_INTTYPES_WCHAR_T", "inttypes.h", _C99_INTTYPES_WCHAR_BODY, "c++11"),
         ])
     checks.append(_link_body_check("_GLIBCXX11_USE_C99_MATH", ["math.h"], _C99_MATH_GENERIC_BODY, "c++11", MATH_LINK_FLAGS))
-    if gcc_version_at_least_for(gcc_version, "14.0.0"):
+    if libstdcxx_has_c99_cxx11_detail_checks(gcc_version):
         checks.extend([
             compile_check(
                 name = "HAVE_C99_FLT_EVAL_TYPES",
@@ -669,7 +675,7 @@ int main() { return sizeof(f) == sizeof(d); }
     checks.extend([
         _link_body_check("_GLIBCXX11_USE_C99_COMPLEX", ["complex.h"], _C99_COMPLEX_BODY, "c++11", MATH_LINK_FLAGS),
     ])
-    if gcc_version_at_least_for(gcc_version, "14.0.0"):
+    if libstdcxx_has_c99_cxx11_detail_checks(gcc_version):
         checks.append(_compile_body_check("_GLIBCXX_USE_C99_COMPLEX_ARC", "complex.h", _C99_COMPLEX_ARC_BODY, "c++11"))
     checks.extend([
         _link_body_check("_GLIBCXX11_USE_C99_STDIO", ["stdarg.h", "stdio.h"], _C99_STDIO_BODY, "c++11"),
@@ -733,7 +739,7 @@ int main() { return 0; }
         function_link_check("HAVE_WCSTOF", "wchar.h", "float f = wcstof(L\"1\", (wchar_t **)0)"),
         policy_undef("_GLIBCXX_NO_C99_ROUNDING_FUNCS"),
     ])
-    if gcc_version_at_least_for(gcc_version, "14.0.0"):
+    if libstdcxx_has_c99_cxx11_detail_checks(gcc_version):
         checks.extend([
             _compile_body_check("_GLIBCXX_USE_C99_CTYPE", "ctype.h", "int ch;\nint ret;\nret = isblank(ch);", "c++11"),
             _compile_body_check("_GLIBCXX_USE_C99_FENV", "fenv.h", _C99_FENV_BODY, "c++11"),
@@ -871,7 +877,7 @@ int main() {
 """,
         ),
     ]
-    if gcc_version_at_least_for(gcc_version, "13.0.0"):
+    if libstdcxx_has_fseeko_ftello_check(gcc_version):
         checks.append(function_link_check("_GLIBCXX_USE_FSEEKO_FTELLO", "stdio.h", "fseeko((FILE *)0, 0, SEEK_SET); ftello((FILE *)0)"))
     return checks
 
@@ -1243,14 +1249,14 @@ int main() { unlinkat(AT_FDCWD, "", AT_REMOVEDIR); return 0; }
 """,
             ),
         ])
-    if gcc_version_at_least_for(gcc_version, "12.0.0"):
+    if libstdcxx_has_filesystem_chdir_chmod_getcwd_mkdir_checks(gcc_version):
         checks.extend([
             function_link_check("_GLIBCXX_USE_CHMOD", "sys/stat.h", 'int i = chmod("", S_IRUSR)', compile_flags = CXX_FILESYSTEM_FLAGS),
             function_link_check("_GLIBCXX_USE_MKDIR", "sys/stat.h", 'int i = mkdir("", S_IRUSR)', compile_flags = CXX_FILESYSTEM_FLAGS),
             function_link_check("_GLIBCXX_USE_CHDIR", "unistd.h", 'int i = chdir("")', compile_flags = CXX_FILESYSTEM_FLAGS),
             function_link_check("_GLIBCXX_USE_GETCWD", "unistd.h", "char *s = getcwd((char *)0, 1)", compile_flags = CXX_FILESYSTEM_FLAGS),
         ])
-    if gcc_version_at_least_for(gcc_version, "14.0.0"):
+    if libstdcxx_has_filesystem_copy_file_range_check(gcc_version):
         checks.extend([
             function_link_check("HAVE_LSEEK", "unistd.h", "lseek(1, 0, SEEK_SET)", compile_flags = CXX_FILESYSTEM_FLAGS),
             link_check(
@@ -1286,7 +1292,7 @@ int main(void) { return O_NONBLOCK == 0; }
     ]
 
 def glibcxx_check_text_encoding(gcc_version):
-    if not gcc_version_at_least_for(gcc_version, "14.0.0"):
+    if not libstdcxx_has_text_encoding_checks(gcc_version):
         return []
     return [
         link_check(
@@ -1420,7 +1426,7 @@ int main() { return strnlen("", 1); }
 int main() { unsigned int v; asm("rdseed %eax"); return __builtin_ia32_rdseed_si_step(&v); }
 """,
         ))
-    if gcc_version_at_least_for(gcc_version, "13.0.0"):
+    if libstdcxx_has_alignas_init_priority_checks(gcc_version):
         checks.extend([
             compile_check(
                 name = "_GLIBCXX_CAN_ALIGNAS_DESTRUCTIVE_SIZE",

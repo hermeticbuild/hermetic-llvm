@@ -55,9 +55,9 @@ Status meanings are defined in `AGENTS.md`.
 - [x] `GLIBCXX_CHECK_DEBUGGING` - GCC 16+ Linux debug probes are modeled; `modeled`.
 - [x] `GLIBCXX_CHECK_STDIO_LOCKING` - GCC 16+ stdio locking probe is modeled; `modeled`.
 - [x] `GLIBCXX_STRUCT_TM_TM_ZONE` - GCC 15+ `tm_zone` probe is modeled; `modeled`.
-- [x] `GLIBCXX_ZONEINFO_DIR` - zoneinfo policy is modeled; `modeled`.
-- [x] `GLIBCXX_CHECK_ALIGNAS_CACHELINE` - cacheline alignment probe is modeled; `modeled`.
-- [x] `GLIBCXX_CHECK_INIT_PRIORITY` - init-priority probe is modeled; `modeled`.
+- [x] `GLIBCXX_ZONEINFO_DIR` - GCC 13+ zoneinfo policy is modeled; `modeled`.
+- [x] `GLIBCXX_CHECK_ALIGNAS_CACHELINE` - GCC 13+ cacheline alignment probe is modeled; `modeled`.
+- [x] `GLIBCXX_CHECK_INIT_PRIORITY` - GCC 13+ init-priority probe is modeled; `modeled`.
 - [x] `GLIBCXX_CHECK_X86_RDRAND` - x86 RDRAND probe is modeled; `modeled`.
 - [x] `GLIBCXX_CHECK_X86_RDSEED` - x86 RDSEED probe is modeled; `modeled`.
 - [x] `GLIBCXX_CHECK_SIZE_T_MANGLING` - size_t mangling policy is modeled; `modeled`.
@@ -96,7 +96,7 @@ Status meanings are defined in `AGENTS.md`.
 - [x] `GLIBCXX_ENABLE_CONCEPT_CHECKS` - fixed today; should become a private knob if exposed.
 - [x] `GLIBCXX_ENABLE_FLOAT128` - fixed today; needs target/probe knob and version-map work.
 - [x] `GLIBCXX_ENABLE_FULLY_DYNAMIC_STRING` - fixed today; needs ABI knob work.
-- [x] `GLIBCXX_EMERGENCY_EH_ALLOC` - fixed today; needs EH pool knobs.
+- [x] `GLIBCXX_EMERGENCY_EH_ALLOC` - GCC 13+ setting is fixed today; needs EH pool knobs.
 - [x] `nls` / `_GLIBCXX_USE_NLS` - fixed off; needs NLS catalog build policy if exposed.
 - [x] `stdio_pure` / `_GLIBCXX_USE_STDIO_PURE` - fixed off; needs a C stdio variant knob if exposed.
 - [x] `malloc` allocator mode - fixed to the normal allocator; needs an allocator variant knob if exposed.
@@ -126,6 +126,7 @@ Status meanings are defined in `AGENTS.md`.
 - [x] `GCC_CHECK_ASSEMBLER_HWCAP` - Solaris branch; `unsupported-target`.
 - [x] `GCC_PROG_GNU_CXXFILT` - Sun/Solaris symbol-version branch; `unsupported-target`.
 - [x] `GLIBCXX_CHECK_FILEBUF_NATIVE_HANDLES` - GCC 14+ Windows branch; `unsupported-target`.
+- [x] `GLIBCXX_MAYBE_UNDERSCORED_FUNCS` - GCC 13 and older underscored C-symbol fallback branch; `unsupported-target`.
 - [x] `GLIBCXX_CHECK_SYSCTL_HW_NCPU` - BSD/macOS branch; `unsupported-target`.
 - [x] `GLIBCXX_CROSSCONFIG` - non-current cross branches; `unsupported-target`.
 

@@ -13,7 +13,7 @@ Status meanings are defined in `AGENTS.md`.
 - [x] `GCC_CHECK_TLS` - native GCC TLS probe, modeled in `gcc_config_checks.bzl`.
 - [x] `GCC_CHECK_UNWIND_GETIPINFO` - GCC unwind policy, modeled for Linux GNU.
 - [x] `GCC_LINUX_FUTEX` - Linux futex probe, modeled as a link probe.
-- [x] `GLIBCXX_CHECK_ALIGNAS_CACHELINE` - cacheline alignment compile probe.
+- [x] `GLIBCXX_CHECK_ALIGNAS_CACHELINE` - GCC 13+ cacheline alignment compile probe.
 - [x] `GLIBCXX_CHECK_ARC4RANDOM` - `arc4random` function probe.
 - [x] `GLIBCXX_CHECK_C99_TR1` - TR1 C99 support probes.
 - [x] `GLIBCXX_CHECK_COMPILER_FEATURES` - compiler feature policy/probe group.
@@ -25,7 +25,7 @@ Status meanings are defined in `AGENTS.md`.
 - [x] `GLIBCXX_CHECK_GETTIMEOFDAY` - `gettimeofday` probe.
 - [x] `GLIBCXX_CHECK_GET_NPROCS` - GNU `get_nprocs` probe.
 - [x] `GLIBCXX_CHECK_GTHREADS` - gthreads capability checks.
-- [x] `GLIBCXX_CHECK_INIT_PRIORITY` - init-priority attribute probe.
+- [x] `GLIBCXX_CHECK_INIT_PRIORITY` - GCC 13+ init-priority attribute probe.
 - [x] `GLIBCXX_CHECK_LFS` - large-file support probe group.
 - [x] `GLIBCXX_CHECK_LINKER_FEATURES` - linker/symver capability policy.
 - [x] `GLIBCXX_CHECK_MATH_DECL` - math declaration helper, represented by math support probes.
@@ -79,7 +79,7 @@ Status meanings are defined in `AGENTS.md`.
 - [x] `GLIBCXX_ENABLE_SYMVERS` - symbol version policy.
 - [x] `GLIBCXX_ENABLE_WCHAR_T` - wide character probes.
 - [x] `GLIBCXX_STRUCT_TM_TM_ZONE` - GCC 15+ `struct tm::tm_zone` probe.
-- [x] `GLIBCXX_ZONEINFO_DIR` - zoneinfo policy.
+- [x] `GLIBCXX_ZONEINFO_DIR` - GCC 13+ zoneinfo policy.
 
 ## Concrete Header Checks
 
@@ -225,7 +225,7 @@ classification. They are not generic raw inventory entries.
 
 ## Build Setting Later
 
-- [x] `GLIBCXX_EMERGENCY_EH_ALLOC` - needs private EH pool knobs.
+- [x] `GLIBCXX_EMERGENCY_EH_ALLOC` - GCC 13+ setting; needs private EH pool knobs.
 - [x] `GLIBCXX_ENABLE_CONCEPT_CHECKS` - needs a private feature knob if exposed.
 - [x] `GLIBCXX_ENABLE_FLOAT128` - needs policy/probe knob and version-map work.
 - [x] `GLIBCXX_ENABLE_FULLY_DYNAMIC_STRING` - needs ABI-affecting private knob.
@@ -259,6 +259,7 @@ classification. They are not generic raw inventory entries.
 
 - [x] `GCC_CHECK_ASSEMBLER_HWCAP` - Solaris assembler HWCAP path.
 - [x] `GCC_PROG_GNU_CXXFILT` - Sun/Solaris symbol-version support path.
+- [x] `GLIBCXX_MAYBE_UNDERSCORED_FUNCS` - fallback for targets with underscored C symbols.
 - [x] `GLIBCXX_CHECK_FILEBUF_NATIVE_HANDLES` - GCC 14+ Windows native file handle path.
 - [x] `GLIBCXX_CHECK_SYSCTL_HW_NCPU` - BSD/macOS CPU-count path.
 - [x] `GLIBCXX_CROSSCONFIG` - non-current cross branches are inactive.

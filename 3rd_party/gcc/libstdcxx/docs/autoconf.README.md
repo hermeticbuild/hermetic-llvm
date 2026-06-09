@@ -143,8 +143,9 @@ as grouped link probes in `linkage.m4.bzl`.
 `GLIBCXX_CHECK_GETENTROPY`, `GLIBCXX_CHECK_FILESYSTEM_DEPS`,
 GCC 14+ `GLIBCXX_CHECK_TEXT_ENCODING`, GCC 16+ `GLIBCXX_CHECK_DEBUGGING`,
 GCC 16+ `GLIBCXX_CHECK_STDIO_LOCKING`, GCC 15+ `GLIBCXX_STRUCT_TM_TM_ZONE`,
-`GLIBCXX_ZONEINFO_DIR`, `GLIBCXX_CHECK_ALIGNAS_CACHELINE`,
-`GLIBCXX_CHECK_INIT_PRIORITY`, `GLIBCXX_CHECK_X86_RDRAND`,
+GCC 13+ `GLIBCXX_ZONEINFO_DIR`, GCC 13+
+`GLIBCXX_CHECK_ALIGNAS_CACHELINE`, GCC 13+ `GLIBCXX_CHECK_INIT_PRIORITY`,
+`GLIBCXX_CHECK_X86_RDRAND`,
 `GLIBCXX_CHECK_X86_RDSEED`, and `GLIBCXX_CHECK_SIZE_T_MANGLING` cover runtime
 library details after the core libc checks. The active Linux GNU behavior is
 modeled as probes or policy. `GLIBCXX_CHECK_DEV_RANDOM` is policy-modeled
@@ -168,7 +169,8 @@ reference-count ABI even when compare-and-swap builtins exist.
 `GLIBCXX_ENABLE_VERBOSE`, `GLIBCXX_ENABLE_CONCEPT_CHECKS`,
 `GLIBCXX_ENABLE_FLOAT128`, `GLIBCXX_ENABLE_FULLY_DYNAMIC_STRING`,
 `GLIBCXX_ENABLE_CSTDIO`'s `stdio_pure` mode, `GLIBCXX_ENABLE_ALLOCATOR`'s
-`malloc` mode, NLS, and `GLIBCXX_EMERGENCY_EH_ALLOC` are currently fixed or
+`malloc` mode, NLS, and GCC 13+ `GLIBCXX_EMERGENCY_EH_ALLOC` are currently
+fixed or
 disabled policies. They should become explicit private Bazel settings only if
 the port exposes the corresponding GCC variant. `GLIBCXX_ENABLE_DECIMAL_FLOAT`
 is already represented by a compile probe and is not a deferred knob. Float128
@@ -226,6 +228,9 @@ with explicit build graph structure or user/toolchain options.
 `GCC_PROG_GNU_CXXFILT` is needed for Sun/Solaris symbol versioning.
 GCC 14+ `GLIBCXX_CHECK_FILEBUF_NATIVE_HANDLES` is the Windows `_get_osfhandle`
 path.
+`GLIBCXX_MAYBE_UNDERSCORED_FUNCS` is a GCC 13 and older fallback for targets
+whose C library exports underscored function names; the supported Linux GNU
+targets use normal names.
 `GLIBCXX_CHECK_SYSCTL_HW_NCPU` is the BSD/macOS CPU-count path.
 `GLIBCXX_CROSSCONFIG` covers cross and non-current target branches. These are
 classified `unsupported-target`.

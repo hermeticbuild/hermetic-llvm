@@ -27,7 +27,7 @@ HAVE_ATOMIC_LOCK_POLICY target-derived
 HAVE_AT_QUICK_EXIT probe-modeled
 HAVE___CXA_THREAD_ATEXIT probe-modeled
 HAVE___CXA_THREAD_ATEXIT_IMPL probe-modeled
-HAVE_C99_FLT_EVAL_TYPES probe-modeled
+HAVE_C99_FLT_EVAL_TYPES probe-modeled gcc_ge_14
 HAVE_CEILF probe-modeled
 HAVE_CEILL probe-modeled
 HAVE_COSF probe-modeled
@@ -76,7 +76,7 @@ HAVE_LOG10F probe-modeled
 HAVE_LOG10L probe-modeled
 HAVE_LOGF probe-modeled
 HAVE_LOGL probe-modeled
-HAVE_LSEEK probe-modeled
+HAVE_LSEEK probe-modeled gcc_ge_14
 HAVE_MBSTATE_T probe-modeled
 HAVE_MEMALIGN probe-modeled
 HAVE_POSIX_MEMALIGN probe-modeled
@@ -86,7 +86,7 @@ HAVE_MODFL probe-modeled
 HAVE_OBSOLETE_ISINF probe-modeled
 HAVE_OBSOLETE_ISNAN probe-modeled
 HAVE_OPENAT probe-modeled
-HAVE_O_NONBLOCK probe-modeled gcc_ge_14_3
+HAVE_O_NONBLOCK probe-modeled gcc_ge_13_4_lt_14,gcc_ge_14_3
 HAVE_POLL probe-modeled
 HAVE_POSIX_SEMAPHORE probe-modeled gcc_lt_16
 HAVE_POWF probe-modeled
@@ -157,7 +157,7 @@ _GLIBCXX98_USE_C99_STDLIB probe-modeled
 _GLIBCXX98_USE_C99_WCHAR probe-modeled
 _GLIBCXX_ATOMIC_BUILTINS policy-modeled gcc_lt_16
 _GLIBCXX_ATOMIC_WORD_BUILTINS policy-modeled gcc_ge_16
-_GLIBCXX_CAN_ALIGNAS_DESTRUCTIVE_SIZE probe-modeled
+_GLIBCXX_CAN_ALIGNAS_DESTRUCTIVE_SIZE probe-modeled gcc_ge_13_2
 _GLIBCXX_CONCEPT_CHECKS policy-modeled
 _GLIBCXX_FULLY_DYNAMIC_STRING policy-modeled
 _GLIBCXX_HAS_GTHREADS probe-modeled
@@ -181,43 +181,43 @@ _GLIBCXX_SYMVER_GNU_NAMESPACE target-derived
 _GLIBCXX_SYMVER_SUN target-derived
 _GLIBCXX_USE_C11_UCHAR_CXX11 probe-modeled
 _GLIBCXX_USE_C99 probe-modeled
-_GLIBCXX_USE_C99_COMPLEX_ARC probe-modeled
+_GLIBCXX_USE_C99_COMPLEX_ARC probe-modeled gcc_ge_14
 _GLIBCXX_USE_C99_COMPLEX_TR1 probe-modeled
-_GLIBCXX_USE_C99_CTYPE probe-modeled
+_GLIBCXX_USE_C99_CTYPE probe-modeled gcc_ge_14
 _GLIBCXX_USE_C99_CTYPE_TR1 probe-modeled
-_GLIBCXX_USE_C99_FENV probe-modeled
+_GLIBCXX_USE_C99_FENV probe-modeled gcc_ge_14
 _GLIBCXX_USE_C99_FENV_TR1 probe-modeled
-_GLIBCXX_USE_C99_INTTYPES probe-modeled
+_GLIBCXX_USE_C99_INTTYPES probe-modeled gcc_ge_14
 _GLIBCXX_USE_C99_INTTYPES_TR1 probe-modeled
-_GLIBCXX_USE_C99_INTTYPES_WCHAR_T probe-modeled
+_GLIBCXX_USE_C99_INTTYPES_WCHAR_T probe-modeled gcc_ge_14
 _GLIBCXX_USE_C99_INTTYPES_WCHAR_T_TR1 probe-modeled
-_GLIBCXX_USE_C99_MATH_FUNCS probe-modeled
+_GLIBCXX_USE_C99_MATH_FUNCS probe-modeled gcc_ge_14
 _GLIBCXX_USE_C99_MATH_TR1 probe-modeled
-_GLIBCXX_USE_C99_STDINT probe-modeled
+_GLIBCXX_USE_C99_STDINT probe-modeled gcc_ge_14
 _GLIBCXX_USE_C99_STDINT_TR1 probe-modeled
-_GLIBCXX_USE_CHDIR probe-modeled
-_GLIBCXX_USE_CHMOD probe-modeled
+_GLIBCXX_USE_CHDIR probe-modeled gcc_ge_13_3
+_GLIBCXX_USE_CHMOD probe-modeled gcc_ge_13_3
 _GLIBCXX_USE_CLOCK_GETTIME_SYSCALL policy-modeled
 _GLIBCXX_USE_CLOCK_MONOTONIC probe-modeled
 _GLIBCXX_USE_CLOCK_REALTIME probe-modeled
-_GLIBCXX_USE_COPY_FILE_RANGE probe-modeled
+_GLIBCXX_USE_COPY_FILE_RANGE probe-modeled gcc_ge_14
 _GLIBCXX_USE_DECIMAL_FLOAT probe-modeled
 _GLIBCXX_USE_DEV_RANDOM policy-modeled
 _GLIBCXX_USE_FCHMOD probe-modeled
 _GLIBCXX_USE_FCHMODAT probe-modeled
-_GLIBCXX_USE_FSEEKO_FTELLO probe-modeled
-_GLIBCXX_USE_GETCWD probe-modeled
+_GLIBCXX_USE_FSEEKO_FTELLO probe-modeled gcc_ge_13_2
+_GLIBCXX_USE_GETCWD probe-modeled gcc_ge_13_3
 _GLIBCXX_USE_GETTIMEOFDAY probe-modeled
 _GLIBCXX_USE_GET_NPROCS probe-modeled
 _GLIBCXX_USE_GLIBC_STDIO_EXT probe-modeled gcc_ge_16
-_GLIBCXX_USE_INIT_PRIORITY_ATTRIBUTE probe-modeled
+_GLIBCXX_USE_INIT_PRIORITY_ATTRIBUTE probe-modeled gcc_ge_13_2
 _GLIBCXX_USE_LFS probe-modeled
 _GLIBCXX_USE_LONG_LONG policy-modeled
 _GLIBCXX_USE_LSTAT probe-modeled
-_GLIBCXX_USE_MKDIR probe-modeled
+_GLIBCXX_USE_MKDIR probe-modeled gcc_ge_13_3
 _GLIBCXX_USE_NANOSLEEP probe-modeled
 _GLIBCXX_USE_NLS build-setting-later
-_GLIBCXX_USE_NL_LANGINFO_L probe-modeled
+_GLIBCXX_USE_NL_LANGINFO_L probe-modeled gcc_ge_14
 _GLIBCXX_USE_PROC_SELF_STATUS policy-modeled gcc_ge_16
 _GLIBCXX_USE_PTHREADS_NUM_PROCESSORS_NP probe-modeled
 _GLIBCXX_USE_PTHREAD_COND_CLOCKWAIT probe-modeled
@@ -243,7 +243,7 @@ _GLIBCXX_USE_UTIME probe-modeled
 _GLIBCXX_USE_UTIMENSAT probe-modeled
 _GLIBCXX_USE_WCHAR_T probe-modeled
 _GLIBCXX_USE_WIN32_SLEEP policy-modeled
-_GLIBCXX_USE__GET_OSFHANDLE unsupported-target
+_GLIBCXX_USE__GET_OSFHANDLE unsupported-target gcc_ge_14
 _GLIBCXX_VERBOSE policy-modeled
 _GLIBCXX_X86_RDRAND probe-modeled
 _GLIBCXX_X86_RDSEED probe-modeled

@@ -5,6 +5,10 @@ GCC_VERSIONS = [
     "15.1.0",
     "14.3.0",
     "14.2.0",
+    "13.4.0",
+    "13.3.0",
+    "13.2.0",
+    "13.1.0",
 ]
 
 DEFAULT_GCC_VERSION = "17.0.0"
@@ -33,6 +37,22 @@ GCC_RELEASES = {
     "14.3.0": {
         "commit": "c9cd41fba9ebd288c4f101e4b99da934bcb96a11",
         "sha256": "e15cb7bdf3f0cbda46d3bd58082abb5cd9bbbb4749c03292a19cf91c285555e1",
+    },
+    "13.1.0": {
+        "commit": "cc035c5d8672f87dc8c2756d9f8367903aa72d93",
+        "sha256": "decd4061fa41b28073c9e7a7b2c1b294c413f3b6efd0fff5552c77dbe40deaa8",
+    },
+    "13.2.0": {
+        "commit": "c891d8dc23e1a46ad9f3e757d09e57b500d40044",
+        "sha256": "47478252fe8b890a43396707349bfe4a013426dc63d43dd14a0c5dff2a6fe952",
+    },
+    "13.3.0": {
+        "commit": "b71f1de6e9cf7181a288c0f39f9b1ef6580cf5c8",
+        "sha256": "54e834fe573948905c934a494ae503d90b08b5607f8f1650ffddf052051b5339",
+    },
+    "13.4.0": {
+        "commit": "99677969d463d75a562f94460ea75e9f6a016b4f",
+        "sha256": "2a061f0d2afe337127d50f607644adfa0f4e1c019c829ade3643f1afb6702191",
     },
 }
 
@@ -118,7 +138,25 @@ def libstdcxx_has_stdio_locking_checks(version):
     return gcc_version_at_least_for(version, "16.0.0")
 
 def libstdcxx_has_networking_o_nonblock_check(version):
-    return gcc_version_at_least_for(version, "14.3.0")
+    return (gcc_version_at_least_for(version, "13.4.0") and gcc_version_less_than_for(version, "14.0.0")) or gcc_version_at_least_for(version, "14.3.0")
 
 def libstdcxx_has_struct_tm_tm_zone_check(version):
     return gcc_version_at_least_for(version, "15.0.0")
+
+def libstdcxx_has_c99_cxx11_detail_checks(version):
+    return gcc_version_at_least_for(version, "14.0.0")
+
+def libstdcxx_has_fseeko_ftello_check(version):
+    return gcc_version_at_least_for(version, "13.2.0")
+
+def libstdcxx_has_filesystem_chdir_chmod_getcwd_mkdir_checks(version):
+    return gcc_version_at_least_for(version, "13.3.0")
+
+def libstdcxx_has_filesystem_copy_file_range_check(version):
+    return gcc_version_at_least_for(version, "14.0.0")
+
+def libstdcxx_has_text_encoding_checks(version):
+    return gcc_version_at_least_for(version, "14.0.0")
+
+def libstdcxx_has_alignas_init_priority_checks(version):
+    return gcc_version_at_least_for(version, "13.2.0")
