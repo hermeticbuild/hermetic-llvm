@@ -1,0 +1,293 @@
+diff --git a/llvm/include/llvm/CodeGen/SDNodeInfo.h b/llvm/include/llvm/CodeGen/SDNodeInfo.h
+index b708b470e02c..8f04221837f6 100644
+--- a/llvm/include/llvm/CodeGen/SDNodeInfo.h
++++ b/llvm/include/llvm/CodeGen/SDNodeInfo.h
+@@ -44,8 +44,9 @@ enum SDTC : uint8_t {
+   SDTCisSameSizeAs,
+ };
+ 
+-enum SDNF {
++enum SDNF : uint8_t {
+   SDNFIsStrictFP,
++  SDNFIsMemOperand,
+ };
+ 
+ struct VTByHwModePair {
+@@ -68,33 +69,46 @@ struct SDTypeConstraint {
+ using SDNodeTSFlags = uint32_t;
+ 
+ struct SDNodeDesc {
++  uint16_t NameOffset;
++  uint8_t TSFlags;
++  uint8_t Flags;
++
++  bool hasFlag(SDNF Flag) const { return Flags & (1 << Flag); }
++};
++
++static_assert(sizeof(SDNodeDesc) == 4,
++              "Keep target SDNode descriptions compact");
++
++struct SDNodeVerifyDesc {
+   uint16_t NumResults;
+   int16_t NumOperands;
+   uint32_t Properties;
+-  uint32_t Flags;
+-  SDNodeTSFlags TSFlags;
+-  unsigned NameOffset;
+   unsigned ConstraintOffset;
+   unsigned ConstraintCount;
+ 
+   bool hasProperty(SDNP Property) const { return Properties & (1 << Property); }
++};
+ 
+-  bool hasFlag(SDNF Flag) const { return Flags & (1 << Flag); }
++static_assert(sizeof(SDNodeVerifyDesc) == 16,
++              "Keep target SDNode verification descriptions compact");
++
++struct SDNodeVerifyInfo {
++  const SDNodeVerifyDesc *Descs;
++  const VTByHwModePair *VTByHwModeTable;
++  const SDTypeConstraint *Constraints;
+ };
+ 
+ class SDNodeInfo final {
+   unsigned NumOpcodes;
+   const SDNodeDesc *Descs;
+   StringTable Names;
+-  const VTByHwModePair *VTByHwModeTable;
+-  const SDTypeConstraint *Constraints;
++  const SDNodeVerifyInfo *VerifyInfo;
+ 
+ public:
+   constexpr SDNodeInfo(unsigned NumOpcodes, const SDNodeDesc *Descs,
+-                       StringTable Names, const VTByHwModePair *VTByHwModeTable,
+-                       const SDTypeConstraint *Constraints)
++                       StringTable Names, const SDNodeVerifyInfo *VerifyInfo)
+       : NumOpcodes(NumOpcodes), Descs(Descs), Names(Names),
+-        VTByHwModeTable(VTByHwModeTable), Constraints(Constraints) {}
++        VerifyInfo(VerifyInfo) {}
+ 
+   /// Returns true if there is a generated description for a node with the given
+   /// target-specific opcode.
+@@ -109,11 +123,26 @@ public:
+     return Descs[Opcode - ISD::BUILTIN_OP_END];
+   }
+ 
++#ifndef NDEBUG
++  /// Returns the verification description of a node with the given opcode.
++  const SDNodeVerifyDesc &getVerifyDesc(unsigned Opcode) const {
++    assert(hasDesc(Opcode));
++    assert(VerifyInfo);
++    return VerifyInfo->Descs[Opcode - ISD::BUILTIN_OP_END];
++  }
++
+   /// Returns operand constraints for a node with the given opcode.
+   ArrayRef<SDTypeConstraint> getConstraints(unsigned Opcode) const {
+-    const SDNodeDesc &Desc = getDesc(Opcode);
+-    return ArrayRef(&Constraints[Desc.ConstraintOffset], Desc.ConstraintCount);
++    const SDNodeVerifyDesc &Desc = getVerifyDesc(Opcode);
++    return ArrayRef(&VerifyInfo->Constraints[Desc.ConstraintOffset],
++                    Desc.ConstraintCount);
++  }
++
++  const VTByHwModePair *getVTByHwModeTable() const {
++    assert(VerifyInfo);
++    return VerifyInfo->VTByHwModeTable;
+   }
++#endif
+ 
+   /// Returns the name of the given target-specific opcode, suitable for
+   /// debug printing.
+@@ -124,6 +153,9 @@ public:
+   void verifyNode(const SelectionDAG &DAG, const SDNode *N) const;
+ };
+ 
++static_assert(sizeof(SDNodeInfo) == 5 * sizeof(void *),
++              "Keep target SDNode information compact");
++
+ } // namespace llvm
+ 
+ #endif // LLVM_CODEGEN_SDNODEINFO_H
+diff --git a/llvm/include/llvm/CodeGen/SelectionDAGTargetInfo.h b/llvm/include/llvm/CodeGen/SelectionDAGTargetInfo.h
+index 8051d2e71407..3786c6eb17c4 100644
+--- a/llvm/include/llvm/CodeGen/SelectionDAGTargetInfo.h
++++ b/llvm/include/llvm/CodeGen/SelectionDAGTargetInfo.h
+@@ -226,7 +226,7 @@ public:
+ 
+   bool isTargetMemoryOpcode(unsigned Opcode) const override {
+     if (GenNodeInfo.hasDesc(Opcode))
+-      return GenNodeInfo.getDesc(Opcode).hasProperty(SDNPMemOperand);
++      return GenNodeInfo.getDesc(Opcode).hasFlag(SDNFIsMemOperand);
+     return false;
+   }
+ 
+diff --git a/llvm/lib/CodeGen/SelectionDAG/SDNodeInfo.cpp b/llvm/lib/CodeGen/SelectionDAG/SDNodeInfo.cpp
+index da763dfb212f..40ee23e56da1 100644
+--- a/llvm/lib/CodeGen/SelectionDAG/SDNodeInfo.cpp
++++ b/llvm/lib/CodeGen/SelectionDAG/SDNodeInfo.cpp
+@@ -14,6 +14,8 @@
+ 
+ using namespace llvm;
+ 
++#ifndef NDEBUG
++
+ static void reportNodeError(const SelectionDAG &DAG, const SDNode *N,
+                             const Twine &Msg) {
+   std::string S;
+@@ -70,7 +72,7 @@ public:
+ } // namespace
+ 
+ void SDNodeInfo::verifyNode(const SelectionDAG &DAG, const SDNode *N) const {
+-  const SDNodeDesc &Desc = getDesc(N->getOpcode());
++  const SDNodeVerifyDesc &Desc = getVerifyDesc(N->getOpcode());
+   bool HasChain = Desc.hasProperty(SDNPHasChain);
+   bool HasOutGlue = Desc.hasProperty(SDNPOutGlue);
+   bool HasInGlue = Desc.hasProperty(SDNPInGlue);
+@@ -172,7 +174,7 @@ void SDNodeInfo::verifyNode(const SelectionDAG &DAG, const SDNode *N) const {
+   auto GetConstraintVT = [&](const SDTypeConstraint &C) {
+     if (!C.NumHwModes)
+       return static_cast<MVT::SimpleValueType>(C.VT);
+-    for (auto [Mode, VT] : ArrayRef(&VTByHwModeTable[C.VT], C.NumHwModes))
++    for (auto [Mode, VT] : ArrayRef(&getVTByHwModeTable()[C.VT], C.NumHwModes))
+       if (Mode == VTHwMode)
+         return VT;
+     llvm_unreachable("No value type for this HW mode");
+@@ -242,3 +244,9 @@ void SDNodeInfo::verifyNode(const SelectionDAG &DAG, const SDNode *N) const {
+     }
+   }
+ }
++
++#else
++
++void SDNodeInfo::verifyNode(const SelectionDAG &, const SDNode *) const {}
++
++#endif // NDEBUG
+diff --git a/llvm/utils/TableGen/SDNodeInfoEmitter.cpp b/llvm/utils/TableGen/SDNodeInfoEmitter.cpp
+index 0f2f1178bf93..b5362b7065c7 100644
+--- a/llvm/utils/TableGen/SDNodeInfoEmitter.cpp
++++ b/llvm/utils/TableGen/SDNodeInfoEmitter.cpp
+@@ -10,6 +10,7 @@
+ #include "Common/CodeGenDAGPatterns.h" // For SDNodeInfo.
+ #include "llvm/Support/CommandLine.h"
+ #include "llvm/Support/FormatVariadic.h"
++#include "llvm/Support/MathExtras.h"
+ #include "llvm/TableGen/CodeGenHelpers.h"
+ #include "llvm/TableGen/Error.h"
+ #include "llvm/TableGen/StringToOffsetTable.h"
+@@ -337,10 +338,45 @@ SDNodeInfoEmitter::emitTypeConstraints(raw_ostream &OS) const {
+ }
+ 
+ static void emitDesc(raw_ostream &OS, StringRef EnumName,
+-                     ArrayRef<SDNodeInfo> Nodes, unsigned NameOffset,
+-                     unsigned ConstraintsOffset, unsigned ConstraintCount) {
++                     ArrayRef<SDNodeInfo> Nodes, unsigned NameOffset) {
+   assert(haveCompatibleDescriptions(Nodes));
+   const SDNodeInfo &N = Nodes.front();
++
++  if (!isUInt<16>(NameOffset))
++    PrintFatalError(N.getRecord()->getLoc(), "generated SDNode name offset " +
++                                                 Twine(NameOffset) +
++                                                 " does not fit in 16 bits");
++  if (!isUInt<8>(N.getTSFlags()))
++    PrintFatalError(N.getRecord()->getLoc(), "SDNode TSFlags value " +
++                                                 Twine(N.getTSFlags()) +
++                                                 " does not fit in 8 bits");
++
++  OS << "    {" << NameOffset << ", " << N.getTSFlags() << ", 0";
++
++  if (N.isStrictFP())
++    OS << "|1<<SDNFIsStrictFP";
++  if (N.getProperties() & (1 << SDNPMemOperand))
++    OS << "|1<<SDNFIsMemOperand";
++
++  OS << "}, // " << EnumName << '\n';
++}
++
++static void emitVerifyDesc(raw_ostream &OS, StringRef EnumName,
++                           ArrayRef<SDNodeInfo> Nodes,
++                           unsigned ConstraintsOffset,
++                           unsigned ConstraintCount) {
++  assert(haveCompatibleDescriptions(Nodes));
++  const SDNodeInfo &N = Nodes.front();
++
++  if (!isUInt<16>(N.getNumResults()))
++    PrintFatalError(N.getRecord()->getLoc(), "SDNode result count " +
++                                                 Twine(N.getNumResults()) +
++                                                 " does not fit in 16 bits");
++  if (!isInt<16>(N.getNumOperands()))
++    PrintFatalError(N.getRecord()->getLoc(), "SDNode operand count " +
++                                                 Twine(N.getNumOperands()) +
++                                                 " does not fit in 16 bits");
++
+   OS << "    {" << N.getNumResults() << ", " << N.getNumOperands() << ", 0";
+ 
+   // Emitted properties must be kept in sync with haveCompatibleDescriptions.
+@@ -358,12 +394,8 @@ static void emitDesc(raw_ostream &OS, StringRef EnumName,
+   if (Properties & (1 << SDNPMemOperand))
+     OS << "|1<<SDNPMemOperand";
+ 
+-  OS << ", 0";
+-  if (N.isStrictFP())
+-    OS << "|1<<SDNFIsStrictFP";
+-
+-  OS << formatv(", {}, {}, {}, {}}, // {}\n", N.getTSFlags(), NameOffset,
+-                ConstraintsOffset, ConstraintCount, EnumName);
++  OS << formatv(", {}, {}}, // {}\n", ConstraintsOffset, ConstraintCount,
++                EnumName);
+ }
+ 
+ void SDNodeInfoEmitter::emitDescs(raw_ostream &OS) const {
+@@ -373,21 +405,46 @@ void SDNodeInfoEmitter::emitDescs(raw_ostream &OS) const {
+   NamespaceEmitter NS(OS, "llvm");
+ 
+   std::vector<unsigned> NameOffsets = emitNodeNames(OS);
++
++  OS << "static const SDNodeDesc " << TargetName << "SDNodeDescs[] = {\n";
++
++  for (const auto &[NameAndNodes, NameOffset] :
++       zip_equal(NodesByName, NameOffsets))
++    emitDesc(OS, NameAndNodes.first, NameAndNodes.second, NameOffset);
++
++  OS << "};\n\n";
++
++  OS << "#ifndef NDEBUG\n";
++
+   std::vector<std::pair<unsigned, unsigned>> ConstraintOffsetsAndCounts =
+       emitTypeConstraints(OS);
+ 
+-  OS << "static const SDNodeDesc " << TargetName << "SDNodeDescs[] = {\n";
++  OS << "static const SDNodeVerifyDesc " << TargetName
++     << "SDNodeVerifyDescs[] = {\n";
+ 
+-  for (const auto &[NameAndNodes, NameOffset, ConstraintOffsetAndCount] :
+-       zip_equal(NodesByName, NameOffsets, ConstraintOffsetsAndCounts))
+-    emitDesc(OS, NameAndNodes.first, NameAndNodes.second, NameOffset,
+-             ConstraintOffsetAndCount.first, ConstraintOffsetAndCount.second);
++  for (const auto &[NameAndNodes, ConstraintOffsetAndCount] :
++       zip_equal(NodesByName, ConstraintOffsetsAndCounts))
++    emitVerifyDesc(OS, NameAndNodes.first, NameAndNodes.second,
++                   ConstraintOffsetAndCount.first,
++                   ConstraintOffsetAndCount.second);
+ 
+   OS << "};\n\n";
+ 
+-  OS << formatv("static const SDNodeInfo {0}GenSDNodeInfo(\n"
++  OS << formatv("static const SDNodeVerifyInfo {0}SDNodeVerifyInfo = {\n"
++                "    {0}SDNodeVerifyDescs, {0}VTByHwModeTable,\n"
++                "    {0}SDTypeConstraints};\n",
++                TargetName);
++  OS << "#endif // NDEBUG\n\n";
++
++  OS << formatv("#ifndef NDEBUG\n"
++                "static const SDNodeInfo {0}GenSDNodeInfo(\n"
++                "    /*NumOpcodes=*/{1}, {0}SDNodeDescs, {0}SDNodeNames,\n"
++                "    &{0}SDNodeVerifyInfo);\n"
++                "#else\n"
++                "static const SDNodeInfo {0}GenSDNodeInfo(\n"
+                 "    /*NumOpcodes=*/{1}, {0}SDNodeDescs, {0}SDNodeNames,\n"
+-                "    {0}VTByHwModeTable, {0}SDTypeConstraints);\n",
++                "    nullptr);\n"
++                "#endif // NDEBUG\n",
+                 TargetName, NodesByName.size());
+ }
+ 
