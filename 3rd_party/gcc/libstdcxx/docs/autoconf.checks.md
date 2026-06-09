@@ -78,7 +78,7 @@ Status meanings are defined in `AGENTS.md`.
 - [x] `GLIBCXX_ENABLE_LONG_LONG` - long long policy.
 - [x] `GLIBCXX_ENABLE_SYMVERS` - symbol version policy.
 - [x] `GLIBCXX_ENABLE_WCHAR_T` - wide character probes.
-- [x] `GLIBCXX_STRUCT_TM_TM_ZONE` - `struct tm::tm_zone` probe.
+- [x] `GLIBCXX_STRUCT_TM_TM_ZONE` - GCC 15+ `struct tm::tm_zone` probe.
 - [x] `GLIBCXX_ZONEINFO_DIR` - zoneinfo policy.
 
 ## Concrete Header Checks

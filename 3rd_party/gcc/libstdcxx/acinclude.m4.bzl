@@ -2,7 +2,15 @@
 # function names and grouping close to the GLIBCXX_* macros in that file so GCC
 # updates can be reviewed by comparing acinclude.m4 against this module.
 
-load("//3rd_party/gcc:version.bzl", "gcc_version_at_least_for", "gcc_version_less_than_for")
+load(
+    "//3rd_party/gcc:version.bzl",
+    "gcc_version_at_least_for",
+    "gcc_version_less_than_for",
+    "libstdcxx_has_atomic_builtins_define",
+    "libstdcxx_has_debugging_checks",
+    "libstdcxx_has_posix_semaphore_check",
+    "libstdcxx_has_stdio_locking_checks",
+)
 load(
     "//3rd_party/gcc/libstdcxx/autoconf:checks.bzl",
     "compile_check",
@@ -66,7 +74,7 @@ def glibcxx_enable_pch():
     return []
 
 def glibcxx_enable_atomic_builtins(gcc_version):
-    if gcc_version_less_than_for(gcc_version, "16.0.0"):
+    if libstdcxx_has_atomic_builtins_define(gcc_version):
         return [policy_define("_GLIBCXX_ATOMIC_BUILTINS")]
     return [policy_define("_GLIBCXX_ATOMIC_WORD_BUILTINS")]
 
@@ -1085,7 +1093,7 @@ int main() {
 """,
         ),
     ]
-    if gcc_version_at_least_for(gcc_version, "11.0.0") and gcc_version_less_than_for(gcc_version, "16.0.0"):
+    if libstdcxx_has_posix_semaphore_check(gcc_version):
         checks.append(
             compile_check(
                 name = "HAVE_POSIX_SEMAPHORE",
@@ -1296,7 +1304,7 @@ int main() {
     ]
 
 def glibcxx_check_debugging(gcc_version):
-    if not gcc_version_at_least_for(gcc_version, "16.0.0"):
+    if not libstdcxx_has_debugging_checks(gcc_version):
         return []
     return [
         link_check(
@@ -1312,7 +1320,7 @@ int main() { return ptrace(PTRACE_TRACEME, (pid_t)0, 1, 0); }
     ]
 
 def glibcxx_check_stdio_locking(gcc_version):
-    if not gcc_version_at_least_for(gcc_version, "16.0.0"):
+    if not libstdcxx_has_stdio_locking_checks(gcc_version):
         return []
     return [
         function_link_check("HAVE_FWRITE_UNLOCKED", "stdio.h", 'fwrite_unlocked("", 1, 1, stdout)'),

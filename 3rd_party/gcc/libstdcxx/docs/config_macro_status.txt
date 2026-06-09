@@ -7,8 +7,9 @@
 # not-needed: configure/build/install/testsuite plumbing replaced by Bazel.
 # unsupported-feature: optional libstdc++ feature not built by this port today.
 # unsupported-target: target family not supported by this libstdc++ port today.
+# Optional third column: version condition for the currently supported GCC versions.
 GCC_AC_THREAD_HEADER target-derived
-GCC_AC_THREAD_MODEL target-derived
+GCC_AC_THREAD_MODEL target-derived gcc_ge_16
 GCC_BASE_VER not-needed
 GCC_CET_FLAGS unsupported-feature
 GCC_CHECK_ASSEMBLER_HWCAP unsupported-target
@@ -23,7 +24,7 @@ GLIBCXX_CHECK_ALIGNAS_CACHELINE modeled
 GLIBCXX_CHECK_ARC4RANDOM modeled
 GLIBCXX_CHECK_C99_TR1 modeled
 GLIBCXX_CHECK_COMPILER_FEATURES modeled
-GLIBCXX_CHECK_DEBUGGING modeled
+GLIBCXX_CHECK_DEBUGGING modeled gcc_ge_16
 GLIBCXX_CHECK_DEV_RANDOM modeled
 GLIBCXX_CHECK_EXCEPTION_PTR_SYMVER modeled
 GLIBCXX_CHECK_FILEBUF_NATIVE_HANDLES unsupported-target
@@ -57,7 +58,7 @@ GLIBCXX_CHECK_SC_NPROC_ONLN modeled
 GLIBCXX_CHECK_SDT_H modeled
 GLIBCXX_CHECK_SETRLIMIT not-needed
 GLIBCXX_CHECK_SIZE_T_MANGLING modeled
-GLIBCXX_CHECK_STDIO_LOCKING modeled
+GLIBCXX_CHECK_STDIO_LOCKING modeled gcc_ge_16
 GLIBCXX_CHECK_STDIO_PROTO modeled
 GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_1 modeled
 GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_2 modeled

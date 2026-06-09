@@ -11,6 +11,7 @@
 # intentionally-defaulted: deliberately left undefined for supported targets.
 # unsupported-feature: optional libstdc++ feature not built by this port today.
 # unsupported-target: target family not supported by this libstdc++ port today.
+# Optional third column: version condition for the currently supported GCC versions.
 HAVE_ACOSF probe-modeled
 HAVE_ACOSL probe-modeled
 HAVE_ALIGNED_ALLOC probe-modeled
@@ -51,7 +52,7 @@ HAVE_FMODF probe-modeled
 HAVE_FMODL probe-modeled
 HAVE_FREXPF probe-modeled
 HAVE_FREXPL probe-modeled
-HAVE_FWRITE_UNLOCKED probe-modeled
+HAVE_FWRITE_UNLOCKED probe-modeled gcc_ge_16
 HAVE_GETENTROPY probe-modeled
 HAVE_GETIPINFO policy-modeled
 HAVE_GETS probe-modeled
@@ -87,6 +88,7 @@ HAVE_OBSOLETE_ISNAN probe-modeled
 HAVE_OPENAT probe-modeled
 HAVE_O_NONBLOCK probe-modeled
 HAVE_POLL probe-modeled
+HAVE_POSIX_SEMAPHORE probe-modeled gcc_lt_16
 HAVE_POWF probe-modeled
 HAVE_POWL probe-modeled
 HAVE_QFPCLASS probe-modeled
@@ -116,8 +118,8 @@ HAVE_STRXFRM_L probe-modeled
 HAVE_SYMLINK probe-modeled
 HAVE_SYMVER_SYMBOL_RENAMING_RUNTIME_SUPPORT policy-modeled
 HAVE_SYS_SDT_H header-probe
-HAVE_SYS_STAT_H header-probe
-HAVE_SYS_TYPES_H header-probe
+HAVE_SYS_STAT_H header-probe gcc_ge_16
+HAVE_SYS_TYPES_H header-probe gcc_ge_16
 HAVE_S_IFREG probe-modeled
 HAVE_S_ISREG probe-modeled
 HAVE_TANF probe-modeled
@@ -127,7 +129,7 @@ HAVE_TANL probe-modeled
 HAVE_TIMESPEC_GET probe-modeled
 HAVE_TLS probe-modeled
 HAVE_TRUNCATE probe-modeled
-HAVE_UNISTD_H header-probe
+HAVE_UNISTD_H header-probe gcc_ge_16
 HAVE_UNLINKAT probe-modeled
 HAVE_USELOCALE probe-modeled
 HAVE_USLEEP probe-modeled
@@ -153,7 +155,8 @@ _GLIBCXX98_USE_C99_MATH probe-modeled
 _GLIBCXX98_USE_C99_STDIO probe-modeled
 _GLIBCXX98_USE_C99_STDLIB probe-modeled
 _GLIBCXX98_USE_C99_WCHAR probe-modeled
-_GLIBCXX_ATOMIC_WORD_BUILTINS policy-modeled
+_GLIBCXX_ATOMIC_BUILTINS policy-modeled gcc_lt_16
+_GLIBCXX_ATOMIC_WORD_BUILTINS policy-modeled gcc_ge_16
 _GLIBCXX_CAN_ALIGNAS_DESTRUCTIVE_SIZE probe-modeled
 _GLIBCXX_CONCEPT_CHECKS policy-modeled
 _GLIBCXX_FULLY_DYNAMIC_STRING policy-modeled
@@ -206,7 +209,7 @@ _GLIBCXX_USE_FSEEKO_FTELLO probe-modeled
 _GLIBCXX_USE_GETCWD probe-modeled
 _GLIBCXX_USE_GETTIMEOFDAY probe-modeled
 _GLIBCXX_USE_GET_NPROCS probe-modeled
-_GLIBCXX_USE_GLIBC_STDIO_EXT probe-modeled
+_GLIBCXX_USE_GLIBC_STDIO_EXT probe-modeled gcc_ge_16
 _GLIBCXX_USE_INIT_PRIORITY_ATTRIBUTE probe-modeled
 _GLIBCXX_USE_LFS probe-modeled
 _GLIBCXX_USE_LONG_LONG policy-modeled
@@ -215,20 +218,20 @@ _GLIBCXX_USE_MKDIR probe-modeled
 _GLIBCXX_USE_NANOSLEEP probe-modeled
 _GLIBCXX_USE_NLS build-setting-later
 _GLIBCXX_USE_NL_LANGINFO_L probe-modeled
-_GLIBCXX_USE_PROC_SELF_STATUS policy-modeled
+_GLIBCXX_USE_PROC_SELF_STATUS policy-modeled gcc_ge_16
 _GLIBCXX_USE_PTHREADS_NUM_PROCESSORS_NP probe-modeled
 _GLIBCXX_USE_PTHREAD_COND_CLOCKWAIT probe-modeled
 _GLIBCXX_USE_PTHREAD_MUTEX_CLOCKLOCK probe-modeled
 _GLIBCXX_USE_PTHREAD_RWLOCK_CLOCKLOCK probe-modeled
 _GLIBCXX_USE_PTHREAD_RWLOCK_T probe-modeled
-_GLIBCXX_USE_PTRACE probe-modeled
+_GLIBCXX_USE_PTRACE probe-modeled gcc_ge_16
 _GLIBCXX_USE_RANDOM_TR1 policy-modeled
 _GLIBCXX_USE_REALPATH probe-modeled
 _GLIBCXX_USE_SCHED_YIELD probe-modeled
 _GLIBCXX_USE_SC_NPROCESSORS_ONLN probe-modeled
 _GLIBCXX_USE_SC_NPROC_ONLN probe-modeled
 _GLIBCXX_USE_SENDFILE probe-modeled
-_GLIBCXX_USE_STDIO_LOCKING probe-modeled
+_GLIBCXX_USE_STDIO_LOCKING probe-modeled gcc_ge_16
 _GLIBCXX_USE_STDIO_PURE build-setting-later
 _GLIBCXX_USE_STRUCT_TM_TM_ZONE probe-modeled
 _GLIBCXX_USE_ST_MTIM probe-modeled
