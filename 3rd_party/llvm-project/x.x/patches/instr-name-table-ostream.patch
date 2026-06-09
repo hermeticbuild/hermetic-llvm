@@ -1,0 +1,13 @@
+diff --git a/llvm/utils/TableGen/InstrInfoEmitter.cpp b/llvm/utils/TableGen/InstrInfoEmitter.cpp
+index d3ec367ba57c..3f76fad4e135 100644
+--- a/llvm/utils/TableGen/InstrInfoEmitter.cpp
++++ b/llvm/utils/TableGen/InstrInfoEmitter.cpp
+@@ -836,7 +836,7 @@ void InstrInfoEmitter::emitFeatureVerifier(raw_ostream &OS,
+        << "  if (MissingFeatures.any()) {\n"
+        << "    std::ostringstream Msg;\n"
+        << "    Msg << \"Attempting to emit \" << get" << Target.getName()
+-       << "InstrNameTable().getName(Opcode)\n"
++       << "InstrNameTable().getName(Opcode).str()\n"
+        << "        << \" instruction but the \";\n"
+        << "    for (unsigned i = 0, e = MissingFeatures.size(); i != e; ++i)\n"
+        << "      if (MissingFeatures.test(i))\n"
