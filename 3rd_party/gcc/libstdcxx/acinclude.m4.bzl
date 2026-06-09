@@ -21,11 +21,14 @@ load(
     "libstdcxx_has_int128_float128_checks",
     "libstdcxx_has_int64_t_checks",
     "libstdcxx_has_networking_o_nonblock_check",
+    "libstdcxx_has_no_sleep_policy",
     "libstdcxx_has_posix_semaphore_check",
     "libstdcxx_has_stdio_locking_checks",
     "libstdcxx_has_struct_tm_tm_zone_check",
+    "libstdcxx_has_system_error_check",
     "libstdcxx_has_text_encoding_checks",
     "libstdcxx_has_uchar_char8_checks",
+    "libstdcxx_has_uselocale_check",
     "libstdcxx_has_zoneinfo_policy",
 )
 load(
@@ -948,7 +951,7 @@ int main() {
         policy_undef("_GLIBCXX_USE_CLOCK_GETTIME_SYSCALL"),
         policy_undef("_GLIBCXX_USE_WIN32_SLEEP"),
     ]
-    if gcc_version_at_least_for(gcc_version, "11.0.0"):
+    if libstdcxx_has_no_sleep_policy(gcc_version):
         checks.append(policy_undef("_GLIBCXX_NO_SLEEP" if libstdcxx_has_cxx11_no_sleep_define(gcc_version) else "NO_SLEEP"))
     return checks
 
@@ -1496,7 +1499,7 @@ int main() { return __cxa_thread_atexit_impl((void (*)(void *))0, (void *)0, (vo
         function_link_check("HAVE_USLEEP", "unistd.h", "usleep(0)"),
         function_link_check("HAVE_WRITEV", "sys/uio.h", "struct iovec iov; writev(1, &iov, 1)"),
     ]
-    if gcc_version_at_least_for(gcc_version, "11.0.0"):
+    if libstdcxx_has_uselocale_check(gcc_version):
         checks.append(function_link_check("HAVE_USELOCALE", "locale.h", "locale_t loc = uselocale((locale_t)0)"))
     if libstdcxx_has_arc4random_getentropy_checks(gcc_version):
         checks.extend([
@@ -1518,7 +1521,7 @@ def glibcxx_abi_policies():
     ]
 
 def glibcxx_check_system_error(gcc_version):
-    if gcc_version_at_least_for(gcc_version, "9.0.0"):
+    if not libstdcxx_has_system_error_check(gcc_version):
         return []
     return [
         policy_define("HAVE_EBADMSG"),

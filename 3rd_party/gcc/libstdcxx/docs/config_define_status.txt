@@ -36,6 +36,25 @@ HAVE_COSHL probe-modeled
 HAVE_COSL probe-modeled
 HAVE_DIRFD probe-modeled gcc_ge_11_5
 HAVE_DECL_STRNLEN probe-modeled gcc_ge_12
+HAVE_EBADMSG policy-modeled gcc_lt_10_3
+HAVE_ECANCELED policy-modeled gcc_lt_10_3
+HAVE_ECHILD policy-modeled gcc_lt_10_3
+HAVE_EIDRM policy-modeled gcc_lt_10_3
+HAVE_ENODATA policy-modeled gcc_lt_10_3
+HAVE_ENOLINK policy-modeled gcc_lt_10_3
+HAVE_ENOSPC policy-modeled gcc_lt_10_3
+HAVE_ENOSR policy-modeled gcc_lt_10_3
+HAVE_ENOSTR policy-modeled gcc_lt_10_3
+HAVE_ENOTRECOVERABLE policy-modeled gcc_lt_10_3
+HAVE_ENOTSUP policy-modeled gcc_lt_10_3
+HAVE_EOVERFLOW policy-modeled gcc_lt_10_3
+HAVE_EOWNERDEAD policy-modeled gcc_lt_10_3
+HAVE_EPERM policy-modeled gcc_lt_10_3
+HAVE_EPROTO policy-modeled gcc_lt_10_3
+HAVE_ETIME policy-modeled gcc_lt_10_3
+HAVE_ETIMEDOUT policy-modeled gcc_lt_10_3
+HAVE_ETXTBSY policy-modeled gcc_lt_10_3
+HAVE_EWOULDBLOCK policy-modeled gcc_lt_10_3
 HAVE_EXCEPTION_PTR_SINCE_GCC46 policy-modeled
 HAVE_EXPF probe-modeled
 HAVE_EXPL probe-modeled
@@ -91,7 +110,7 @@ HAVE_OBSOLETE_ISNAN probe-modeled
 HAVE_OPENAT probe-modeled gcc_ge_11_5_lt_12,gcc_ge_12_2
 HAVE_O_NONBLOCK probe-modeled gcc_ge_12_5_lt_13,gcc_ge_13_4_lt_14,gcc_ge_14_3
 HAVE_POLL probe-modeled
-HAVE_POSIX_SEMAPHORE probe-modeled gcc_lt_16
+HAVE_POSIX_SEMAPHORE probe-modeled gcc_ge_11_lt_16
 HAVE_POWF probe-modeled
 HAVE_POWL probe-modeled
 HAVE_QFPCLASS probe-modeled
@@ -134,7 +153,7 @@ HAVE_TLS probe-modeled
 HAVE_TRUNCATE probe-modeled
 HAVE_UNISTD_H header-probe gcc_ge_16
 HAVE_UNLINKAT probe-modeled gcc_ge_11_5
-HAVE_USELOCALE probe-modeled
+HAVE_USELOCALE probe-modeled gcc_ge_11
 HAVE_USLEEP probe-modeled
 HAVE_VFWSCANF probe-modeled
 HAVE_VSWSCANF probe-modeled
@@ -166,11 +185,11 @@ _GLIBCXX_CONCEPT_CHECKS policy-modeled
 _GLIBCXX_FULLY_DYNAMIC_STRING policy-modeled
 _GLIBCXX_HAS_GTHREADS probe-modeled
 _GLIBCXX_HOSTED policy-modeled
-_GLIBCXX_LONG_DOUBLE_ALT128_COMPAT intentionally-defaulted
+_GLIBCXX_LONG_DOUBLE_ALT128_COMPAT intentionally-defaulted gcc_ge_11
 _GLIBCXX_LONG_DOUBLE_COMPAT intentionally-defaulted
 _GLIBCXX_MANGLE_SIZE_T target-derived
 _GLIBCXX_NO_C99_ROUNDING_FUNCS policy-modeled
-NO_SLEEP policy-modeled gcc_lt_11_3
+NO_SLEEP policy-modeled gcc_ge_11_lt_11_3
 _GLIBCXX_NO_SLEEP policy-modeled gcc_ge_11_3
 _GLIBCXX_PTRDIFF_T_IS_INT target-derived
 _GLIBCXX_RES_LIMITS policy-modeled
@@ -238,7 +257,7 @@ _GLIBCXX_USE_SC_NPROCESSORS_ONLN probe-modeled
 _GLIBCXX_USE_SC_NPROC_ONLN probe-modeled
 _GLIBCXX_USE_SENDFILE probe-modeled
 _GLIBCXX_USE_STDIO_LOCKING probe-modeled gcc_ge_16
-_GLIBCXX_USE_STDIO_PURE build-setting-later
+_GLIBCXX_USE_STDIO_PURE build-setting-later gcc_ge_11
 _GLIBCXX_USE_STRUCT_TM_TM_ZONE probe-modeled gcc_ge_15
 _GLIBCXX_USE_ST_MTIM probe-modeled
 _GLIBCXX_USE_SYSCTL_HW_NCPU unsupported-target

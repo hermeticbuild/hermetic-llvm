@@ -19,6 +19,11 @@ GCC_VERSIONS = [
     "11.3.0",
     "11.2.0",
     "11.1.0",
+    "10.5.0",
+    "10.4.0",
+    "10.3.0",
+    "10.2.0",
+    "10.1.0",
 ]
 
 DEFAULT_GCC_VERSION = "17.0.0"
@@ -104,6 +109,26 @@ GCC_RELEASES = {
         "commit": "5cc4c42a0d4de08715c2eef8715ad5b2e92a23b6",
         "sha256": "f74980dd3928f79376ca0ac9f53fe98e6509511ea53de8476465bf095d297c5b",
     },
+    "10.1.0": {
+        "commit": "6e6e3f144a33ae504149dc992453b4f6dea12fdb",
+        "sha256": "3db01abaac3d4dde34272d44e724e28494ca55c87961b64703555122d5e6205b",
+    },
+    "10.2.0": {
+        "commit": "ee5c3db6c5b2c3332912fb4c9cfa2864569ebd9a",
+        "sha256": "13b4da7d6c12a096188640aafd047ffcac6f5731298d67818e6135af34864b54",
+    },
+    "10.3.0": {
+        "commit": "f00b5710a30f22efc3171c393e56aeb335c3cd39",
+        "sha256": "3d850029364cad899ed121af72e14533eee2cbb95745ff6027b4bf7e97554741",
+    },
+    "10.4.0": {
+        "commit": "7ff47281ce4f3699185b06a3430968eac2a5b0c6",
+        "sha256": "7f60d80d2054ef738733a4c996de046e055f1f1c085afccb3c2fc3c5b6ee1d84",
+    },
+    "10.5.0": {
+        "commit": "d04fe5541c53cb16d1ca5c80da044b4c7633dbc6",
+        "sha256": "ecace41b1e79da90f87d71c2bb6fce5c53eb126ec3a4c376bbc8d296c77753e9",
+    },
 }
 
 GCC_VERSION = DEFAULT_GCC_VERSION
@@ -155,6 +180,37 @@ def gcc_version_at_least_for(gcc_version, version):
 def gcc_version_less_than_for(gcc_version, version):
     return _compare_versions(gcc_version, version) < 0
 
+def _libstdcxx_patch(path):
+    return "//3rd_party/gcc/patches:" + path
+
+GCC_PATCHES = {
+    "10.5.0": [
+        _libstdcxx_patch("10.x/libstdcxx-cow-string-inst.patch"),
+        _libstdcxx_patch("10.x/libstdcxx-constinit.patch"),
+    ],
+    "10.4.0": [
+        _libstdcxx_patch("10.x/libstdcxx-cow-string-inst.patch"),
+        _libstdcxx_patch("10.x/libstdcxx-constinit.patch"),
+    ],
+    "10.3.0": [
+        _libstdcxx_patch("10.x/libstdcxx-cow-string-inst.patch"),
+        _libstdcxx_patch("10.x/libstdcxx-constinit.patch"),
+    ],
+    "10.2.0": [
+        _libstdcxx_patch("10.x/libstdcxx-cow-string-inst.patch"),
+        _libstdcxx_patch("10.1-10.2/libstdcxx-filesystem-source-noexcept.patch"),
+        _libstdcxx_patch("10.x/libstdcxx-constinit.patch"),
+    ],
+    "10.1.0": [
+        _libstdcxx_patch("10.x/libstdcxx-cow-string-inst.patch"),
+        _libstdcxx_patch("10.1-10.2/libstdcxx-filesystem-source-noexcept.patch"),
+        _libstdcxx_patch("10.x/libstdcxx-constinit.patch"),
+    ],
+}
+
+def gcc_patches(version):
+    return GCC_PATCHES.get(version, [])
+
 def gcc_version_at_least(version):
     return gcc_version_at_least_for(GCC_VERSION, version)
 
@@ -179,7 +235,7 @@ def libstdcxx_has_atomic_builtins_define(version):
     return gcc_version_less_than_for(version, "16.0.0")
 
 def libstdcxx_has_posix_semaphore_check(version):
-    return gcc_version_less_than_for(version, "16.0.0")
+    return gcc_version_at_least_for(version, "11.0.0") and gcc_version_less_than_for(version, "16.0.0")
 
 def libstdcxx_has_debugging_checks(version):
     return gcc_version_at_least_for(version, "16.0.0")
@@ -240,3 +296,12 @@ def libstdcxx_has_arc4random_getentropy_checks(version):
 
 def libstdcxx_has_stdlib_secure_getenv_check(version):
     return gcc_version_at_least_for(version, "11.4.0")
+
+def libstdcxx_has_no_sleep_policy(version):
+    return gcc_version_at_least_for(version, "11.0.0")
+
+def libstdcxx_has_uselocale_check(version):
+    return gcc_version_at_least_for(version, "11.0.0")
+
+def libstdcxx_has_system_error_check(version):
+    return gcc_version_at_least_for(version, "10.1.0") and gcc_version_less_than_for(version, "10.3.0")

@@ -58,6 +58,7 @@ Status meanings are defined in `AGENTS.md`.
 - [x] `GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_2` - `linkage.m4` stdlib helper.
 - [x] `GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_3` - stdlib helper represented by stdlib support probes.
 - [x] `GLIBCXX_CHECK_STDLIB_SUPPORT` - native stdlib support probe group.
+- [x] `GLIBCXX_CHECK_SYSTEM_ERROR` - Linux errno availability policy for legacy configure flows.
 - [x] `GLIBCXX_CHECK_S_ISREG_OR_S_IFREG` - `S_ISREG`/`S_IFREG` probe.
 - [x] `GLIBCXX_CHECK_TEXT_ENCODING` - GCC 14+ text encoding support probes.
 - [x] `GLIBCXX_CHECK_TMPNAM` - `tmpnam` probe.

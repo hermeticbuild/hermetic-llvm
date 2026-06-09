@@ -5,6 +5,7 @@ load(
     "//3rd_party/gcc:version.bzl",
     "GCC_RELEASES",
     "GCC_VERSIONS",
+    "gcc_patches",
     "gcc_repo_name",
     "gcc_version_at_least_for",
 )
@@ -102,6 +103,8 @@ def _gcc_impl(module_ctx):
                     "version.bzl": "GCC_VERSION = \"{}\"\n".format(version),
                 },
                 includes = _GCC_ARCHIVE_INCLUDES + (_GCC_10_ARCHIVE_INCLUDES if gcc_version_at_least_for(version, "10.0.0") else []),
+                patch_args = ["-p1"],
+                patches = [Label(patch) for patch in gcc_patches(version)],
                 sha256 = release["sha256"],
                 strip_prefix = "gcc-{}".format(release["commit"]),
                 urls = ["https://github.com/gcc-mirror/gcc/archive/{}.tar.gz".format(release["commit"])],
