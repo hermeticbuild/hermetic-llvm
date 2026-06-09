@@ -1,5 +1,5 @@
 diff --git a/llvm/lib/CodeGen/SelectionDAG/SelectionDAGISel.cpp b/llvm/lib/CodeGen/SelectionDAG/SelectionDAGISel.cpp
-index c8b74b1..d02847d 100644
+index c8b74b15f9b2..d02847d4874c 100644
 --- a/llvm/lib/CodeGen/SelectionDAG/SelectionDAGISel.cpp
 +++ b/llvm/lib/CodeGen/SelectionDAG/SelectionDAGISel.cpp
 @@ -108,6 +108,7 @@
@@ -41,7 +41,7 @@ index c8b74b1..d02847d 100644
    return static_cast<MVT::SimpleValueType>(SimpleVT);
  }
 diff --git a/llvm/utils/TableGen/DAGISelMatcherEmitter.cpp b/llvm/utils/TableGen/DAGISelMatcherEmitter.cpp
-index 29f4510..0fefb1a 100644
+index 29f451025d3c..e7b36ec6feca 100644
 --- a/llvm/utils/TableGen/DAGISelMatcherEmitter.cpp
 +++ b/llvm/utils/TableGen/DAGISelMatcherEmitter.cpp
 @@ -27,6 +27,9 @@
@@ -54,7 +54,36 @@ index 29f4510..0fefb1a 100644
  
  using namespace llvm;
  
-@@ -500,15 +503,21 @@ void MatcherTableEmitter::EmitPatternMatchTable(raw_ostream &OS) {
+@@ -299,6 +302,16 @@ static unsigned GetVBRSize(unsigned Val) {
+   return NumBytes + 1;
+ }
+ 
++static unsigned getMVTEncodingSize(MVT VT) {
++  constexpr uint64_t Escape = std::numeric_limits<uint8_t>::max();
++  using SimpleVTStorage = std::underlying_type_t<MVT::SimpleValueType>;
++  static_assert(std::is_unsigned_v<SimpleVTStorage>);
++  static_assert(sizeof(SimpleVTStorage) <= sizeof(uint64_t));
++
++  uint64_t SimpleVT = static_cast<SimpleVTStorage>(VT.SimpleTy);
++  return SimpleVT < Escape ? 1 : 1 + GetVBRSize(SimpleVT - Escape);
++}
++
+ /// EmitVBRValue - Emit the specified value as a VBR, returning the number of
+ /// bytes emitted.
+ static unsigned EmitVBRValue(uint64_t Val, raw_ostream &OS) {
+@@ -420,9 +433,8 @@ unsigned MatcherTableEmitter::SizeMatcher(Matcher *N, raw_ostream &OS) {
+         Size += 2; // Count the child's opcode.
+       } else {
+         Child = cast<SwitchTypeMatcher>(N)->getCaseMatcher(i);
+-        Size += GetVBRSize(cast<SwitchTypeMatcher>(N)
+-                               ->getCaseType(i)
+-                               .SimpleTy); // Count the child's type.
++        Size += getMVTEncodingSize(
++            cast<SwitchTypeMatcher>(N)->getCaseType(i));
+       }
+       const unsigned ChildSize = SizeMatcherList(Child, OS);
+       assert(ChildSize != 0 && "Matcher cannot have child of size 0");
+@@ -500,15 +512,21 @@ void MatcherTableEmitter::EmitPatternMatchTable(raw_ostream &OS) {
  }
  
  static unsigned emitMVT(MVT VT, raw_ostream &OS) {
@@ -79,3 +108,16 @@ index 29f4510..0fefb1a 100644
  }
  
  static StringRef getCompactISDOpcode(StringRef Opcode) {
+@@ -745,10 +763,8 @@ unsigned MatcherTableEmitter::EmitMatcher(const Matcher *N,
+         IdxSize = 2; // size of opcode in table is 2 bytes.
+       } else {
+         Child = cast<SwitchTypeMatcher>(N)->getCaseMatcher(i);
+-        IdxSize = GetVBRSize(
+-            cast<SwitchTypeMatcher>(N)
+-                ->getCaseType(i)
+-                .SimpleTy); // size of type in table is sizeof(VBR(MVT)) byte.
++        IdxSize = getMVTEncodingSize(
++            cast<SwitchTypeMatcher>(N)->getCaseType(i));
+       }
+ 
+       if (i != 0) {
