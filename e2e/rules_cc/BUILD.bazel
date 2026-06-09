@@ -149,6 +149,44 @@ cc_binary(
     }),
 )
 
+cc_binary(
+    name = "libstdcxx_headers_dynamic",
+    srcs = ["libstdcxx_headers.cc"],
+    copts = ["-std=c++20"],
+    linkstatic = False,
+    target_compatible_with = select({
+        "@llvm//constraints/cxxstdlib:libstdcxx": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }) + select({
+        "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }) + select({
+        # We do not support musl libc.so.
+        "@llvm//constraints/libc:musl": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+    deps = ["@gcc//:libstdcxxfs"],
+)
+
+cc_binary(
+    name = "libstdcxx_headers_dynamic_with_linkopts",
+    srcs = ["libstdcxx_headers.cc"],
+    copts = ["-std=c++20"],
+    linkopts = ["-lstdc++fs"],
+    linkstatic = False,
+    target_compatible_with = select({
+        "@llvm//constraints/cxxstdlib:libstdcxx": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }) + select({
+        "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }) + select({
+        # We do not support musl libc.so.
+        "@llvm//constraints/libc:musl": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+)
+
 LIBSTDCXX_PLATFORMS = [
     ("linux_x86_64_libstdcxx", "@platforms//cpu:x86_64", "@llvm//constraints/libc:gnu.2.28"),
     ("linux_aarch64_libstdcxx", "@platforms//cpu:aarch64", "@llvm//constraints/libc:gnu.2.28"),
@@ -197,6 +235,26 @@ platform_transition_filegroup(
     platform_transition_binary(
         name = "libstdcxx_main_dynamic_" + platform_name,
         binary = ":libstdcxx_main_dynamic",
+        target_compatible_with = _LIBSTDCXX_E2E_TARGET_COMPATIBLE_WITH,
+        target_platform = ":" + platform_name,
+    )
+    for platform_name, _, _ in LIBSTDCXX_PLATFORMS
+]
+
+[
+    platform_transition_binary(
+        name = "libstdcxx_headers_dynamic_" + platform_name,
+        binary = ":libstdcxx_headers_dynamic",
+        target_compatible_with = _LIBSTDCXX_E2E_TARGET_COMPATIBLE_WITH,
+        target_platform = ":" + platform_name,
+    )
+    for platform_name, _, _ in LIBSTDCXX_PLATFORMS
+]
+
+[
+    platform_transition_binary(
+        name = "libstdcxx_headers_dynamic_with_linkopts_" + platform_name,
+        binary = ":libstdcxx_headers_dynamic_with_linkopts",
         target_compatible_with = _LIBSTDCXX_E2E_TARGET_COMPATIBLE_WITH,
         target_platform = ":" + platform_name,
     )
