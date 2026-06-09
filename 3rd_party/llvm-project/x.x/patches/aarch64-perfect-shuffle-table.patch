@@ -1,0 +1,28 @@
+diff --git a/llvm/lib/Target/AArch64/AArch64PerfectShuffle.h b/llvm/lib/Target/AArch64/AArch64PerfectShuffle.h
+index 12a53aad08aa..23374921e5d1 100644
+--- a/llvm/lib/Target/AArch64/AArch64PerfectShuffle.h
++++ b/llvm/lib/Target/AArch64/AArch64PerfectShuffle.h
+@@ -25,7 +25,8 @@ namespace llvm {
+ // 2084 entries have cost 3
+ 
+ // This table is 6561*4 = 26244 bytes in size.
+-static const unsigned PerfectShuffleTable[6561 + 1] = {
++LLVM_LIBRARY_VISIBILITY inline constexpr unsigned
++    PerfectShuffleTable[6561 + 1] = {
+     135053414U,  // <0,0,0,0>: Cost 1 vdup0 LHS
+     2080972802U, // <0,0,0,1>: Cost 2 ins <0,0,u,1>, lane 2
+     1679065190U, // <0,0,0,2>: Cost 2 vuzpl <0,2,0,2>, LHS
+diff --git a/llvm/utils/PerfectShuffle/PerfectShuffle.cpp b/llvm/utils/PerfectShuffle/PerfectShuffle.cpp
+index ba8292db027d..3b9a5d8583b0 100644
+--- a/llvm/utils/PerfectShuffle/PerfectShuffle.cpp
++++ b/llvm/utils/PerfectShuffle/PerfectShuffle.cpp
+@@ -441,7 +441,8 @@ int main() {
+ 
+   // Build up the table to emit.
+   std::cout << "\n// This table is 6561*4 = 26244 bytes in size.\n";
+-  std::cout << "static const unsigned PerfectShuffleTable[6561+1] = {\n";
++  std::cout << "LLVM_LIBRARY_VISIBILITY inline constexpr unsigned "
++               "PerfectShuffleTable[6561+1] = {\n";
+ 
+   for (unsigned i = 0; i != 0x8889; ++i) {
+     if (!isValidMask(i)) continue;

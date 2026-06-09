@@ -19,6 +19,7 @@ _DEFAULT_SOURCE_PATCHES = [
     "//3rd_party/llvm-project/x.x/patches:recursive-ast-visitor-minsize.patch",
     "//3rd_party/llvm-project/x.x/patches:compiler-invocation-reuse-option-string-table.patch",
     "//3rd_party/llvm-project/x.x/patches:aarch64-scalable-vector-intrinsic-map.patch",
+    "//3rd_party/llvm-project/x.x/patches:aarch64-perfect-shuffle-table.patch",
     "//3rd_party/llvm-project/x.x/patches:clangd-dynamic-semantic-highlighting-visitor.patch",
     "//3rd_party/llvm-project/x.x/patches:clangd-dynamic-tweak-visitors.patch",
     "//3rd_party/llvm-project/x.x/patches:asm-matcher-compact-class-tables.patch",
