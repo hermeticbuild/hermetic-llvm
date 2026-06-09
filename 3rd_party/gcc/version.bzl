@@ -1,4 +1,8 @@
 GCC_VERSIONS = [
+    "13.1.0",
+    "13.2.0",
+    "13.3.0",
+    "13.4.0",
     "14.1.0",
     "14.2.0",
     "14.3.0",
@@ -7,9 +11,25 @@ GCC_VERSIONS = [
     "16.1.0",
 ]
 
-DEFAULT_GCC_VERSION = "14.3.0"
+DEFAULT_GCC_VERSION = "13.4.0"
 
 GCC_RELEASES = {
+    "13.1.0": {
+        "commit": "cc035c5d8672f87dc8c2756d9f8367903aa72d93",
+        "sha256": "decd4061fa41b28073c9e7a7b2c1b294c413f3b6efd0fff5552c77dbe40deaa8",
+    },
+    "13.2.0": {
+        "commit": "c891d8dc23e1a46ad9f3e757d09e57b500d40044",
+        "sha256": "47478252fe8b890a43396707349bfe4a013426dc63d43dd14a0c5dff2a6fe952",
+    },
+    "13.3.0": {
+        "commit": "b71f1de6e9cf7181a288c0f39f9b1ef6580cf5c8",
+        "sha256": "54e834fe573948905c934a494ae503d90b08b5607f8f1650ffddf052051b5339",
+    },
+    "13.4.0": {
+        "commit": "99677969d463d75a562f94460ea75e9f6a016b4f",
+        "sha256": "2a061f0d2afe337127d50f607644adfa0f4e1c019c829ade3643f1afb6702191",
+    },
     "14.1.0": {
         "commit": "cd0059a1976303638cea95f216de129334fc04d1",
         "sha256": "addaea023df10a6df06aa35b274542c399f9e269cfe7733c4123dde94490b08b",
