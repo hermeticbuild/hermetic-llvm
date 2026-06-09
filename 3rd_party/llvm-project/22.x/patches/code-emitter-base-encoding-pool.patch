@@ -1,0 +1,162 @@
+diff --git a/llvm/test/TableGen/CodeEmitterBaseEncodingPool.td b/llvm/test/TableGen/CodeEmitterBaseEncodingPool.td
+new file mode 100644
+index 000000000000..3ab26b3c3095
+--- /dev/null
++++ b/llvm/test/TableGen/CodeEmitterBaseEncodingPool.td
+@@ -0,0 +1,38 @@
++// RUN: llvm-tblgen -gen-emitter -I %p/../../include %s | FileCheck %s
++
++include "llvm/Target/Target.td"
++
++def TestInstrInfo : InstrInfo;
++
++def Test : Target {
++  let InstructionSet = TestInstrInfo;
++}
++
++class TestInst<bits<8> Encoding> : Instruction {
++  bits<128> Inst;
++  let Inst{7...0} = Encoding;
++  let OutOperandList = (outs);
++  let InOperandList = (ins);
++}
++
++def A0 : TestInst<1>;
++def A1 : TestInst<1>;
++def A2 : TestInst<1>;
++def A3 : TestInst<1>;
++def B0 : TestInst<2>;
++def B1 : TestInst<2>;
++def B2 : TestInst<2>;
++def B3 : TestInst<2>;
++
++// CHECK: static const uint64_t InstBits[] = {
++// CHECK-NEXT: UINT64_C(1),
++// CHECK-NEXT: UINT64_C(2),
++// CHECK-NEXT: };
++// CHECK: static const uint8_t InstBitsIndices[] = {
++// CHECK-NEXT: 0, 0, 0, 0, 1, 1, 1, 1,
++// CHECK-NEXT: };
++// CHECK: static_assert(sizeof(InstBitsIndices[0]) == 1);
++// CHECK: static_assert(sizeof(InstBitsIndices) / sizeof(InstBitsIndices[0]) == 8);
++// CHECK: static_assert(sizeof(InstBits) / sizeof(InstBits[0]) == 2);
++// CHECK: static_assert(2 <= (UINT64_C(1) << 8));
++// CHECK: Inst = APInt(128, InstBits[InstBitsIndices[TableIndex]]);
+diff --git a/llvm/utils/TableGen/CodeEmitterGen.cpp b/llvm/utils/TableGen/CodeEmitterGen.cpp
+index 4c83433c7423..c849744ae342 100644
+--- a/llvm/utils/TableGen/CodeEmitterGen.cpp
++++ b/llvm/utils/TableGen/CodeEmitterGen.cpp
+@@ -371,6 +371,18 @@ static APInt getInstructionBaseValue(const Record *EncodingDef,
+   return Value;
+ }
+ 
++static StringRef getIndexType(unsigned BitWidth) {
++  switch (BitWidth) {
++  case 8:
++    return "uint8_t";
++  case 16:
++    return "uint16_t";
++  case 32:
++    return "uint32_t";
++  }
++  llvm_unreachable("unsupported base encoding index width");
++}
++
+ void CodeEmitterGen::emitInstructionBaseValues(
+     raw_ostream &O, ArrayRef<const CodeGenInstruction *> NumberedInstructions,
+     unsigned HwMode) {
+@@ -445,6 +457,39 @@ void CodeEmitterGen::run(raw_ostream &O) {
+   CompactTwoWordInstBits =
+       UseAPInt && HwModes.empty() && APInt::getNumWords(BitWidth) == 2;
+ 
++  std::vector<uint64_t> PooledInstBits;
++  std::vector<unsigned> InstBitsIndices;
++  unsigned InstBitsIndexBitWidth = 0;
++  if (CompactTwoWordInstBits) {
++    std::map<uint64_t, unsigned> ValueToIndex;
++    for (const CodeGenInstruction *CGI : EncodedInstructions) {
++      uint64_t Value =
++          getInstructionBaseValue(CGI->TheDef, BitWidth).getRawData()[0];
++      auto [It, Inserted] =
++          ValueToIndex.try_emplace(Value, PooledInstBits.size());
++      if (Inserted)
++        PooledInstBits.push_back(Value);
++      InstBitsIndices.push_back(It->second);
++    }
++
++    if (PooledInstBits.size() <= (UINT64_C(1) << 8))
++      InstBitsIndexBitWidth = 8;
++    else if (PooledInstBits.size() <= (UINT64_C(1) << 16))
++      InstBitsIndexBitWidth = 16;
++    else if (PooledInstBits.size() <= (UINT64_C(1) << 32))
++      InstBitsIndexBitWidth = 32;
++
++    const uint64_t RawSize =
++        uint64_t(EncodedInstructions.size()) * sizeof(uint64_t);
++    const uint64_t PooledSize =
++        uint64_t(PooledInstBits.size()) * sizeof(uint64_t) +
++        uint64_t(InstBitsIndices.size()) * (InstBitsIndexBitWidth / 8);
++    if (InstBitsIndexBitWidth == 0 || PooledSize >= RawSize) {
++      PooledInstBits.clear();
++      InstBitsIndices.clear();
++    }
++  }
++
+   // Emit function declaration
+   if (UseAPInt) {
+     O << "void " << Target.getName()
+@@ -461,7 +506,36 @@ void CodeEmitterGen::run(raw_ostream &O) {
+   }
+ 
+   // Emit instruction base values
+-  emitInstructionBaseValues(O, EncodedInstructions, DefaultMode);
++  if (PooledInstBits.empty()) {
++    emitInstructionBaseValues(O, EncodedInstructions, DefaultMode);
++  } else {
++    O << "  static const uint64_t InstBits[] = {\n";
++    for (uint64_t Value : PooledInstBits)
++      O << "    UINT64_C(" << Value << "),\n";
++    O << "  };\n";
++
++    StringRef IndexType = getIndexType(InstBitsIndexBitWidth);
++    O << "  static const " << IndexType << " InstBitsIndices[] = {\n";
++    for (auto [I, Index] : enumerate(InstBitsIndices)) {
++      if (I % 16 == 0)
++        O << "    ";
++      O << Index << ",";
++      if (I % 16 == 15 || I + 1 == InstBitsIndices.size())
++        O << "\n";
++      else
++        O << " ";
++    }
++    O << "  };\n";
++    O << "  static_assert(sizeof(InstBitsIndices[0]) == "
++      << InstBitsIndexBitWidth / 8 << ");\n";
++    O << "  static_assert(sizeof(InstBitsIndices) / "
++         "sizeof(InstBitsIndices[0]) == "
++      << InstBitsIndices.size() << ");\n";
++    O << "  static_assert(sizeof(InstBits) / sizeof(InstBits[0]) == "
++      << PooledInstBits.size() << ");\n";
++    O << "  static_assert(" << PooledInstBits.size()
++      << " <= (UINT64_C(1) << " << InstBitsIndexBitWidth << "));\n";
++  }
+   if (!HwModes.empty()) {
+     // Emit table for instrs whose encodings are controlled by HwModes.
+     for (unsigned HwMode : HwModes) {
+@@ -514,9 +588,13 @@ void CodeEmitterGen::run(raw_ostream &O) {
+   if (UseAPInt) {
+     O << "  if (Scratch.getBitWidth() != " << BitWidth << ")\n"
+       << "    Scratch = Scratch.zext(" << BitWidth << ");\n";
+-    if (CompactTwoWordInstBits)
+-      O << "  Inst = APInt(" << BitWidth << ", InstBits[TableIndex]);\n";
+-    else {
++    if (CompactTwoWordInstBits) {
++      if (PooledInstBits.empty())
++        O << "  Inst = APInt(" << BitWidth << ", InstBits[TableIndex]);\n";
++      else
++        O << "  Inst = APInt(" << BitWidth
++          << ", InstBits[InstBitsIndices[TableIndex]]);\n";
++    } else {
+       int NumWords = APInt::getNumWords(BitWidth);
+       O << "  Inst = APInt(" << BitWidth
+         << ", ArrayRef(InstBits + TableIndex * " << NumWords << ", " << NumWords
