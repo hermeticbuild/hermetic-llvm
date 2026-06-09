@@ -7,7 +7,9 @@
 # not-needed: configure/build/install/testsuite plumbing replaced by Bazel.
 # unsupported-feature: optional libstdc++ feature not built by this port today.
 # unsupported-target: target family not supported by this libstdc++ port today.
-# Optional third column: version condition for the currently supported GCC versions.
+# Optional third column: version condition such as gcc_ge_10, gcc_ge_11,
+# gcc_ge_11_lt_16, gcc_lt_12, gcc_ge_12, gcc_lt_13, gcc_ge_13, gcc_lt_14,
+# gcc_ge_14, gcc_ge_15, gcc_lt_16, or gcc_ge_16.
 GCC_AC_THREAD_HEADER target-derived
 GCC_AC_THREAD_MODEL target-derived gcc_ge_16
 GCC_BASE_VER not-needed
@@ -26,7 +28,7 @@ GLIBCXX_CHECK_ARC4RANDOM modeled gcc_ge_12
 GLIBCXX_CHECK_C99_TR1 modeled
 GLIBCXX_CHECK_COMPILER_FEATURES modeled
 GLIBCXX_CHECK_DEBUGGING modeled gcc_ge_16
-GLIBCXX_CHECK_DEV_RANDOM modeled
+GLIBCXX_CHECK_DEV_RANDOM modeled gcc_ge_9
 GLIBCXX_CHECK_EXCEPTION_PTR_SYMVER modeled
 GLIBCXX_CHECK_FILEBUF_NATIVE_HANDLES unsupported-target gcc_ge_14
 GLIBCXX_CHECK_FILESYSTEM_DEPS modeled
@@ -55,6 +57,7 @@ GLIBCXX_CHECK_PTHREADS_NUM_PROCESSORS_NP modeled
 GLIBCXX_CHECK_PTHREAD_COND_CLOCKWAIT modeled gcc_ge_10
 GLIBCXX_CHECK_PTHREAD_MUTEX_CLOCKLOCK modeled gcc_ge_10
 GLIBCXX_CHECK_PTHREAD_RWLOCK_CLOCKLOCK modeled gcc_ge_10
+GLIBCXX_CHECK_RANDOM_TR1 modeled gcc_lt_9
 GLIBCXX_CHECK_SC_NPROCESSORS_ONLN modeled
 GLIBCXX_CHECK_SC_NPROC_ONLN modeled
 GLIBCXX_CHECK_SDT_H modeled
@@ -106,7 +109,7 @@ GLIBCXX_ENABLE_INT128_FLOAT128 modeled gcc_lt_12
 GLIBCXX_ENABLE_LIBSTDCXX_DUAL_ABI modeled
 GLIBCXX_ENABLE_LIBSTDCXX_TIME modeled
 GLIBCXX_ENABLE_LIBSTDCXX_VISIBILITY modeled
-GLIBCXX_ENABLE_LOCK_POLICY target-derived
+GLIBCXX_ENABLE_LOCK_POLICY target-derived gcc_ge_9
 GLIBCXX_ENABLE_LONG_LONG modeled
 GLIBCXX_ENABLE_PARALLEL unsupported-feature
 GLIBCXX_ENABLE_PCH not-needed

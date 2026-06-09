@@ -3,7 +3,7 @@
 # fields, compare against configure.host plus configure.ac's *_SRCDIR
 # substitutions for the generated include/source paths.
 
-load("//3rd_party/gcc:version.bzl", "gcc_version_at_least_for")
+load("//3rd_party/gcc:version.bzl", "libstdcxx_has_atomic_lock_policy_define")
 load("//3rd_party/gcc/libstdcxx/autoconf:checks.bzl", "policy_define", "policy_undef")
 
 _SUPPORTED_TARGETS = {
@@ -310,7 +310,7 @@ def libstdcxx_config_h_policy_defines(gcc_version):
                 policy_define("HAVE_SYMVER_SYMBOL_RENAMING_RUNTIME_SUPPORT"),
                 policy_define("HAVE_EXCEPTION_PTR_SINCE_GCC46"),
             ] if _field_value(values, "symver_style") == "gnu" else []) +
-            ([policy_define("HAVE_ATOMIC_LOCK_POLICY")] if gcc_version_at_least_for(gcc_version, "9.0.0") and values["atomic_lock_policy"] else []) +
+            ([policy_define("HAVE_ATOMIC_LOCK_POLICY")] if libstdcxx_has_atomic_lock_policy_define(gcc_version) and values["atomic_lock_policy"] else []) +
             [policy_define("_GLIBCXX_MANGLE_SIZE_T", _field_value(values, "size_t_mangling"))] +
             ([
                 policy_define("_GLIBCXX_PTRDIFF_T_IS_INT"),

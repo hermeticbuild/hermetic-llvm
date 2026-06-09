@@ -14,8 +14,8 @@
 
 load(
     "//3rd_party/gcc:version.bzl",
-    "gcc_version_at_least_for",
     "libstdcxx_has_stdlib_secure_getenv_check",
+    "libstdcxx_has_stdlib_timespec_get_check",
 )
 load(
     "//3rd_party/gcc/libstdcxx/autoconf:checks.bzl",
@@ -132,7 +132,7 @@ def gcc_check_stdlib_support(gcc_version):
         function_link_check("HAVE_STRTOF", "stdlib.h", 'float f = strtof("1", (char **)0)'),
         function_link_check("HAVE_STRTOLD", "stdlib.h", 'long double ld = strtold("1", (char **)0)'),
     ]
-    if gcc_version_at_least_for(gcc_version, "9.0.0"):
+    if libstdcxx_has_stdlib_timespec_get_check(gcc_version):
         checks.append(function_link_check("HAVE_TIMESPEC_GET", "time.h", "struct timespec ts; timespec_get(&ts, TIME_UTC)"))
     if libstdcxx_has_stdlib_secure_getenv_check(gcc_version):
         checks.append(function_link_check("HAVE_SECURE_GETENV", "stdlib.h", 'char *p = secure_getenv("PATH")'))

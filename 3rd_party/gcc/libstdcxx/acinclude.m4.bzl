@@ -4,8 +4,6 @@
 
 load(
     "//3rd_party/gcc:version.bzl",
-    "gcc_version_at_least_for",
-    "gcc_version_less_than_for",
     "libstdcxx_has_alignas_init_priority_checks",
     "libstdcxx_has_arc4random_getentropy_checks",
     "libstdcxx_has_atomic_builtins_define",
@@ -13,9 +11,11 @@ load(
     "libstdcxx_has_cxx11_no_sleep_define",
     "libstdcxx_has_debugging_checks",
     "libstdcxx_has_decl_strnlen_check",
+    "libstdcxx_has_dev_random_policy",
     "libstdcxx_has_filesystem_chdir_chmod_getcwd_mkdir_checks",
     "libstdcxx_has_filesystem_copy_file_range_check",
     "libstdcxx_has_filesystem_dirfd_checks",
+    "libstdcxx_has_filesystem_extra_posix_checks",
     "libstdcxx_has_filesystem_openat_check",
     "libstdcxx_has_fseeko_ftello_check",
     "libstdcxx_has_int128_float128_checks",
@@ -24,6 +24,7 @@ load(
     "libstdcxx_has_no_sleep_policy",
     "libstdcxx_has_posix_semaphore_check",
     "libstdcxx_has_pthread_clock_checks",
+    "libstdcxx_has_sockatmark_wfopen_checks",
     "libstdcxx_has_stdio_locking_checks",
     "libstdcxx_has_struct_tm_tm_zone_check",
     "libstdcxx_has_system_error_check",
@@ -1217,7 +1218,7 @@ int main() { fchmodat(AT_FDCWD, "", 0, AT_SYMLINK_NOFOLLOW); return 0; }
         ),
         function_link_check("_GLIBCXX_USE_SENDFILE", "sys/sendfile.h", "sendfile(1, 2, (off_t *)0, sizeof 1)", compile_flags = CXX_FILESYSTEM_FLAGS),
     ]
-    if gcc_version_at_least_for(gcc_version, "9.0.0"):
+    if libstdcxx_has_filesystem_extra_posix_checks(gcc_version):
         checks.extend([
             link_check(
                 name = "_GLIBCXX_USE_UTIME",
@@ -1508,9 +1509,9 @@ int main() { return __cxa_thread_atexit_impl((void (*)(void *))0, (void *)0, (vo
             function_link_check("HAVE_ARC4RANDOM", "stdlib.h", "unsigned x = arc4random()"),
             function_link_check("HAVE_GETENTROPY", "unistd.h", "char buf[8]; getentropy(buf, sizeof(buf))"),
         ])
-    if gcc_version_at_least_for(gcc_version, "9.0.0"):
+    if libstdcxx_has_sockatmark_wfopen_checks(gcc_version):
         checks.append(function_link_check("HAVE_SOCKATMARK", "sys/socket.h", "int i = sockatmark(0)"))
-    if gcc_version_at_least_for(gcc_version, "9.0.0"):
+    if libstdcxx_has_sockatmark_wfopen_checks(gcc_version):
         checks.append(function_link_check("HAVE__WFOPEN", "wchar.h", 'FILE *f = _wfopen(L"", L"r")'))
     return checks
 
@@ -1548,7 +1549,7 @@ def glibcxx_check_system_error(gcc_version):
     ]
 
 def glibcxx_random_policy(gcc_version):
-    if gcc_version_less_than_for(gcc_version, "9.0.0"):
+    if not libstdcxx_has_dev_random_policy(gcc_version):
         return [
             policy_define("_GLIBCXX_USE_RANDOM_TR1"),
         ]

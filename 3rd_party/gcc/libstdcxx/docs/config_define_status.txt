@@ -11,7 +11,8 @@
 # intentionally-defaulted: deliberately left undefined for supported targets.
 # unsupported-feature: optional libstdc++ feature not built by this port today.
 # unsupported-target: target family not supported by this libstdc++ port today.
-# Optional third column: version condition for the currently supported GCC versions.
+# Optional third column: version condition such as gcc_ge_10, gcc_ge_12_4,
+# gcc_ge_11_lt_16, gcc_ge_12_4_lt_13, gcc_lt_8_3, or comma-separated ORs.
 HAVE_ACOSF probe-modeled
 HAVE_ACOSL probe-modeled
 HAVE_ALIGNED_ALLOC probe-modeled
@@ -23,7 +24,7 @@ HAVE_ATAN2F probe-modeled
 HAVE_ATAN2L probe-modeled
 HAVE_ATANF probe-modeled
 HAVE_ATANL probe-modeled
-HAVE_ATOMIC_LOCK_POLICY target-derived
+HAVE_ATOMIC_LOCK_POLICY target-derived gcc_ge_9
 HAVE_AT_QUICK_EXIT probe-modeled
 HAVE___CXA_THREAD_ATEXIT probe-modeled
 HAVE___CXA_THREAD_ATEXIT_IMPL probe-modeled
@@ -92,7 +93,7 @@ HAVE_ISWBLANK probe-modeled
 HAVE_LC_MESSAGES probe-modeled
 HAVE_LDEXPF probe-modeled
 HAVE_LDEXPL probe-modeled
-HAVE_LINK probe-modeled
+HAVE_LINK probe-modeled gcc_ge_9
 HAVE_LINUX_FUTEX probe-modeled
 HAVE_LOG10F probe-modeled
 HAVE_LOG10L probe-modeled
@@ -115,7 +116,7 @@ HAVE_POWF probe-modeled
 HAVE_POWL probe-modeled
 HAVE_QFPCLASS probe-modeled
 HAVE_QUICK_EXIT probe-modeled
-HAVE_READLINK probe-modeled
+HAVE_READLINK probe-modeled gcc_ge_9
 HAVE_SECURE_GETENV probe-modeled gcc_ge_11_4
 HAVE_SETENV probe-modeled
 HAVE_SINCOSL probe-modeled
@@ -126,7 +127,7 @@ HAVE_SINHF probe-modeled
 HAVE_SINHL probe-modeled
 HAVE_SINL probe-modeled
 HAVE_SLEEP probe-modeled
-HAVE_SOCKATMARK probe-modeled
+HAVE_SOCKATMARK probe-modeled gcc_ge_9
 HAVE_SQRTF probe-modeled
 HAVE_SQRTL probe-modeled
 HAVE_STACKTRACE unsupported-feature gcc_ge_12
@@ -137,7 +138,7 @@ HAVE_STRTOF probe-modeled
 HAVE_STRTOLD probe-modeled
 HAVE_STRUCT_DIRENT_D_TYPE probe-modeled
 HAVE_STRXFRM_L probe-modeled
-HAVE_SYMLINK probe-modeled
+HAVE_SYMLINK probe-modeled gcc_ge_9
 HAVE_SYMVER_SYMBOL_RENAMING_RUNTIME_SUPPORT policy-modeled
 HAVE_SYS_SDT_H header-probe
 HAVE_SYS_STAT_H header-probe gcc_ge_16
@@ -148,9 +149,9 @@ HAVE_TANF probe-modeled
 HAVE_TANHF probe-modeled
 HAVE_TANHL probe-modeled
 HAVE_TANL probe-modeled
-HAVE_TIMESPEC_GET probe-modeled
+HAVE_TIMESPEC_GET probe-modeled gcc_ge_9
 HAVE_TLS probe-modeled
-HAVE_TRUNCATE probe-modeled
+HAVE_TRUNCATE probe-modeled gcc_ge_9
 HAVE_UNISTD_H header-probe gcc_ge_16
 HAVE_UNLINKAT probe-modeled gcc_ge_11_5
 HAVE_USELOCALE probe-modeled gcc_ge_11
@@ -163,7 +164,7 @@ HAVE_WCSTOF probe-modeled
 HAVE_WRITEV probe-modeled
 HAVE__ALIGNED_MALLOC probe-modeled
 HAVE__BOOL not-needed
-HAVE__WFOPEN probe-modeled
+HAVE__WFOPEN probe-modeled gcc_ge_9
 HAVE_CC_TLS probe-modeled
 ICONV_CONST intentionally-defaulted
 STRING_WITH_STRINGS not-needed
@@ -226,9 +227,10 @@ _GLIBCXX_USE_CLOCK_MONOTONIC probe-modeled
 _GLIBCXX_USE_CLOCK_REALTIME probe-modeled
 _GLIBCXX_USE_COPY_FILE_RANGE probe-modeled gcc_ge_14
 _GLIBCXX_USE_DECIMAL_FLOAT probe-modeled
-_GLIBCXX_USE_DEV_RANDOM policy-modeled
+_GLIBCXX_USE_DEV_RANDOM policy-modeled gcc_ge_9
 _GLIBCXX_USE_FCHMOD probe-modeled
 _GLIBCXX_USE_FCHMODAT probe-modeled
+_GLIBCXX_USE_FLOAT128 unsupported-feature gcc_lt_8_3
 _GLIBCXX_USE_FSEEKO_FTELLO probe-modeled gcc_ge_13_2
 _GLIBCXX_USE_GETCWD probe-modeled gcc_ge_12_4_lt_13,gcc_ge_13_3
 _GLIBCXX_USE_GETTIMEOFDAY probe-modeled
@@ -238,7 +240,7 @@ _GLIBCXX_USE_INIT_PRIORITY_ATTRIBUTE probe-modeled gcc_ge_13_2
 _GLIBCXX_USE_INT128 probe-modeled gcc_lt_12
 _GLIBCXX_USE_LFS probe-modeled
 _GLIBCXX_USE_LONG_LONG policy-modeled
-_GLIBCXX_USE_LSTAT probe-modeled
+_GLIBCXX_USE_LSTAT probe-modeled gcc_ge_9
 _GLIBCXX_USE_MKDIR probe-modeled gcc_ge_12_4_lt_13,gcc_ge_13_3
 _GLIBCXX_USE_NANOSLEEP probe-modeled
 _GLIBCXX_USE_NLS build-setting-later
@@ -264,7 +266,7 @@ _GLIBCXX_USE_SYSCTL_HW_NCPU unsupported-target
 _GLIBCXX_USE_TMPNAM probe-modeled
 _GLIBCXX_USE_UCHAR_C8RTOMB_MBRTOC8_CXX20 probe-modeled gcc_ge_12
 _GLIBCXX_USE_UCHAR_C8RTOMB_MBRTOC8_FCHAR8_T probe-modeled gcc_ge_12
-_GLIBCXX_USE_UTIME probe-modeled
+_GLIBCXX_USE_UTIME probe-modeled gcc_ge_9
 _GLIBCXX_USE_UTIMENSAT probe-modeled
 _GLIBCXX_USE_WCHAR_T probe-modeled
 _GLIBCXX_USE_WIN32_SLEEP policy-modeled gcc_ge_13

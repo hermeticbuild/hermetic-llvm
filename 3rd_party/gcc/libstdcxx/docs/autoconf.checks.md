@@ -48,6 +48,7 @@ Status meanings are defined in `AGENTS.md`.
 - [x] `GLIBCXX_CHECK_PTHREAD_COND_CLOCKWAIT` - pthread cond clockwait probe.
 - [x] `GLIBCXX_CHECK_PTHREAD_MUTEX_CLOCKLOCK` - pthread mutex clocklock probe.
 - [x] `GLIBCXX_CHECK_PTHREAD_RWLOCK_CLOCKLOCK` - pthread rwlock clocklock probe.
+- [x] `GLIBCXX_CHECK_RANDOM_TR1` - GCC 8 TR1 random-device policy.
 - [x] `GLIBCXX_CHECK_SC_NPROCESSORS_ONLN` - `sysconf` processor-count probe.
 - [x] `GLIBCXX_CHECK_SC_NPROC_ONLN` - `sysconf` processor-count probe.
 - [x] `GLIBCXX_CHECK_SDT_H` - systemtap header probe.
@@ -58,7 +59,7 @@ Status meanings are defined in `AGENTS.md`.
 - [x] `GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_2` - `linkage.m4` stdlib helper.
 - [x] `GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_3` - stdlib helper represented by stdlib support probes.
 - [x] `GLIBCXX_CHECK_STDLIB_SUPPORT` - native stdlib support probe group.
-- [x] `GLIBCXX_CHECK_SYSTEM_ERROR` - Linux errno availability policy for legacy configure flows.
+- [x] `GLIBCXX_CHECK_SYSTEM_ERROR` - GCC 8 Linux errno availability policy.
 - [x] `GLIBCXX_CHECK_S_ISREG_OR_S_IFREG` - `S_ISREG`/`S_IFREG` probe.
 - [x] `GLIBCXX_CHECK_TEXT_ENCODING` - GCC 14+ text encoding support probes.
 - [x] `GLIBCXX_CHECK_TMPNAM` - `tmpnam` probe.

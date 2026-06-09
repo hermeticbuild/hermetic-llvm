@@ -58,6 +58,7 @@ Status meanings are defined in `AGENTS.md`.
 - [x] `GLIBCXX_CHECK_MATH_SUPPORT` - native math probes are modeled; `modeled`.
 - [x] `GLIBCXX_CHECK_STDLIB_SUPPORT` - native stdlib probes are modeled; `modeled`.
 - [x] `GLIBCXX_CHECK_DEV_RANDOM` - Linux random-device policy is modeled; `modeled`.
+- [x] `GLIBCXX_CHECK_RANDOM_TR1` - GCC 8 TR1 random-device policy is modeled; `modeled`.
 - [x] `GLIBCXX_CHECK_ARC4RANDOM` - GCC 12+ `arc4random` probe is modeled; `modeled`.
 - [x] `GLIBCXX_CHECK_GETENTROPY` - GCC 12+ `getentropy` probe is modeled; `modeled`.
 - [x] `GLIBCXX_CHECK_FILESYSTEM_DEPS` - filesystem probes are modeled; `modeled`.
@@ -99,7 +100,7 @@ Status meanings are defined in `AGENTS.md`.
 - [x] `GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_1` - represented by stdlib support probes; `modeled`.
 - [x] `GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_2` - represented by stdlib support probes; `modeled`.
 - [x] `GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_3` - represented by stdlib support probes; `modeled`.
-- [x] `GLIBCXX_CHECK_SYSTEM_ERROR` - Linux errno availability is modeled; `modeled`.
+- [x] `GLIBCXX_CHECK_SYSTEM_ERROR` - GCC 8 Linux errno availability is modeled; `modeled`.
 
 ## Build Setting Later
 

@@ -126,9 +126,9 @@ section flags, lock-free atomic word support, decimal floating-point support,
 int128 support, and gthreads support. The active Linux GNU behavior is modeled,
 with some answers represented as target policy where GCC's result is
 target-derived. Decimal floating point and GCC 11 int128 support are compile
-probes. Float128 remains deferred. The gthreads availability and
-pthread read/write lock checks compile against the generated `bits/gthr.h`
-overlay so they follow the staged header context used by this Bazel port.
+probes. Float128 remains deferred. The gthreads availability and pthread
+read/write lock checks compile against the generated `bits/gthr.h` overlay so
+they follow the staged header context used by this Bazel port.
 
 `GLIBCXX_CHECK_LINKER_FEATURES`, `GLIBCXX_ENABLE_SYMVERS`,
 `GLIBCXX_CHECK_EXCEPTION_PTR_SYMVER`, `GLIBCXX_DEFAULT_ABI`,
@@ -149,16 +149,16 @@ The Bazel port models the Linux GNU dynamic libstdc++ path.
 groups from `acinclude.m4` and `linkage.m4`. The Bazel port represents these
 as grouped link probes in `linkage.m4.bzl`.
 
-GCC 9+ `GLIBCXX_CHECK_DEV_RANDOM`, GCC 12+ `GLIBCXX_CHECK_ARC4RANDOM`, GCC 12+
-`GLIBCXX_CHECK_GETENTROPY`, `GLIBCXX_CHECK_FILESYSTEM_DEPS`,
-GCC 14+ `GLIBCXX_CHECK_TEXT_ENCODING`, GCC 16+ `GLIBCXX_CHECK_DEBUGGING`,
-GCC 16+ `GLIBCXX_CHECK_STDIO_LOCKING`, GCC 15+ `GLIBCXX_STRUCT_TM_TM_ZONE`,
-GCC 13+ `GLIBCXX_ZONEINFO_DIR`, GCC 13+
+GCC 8 `GLIBCXX_CHECK_RANDOM_TR1`, GCC 9+ `GLIBCXX_CHECK_DEV_RANDOM`, GCC 12+
+`GLIBCXX_CHECK_ARC4RANDOM`, GCC 12+ `GLIBCXX_CHECK_GETENTROPY`,
+`GLIBCXX_CHECK_FILESYSTEM_DEPS`, GCC 14+ `GLIBCXX_CHECK_TEXT_ENCODING`, GCC 16+
+`GLIBCXX_CHECK_DEBUGGING`, GCC 16+ `GLIBCXX_CHECK_STDIO_LOCKING`, GCC 15+
+`GLIBCXX_STRUCT_TM_TM_ZONE`, GCC 13+ `GLIBCXX_ZONEINFO_DIR`, GCC 13+
 `GLIBCXX_CHECK_ALIGNAS_CACHELINE`, GCC 13+ `GLIBCXX_CHECK_INIT_PRIORITY`,
-`GLIBCXX_CHECK_SYSTEM_ERROR`, `GLIBCXX_CHECK_X86_RDRAND`,
+GCC 8 `GLIBCXX_CHECK_SYSTEM_ERROR`, `GLIBCXX_CHECK_X86_RDRAND`,
 `GLIBCXX_CHECK_X86_RDSEED`, and `GLIBCXX_CHECK_SIZE_T_MANGLING` cover runtime
 library details after the core libc checks. The active Linux GNU behavior is
-modeled as probes or policy. `GLIBCXX_CHECK_DEV_RANDOM` is policy-modeled
+modeled as probes or policy. The random-device checks are policy-modeled
 rather than probed because GCC's native check reads the execution host's
 `/dev/random` and `/dev/urandom`, while the supported Bazel target decision is
 Linux GNU and GCC's cross configuration hardcodes that answer for Linux-family
@@ -180,12 +180,11 @@ reference-count ABI even when compare-and-swap builtins exist.
 `GLIBCXX_ENABLE_FLOAT128`, `GLIBCXX_ENABLE_FULLY_DYNAMIC_STRING`,
 `GLIBCXX_ENABLE_CSTDIO`'s `stdio_pure` mode, `GLIBCXX_ENABLE_ALLOCATOR`'s
 `malloc` mode, NLS, and GCC 13+ `GLIBCXX_EMERGENCY_EH_ALLOC` are currently
-fixed or
-disabled policies. They should become explicit private Bazel settings only if
-the port exposes the corresponding GCC variant. `GLIBCXX_ENABLE_DECIMAL_FLOAT`
-is already represented by a compile probe and is not a deferred knob. Float128
-remains fixed disabled until the probe result and `float128.ver` version-script
-input can be modeled together.
+fixed or disabled policies. They should become explicit private Bazel settings
+only if the port exposes the corresponding GCC variant.
+`GLIBCXX_ENABLE_DECIMAL_FLOAT` is already represented by a compile probe and is
+not a deferred knob. Float128 remains fixed disabled until the probe result and
+`float128.ver` version-script input can be modeled together.
 
 ## Audited Policy And Defaults
 

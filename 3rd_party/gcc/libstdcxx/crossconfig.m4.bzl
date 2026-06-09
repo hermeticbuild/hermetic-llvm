@@ -2,7 +2,7 @@
 # libstdc++-v3/crossconfig.m4. Only the Linux GNU-relevant branch is active in
 # this Bazel port; other target branches remain documented as unsupported.
 
-load("//3rd_party/gcc:version.bzl", "gcc_version_at_least_for")
+load("//3rd_party/gcc:version.bzl", "libstdcxx_has_dev_random_policy")
 load("//3rd_party/gcc/libstdcxx/autoconf:checks.bzl", "policy_define")
 load(
     ":gcc_config_checks.bzl",
@@ -21,7 +21,7 @@ def glibcxx_crossconfig_linux_gnu(gcc_version):
     # *-gnu*, *-kfreebsd*-gnu, *-cygwin*, and *-solaris*. Only Linux GNU is
     # active in this Bazel port; cygwin/solaris and non-glibc targets are out
     # of scope.
-    if gcc_version_at_least_for(gcc_version, "9.0.0"):
+    if libstdcxx_has_dev_random_policy(gcc_version):
         random_policy = [
             # crossconfig.m4 hardcodes the same GLIBCXX_CHECK_DEV_RANDOM
             # feature pair for Linux-family targets.
