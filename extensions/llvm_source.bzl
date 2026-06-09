@@ -83,6 +83,7 @@ _LLVM_22_SOURCE_PATCHES = _DEFAULT_SOURCE_PATCHES + [
     "//3rd_party/llvm-project/22.x/patches:code-emitter-base-encoding-pool.patch",
     "//3rd_party/llvm-project/22.x/patches:astcontext-builtin-type-init.patch",
     "//3rd_party/llvm-project/22.x/patches:intrinsic-name-lengths.patch",
+    "//3rd_party/llvm-project/22.x/patches:intrinsic-builtin-map.patch",
     "//3rd_party/llvm-project/22.x/patches:subtarget-feature-mask-pooling.patch",
     "//3rd_party/llvm-project/22.x/patches:pass-pipeline-name-outlining.patch",
     "//3rd_party/llvm-project/22.x/patches:llvm-link-multicall.patch",
