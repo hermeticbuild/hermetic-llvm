@@ -1,0 +1,421 @@
+diff --git a/llvm/include/llvm/CodeGen/SelectionDAGISel.h b/llvm/include/llvm/CodeGen/SelectionDAGISel.h
+--- a/llvm/include/llvm/CodeGen/SelectionDAGISel.h
++++ b/llvm/include/llvm/CodeGen/SelectionDAGISel.h
+@@ -140,6 +140,8 @@ public:
+   // Opcodes used by the DAG state machine:
+   enum BuiltinOpcodes {
+     OPC_Scope,
++    // Two-child scope with no second child size or zero sentinel.
++    OPC_Scope2,
+     OPC_RecordNode,
+     OPC_RecordChild0,
+     OPC_RecordChild1,
+@@ -231,12 +233,16 @@ public:
+     OPC_CheckOpcodeISD_SMIN,
+     OPC_CheckOpcodeISD_BUILD_VECTOR,
+     OPC_SwitchOpcode,
++    // Two-case opcode switch with no second case size or zero sentinel.
++    OPC_SwitchOpcode2,
+     OPC_CheckType,
+     // Space-optimized forms that implicitly encode VT.
+     OPC_CheckTypeI32,
+     OPC_CheckTypeI64,
+     OPC_CheckTypeRes,
+     OPC_SwitchType,
++    // Two-case type switch with no second case size or zero sentinel.
++    OPC_SwitchType2,
+     OPC_CheckChild0Type,
+     OPC_CheckChild1Type,
+     OPC_CheckChild2Type,
+diff --git a/llvm/lib/CodeGen/SelectionDAG/SelectionDAGISel.cpp b/llvm/lib/CodeGen/SelectionDAG/SelectionDAGISel.cpp
+--- a/llvm/lib/CodeGen/SelectionDAG/SelectionDAGISel.cpp
++++ b/llvm/lib/CodeGen/SelectionDAG/SelectionDAGISel.cpp
+@@ -3313,6 +3313,9 @@ struct MatchScope {
+ 
+   /// HasChainNodesMatched - True if the ChainNodesMatched list is non-empty.
+   bool HasChainNodesMatched;
++
++  /// For OPC_Scope2, a nonzero fail index points directly at the final child.
++  bool IsTwoChildScope;
+ };
+ 
+ /// \A DAG update listener to keep the matching state
+@@ -3494,17 +3497,23 @@ void SelectionDAGISel::SelectCodeCommon(SDNode *NodeToMatch,
+       MatcherIndex = OpcodeOffset[N.getOpcode()];
+     LLVM_DEBUG(dbgs() << "  Initial Opcode index to " << MatcherIndex << "\n");
+ 
+-  } else if (MatcherTable[0] == OPC_SwitchOpcode) {
++  } else if (MatcherTable[0] == OPC_SwitchOpcode ||
++             MatcherTable[0] == OPC_SwitchOpcode2) {
+     // Otherwise, the table isn't computed, but the state machine does start
+-    // with an OPC_SwitchOpcode instruction.  Populate the table now, since this
+-    // is the first time we're selecting an instruction.
++    // with an opcode switch. Populate the table now, since this is the first
++    // time we're selecting an instruction.
++    bool IsTwoCase = MatcherTable[0] == OPC_SwitchOpcode2;
+     unsigned Idx = 1;
+-    while (true) {
++    for (unsigned Case = 0;; ++Case) {
+       // Get the size of this case.
+-      unsigned CaseSize = MatcherTable[Idx++];
+-      if (CaseSize & 128)
+-        CaseSize = GetVBR(CaseSize, MatcherTable, Idx);
+-      if (CaseSize == 0) break;
++      unsigned CaseSize = 0;
++      if (!IsTwoCase || Case == 0) {
++        CaseSize = MatcherTable[Idx++];
++        if (CaseSize & 128)
++          CaseSize = GetVBR(CaseSize, MatcherTable, Idx);
++        if (CaseSize == 0)
++          break;
++      }
+ 
+       // Get the opcode, add the index to the table.
+       uint16_t Opc = MatcherTable[Idx++];
+@@ -3512,6 +3521,9 @@ void SelectionDAGISel::SelectCodeCommon(SDNode *NodeToMatch,
+       if (Opc >= OpcodeOffset.size())
+         OpcodeOffset.resize((Opc+1)*2);
+       OpcodeOffset[Opc] = Idx;
++
++      if (IsTwoCase && Case == 1)
++        break;
+       Idx += CaseSize;
+     }
+ 
+@@ -3528,6 +3540,51 @@ void SelectionDAGISel::SelectCodeCommon(SDNode *NodeToMatch,
+     BuiltinOpcodes Opcode =
+         static_cast<BuiltinOpcodes>(MatcherTable[MatcherIndex++]);
+     switch (Opcode) {
++    case OPC_Scope2: {
++      unsigned NumToSkip = MatcherTable[MatcherIndex++];
++      if (NumToSkip & 128)
++        NumToSkip = GetVBR(NumToSkip, MatcherTable, MatcherIndex);
++      unsigned FinalChildIndex = MatcherIndex + NumToSkip;
++
++      unsigned MatcherIndexOfPredicate = MatcherIndex;
++      (void)MatcherIndexOfPredicate;
++      bool Result;
++      MatcherIndex = IsPredicateKnownToFail(MatcherTable, MatcherIndex, N,
++                                            Result, *this, RecordedNodes);
++      bool MatchingFinalChild = false;
++      if (Result) {
++        LLVM_DEBUG(
++            dbgs() << "  Skipped scope entry (due to false predicate) at "
++                   << "index " << MatcherIndexOfPredicate << ", continuing at "
++                   << FinalChildIndex << "\n");
++        ++NumDAGIselRetries;
++
++        MatcherIndex = FinalChildIndex;
++        MatcherIndexOfPredicate = MatcherIndex;
++        MatcherIndex = IsPredicateKnownToFail(MatcherTable, MatcherIndex, N,
++                                              Result, *this, RecordedNodes);
++        if (Result) {
++          LLVM_DEBUG(dbgs()
++                     << "  Skipped final scope entry (due to false predicate) "
++                     << "at index " << MatcherIndexOfPredicate << "\n");
++          ++NumDAGIselRetries;
++          break;
++        }
++        MatchingFinalChild = true;
++      }
++
++      MatchScope NewEntry;
++      NewEntry.FailIndex = MatchingFinalChild ? 0 : FinalChildIndex;
++      NewEntry.NodeStack.append(NodeStack.begin(), NodeStack.end());
++      NewEntry.NumRecordedNodes = RecordedNodes.size();
++      NewEntry.NumMatchedMemRefs = MatchedMemRefs.size();
++      NewEntry.InputChain = InputChain;
++      NewEntry.InputGlue = InputGlue;
++      NewEntry.HasChainNodesMatched = !ChainNodesMatched.empty();
++      NewEntry.IsTwoChildScope = true;
++      MatchScopes.push_back(NewEntry);
++      continue;
++    }
+     case OPC_Scope: {
+       // Okay, the semantics of this operation are that we should push a scope
+       // then evaluate the first child.  However, pushing a scope only to have
+@@ -3584,6 +3641,7 @@ void SelectionDAGISel::SelectCodeCommon(SDNode *NodeToMatch,
+       NewEntry.InputChain = InputChain;
+       NewEntry.InputGlue = InputGlue;
+       NewEntry.HasChainNodesMatched = !ChainNodesMatched.empty();
++      NewEntry.IsTwoChildScope = false;
+       MatchScopes.push_back(NewEntry);
+       continue;
+     }
+@@ -3926,6 +3984,29 @@ void SelectionDAGISel::SelectCodeCommon(SDNode *NodeToMatch,
+       if (!::CheckType(getSimpleVT(MatcherTable, MatcherIndex), N.getValue(Res),
+                        TLI, CurDAG->getDataLayout()))
+         break;
++      continue;
++    }
++
++    case OPC_SwitchOpcode2: {
++      unsigned CurNodeOpcode = N.getOpcode();
++      unsigned SwitchStart = MatcherIndex - 1;
++      (void)SwitchStart;
++
++      unsigned CaseSize = MatcherTable[MatcherIndex++];
++      if (CaseSize & 128)
++        CaseSize = GetVBR(CaseSize, MatcherTable, MatcherIndex);
++      uint16_t Opc = MatcherTable[MatcherIndex++];
++      Opc |= static_cast<uint16_t>(MatcherTable[MatcherIndex++]) << 8;
++      if (CurNodeOpcode != Opc) {
++        MatcherIndex += CaseSize;
++        Opc = MatcherTable[MatcherIndex++];
++        Opc |= static_cast<uint16_t>(MatcherTable[MatcherIndex++]) << 8;
++        if (CurNodeOpcode != Opc)
++          break;
++      }
++
++      LLVM_DEBUG(dbgs() << "  OpcodeSwitch from " << SwitchStart << " to "
++                        << MatcherIndex << "\n");
+       continue;
+     }
+ 
+@@ -3960,6 +4041,31 @@ void SelectionDAGISel::SelectCodeCommon(SDNode *NodeToMatch,
+       continue;
+     }
+ 
++    case OPC_SwitchType2: {
++      MVT CurNodeVT = N.getSimpleValueType();
++      unsigned SwitchStart = MatcherIndex - 1;
++      (void)SwitchStart;
++
++      unsigned CaseSize = MatcherTable[MatcherIndex++];
++      if (CaseSize & 128)
++        CaseSize = GetVBR(CaseSize, MatcherTable, MatcherIndex);
++      MVT CaseVT = getSimpleVT(MatcherTable, MatcherIndex);
++      if (CaseVT == MVT::iPTR)
++        CaseVT = TLI->getPointerTy(CurDAG->getDataLayout());
++      if (CurNodeVT != CaseVT) {
++        MatcherIndex += CaseSize;
++        CaseVT = getSimpleVT(MatcherTable, MatcherIndex);
++        if (CaseVT == MVT::iPTR)
++          CaseVT = TLI->getPointerTy(CurDAG->getDataLayout());
++        if (CurNodeVT != CaseVT)
++          break;
++      }
++
++      LLVM_DEBUG(dbgs() << "  TypeSwitch[" << CurNodeVT << "] from "
++                        << SwitchStart << " to " << MatcherIndex << '\n');
++      continue;
++    }
++
+     case OPC_SwitchType: {
+       MVT CurNodeVT = N.getSimpleValueType();
+       unsigned SwitchStart = MatcherIndex-1; (void)SwitchStart;
+@@ -4676,6 +4782,15 @@ void SelectionDAGISel::SelectCodeCommon(SDNode *NodeToMatch,
+       if (!LastScope.HasChainNodesMatched)
+         ChainNodesMatched.clear();
+ 
++      if (LastScope.IsTwoChildScope) {
++        if (LastScope.FailIndex == 0) {
++          MatchScopes.pop_back();
++          continue;
++        }
++        LastScope.FailIndex = 0;
++        break;
++      }
++
+       // Check to see what the offset is at the new MatcherIndex.  If it is zero
+       // we have reached the end of this scope, otherwise we have another child
+       // in the current scope to try.
+diff --git a/llvm/utils/TableGen/DAGISelMatcherEmitter.cpp b/llvm/utils/TableGen/DAGISelMatcherEmitter.cpp
+--- a/llvm/utils/TableGen/DAGISelMatcherEmitter.cpp
++++ b/llvm/utils/TableGen/DAGISelMatcherEmitter.cpp
+@@ -390,24 +390,29 @@ unsigned MatcherTableEmitter::SizeMatcher(Matcher *N, raw_ostream &OS) {
+ 
+   ++OpcodeCounts[N->getKind()];
+   switch (N->getKind()) {
+-  // The Scope matcher has its kind, a series of child size + child,
+-  // and a trailing zero.
++  // The Scope matcher has its kind, a series of child size + child, and a
++  // trailing zero. The two-child form omits the second size and trailing zero.
+   case Matcher::Scope: {
+     ScopeMatcher *SM = cast<ScopeMatcher>(N);
+     assert(SM->getNext() == nullptr && "Scope matcher should not have next");
++    bool IsTwoChild = SM->getNumChildren() == 2;
+     unsigned Size = 1; // Count the kind.
+     for (unsigned i = 0, e = SM->getNumChildren(); i != e; ++i) {
+       const unsigned ChildSize = SizeMatcherList(SM->getChild(i), OS);
+       assert(ChildSize != 0 && "Matcher cannot have child of size 0");
+       SM->getChild(i)->setSize(ChildSize);
+-      Size += GetVBRSize(ChildSize) + ChildSize; // Count VBR and child size.
++      if (!IsTwoChild || i == 0)
++        Size += GetVBRSize(ChildSize);
++      Size += ChildSize;
+     }
+-    ++Size; // Count the zero sentinel.
++    if (!IsTwoChild)
++      ++Size; // Count the zero sentinel.
+     return Size;
+   }
+ 
+   // SwitchOpcode and SwitchType have their kind, a series of child size +
+-  // opcode/type + child, and a trailing zero.
++  // opcode/type + child, and a trailing zero. The two-case forms omit the
++  // second size and trailing zero.
+   case Matcher::SwitchOpcode:
+   case Matcher::SwitchType: {
+     unsigned Size = 1; // Count the kind.
+@@ -416,6 +421,7 @@ unsigned MatcherTableEmitter::SizeMatcher(Matcher *N, raw_ostream &OS) {
+       NumCases = SOM->getNumCases();
+     else
+       NumCases = cast<SwitchTypeMatcher>(N)->getNumCases();
++    bool IsTwoCase = NumCases == 2;
+     for (unsigned i = 0, e = NumCases; i != e; ++i) {
+       Matcher *Child;
+       if (SwitchOpcodeMatcher *SOM = dyn_cast<SwitchOpcodeMatcher>(N)) {
+@@ -430,9 +436,12 @@ unsigned MatcherTableEmitter::SizeMatcher(Matcher *N, raw_ostream &OS) {
+       const unsigned ChildSize = SizeMatcherList(Child, OS);
+       assert(ChildSize != 0 && "Matcher cannot have child of size 0");
+       Child->setSize(ChildSize);
+-      Size += GetVBRSize(ChildSize) + ChildSize; // Count VBR and child size.
++      if (!IsTwoCase || i == 0)
++        Size += GetVBRSize(ChildSize);
++      Size += ChildSize;
+     }
+-    ++Size; // Count the zero sentinel.
++    if (!IsTwoCase)
++      ++Size; // Count the zero sentinel.
+     return Size;
+   }
+ 
+@@ -572,9 +581,10 @@ unsigned MatcherTableEmitter::EmitMatcher(const Matcher *N,
+   switch (N->getKind()) {
+   case Matcher::Scope: {
+     const ScopeMatcher *SM = cast<ScopeMatcher>(N);
++    bool IsTwoChild = SM->getNumChildren() == 2;
+     unsigned StartIdx = CurrentIdx;
+ 
+-    OS << "OPC_Scope";
++    OS << (IsTwoChild ? "OPC_Scope2" : "OPC_Scope");
+     if (!OmitComments)
+       OS << " /*" << SM->getNumChildren() << " children */";
+     OS << ", ";
+@@ -582,7 +592,7 @@ unsigned MatcherTableEmitter::EmitMatcher(const Matcher *N,
+ 
+     // Emit all of the children.
+     for (unsigned i = 0, e = SM->getNumChildren(); i != e; ++i) {
+-      if (i != 0) {
++      if ((!IsTwoChild || i == 0) && i != 0) {
+         if (!OmitComments) {
+           OS << "/*" << format_decimal(CurrentIdx, IndexWidth) << "*/";
+           OS.indent(Indent) << "/*Scope*/ ";
+@@ -593,10 +603,12 @@ unsigned MatcherTableEmitter::EmitMatcher(const Matcher *N,
+ 
+       const Matcher *Child = SM->getChild(i);
+       unsigned ChildSize = Child->getSize();
+-      CurrentIdx += EmitVBRValue(ChildSize, OS);
+-      if (!OmitComments)
+-        OS << " // ->" << CurrentIdx + ChildSize;
+-      OS << '\n';
++      if (!IsTwoChild || i == 0) {
++        CurrentIdx += EmitVBRValue(ChildSize, OS);
++        if (!OmitComments)
++          OS << " // ->" << CurrentIdx + ChildSize;
++        OS << '\n';
++      }
+ 
+       ChildSize = EmitMatcherList(Child, Indent + 1, CurrentIdx, OS);
+       assert(ChildSize == Child->getSize() &&
+@@ -604,14 +616,17 @@ unsigned MatcherTableEmitter::EmitMatcher(const Matcher *N,
+       CurrentIdx += ChildSize;
+     }
+ 
+-    // Emit a zero as a sentinel indicating end of 'Scope'.
+-    if (!OmitComments)
+-      OS << "/*" << format_decimal(CurrentIdx, IndexWidth) << "*/";
+-    OS.indent(Indent) << "0,";
+-    if (!OmitComments)
+-      OS << " // End of Scope";
+-    OS << '\n';
+-    return CurrentIdx - StartIdx + 1;
++    if (!IsTwoChild) {
++      // Emit a zero as a sentinel indicating end of 'Scope'.
++      if (!OmitComments)
++        OS << "/*" << format_decimal(CurrentIdx, IndexWidth) << "*/";
++      OS.indent(Indent) << "0,";
++      if (!OmitComments)
++        OS << " // End of Scope";
++      OS << '\n';
++      ++CurrentIdx;
++    }
++    return CurrentIdx - StartIdx;
+   }
+ 
+   case Matcher::RecordNode:
+@@ -733,19 +748,21 @@ unsigned MatcherTableEmitter::EmitMatcher(const Matcher *N,
+ 
+     unsigned NumCases;
+     if (const SwitchOpcodeMatcher *SOM = dyn_cast<SwitchOpcodeMatcher>(N)) {
+-      OS << "OPC_SwitchOpcode ";
+       NumCases = SOM->getNumCases();
++      OS << (NumCases == 2 ? "OPC_SwitchOpcode2 " : "OPC_SwitchOpcode ");
+     } else {
+-      OS << "OPC_SwitchType ";
+       NumCases = cast<SwitchTypeMatcher>(N)->getNumCases();
++      OS << (NumCases == 2 ? "OPC_SwitchType2 " : "OPC_SwitchType ");
+     }
++    bool IsTwoCase = NumCases == 2;
+ 
+     if (!OmitComments)
+       OS << "/*" << NumCases << " cases */";
+     OS << ", ";
+     ++CurrentIdx;
+ 
+-    // For each case we emit the size, then the opcode, then the matcher.
++    // For each case we emit the size, then the opcode/type and matcher. The
++    // final case of the two-case form omits its size.
+     for (unsigned i = 0, e = NumCases; i != e; ++i) {
+       const Matcher *Child;
+       unsigned IdxSize;
+@@ -770,13 +787,16 @@ unsigned MatcherTableEmitter::EmitMatcher(const Matcher *N,
+       }
+ 
+       unsigned ChildSize = Child->getSize();
+-      CurrentIdx += EmitVBRValue(ChildSize, OS) + IdxSize;
+-      OS << ' ';
++      if (!IsTwoCase || i == 0) {
++        CurrentIdx += EmitVBRValue(ChildSize, OS);
++        OS << ' ';
++      }
++      CurrentIdx += IdxSize;
+       if (const SwitchOpcodeMatcher *SOM = dyn_cast<SwitchOpcodeMatcher>(N))
+         OS << "TARGET_VAL(" << SOM->getCaseOpcode(i).getEnumName() << "),";
+       else
+         emitMVT(cast<SwitchTypeMatcher>(N)->getCaseType(i), OS);
+-      if (!OmitComments)
++      if (!OmitComments && (!IsTwoCase || i == 0))
+         OS << " // ->" << CurrentIdx + ChildSize;
+       OS << '\n';
+ 
+@@ -786,16 +806,18 @@ unsigned MatcherTableEmitter::EmitMatcher(const Matcher *N,
+       CurrentIdx += ChildSize;
+     }
+ 
+-    // Emit the final zero to terminate the switch.
+-    if (!OmitComments)
+-      OS << "/*" << format_decimal(CurrentIdx, IndexWidth) << "*/";
+-    OS.indent(Indent) << "0,";
+-    if (!OmitComments)
+-      OS << (isa<SwitchOpcodeMatcher>(N) ? " // EndSwitchOpcode"
+-                                         : " // EndSwitchType");
+-
+-    OS << '\n';
+-    return CurrentIdx - StartIdx + 1;
++    if (!IsTwoCase) {
++      // Emit the final zero to terminate the switch.
++      if (!OmitComments)
++        OS << "/*" << format_decimal(CurrentIdx, IndexWidth) << "*/";
++      OS.indent(Indent) << "0,";
++      if (!OmitComments)
++        OS << (isa<SwitchOpcodeMatcher>(N) ? " // EndSwitchOpcode"
++                                           : " // EndSwitchType");
++      OS << '\n';
++      ++CurrentIdx;
++    }
++    return CurrentIdx - StartIdx;
+   }
+ 
+   case Matcher::CheckType: {
