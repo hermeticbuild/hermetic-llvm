@@ -1,0 +1,85 @@
+diff --git a/llvm/include/llvm/IR/PassManager.h b/llvm/include/llvm/IR/PassManager.h
+index 4d4c4bcfe943..3541e9dad7dd 100644
+--- a/llvm/include/llvm/IR/PassManager.h
++++ b/llvm/include/llvm/IR/PassManager.h
+@@ -60,6 +60,17 @@ namespace llvm {
+ class Function;
+ class Module;
+ 
++namespace detail {
++LLVM_ABI void
++printPassPipelineName(raw_ostream &OS,
++                      function_ref<StringRef(StringRef)> MapClassName2PassName,
++                      StringRef ClassName);
++LLVM_ABI void printAnalysisPassPipelineName(
++    raw_ostream &OS,
++    function_ref<StringRef(StringRef)> MapClassName2PassName,
++    StringRef ClassName, bool IsInvalidate);
++} // namespace detail
++
+ // Forward declare the analysis manager template.
+ template <typename IRUnitT, typename... ExtraArgTs> class AnalysisManager;
+ 
+@@ -79,9 +90,7 @@ template <typename DerivedT> struct PassInfoMixin {
+ 
+   void printPipeline(raw_ostream &OS,
+                      function_ref<StringRef(StringRef)> MapClassName2PassName) {
+-    StringRef ClassName = DerivedT::name();
+-    auto PassName = MapClassName2PassName(ClassName);
+-    OS << PassName;
++    detail::printPassPipelineName(OS, MapClassName2PassName, DerivedT::name());
+   }
+ };
+ 
+@@ -915,9 +924,8 @@ struct RequireAnalysisPass
+   }
+   void printPipeline(raw_ostream &OS,
+                      function_ref<StringRef(StringRef)> MapClassName2PassName) {
+-    auto ClassName = AnalysisT::name();
+-    auto PassName = MapClassName2PassName(ClassName);
+-    OS << "require<" << PassName << '>';
++    detail::printAnalysisPassPipelineName(
++        OS, MapClassName2PassName, AnalysisT::name(), false);
+   }
+   static bool isRequired() { return true; }
+ };
+@@ -941,9 +949,8 @@ struct InvalidateAnalysisPass
+   }
+   void printPipeline(raw_ostream &OS,
+                      function_ref<StringRef(StringRef)> MapClassName2PassName) {
+-    auto ClassName = AnalysisT::name();
+-    auto PassName = MapClassName2PassName(ClassName);
+-    OS << "invalidate<" << PassName << '>';
++    detail::printAnalysisPassPipelineName(
++        OS, MapClassName2PassName, AnalysisT::name(), true);
+   }
+ };
+ 
+diff --git a/llvm/lib/IR/PassManager.cpp b/llvm/lib/IR/PassManager.cpp
+index af22b779ddbb..8f614a0ca5f9 100644
+--- a/llvm/lib/IR/PassManager.cpp
++++ b/llvm/lib/IR/PassManager.cpp
+@@ -15,6 +15,23 @@
+ using namespace llvm;
+ 
+ namespace llvm {
++namespace detail {
++void printPassPipelineName(
++    raw_ostream &OS,
++    function_ref<StringRef(StringRef)> MapClassName2PassName,
++    StringRef ClassName) {
++  OS << MapClassName2PassName(ClassName);
++}
++
++void printAnalysisPassPipelineName(
++    raw_ostream &OS,
++    function_ref<StringRef(StringRef)> MapClassName2PassName,
++    StringRef ClassName, bool IsInvalidate) {
++  OS << (IsInvalidate ? "invalidate<" : "require<")
++     << MapClassName2PassName(ClassName) << '>';
++}
++} // namespace detail
++
+ // Explicit template instantiations and specialization defininitions for core
+ // template typedefs.
+ template class LLVM_EXPORT_TEMPLATE AllAnalysesOn<Module>;
