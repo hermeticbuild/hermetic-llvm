@@ -95,8 +95,11 @@ stub_library(
     name = "supc++",
 )
 
-stub_library(
+copy_file(
     name = "stdc++fs",
+    src = "@gcc//:libstdcxxfs.static",
+    out = "libstdc++fs.a",
+    allow_symlink = True,
 )
 
 copy_to_directory(

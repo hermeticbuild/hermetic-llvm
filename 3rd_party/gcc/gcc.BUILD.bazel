@@ -44,6 +44,7 @@ load(
     "libstdcxx_use_dual_abi",
 )
 load("@llvm//toolchain/runtimes:cc_runtime_shared_library.bzl", "cc_runtime_stage1_shared_library")
+load("@llvm//toolchain/runtimes:cc_runtime_static_library.bzl", "cc_runtime_stage0_static_library")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load(":version.bzl", "GCC_VERSION")
 
@@ -1491,6 +1492,11 @@ cc_library(
     copts = LIBSTDCXX_LIBRARY_COPTS + ["-std=gnu++17"],
     implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
     includes = LIBSTDCXX_LIBRARY_INCLUDES,
+)
+
+cc_runtime_stage0_static_library(
+    name = "libstdcxxfs.static",
+    deps = [":libstdcxxfs"],
 )
 
 # Header search directory layout mirrors libstdc++-v3/include/Makefile.am:
