@@ -1,12 +1,27 @@
 GCC_VERSIONS = [
+    "14.1.0",
+    "14.2.0",
+    "14.3.0",
     "15.1.0",
     "15.2.0",
     "16.1.0",
 ]
 
-DEFAULT_GCC_VERSION = "15.2.0"
+DEFAULT_GCC_VERSION = "14.3.0"
 
 GCC_RELEASES = {
+    "14.1.0": {
+        "commit": "cd0059a1976303638cea95f216de129334fc04d1",
+        "sha256": "addaea023df10a6df06aa35b274542c399f9e269cfe7733c4123dde94490b08b",
+    },
+    "14.2.0": {
+        "commit": "04696df09633baf97cdbbdd6e9929b9d472161d3",
+        "sha256": "bc304fe24d9c046588d6336a283325eb86c85b88699111ae9cccc08ca16fbc66",
+    },
+    "14.3.0": {
+        "commit": "c9cd41fba9ebd288c4f101e4b99da934bcb96a11",
+        "sha256": "e15cb7bdf3f0cbda46d3bd58082abb5cd9bbbb4749c03292a19cf91c285555e1",
+    },
     "15.1.0": {
         "commit": "1b306039ac49f8ad91ca71d3de3150a3c9fa792a",
         "sha256": "b45e06e72a265b129f0f68fc81b7be06c931e5ff7c2d47bafcd45c573eda96ad",
