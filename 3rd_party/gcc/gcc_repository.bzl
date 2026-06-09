@@ -54,6 +54,23 @@ def gcc_repository(gcc_version):
         "libstdc++-v3/src/c++20/format-inst.cc",
     ]
 
+    _GCC_16_STD_HEADERS = [
+        "libstdc++-v3/include/std/contracts",
+        "libstdc++-v3/include/std/debugging",
+        "libstdc++-v3/include/std/inplace_vector",
+        "libstdc++-v3/include/std/mdspan",
+        "libstdc++-v3/include/std/meta",
+        "libstdc++-v3/include/std/simd",
+    ]
+
+    _GCC_16_CXX20_SOURCES = [
+        "libstdc++-v3/src/c++20/atomic.cc",
+        "libstdc++-v3/src/c++20/clock.cc",
+        "libstdc++-v3/src/c++20/cow-string-inst.cc",
+        "libstdc++-v3/src/c++20/string-inst.cc",
+        "libstdc++-v3/src/c++20/syncbuf.cc",
+    ]
+
     # Keep this export list in sync with the sparse archive roots in
     # 3rd_party/gcc/extension/gcc.bzl. The libstdc++ configure inputs are exported
     # for the audit test; the config/include/libsupc++ entries are the files
@@ -174,9 +191,7 @@ def gcc_repository(gcc_version):
             "libstdc++-v3/include/std/complex",
             "libstdc++-v3/include/std/concepts",
             "libstdc++-v3/include/std/condition_variable",
-            "libstdc++-v3/include/std/contracts",
             "libstdc++-v3/include/std/coroutine",
-            "libstdc++-v3/include/std/debugging",
             "libstdc++-v3/include/std/deque",
             "libstdc++-v3/include/std/execution",
             "libstdc++-v3/include/std/expected",
@@ -189,7 +204,6 @@ def gcc_repository(gcc_version):
             "libstdc++-v3/include/std/functional",
             "libstdc++-v3/include/std/future",
             "libstdc++-v3/include/std/generator",
-            "libstdc++-v3/include/std/inplace_vector",
             "libstdc++-v3/include/std/iomanip",
             "libstdc++-v3/include/std/ios",
             "libstdc++-v3/include/std/iosfwd",
@@ -201,10 +215,8 @@ def gcc_repository(gcc_version):
             "libstdc++-v3/include/std/list",
             "libstdc++-v3/include/std/locale",
             "libstdc++-v3/include/std/map",
-            "libstdc++-v3/include/std/mdspan",
             "libstdc++-v3/include/std/memory",
             "libstdc++-v3/include/std/memory_resource",
-            "libstdc++-v3/include/std/meta",
             "libstdc++-v3/include/std/mutex",
             "libstdc++-v3/include/std/numbers",
             "libstdc++-v3/include/std/numeric",
@@ -220,7 +232,6 @@ def gcc_repository(gcc_version):
             "libstdc++-v3/include/std/semaphore",
             "libstdc++-v3/include/std/set",
             "libstdc++-v3/include/std/shared_mutex",
-            "libstdc++-v3/include/std/simd",
             "libstdc++-v3/include/std/source_location",
             "libstdc++-v3/include/std/span",
             "libstdc++-v3/include/std/spanstream",
@@ -247,7 +258,7 @@ def gcc_repository(gcc_version):
             "libstdc++-v3/include/std/variant",
             "libstdc++-v3/include/std/vector",
             "libstdc++-v3/include/std/version",
-        ],
+        ] + (_GCC_16_STD_HEADERS if gcc_version_at_least("16.0.0") else []),
     )
 
     native.filegroup(
@@ -914,14 +925,9 @@ def gcc_repository(gcc_version):
     native.filegroup(
         name = "libstdcxx_cxx20_sources",
         srcs = [
-            "libstdc++-v3/src/c++20/atomic.cc",
-            "libstdc++-v3/src/c++20/clock.cc",
-            "libstdc++-v3/src/c++20/cow-string-inst.cc",
             "libstdc++-v3/src/c++20/sstream-inst.cc",
-            "libstdc++-v3/src/c++20/string-inst.cc",
-            "libstdc++-v3/src/c++20/syncbuf.cc",
             "libstdc++-v3/src/c++20/tzdb.cc",
-        ],
+        ] + (_GCC_16_CXX20_SOURCES if gcc_version_at_least("16.0.0") else []),
     )
 
     native.filegroup(
