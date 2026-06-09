@@ -3,6 +3,8 @@ GCC_VERSIONS = [
     "16.1.0",
     "15.2.0",
     "15.1.0",
+    "14.3.0",
+    "14.2.0",
 ]
 
 DEFAULT_GCC_VERSION = "17.0.0"
@@ -23,6 +25,14 @@ GCC_RELEASES = {
     "15.2.0": {
         "commit": "5115c7e447fc07457443df874bf57840e8316d5f",
         "sha256": "0a1cfcef7d3903f706c94ceba9f49a08bf3acd8ce5258270f7f3016290f7c4ee",
+    },
+    "14.2.0": {
+        "commit": "04696df09633baf97cdbbdd6e9929b9d472161d3",
+        "sha256": "bc304fe24d9c046588d6336a283325eb86c85b88699111ae9cccc08ca16fbc66",
+    },
+    "14.3.0": {
+        "commit": "c9cd41fba9ebd288c4f101e4b99da934bcb96a11",
+        "sha256": "e15cb7bdf3f0cbda46d3bd58082abb5cd9bbbb4749c03292a19cf91c285555e1",
     },
 }
 
@@ -106,3 +116,9 @@ def libstdcxx_has_debugging_checks(version):
 
 def libstdcxx_has_stdio_locking_checks(version):
     return gcc_version_at_least_for(version, "16.0.0")
+
+def libstdcxx_has_networking_o_nonblock_check(version):
+    return gcc_version_at_least_for(version, "14.3.0")
+
+def libstdcxx_has_struct_tm_tm_zone_check(version):
+    return gcc_version_at_least_for(version, "15.0.0")

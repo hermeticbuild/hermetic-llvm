@@ -51,7 +51,7 @@ Status meanings are defined in `AGENTS.md`.
 - [x] `GLIBCXX_CHECK_ARC4RANDOM` - `arc4random` probe is modeled; `modeled`.
 - [x] `GLIBCXX_CHECK_GETENTROPY` - `getentropy` probe is modeled; `modeled`.
 - [x] `GLIBCXX_CHECK_FILESYSTEM_DEPS` - filesystem probes are modeled; `modeled`.
-- [x] `GLIBCXX_CHECK_TEXT_ENCODING` - text encoding probes are modeled; `modeled`.
+- [x] `GLIBCXX_CHECK_TEXT_ENCODING` - GCC 14+ text encoding probes are modeled; `modeled`.
 - [x] `GLIBCXX_CHECK_DEBUGGING` - GCC 16+ Linux debug probes are modeled; `modeled`.
 - [x] `GLIBCXX_CHECK_STDIO_LOCKING` - GCC 16+ stdio locking probe is modeled; `modeled`.
 - [x] `GLIBCXX_STRUCT_TM_TM_ZONE` - GCC 15+ `tm_zone` probe is modeled; `modeled`.
@@ -125,7 +125,7 @@ Status meanings are defined in `AGENTS.md`.
 
 - [x] `GCC_CHECK_ASSEMBLER_HWCAP` - Solaris branch; `unsupported-target`.
 - [x] `GCC_PROG_GNU_CXXFILT` - Sun/Solaris symbol-version branch; `unsupported-target`.
-- [x] `GLIBCXX_CHECK_FILEBUF_NATIVE_HANDLES` - Windows branch; `unsupported-target`.
+- [x] `GLIBCXX_CHECK_FILEBUF_NATIVE_HANDLES` - GCC 14+ Windows branch; `unsupported-target`.
 - [x] `GLIBCXX_CHECK_SYSCTL_HW_NCPU` - BSD/macOS branch; `unsupported-target`.
 - [x] `GLIBCXX_CROSSCONFIG` - non-current cross branches; `unsupported-target`.
 

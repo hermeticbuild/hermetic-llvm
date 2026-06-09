@@ -8,8 +8,10 @@ load(
     "gcc_version_less_than_for",
     "libstdcxx_has_atomic_builtins_define",
     "libstdcxx_has_debugging_checks",
+    "libstdcxx_has_networking_o_nonblock_check",
     "libstdcxx_has_posix_semaphore_check",
     "libstdcxx_has_stdio_locking_checks",
+    "libstdcxx_has_struct_tm_tm_zone_check",
 )
 load(
     "//3rd_party/gcc/libstdcxx/autoconf:checks.bzl",
@@ -1268,7 +1270,7 @@ int main() {
     return checks
 
 def glibcxx_check_networking_deps(gcc_version):
-    if gcc_version_less_than_for(gcc_version, "12.0.0"):
+    if not libstdcxx_has_networking_o_nonblock_check(gcc_version):
         return []
     return [
         compile_check(
@@ -1442,7 +1444,7 @@ int main() { return 0; }
 """,
             ),
         ])
-    if gcc_version_at_least_for(gcc_version, "15.0.0"):
+    if libstdcxx_has_struct_tm_tm_zone_check(gcc_version):
         checks.append(
             compile_check(
                 name = "_GLIBCXX_USE_STRUCT_TM_TM_ZONE",

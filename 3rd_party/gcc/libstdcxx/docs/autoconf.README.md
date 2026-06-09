@@ -141,7 +141,7 @@ as grouped link probes in `linkage.m4.bzl`.
 
 `GLIBCXX_CHECK_DEV_RANDOM`, `GLIBCXX_CHECK_ARC4RANDOM`,
 `GLIBCXX_CHECK_GETENTROPY`, `GLIBCXX_CHECK_FILESYSTEM_DEPS`,
-`GLIBCXX_CHECK_TEXT_ENCODING`, GCC 16+ `GLIBCXX_CHECK_DEBUGGING`,
+GCC 14+ `GLIBCXX_CHECK_TEXT_ENCODING`, GCC 16+ `GLIBCXX_CHECK_DEBUGGING`,
 GCC 16+ `GLIBCXX_CHECK_STDIO_LOCKING`, GCC 15+ `GLIBCXX_STRUCT_TM_TM_ZONE`,
 `GLIBCXX_ZONEINFO_DIR`, `GLIBCXX_CHECK_ALIGNAS_CACHELINE`,
 `GLIBCXX_CHECK_INIT_PRIORITY`, `GLIBCXX_CHECK_X86_RDRAND`,
@@ -224,7 +224,8 @@ with explicit build graph structure or user/toolchain options.
 
 `GCC_CHECK_ASSEMBLER_HWCAP` is Solaris-only assembler HWCAP handling.
 `GCC_PROG_GNU_CXXFILT` is needed for Sun/Solaris symbol versioning.
-`GLIBCXX_CHECK_FILEBUF_NATIVE_HANDLES` is the Windows `_get_osfhandle` path.
+GCC 14+ `GLIBCXX_CHECK_FILEBUF_NATIVE_HANDLES` is the Windows `_get_osfhandle`
+path.
 `GLIBCXX_CHECK_SYSCTL_HW_NCPU` is the BSD/macOS CPU-count path.
 `GLIBCXX_CROSSCONFIG` covers cross and non-current target branches. These are
 classified `unsupported-target`.

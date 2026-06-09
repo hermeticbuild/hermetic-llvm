@@ -55,7 +55,7 @@ Status meanings are defined in `AGENTS.md`.
 - [x] `GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE_3` - stdlib helper represented by stdlib support probes.
 - [x] `GLIBCXX_CHECK_STDLIB_SUPPORT` - native stdlib support probe group.
 - [x] `GLIBCXX_CHECK_S_ISREG_OR_S_IFREG` - `S_ISREG`/`S_IFREG` probe.
-- [x] `GLIBCXX_CHECK_TEXT_ENCODING` - text encoding support probes.
+- [x] `GLIBCXX_CHECK_TEXT_ENCODING` - GCC 14+ text encoding support probes.
 - [x] `GLIBCXX_CHECK_TMPNAM` - `tmpnam` probe.
 - [x] `GLIBCXX_CHECK_UCHAR_H` - `uchar.h` support probes.
 - [x] `GLIBCXX_CHECK_WRITEV` - `writev` probe.
@@ -259,7 +259,7 @@ classification. They are not generic raw inventory entries.
 
 - [x] `GCC_CHECK_ASSEMBLER_HWCAP` - Solaris assembler HWCAP path.
 - [x] `GCC_PROG_GNU_CXXFILT` - Sun/Solaris symbol-version support path.
-- [x] `GLIBCXX_CHECK_FILEBUF_NATIVE_HANDLES` - Windows native file handle path.
+- [x] `GLIBCXX_CHECK_FILEBUF_NATIVE_HANDLES` - GCC 14+ Windows native file handle path.
 - [x] `GLIBCXX_CHECK_SYSCTL_HW_NCPU` - BSD/macOS CPU-count path.
 - [x] `GLIBCXX_CROSSCONFIG` - non-current cross branches are inactive.
 
