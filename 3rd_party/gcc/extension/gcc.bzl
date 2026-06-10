@@ -127,6 +127,7 @@ gcc = module_extension(
 
 def _gcc_trampoline_repository_impl(repository_ctx):
     repository_ctx.template("BUILD.bazel", repository_ctx.attr._build_file)
+    return repository_ctx.repo_metadata(reproducible = True)
 
 _gcc_trampoline_repository = repository_rule(
     implementation = _gcc_trampoline_repository_impl,
