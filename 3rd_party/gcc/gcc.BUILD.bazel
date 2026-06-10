@@ -475,7 +475,7 @@ filegroup(
 
 libstdcxx_gthr_headers(
     name = "gthr_headers",
-    gthr_default_h = libstdcxx_thread_header_h(local = True),
+    gthr_default_h = libstdcxx_thread_header_h(),
     gthr_h = "libgcc/gthr.h",
     gthr_posix_h = "libgcc/gthr-posix.h",
     gthr_single_h = "libgcc/gthr-single.h",
@@ -498,49 +498,49 @@ filegroup(
 # selected source labels come from configure.host fields in target_config.bzl.
 copy_file(
     name = "ctype_base_h",
-    src = libstdcxx_ctype_base_h(local = True),
+    src = libstdcxx_ctype_base_h(),
     out = "public_host_headers/bits/ctype_base.h",
     allow_symlink = True,
 )
 
 copy_file(
     name = "ctype_inline_h",
-    src = libstdcxx_ctype_inline_h(local = True),
+    src = libstdcxx_ctype_inline_h(),
     out = "public_host_headers/bits/ctype_inline.h",
     allow_symlink = True,
 )
 
 copy_file(
     name = "os_defines_h",
-    src = libstdcxx_os_defines_h(local = True),
+    src = libstdcxx_os_defines_h(),
     out = "public_host_headers/bits/os_defines.h",
     allow_symlink = True,
 )
 
 copy_file(
     name = "atomic_word_h",
-    src = libstdcxx_atomic_word_h(local = True),
+    src = libstdcxx_atomic_word_h(),
     out = "public_host_headers/bits/atomic_word.h",
     allow_symlink = True,
 )
 
 copy_file(
     name = "cxxabi_tweaks_h",
-    src = libstdcxx_cxxabi_tweaks_h(local = True),
+    src = libstdcxx_cxxabi_tweaks_h(),
     out = "public_host_headers/bits/cxxabi_tweaks.h",
     allow_symlink = True,
 )
 
 copy_file(
     name = "cpu_defines_h",
-    src = libstdcxx_cpu_defines_h(local = True),
+    src = libstdcxx_cpu_defines_h(),
     out = "public_host_headers/bits/cpu_defines.h",
     allow_symlink = True,
 )
 
 copy_file(
     name = "error_constants_h",
-    src = libstdcxx_error_constants_h(local = True),
+    src = libstdcxx_error_constants_h(),
     out = "public_host_headers/bits/error_constants.h",
     allow_symlink = True,
 )
@@ -568,21 +568,21 @@ copy_file(
 
 copy_file(
     name = "c_locale_h",
-    src = libstdcxx_c_locale_h(local = True),
+    src = libstdcxx_c_locale_h(),
     out = "public_host_headers/bits/c++locale.h",
     allow_symlink = True,
 )
 
 copy_file(
     name = "messages_members_h",
-    src = libstdcxx_messages_members_h(local = True),
+    src = libstdcxx_messages_members_h(),
     out = "public_host_headers/bits/messages_members.h",
     allow_symlink = True,
 )
 
 copy_file(
     name = "time_members_h",
-    src = libstdcxx_time_members_h(local = True),
+    src = libstdcxx_time_members_h(),
     out = "public_host_headers/bits/time_members.h",
     allow_symlink = True,
 )
@@ -610,14 +610,14 @@ copy_file(
 
 copy_file(
     name = "bits_opt_random_h",
-    src = libstdcxx_bits_opt_random_h(local = True),
+    src = libstdcxx_bits_opt_random_h(),
     out = "public_host_headers/bits/opt_random.h",
     allow_symlink = True,
 )
 
 copy_file(
     name = "ext_opt_random_h",
-    src = libstdcxx_ext_opt_random_h(local = True),
+    src = libstdcxx_ext_opt_random_h(),
     out = "public_host_headers/ext/opt_random.h",
     allow_symlink = True,
 )
@@ -675,7 +675,7 @@ copy_to_directory(
 # that are needed to compile the library but are not public installed headers.
 copy_file(
     name = "c_locale_internal_h",
-    src = libstdcxx_c_locale_internal_h(local = True),
+    src = libstdcxx_c_locale_internal_h(),
     out = "private_host_headers/bits/c++locale_internal.h",
     allow_symlink = True,
 )
@@ -763,7 +763,7 @@ write_file(
 # source to mirror the libsupc++/Makefile.am atomicity.cc substitution.
 copy_file(
     name = "libsupcxx_atomicity_cc",
-    src = libstdcxx_atomicity_h(local = True),
+    src = libstdcxx_atomicity_h(),
     out = "libsupcxx_generated/atomicity.cc",
     allow_symlink = True,
 )
@@ -873,91 +873,91 @@ filegroup(
 # libstdc++-v3/src/c++11/Makefile.am.
 copy_file(
     name = "libstdcxx_cxx98_cxxlocale_cc",
-    src = libstdcxx_c_locale_cc(local = True),
+    src = libstdcxx_c_locale_cc(),
     out = "libstdcxx_generated/c++98/c++locale.cc",
     allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx98_codecvt_members_cc",
-    src = libstdcxx_codecvt_members_cc(local = True),
+    src = libstdcxx_codecvt_members_cc(),
     out = "libstdcxx_generated/c++98/codecvt_members.cc",
     allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx98_collate_members_cc",
-    src = libstdcxx_collate_members_cc(local = True),
+    src = libstdcxx_collate_members_cc(),
     out = "libstdcxx_generated/c++98/collate_members.cc",
     allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx98_messages_members_cc",
-    src = libstdcxx_messages_members_cc(local = True),
+    src = libstdcxx_messages_members_cc(),
     out = "libstdcxx_generated/c++98/messages_members.cc",
     allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx98_monetary_members_cc",
-    src = libstdcxx_monetary_members_cc(local = True),
+    src = libstdcxx_monetary_members_cc(),
     out = "libstdcxx_generated/c++98/monetary_members.cc",
     allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx98_numeric_members_cc",
-    src = libstdcxx_numeric_members_cc(local = True),
+    src = libstdcxx_numeric_members_cc(),
     out = "libstdcxx_generated/c++98/numeric_members.cc",
     allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx98_time_members_cc",
-    src = libstdcxx_time_members_cc(local = True),
+    src = libstdcxx_time_members_cc(),
     out = "libstdcxx_generated/c++98/time_members.cc",
     allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx98_collate_members_cow_cc",
-    src = libstdcxx_collate_members_cc(local = True),
+    src = libstdcxx_collate_members_cc(),
     out = "libstdcxx_generated/c++98/collate_members_cow.cc",
     allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx98_messages_members_cow_cc",
-    src = libstdcxx_messages_members_cc(local = True),
+    src = libstdcxx_messages_members_cc(),
     out = "libstdcxx_generated/c++98/messages_members_cow.cc",
     allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx98_monetary_members_cow_cc",
-    src = libstdcxx_monetary_members_cc(local = True),
+    src = libstdcxx_monetary_members_cc(),
     out = "libstdcxx_generated/c++98/monetary_members_cow.cc",
     allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx98_numeric_members_cow_cc",
-    src = libstdcxx_numeric_members_cc(local = True),
+    src = libstdcxx_numeric_members_cc(),
     out = "libstdcxx_generated/c++98/numeric_members_cow.cc",
     allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx11_ctype_configure_char_cc",
-    src = libstdcxx_ctype_configure_char_cc(local = True),
+    src = libstdcxx_ctype_configure_char_cc(),
     out = "libstdcxx_generated/c++11/ctype_configure_char.cc",
     allow_symlink = True,
 )
 
 copy_file(
     name = "libstdcxx_cxx11_ctype_members_cc",
-    src = libstdcxx_ctype_members_cc(local = True),
+    src = libstdcxx_ctype_members_cc(),
     out = "libstdcxx_generated/c++11/ctype_members.cc",
     allow_symlink = True,
 )
@@ -1454,7 +1454,7 @@ libstdcxx_symbols_version_script(
     name = "libstdcxx_symbols_ver",
     base_version_script = "libstdc++-v3/config/abi/pre/gnu.ver",
     config_h = ":config_h_header",
-    port_version_scripts = libstdcxx_port_symver_files(local = True),
+    port_version_scripts = libstdcxx_port_symver_files(),
 )
 
 cc_library(
