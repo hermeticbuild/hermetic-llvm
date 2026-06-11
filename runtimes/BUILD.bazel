@@ -60,13 +60,19 @@ filegroup(
 
 filegroup(
     name = "static_runtime_lib",
-    srcs = ["//runtimes/cxxstdlib:static_runtime_lib"],
+    srcs = [
+        "//runtimes/cxxstdlib:static_runtime_lib",
+        "//runtimes/unwindlib:static_runtime_lib",
+    ],
     visibility = ["//visibility:public"],
 )
 
 filegroup(
     name = "dynamic_runtime_lib",
-    srcs = ["//runtimes/cxxstdlib:dynamic_runtime_lib"],
+    srcs = [
+        "//runtimes/cxxstdlib:dynamic_runtime_lib",
+        "//runtimes/unwindlib:dynamic_runtime_lib",
+    ],
     visibility = ["//visibility:public"],
 )
 

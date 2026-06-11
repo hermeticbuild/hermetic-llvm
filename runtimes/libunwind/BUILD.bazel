@@ -1,6 +1,3 @@
-load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
-load("//runtimes:defs.bzl", "stub_library")
-
 alias(
     name = "libunwind.static",
     actual = "@llvm-project//libunwind:libunwind.static",
@@ -13,30 +10,18 @@ alias(
     visibility = ["//visibility:public"],
 )
 
-stub_library(
-    name = "unwind",
-    visibility = ["//visibility:public"],
-)
-
-stub_library(
-    name = "gcc_s",
-    visibility = ["//visibility:public"],
-)
-
-config_setting(
-    name = "stub_libgcc_s",
-    flag_values = {
-        "//config:experimental_stub_libgcc_s": "True",
-    },
-)
-
-copy_to_directory(
-    name = "libunwind_library_search_directory",
+filegroup(
+    name = "static_runtime_lib",
     srcs = [
-        ":unwind",
-    ] + select({
-        ":stub_libgcc_s": [":gcc_s"],
-        "//conditions:default": [],
-    }),
+        ":libunwind.static",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "dynamic_runtime_lib",
+    srcs = [
+        ":libunwind.shared",
+    ],
     visibility = ["//visibility:public"],
 )
