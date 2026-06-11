@@ -17,6 +17,13 @@ def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
             "@platforms//os:linux": [
                 "@rules_cc//cc/toolchains/args/thin_lto:feature",
             ],
+            # TODO: Enable Windows ThinLTO unconditionally after a rules_cc
+            # release includes Windows ThinLTO support. The root module's
+            # rules_cc patch does not propagate to dependents, so dependents
+            # may use a rules_cc release without Windows ThinLTO support.
+            "@llvm//toolchain:windows_thin_lto_enabled": [
+                "@rules_cc//cc/toolchains/args/thin_lto:feature",
+            ],
             "//conditions:default": [],
         }) + select({
             "@llvm//toolchain:macos_complete": [

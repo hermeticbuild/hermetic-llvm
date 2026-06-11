@@ -103,7 +103,7 @@ cc_feature_set(
     all_of = [
         ":default_compile_flags",
     ] + select({
-        "@platforms//os:windows": [],
+        "@llvm//toolchain:windows_thin_lto_disabled": [],
         "//conditions:default": [
             ":supports_start_end_lib",
         ],

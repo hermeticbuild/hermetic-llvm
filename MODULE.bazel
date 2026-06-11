@@ -14,6 +14,13 @@ bazel_dep(name = "rules_python", version = "1.7.0")
 bazel_dep(name = "with_cfg.bzl", version = "0.12.0")
 bazel_dep(name = "tar.bzl", version = "0.10.4")
 
+single_version_override(
+    module_name = "rules_cc",
+    patch_strip = 1,
+    patches = ["//3rd_party/rules_cc:windows-thin-lto.patch"],
+    version = "0.2.19",
+)
+
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 rbe_platform_repository = use_repo_rule("//:rbe.bzl", "rbe_platform_repository")
