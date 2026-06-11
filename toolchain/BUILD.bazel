@@ -57,18 +57,35 @@ string_flag(
 )
 
 bool_flag(
-    name = "enable_windows_thin_lto",
+    name = "is_windows_capable_of_thinlto_feature",
+    build_setting_default = False,
+    visibility = ["//visibility:public"],
+)
+
+bool_flag(
+    name = "is_macos_capable_of_thinlto_feature",
     build_setting_default = False,
     visibility = ["//visibility:public"],
 )
 
 config_setting(
-    name = "windows_thin_lto_enabled",
+    name = "macos_capable_of_thinlto_feature",
+    constraint_values = [
+        "@platforms//os:macos",
+    ],
+    flag_values = {
+        ":is_macos_capable_of_thinlto_feature": "true",
+    },
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "windows_capable_of_thinlto_feature",
     constraint_values = [
         "@platforms//os:windows",
     ],
     flag_values = {
-        ":enable_windows_thin_lto": "true",
+        ":is_windows_capable_of_thinlto_feature": "true",
     },
     visibility = ["//visibility:public"],
 )
@@ -79,7 +96,7 @@ config_setting(
         "@platforms//os:windows",
     ],
     flag_values = {
-        ":enable_windows_thin_lto": "false",
+        ":is_windows_capable_of_thinlto_feature": "false",
     },
     visibility = ["//visibility:public"],
 )

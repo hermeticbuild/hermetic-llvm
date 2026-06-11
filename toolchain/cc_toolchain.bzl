@@ -17,11 +17,16 @@ def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
             "@platforms//os:linux": [
                 "@rules_cc//cc/toolchains/args/thin_lto:feature",
             ],
+            # TODO: Enable macOS ThinLTO unconditionally after rules_cc and
+            # LLVM releases include macOS distributed ThinLTO support.
+            "@llvm//toolchain:macos_capable_of_thinlto_feature": [
+                "@rules_cc//cc/toolchains/args/thin_lto:feature",
+            ],
             # TODO: Enable Windows ThinLTO unconditionally after a rules_cc
             # release includes Windows ThinLTO support. The root module's
             # rules_cc patch does not propagate to dependents, so dependents
             # may use a rules_cc release without Windows ThinLTO support.
-            "@llvm//toolchain:windows_thin_lto_enabled": [
+            "@llvm//toolchain:windows_capable_of_thinlto_feature": [
                 "@rules_cc//cc/toolchains/args/thin_lto:feature",
             ],
             "//conditions:default": [],

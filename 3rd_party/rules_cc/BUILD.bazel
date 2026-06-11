@@ -1,1 +1,4 @@
-exports_files(["windows-thin-lto.patch"])
+exports_files([
+    "macos-thin-lto.patch",
+    "windows-thin-lto.patch",
+])

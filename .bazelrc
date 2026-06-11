@@ -40,11 +40,11 @@ common:bootstrap   --@llvm//toolchain:source=bootstrapped
 common:prebuilt  -c opt
 common:prebuilt  --strip=always
 common:prebuilt  --stripopt=--strip-all
-# TODO: Enable Windows ThinLTO unconditionally after a rules_cc release includes Windows ThinLTO support.
-common:prebuilt  --@llvm//toolchain:enable_windows_thin_lto=true
-# Use ThinLTO when available (on Linux), but it doesn't work for Darwin targets, so also enable `flto=thin` as fallback.
+# TODO: Remove is_windows_capable_of_thinlto_feature after a rules_cc release includes Windows distributed ThinLTO support.
+common:prebuilt  --@llvm//toolchain:is_windows_capable_of_thinlto_feature=true
+# TODO: Remove is_macos_capable_of_thinlto_feature after rules_cc and LLVM releases include macOS distributed ThinLTO support.
+common:prebuilt  --@llvm//toolchain:is_macos_capable_of_thinlto_feature=true
 common:prebuilt   --features=thin_lto
-common:prebuilt  --copt=-flto=thin
 common:prebuilt  --copt=-fno-exceptions
 common:prebuilt  --copt=-fno-rtti
 common:prebuilt  --copt=-fomit-frame-pointer

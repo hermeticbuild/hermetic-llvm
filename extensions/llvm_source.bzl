@@ -23,6 +23,7 @@ _DEFAULT_SOURCE_PATCHES = [
     "//3rd_party/llvm-project/x.x/patches:clang-hardlink-filenames.patch",
     "//3rd_party/llvm-project/x.x/patches:llvm-configure-reproducible.patch",
     "//3rd_party/llvm-project/x.x/patches:lld-coff-thinlto-lazy-index.patch",
+    "//3rd_party/llvm-project/x.x/patches:lld-macho-thinlto-obj-path.patch",
 ]
 
 _LLVM_21_SOURCE_PATCHES = _DEFAULT_SOURCE_PATCHES + [

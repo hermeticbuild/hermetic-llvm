@@ -17,7 +17,10 @@ bazel_dep(name = "tar.bzl", version = "0.10.4")
 single_version_override(
     module_name = "rules_cc",
     patch_strip = 1,
-    patches = ["//3rd_party/rules_cc:windows-thin-lto.patch"],
+    patches = [
+        "//3rd_party/rules_cc:windows-thin-lto.patch",
+        "//3rd_party/rules_cc:macos-thin-lto.patch",
+    ],
     version = "0.2.19",
 )
 
