@@ -7,8 +7,9 @@ inputs are `config_macro_status.txt` and `config_define_status.txt`.
 The raw output from `autoconf_inventory.sh inventory` is a review queue;
 it is not itself evidence that a check has been implemented.
 
-The current active support scope is Linux with GNU libc. Other target branches
-are documented so GCC updates are reviewable, but they do not imply support.
+The current active support scope is Linux with GNU libc across the supported GCC
+versions declared in `3rd_party/gcc/version.bzl`. Other target branches are
+documented so GCC updates are reviewable, but they do not imply support.
 `autoconf.checks.md` also contains reviewed concrete entries for implemented
 header, declaration, type, function, computed-value, and configure-option
 checks. Those entries are narrower than the raw inventory output: they are
@@ -26,12 +27,26 @@ classification.
 - `libstdc++-v3/configure.host` maps to target-derived policy in
   `target_config.bzl`, generated header selection in the
   `libstdcxx_*_header.bzl` rule files, and Bazel targets in `BUILD.bazel`.
+- GCC source repositories are materialized per version by
+  `3rd_party/gcc/extension/gcc.bzl`. `3rd_party/gcc/gcc.BUILD.bazel` is loaded
+  inside each concrete GCC repository, while the stable `@gcc` repository is a
+  reproducible selected facade over those concrete targets.
 - Generic autoconf mechanics live in the `autoconf/` subpackage:
   `autoconf/checks.bzl`, `autoconf/autoconf_config.bzl`,
   `autoconf/autoconf_hdr.bzl`, `autoconf/providers.bzl`, and
   `autoconf/cc_configure_probe.bzl`. Keep these files free of libstdc++
   source-policy decisions; source-counterpart files should only declare checks
   through that local API.
+
+## Version Matrix
+
+The audit and smoke targets are generated from `GCC_VERSIONS`. Configure status
+may be version-gated, for example `GCC 16+`, but the docs must describe whether
+the older branch is inactive, absent upstream, or modeled differently. When a
+new GCC version is introduced, the version commit must include the source-list,
+header, config, and audit-status changes needed by that version, and the
+all-version smoke target should continue to build every supported version at or
+above that commit.
 
 ## Status Glossary
 
@@ -240,5 +255,5 @@ Important groups are:
 - Windows, Solaris, BSD/macOS, and libbacktrace-only outputs are
   `unsupported-target` or `unsupported-feature`.
 
-Run `bazel test --config remote //runtimes/libstdcxx/tests:config_define_audit_test`
+Run `bazel test --config remote //3rd_party/gcc/libstdcxx/tests:config_define_audit_test`
 to verify the source inventory and status files still agree.

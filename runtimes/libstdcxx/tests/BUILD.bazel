@@ -1,15 +1,11 @@
-load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 load("@bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//3rd_party/gcc:version.bzl", "GCC_VERSIONS", "gcc_repository_label", "gcc_target_suffix", "libstdcxx_constraint_value")
 load("//constraints/libc:libc_versions.bzl", "default_libc")
-load(":autoconf_inventory_targets.bzl", "declare_autoconf_inventory_targets")
 
 package(default_visibility = ["//visibility:public"])
-
-declare_autoconf_inventory_targets()
 
 sh_test(
     name = "shared_elf_test",
@@ -166,15 +162,5 @@ filegroup(
     srcs = [
         ":libstdcxx_cxx26_compile_linux_aarch64_all_versions",
         ":libstdcxx_cxx26_compile_linux_x86_64_all_versions",
-    ],
-)
-
-bzl_library(
-    name = "autoconf_inventory_targets",
-    srcs = ["autoconf_inventory_targets.bzl"],
-    deps = [
-        "//3rd_party/gcc:version",
-        "@rules_shell//shell:sh_binary",
-        "@rules_shell//shell:sh_test",
     ],
 )

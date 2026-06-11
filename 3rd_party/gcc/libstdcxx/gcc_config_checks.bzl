@@ -8,7 +8,7 @@
 # config.h fan-out for that successful probe.
 
 load(
-    "//runtimes/libstdcxx/autoconf:checks.bzl",
+    "//3rd_party/gcc/libstdcxx/autoconf:checks.bzl",
     "compile_check",
     "link_check",
     "policy_define",

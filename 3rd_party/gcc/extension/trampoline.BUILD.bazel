@@ -5,24 +5,18 @@ package(default_visibility = ["//visibility:public"])
 
 # The concrete GCC repositories own the version-specific libstdc++ build graph.
 # This repository is only the stable selected facade consumed by the rest of
-# hermetic-llvm and by version-matrix tests.
-_FACADE_TARGETS = [
+# hermetic-llvm.
+_SELECTED_FACADE_TARGETS = [
     "abi_headers_include_search_directory",
-    "build_headers",
-    "build_headers_include_search_directory",
-    "config_h",
-    "config_h_header",
-    "cxxconfig_h",
-    "generated_host_headers_include_search_directory",
-    "gthr_headers",
     "headers_include_search_directory",
-    "largefile_config_h",
-    "libstdcxx",
     "libstdcxx.shared",
-    "libstdcxx_autoconf_audit_inputs",
-    "libstdcxx_cxx26",
     "libstdcxxfs",
     "libstdcxxfs.static",
+]
+
+_VERSION_MATRIX_TARGETS = [
+    "libstdcxx_autoconf_audit_inputs",
+    "libstdcxx_cxx26",
 ]
 
 [
@@ -30,7 +24,7 @@ _FACADE_TARGETS = [
         name = target,
         actual = make_select_gcc_repository_target(target),
     )
-    for target in _FACADE_TARGETS
+    for target in _SELECTED_FACADE_TARGETS
 ]
 
 [
@@ -45,5 +39,5 @@ _FACADE_TARGETS = [
         ),
     )
     for version in GCC_VERSIONS
-    for target in _FACADE_TARGETS
+    for target in _VERSION_MATRIX_TARGETS
 ]

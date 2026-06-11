@@ -1,8 +1,8 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 
 package(default_visibility = [
-    "//runtimes/libstdcxx:__pkg__",
-    "//runtimes/libstdcxx/tests:__pkg__",
+    "//3rd_party/gcc/libstdcxx:__pkg__",
+    "//3rd_party/gcc/libstdcxx/tests:__pkg__",
 ])
 
 exports_files(
@@ -14,8 +14,8 @@ exports_files(
         "providers.bzl",
     ],
     visibility = [
-        "//runtimes/libstdcxx:__pkg__",
-        "//runtimes/libstdcxx/tests:__pkg__",
+        "//3rd_party/gcc/libstdcxx:__pkg__",
+        "//3rd_party/gcc/libstdcxx/tests:__pkg__",
     ],
 )
 

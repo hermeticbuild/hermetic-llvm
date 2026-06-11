@@ -2,7 +2,7 @@
 # libstdc++-v3/configure.ac. This file should read like the supported Linux GNU
 # configure flow; unsupported branches stay documented as inactive notes below.
 
-load("//runtimes/libstdcxx/autoconf:checks.bzl", "ac_check_headers")
+load("//3rd_party/gcc/libstdcxx/autoconf:checks.bzl", "ac_check_headers")
 load(
     ":acinclude.m4.bzl",
     "glibcxx_abi_policies",

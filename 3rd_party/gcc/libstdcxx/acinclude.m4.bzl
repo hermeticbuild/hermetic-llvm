@@ -4,7 +4,7 @@
 
 load("//3rd_party/gcc:version.bzl", "gcc_version_at_least_for", "gcc_version_less_than_for")
 load(
-    "//runtimes/libstdcxx/autoconf:checks.bzl",
+    "//3rd_party/gcc/libstdcxx/autoconf:checks.bzl",
     "compile_check",
     "function_link_check",
     "link_check",

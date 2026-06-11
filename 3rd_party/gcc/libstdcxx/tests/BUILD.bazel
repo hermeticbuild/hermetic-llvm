@@ -1,0 +1,15 @@
+load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load(":autoconf_inventory_targets.bzl", "declare_autoconf_inventory_targets")
+
+package(default_visibility = ["//visibility:public"])
+
+declare_autoconf_inventory_targets()
+
+bzl_library(
+    name = "autoconf_inventory_targets",
+    srcs = ["autoconf_inventory_targets.bzl"],
+    deps = [
+        "//3rd_party/gcc:version",
+        "@rules_shell//shell:rules_bzl",
+    ],
+)

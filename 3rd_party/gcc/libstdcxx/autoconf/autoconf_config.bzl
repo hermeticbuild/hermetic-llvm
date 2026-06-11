@@ -124,7 +124,7 @@ _autoconf_config = rule(
     implementation = _autoconf_config_impl,
     attrs = {
         "checks": attr.string_list(
-            doc = "JSON-encoded checks from //runtimes/libstdcxx/autoconf:checks.bzl.",
+            doc = "JSON-encoded checks from //3rd_party/gcc/libstdcxx/autoconf:checks.bzl.",
             default = [],
         ),
         "probe_context_include_root_markers": attr.string_dict(

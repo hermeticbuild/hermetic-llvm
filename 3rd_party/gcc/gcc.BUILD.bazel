@@ -3,13 +3,13 @@ load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@llvm//3rd_party/gcc:version.bzl", "gcc_version_at_least_for")
-load("@llvm//runtimes/libstdcxx:libstdcxx_config_h.bzl", "libstdcxx_config_h")
-load("@llvm//runtimes/libstdcxx:libstdcxx_cxxconfig_header.bzl", "libstdcxx_cxxconfig_header")
-load("@llvm//runtimes/libstdcxx:libstdcxx_gthr_headers.bzl", "libstdcxx_gthr_headers")
-load("@llvm//runtimes/libstdcxx:libstdcxx_largefile_config_header.bzl", "libstdcxx_largefile_config_header")
-load("@llvm//runtimes/libstdcxx:libstdcxx_symbols_version_script.bzl", "libstdcxx_symbols_version_script")
+load("@llvm//3rd_party/gcc/libstdcxx:libstdcxx_config_h.bzl", "libstdcxx_config_h")
+load("@llvm//3rd_party/gcc/libstdcxx:libstdcxx_cxxconfig_header.bzl", "libstdcxx_cxxconfig_header")
+load("@llvm//3rd_party/gcc/libstdcxx:libstdcxx_gthr_headers.bzl", "libstdcxx_gthr_headers")
+load("@llvm//3rd_party/gcc/libstdcxx:libstdcxx_largefile_config_header.bzl", "libstdcxx_largefile_config_header")
+load("@llvm//3rd_party/gcc/libstdcxx:libstdcxx_symbols_version_script.bzl", "libstdcxx_symbols_version_script")
 load(
-    "@llvm//runtimes/libstdcxx:target_config.bzl",
+    "@llvm//3rd_party/gcc/libstdcxx:target_config.bzl",
     "libstdcxx_atomic_word_h",
     "libstdcxx_atomicity_h",
     "libstdcxx_bits_opt_random_h",
@@ -88,7 +88,7 @@ _GCC_16_CXX26_SOURCES = [
 # Keep this export list in sync with the sparse archive roots in
 # 3rd_party/gcc/extension/gcc.bzl. The libstdc++ configure inputs are exported
 # for the audit test; the config/include/libsupc++ entries are the files
-# consumed by runtimes/libstdcxx/target_config.bzl and the targets below.
+# consumed by 3rd_party/gcc/libstdcxx/target_config.bzl and the targets below.
 exports_files([
     "config/acx.m4",
     "config/cet.m4",
@@ -1540,7 +1540,7 @@ cc_runtime_stage0_static_library(
 )
 
 # Header search directory layout mirrors libstdc++-v3/include/Makefile.am:
-# generated/configured headers are overlaid by runtimes/libstdcxx/BUILD.bazel,
+# generated/configured headers are overlaid by the targets below,
 # while this package contributes raw installed headers.
 copy_to_directory(
     name = "libstdcxx_raw_headers_include_search_directory",

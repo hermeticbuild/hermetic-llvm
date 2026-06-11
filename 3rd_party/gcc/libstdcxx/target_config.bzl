@@ -4,7 +4,7 @@
 # substitutions for the generated include/source paths.
 
 load("//3rd_party/gcc:version.bzl", "gcc_version_at_least_for")
-load("//runtimes/libstdcxx/autoconf:checks.bzl", "policy_define", "policy_undef")
+load("//3rd_party/gcc/libstdcxx/autoconf:checks.bzl", "policy_define", "policy_undef")
 
 _SUPPORTED_TARGETS = {
     "//platforms/config:linux_x86_64_gnu": {

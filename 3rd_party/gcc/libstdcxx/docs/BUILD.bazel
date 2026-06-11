@@ -1,4 +1,4 @@
-package(default_visibility = ["//runtimes/libstdcxx/tests:__pkg__"])
+package(default_visibility = ["//3rd_party/gcc/libstdcxx/tests:__pkg__"])
 
 exports_files(
     [
@@ -8,7 +8,7 @@ exports_files(
         "config_define_status.txt",
         "config_macro_status.txt",
     ],
-    visibility = ["//runtimes/libstdcxx/tests:__pkg__"],
+    visibility = ["//3rd_party/gcc/libstdcxx/tests:__pkg__"],
 )
 
 filegroup(

@@ -3,7 +3,7 @@
 # this Bazel port; other target branches remain documented as unsupported.
 
 load("//3rd_party/gcc:version.bzl", "gcc_version_at_least_for")
-load("//runtimes/libstdcxx/autoconf:checks.bzl", "policy_define")
+load("//3rd_party/gcc/libstdcxx/autoconf:checks.bzl", "policy_define")
 load(
     ":gcc_config_checks.bzl",
     "am_iconv",

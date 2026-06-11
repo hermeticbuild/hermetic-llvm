@@ -9,58 +9,58 @@ load(
 )
 
 _AUTOCONF_AUDIT_BASE_DATA = [
-    "//runtimes/libstdcxx/docs:config_define_status.txt",
-    "//runtimes/libstdcxx/docs:config_macro_status.txt",
+    "//3rd_party/gcc/libstdcxx/docs:config_define_status.txt",
+    "//3rd_party/gcc/libstdcxx/docs:config_macro_status.txt",
 ]
 
 _AUTOCONF_MODEL_DATA = [
-    "//runtimes/libstdcxx:acinclude.m4.bzl",
-    "//runtimes/libstdcxx:configure.ac.bzl",
-    "//runtimes/libstdcxx:crossconfig.m4.bzl",
-    "//runtimes/libstdcxx:gcc_config_checks.bzl",
-    "//runtimes/libstdcxx:linkage.m4.bzl",
-    "//runtimes/libstdcxx:target_config.bzl",
-    "//runtimes/libstdcxx:libstdcxx_config_h.bzl",
-    "//runtimes/libstdcxx:libstdcxx_cxxconfig_header.bzl",
-    "//runtimes/libstdcxx:libstdcxx_gthr_headers.bzl",
-    "//runtimes/libstdcxx:libstdcxx_largefile_config_header.bzl",
-    "//runtimes/libstdcxx/autoconf:autoconf_config.bzl",
-    "//runtimes/libstdcxx/autoconf:autoconf_hdr.bzl",
-    "//runtimes/libstdcxx/autoconf:cc_configure_probe.bzl",
-    "//runtimes/libstdcxx/autoconf:checks.bzl",
-    "//runtimes/libstdcxx/autoconf:providers.bzl",
-    "//runtimes/libstdcxx:libstdcxx_symbols_version_script.bzl",
+    "//3rd_party/gcc/libstdcxx:acinclude.m4.bzl",
+    "//3rd_party/gcc/libstdcxx:configure.ac.bzl",
+    "//3rd_party/gcc/libstdcxx:crossconfig.m4.bzl",
+    "//3rd_party/gcc/libstdcxx:gcc_config_checks.bzl",
+    "//3rd_party/gcc/libstdcxx:linkage.m4.bzl",
+    "//3rd_party/gcc/libstdcxx:target_config.bzl",
+    "//3rd_party/gcc/libstdcxx:libstdcxx_config_h.bzl",
+    "//3rd_party/gcc/libstdcxx:libstdcxx_cxxconfig_header.bzl",
+    "//3rd_party/gcc/libstdcxx:libstdcxx_gthr_headers.bzl",
+    "//3rd_party/gcc/libstdcxx:libstdcxx_largefile_config_header.bzl",
+    "//3rd_party/gcc/libstdcxx/autoconf:autoconf_config.bzl",
+    "//3rd_party/gcc/libstdcxx/autoconf:autoconf_hdr.bzl",
+    "//3rd_party/gcc/libstdcxx/autoconf:cc_configure_probe.bzl",
+    "//3rd_party/gcc/libstdcxx/autoconf:checks.bzl",
+    "//3rd_party/gcc/libstdcxx/autoconf:providers.bzl",
+    "//3rd_party/gcc/libstdcxx:libstdcxx_symbols_version_script.bzl",
 ]
 
 _AUTOCONF_MODEL_ENV = {
-    "ACINCLUDE_CHECKS": "$(rootpath //runtimes/libstdcxx:acinclude.m4.bzl)",
-    "AUTOCONF_CONFIG": "$(rootpath //runtimes/libstdcxx/autoconf:autoconf_config.bzl)",
-    "AUTOCONF_HDR": "$(rootpath //runtimes/libstdcxx/autoconf:autoconf_hdr.bzl)",
-    "CC_CONFIGURE_PROBE": "$(rootpath //runtimes/libstdcxx/autoconf:cc_configure_probe.bzl)",
-    "CHECKS": "$(rootpath //runtimes/libstdcxx/autoconf:checks.bzl)",
-    "CONFIGURE_AC_CHECKS": "$(rootpath //runtimes/libstdcxx:configure.ac.bzl)",
-    "CROSSCONFIG_CHECKS": "$(rootpath //runtimes/libstdcxx:crossconfig.m4.bzl)",
-    "CXXCONFIG_HEADER": "$(rootpath //runtimes/libstdcxx:libstdcxx_cxxconfig_header.bzl)",
-    "GCC_CONFIG_CHECKS": "$(rootpath //runtimes/libstdcxx:gcc_config_checks.bzl)",
-    "GTHR_HEADERS": "$(rootpath //runtimes/libstdcxx:libstdcxx_gthr_headers.bzl)",
-    "LARGEFILE_CONFIG_HEADER": "$(rootpath //runtimes/libstdcxx:libstdcxx_largefile_config_header.bzl)",
-    "LIBSTDCXX_CONFIG_H": "$(rootpath //runtimes/libstdcxx:libstdcxx_config_h.bzl)",
-    "LINKAGE_CHECKS": "$(rootpath //runtimes/libstdcxx:linkage.m4.bzl)",
-    "PROVIDERS": "$(rootpath //runtimes/libstdcxx/autoconf:providers.bzl)",
-    "TARGET_CONFIG": "$(rootpath //runtimes/libstdcxx:target_config.bzl)",
-    "VERSION_SCRIPT": "$(rootpath //runtimes/libstdcxx:libstdcxx_symbols_version_script.bzl)",
+    "ACINCLUDE_CHECKS": "$(rootpath //3rd_party/gcc/libstdcxx:acinclude.m4.bzl)",
+    "AUTOCONF_CONFIG": "$(rootpath //3rd_party/gcc/libstdcxx/autoconf:autoconf_config.bzl)",
+    "AUTOCONF_HDR": "$(rootpath //3rd_party/gcc/libstdcxx/autoconf:autoconf_hdr.bzl)",
+    "CC_CONFIGURE_PROBE": "$(rootpath //3rd_party/gcc/libstdcxx/autoconf:cc_configure_probe.bzl)",
+    "CHECKS": "$(rootpath //3rd_party/gcc/libstdcxx/autoconf:checks.bzl)",
+    "CONFIGURE_AC_CHECKS": "$(rootpath //3rd_party/gcc/libstdcxx:configure.ac.bzl)",
+    "CROSSCONFIG_CHECKS": "$(rootpath //3rd_party/gcc/libstdcxx:crossconfig.m4.bzl)",
+    "CXXCONFIG_HEADER": "$(rootpath //3rd_party/gcc/libstdcxx:libstdcxx_cxxconfig_header.bzl)",
+    "GCC_CONFIG_CHECKS": "$(rootpath //3rd_party/gcc/libstdcxx:gcc_config_checks.bzl)",
+    "GTHR_HEADERS": "$(rootpath //3rd_party/gcc/libstdcxx:libstdcxx_gthr_headers.bzl)",
+    "LARGEFILE_CONFIG_HEADER": "$(rootpath //3rd_party/gcc/libstdcxx:libstdcxx_largefile_config_header.bzl)",
+    "LIBSTDCXX_CONFIG_H": "$(rootpath //3rd_party/gcc/libstdcxx:libstdcxx_config_h.bzl)",
+    "LINKAGE_CHECKS": "$(rootpath //3rd_party/gcc/libstdcxx:linkage.m4.bzl)",
+    "PROVIDERS": "$(rootpath //3rd_party/gcc/libstdcxx/autoconf:providers.bzl)",
+    "TARGET_CONFIG": "$(rootpath //3rd_party/gcc/libstdcxx:target_config.bzl)",
+    "VERSION_SCRIPT": "$(rootpath //3rd_party/gcc/libstdcxx:libstdcxx_symbols_version_script.bzl)",
 }
 
 _AUTOCONF_DOC_DATA = [
-    "//runtimes/libstdcxx/docs:autoconf.README.md",
-    "//runtimes/libstdcxx/docs:autoconf.checks.md",
-    "//runtimes/libstdcxx/docs:autoconf.usage.md",
+    "//3rd_party/gcc/libstdcxx/docs:autoconf.README.md",
+    "//3rd_party/gcc/libstdcxx/docs:autoconf.checks.md",
+    "//3rd_party/gcc/libstdcxx/docs:autoconf.usage.md",
 ]
 
 _AUTOCONF_DOC_ENV = {
-    "AUTOCONF_CHECKS": "$(rootpath //runtimes/libstdcxx/docs:autoconf.checks.md)",
-    "AUTOCONF_README": "$(rootpath //runtimes/libstdcxx/docs:autoconf.README.md)",
-    "AUTOCONF_USAGE": "$(rootpath //runtimes/libstdcxx/docs:autoconf.usage.md)",
+    "AUTOCONF_CHECKS": "$(rootpath //3rd_party/gcc/libstdcxx/docs:autoconf.checks.md)",
+    "AUTOCONF_README": "$(rootpath //3rd_party/gcc/libstdcxx/docs:autoconf.README.md)",
+    "AUTOCONF_USAGE": "$(rootpath //3rd_party/gcc/libstdcxx/docs:autoconf.usage.md)",
 }
 
 def _rootpath(label):
@@ -99,8 +99,8 @@ def _gcc_audit_env(version):
         "GCC_CROSSCONFIG": _gcc_audit_path(version, "libstdc++-v3/crossconfig.m4"),
         "GCC_LINKAGE": _gcc_audit_path(version, "libstdc++-v3/linkage.m4"),
         "GCC_VERSION": version,
-        "MACRO_STATUS_FILE": "$(rootpath //runtimes/libstdcxx/docs:config_macro_status.txt)",
-        "STATUS_FILE": "$(rootpath //runtimes/libstdcxx/docs:config_define_status.txt)",
+        "MACRO_STATUS_FILE": "$(rootpath //3rd_party/gcc/libstdcxx/docs:config_macro_status.txt)",
+        "STATUS_FILE": "$(rootpath //3rd_party/gcc/libstdcxx/docs:config_define_status.txt)",
     }
 
 def declare_autoconf_inventory_targets():
