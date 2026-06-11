@@ -5,7 +5,7 @@ diff --git a/utils/bazel/configure.bzl b/utils/bazel/configure.bzl
          executable = False,
      )
  
-+    return repository_ctx.repo_metadata(reproducible = True)
++    return repository_ctx.repo_metadata(reproducible = False)
 +
  llvm_configure = repository_rule(
      implementation = _llvm_configure_impl,
