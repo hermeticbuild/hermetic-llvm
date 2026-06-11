@@ -1,7 +1,7 @@
 {
   "latest_by_llvm_version": {
     "22.1.6": "llvm-22.1.6-1",
-    "22.1.7": "llvm-22.1.7-1"
+    "22.1.7": "llvm-22.1.7-2"
   },
   "releases": {
     "llvm-22.1.6-1": {
@@ -54,6 +54,32 @@
       "windows-arm64": {
         "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-22.1.7-1/llvm-toolchain-minimal-22.1.7-windows-arm64.tar.zst",
         "sha256": "6adee51f1cdf8bce4141b031e865ff012f359b36d527cbfb74064441328785be"
+      }
+    },
+    "llvm-22.1.7-2": {
+      "darwin-amd64": {
+        "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-22.1.7-2/llvm-toolchain-minimal-22.1.7-darwin-amd64.tar.zst",
+        "sha256": "96000cc6401535c91e56418e50b974ccc7b07233e5d74c93bdf62214556be4d9"
+      },
+      "darwin-arm64": {
+        "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-22.1.7-2/llvm-toolchain-minimal-22.1.7-darwin-arm64.tar.zst",
+        "sha256": "95f733b26de365e3ba2a5201e9cbfc6b168718edc15130bea1759369e7d3ecf3"
+      },
+      "linux-amd64-musl": {
+        "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-22.1.7-2/llvm-toolchain-minimal-22.1.7-linux-amd64-musl.tar.zst",
+        "sha256": "d739a0f8a0f28687e64ea9edf9d98b4cd5f2f1fe72d70eb35834864a0da73bc2"
+      },
+      "linux-arm64-musl": {
+        "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-22.1.7-2/llvm-toolchain-minimal-22.1.7-linux-arm64-musl.tar.zst",
+        "sha256": "194060c8282b2fb9ea89ae860be94dd8edba849c171f8932b4e47e8a1b73cf46"
+      },
+      "windows-amd64": {
+        "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-22.1.7-2/llvm-toolchain-minimal-22.1.7-windows-amd64.tar.zst",
+        "sha256": "2bd103959ed7234f90f37606a5a2fd1ea578fee1bb39bb046f8e61dec7a73a8b"
+      },
+      "windows-arm64": {
+        "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-22.1.7-2/llvm-toolchain-minimal-22.1.7-windows-arm64.tar.zst",
+        "sha256": "e35dc28b1f5aecc6ba3f78f6f5ef2d8cbd5fb682d36e4198b5a451acda471c47"
       }
     }
   }
