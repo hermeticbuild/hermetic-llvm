@@ -14,6 +14,8 @@ package(default_visibility = ["//toolchain:__subpackages__"])
 string_setting(
     name = "runtime_stage",
     build_setting_default = "complete",
+    # Runtime transitions must survive the cc_toolchain tool_map exec transition.
+    scope = "universal",
     values = [
         "stage0",  # depend on compiler-only: CRTs, builtins, libc, static libraries.
         "stage1",  # depends on above: libunwind
