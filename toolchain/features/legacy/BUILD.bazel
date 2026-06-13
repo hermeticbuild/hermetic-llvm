@@ -102,12 +102,8 @@ cc_feature_set(
     name = "all_legacy_builtin_features",
     all_of = [
         ":default_compile_flags",
-    ] + select({
-        "@llvm//toolchain:windows_thin_lto_disabled": [],
-        "//conditions:default": [
-            ":supports_start_end_lib",
-        ],
-    }),
+        ":supports_start_end_lib",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -119,7 +115,10 @@ cc_feature_set(
         ":no_legacy_features",
         "@rules_cc//cc/toolchains/args/archiver_flags:feature",
         "@rules_cc//cc/toolchains/args/pic_flags:feature",
-        "@rules_cc//cc/toolchains/args/libraries_to_link:feature",
+        # TODO: Restore this after a rules_cc release includes the Windows
+        # /start-lib and /end-lib arguments.
+        # "@rules_cc//cc/toolchains/args/libraries_to_link:feature",
+        "@llvm//toolchain/features/libraries_to_link:feature",
         "@rules_cc//cc/toolchains/args/linker_param_file:feature",
         "@rules_cc//cc/toolchains/args/preprocessor_defines:feature",
         "@rules_cc//cc/toolchains/args/random_seed:feature",

@@ -1,5 +1,5 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
-load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "string_flag", "string_setting")
+load("@bazel_skylib//rules:common_settings.bzl", "string_flag", "string_setting")
 load("@rules_cc//cc/toolchains:actions.bzl", "cc_action_type_set")
 load("@rules_cc//cc/toolchains:artifacts.bzl", "cc_artifact_name_pattern")
 load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
@@ -53,51 +53,6 @@ string_flag(
         "bootstrapped",
         "prebuilt",
     ],
-    visibility = ["//visibility:public"],
-)
-
-bool_flag(
-    name = "is_windows_capable_of_thinlto_feature",
-    build_setting_default = False,
-    visibility = ["//visibility:public"],
-)
-
-bool_flag(
-    name = "is_macos_capable_of_thinlto_feature",
-    build_setting_default = False,
-    visibility = ["//visibility:public"],
-)
-
-config_setting(
-    name = "macos_capable_of_thinlto_feature",
-    constraint_values = [
-        "@platforms//os:macos",
-    ],
-    flag_values = {
-        ":is_macos_capable_of_thinlto_feature": "true",
-    },
-    visibility = ["//visibility:public"],
-)
-
-config_setting(
-    name = "windows_capable_of_thinlto_feature",
-    constraint_values = [
-        "@platforms//os:windows",
-    ],
-    flag_values = {
-        ":is_windows_capable_of_thinlto_feature": "true",
-    },
-    visibility = ["//visibility:public"],
-)
-
-config_setting(
-    name = "windows_thin_lto_disabled",
-    constraint_values = [
-        "@platforms//os:windows",
-    ],
-    flag_values = {
-        ":is_windows_capable_of_thinlto_feature": "false",
-    },
     visibility = ["//visibility:public"],
 )
 
