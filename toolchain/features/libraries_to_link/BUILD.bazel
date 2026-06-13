@@ -187,5 +187,7 @@ cc_nested_args(
 bzl_library(
     name = "library_link_args",
     srcs = ["library_link_args.bzl"],
-    deps = ["@rules_cc//cc/toolchains:nested_args"],
+    deps = [
+        "@rules_cc//cc/toolchains:toolchain_rules",
+    ],  # keep
 )
