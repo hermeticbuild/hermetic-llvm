@@ -1,3 +1,4 @@
+load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 load("@rules_cc//cc/toolchains:feature.bzl", "cc_feature")
 load("@rules_cc//cc/toolchains:nested_args.bzl", "cc_nested_args")
@@ -181,4 +182,10 @@ cc_nested_args(
     },
     requires_equal = "@rules_cc//cc/toolchains/variables:libraries_to_link.type",
     requires_equal_value = "versioned_dynamic_library",
+)
+
+bzl_library(
+    name = "library_link_args",
+    srcs = ["library_link_args.bzl"],
+    deps = ["@rules_cc//cc/toolchains:nested_args"],
 )
