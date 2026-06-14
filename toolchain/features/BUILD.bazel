@@ -316,6 +316,25 @@ cc_args(
     args = ["-static"],
 )
 
+cc_args(
+    name = "module_map_home_cwd_args",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:compile_actions",
+    ],
+    args = [
+        "-Xclang",
+        "-fmodule-map-file-home-is-cwd",
+    ],
+)
+
+cc_feature(
+    name = "module_map_home_cwd",
+    args = [":module_map_home_cwd_args"],
+    feature_name = "module_map_home_cwd",
+    requires_any_of = ["@rules_cc//cc/toolchains/args/layering_check:module_maps"],
+    visibility = ["//visibility:public"],
+)
+
 ###
 
 cc_feature_set(
