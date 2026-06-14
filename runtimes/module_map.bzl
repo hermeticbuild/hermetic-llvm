@@ -11,11 +11,8 @@ IncludePathInfo = provider(
     },
 )
 
-def _textual_header(file, *, execroot_prefix):
-    return "  textual header \"{}{}\"".format(execroot_prefix, file.path)
-
-def _umbrella_submodule(directory, *, execroot_prefix):
-    path = execroot_prefix + paths.normalize(directory.path).replace("//", "/")
+def _umbrella_submodule(directory):
+    path = paths.normalize(directory.path).replace("//", "/")
 
     return """
   module "{path}" {{
@@ -25,10 +22,6 @@ def _umbrella_submodule(directory, *, execroot_prefix):
 def _module_map_impl(ctx):
     module_map = ctx.actions.declare_file(ctx.attr.name + ".modulemap")
 
-    # The builtin include directories are relative to the execroot, but the
-    # paths in the module map must be relative to the directory that contains
-    # the module map.
-    execroot_prefix = (module_map.dirname.count("/") + 1) * "../"
     include_path_info = ctx.attr.include_path[IncludePathInfo]
 
     module_map_args = ctx.actions.args()
@@ -38,16 +31,14 @@ def _module_map_impl(ctx):
     module_map_args.add_joined(
         include_path_info.submodule_directories,
         join_with = "\n",
-        map_each = lambda directory: _umbrella_submodule(directory, execroot_prefix = execroot_prefix),
-        allow_closure = True,
+        map_each = _umbrella_submodule,
         expand_directories = False,
     )
 
     module_map_args.add_joined(
         include_path_info.textual_headers,
         join_with = "\n",
-        map_each = lambda file: _textual_header(file, execroot_prefix = execroot_prefix),
-        allow_closure = True,
+        format_each = "  textual header \"%s\"",
         expand_directories = False,
     )
 

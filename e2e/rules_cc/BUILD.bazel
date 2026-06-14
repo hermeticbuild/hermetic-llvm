@@ -24,6 +24,7 @@ load(
     "nsan_cc_binary",
     "opt_binary",
     "profile_cc_binary",
+    "restricted_exec_cc_test",
     "rtsan_cc_binary",
     "safestack_cc_binary",
     "tsan_cc_binary",
@@ -362,13 +363,10 @@ cc_binary(
     deps = [":windows_explicit_def_import"],
 )
 
-cc_test(
+restricted_exec_cc_test(
     name = "windows_explicit_def_test",
     srcs = ["windows_explicit_def_test.cc"],
-    exec_compatible_with = [
-        "@platforms//os:windows",
-    ],
-    tags = ["no-remote"],
+    exec_constraints = ["@platforms//os:windows"],
     target_compatible_with = ["@platforms//os:windows"],
     deps = [":windows_explicit_def_import"],
 )
@@ -387,6 +385,8 @@ cc_binary(
     features = ["windows_export_all_symbols"],
     linkopts = ["-Wl,--exclude-all-symbols"],
     linkshared = True,
+    # The DefParser and link actions use Windows-only tools (def_parser.exe),
+    # which can't run on the Linux remote executor.
     tags = ["no-remote"],
     target_compatible_with = ["@platforms//os:windows"],
     deps = [":windows_generated_def_library"],
@@ -398,13 +398,10 @@ cc_import(
     target_compatible_with = ["@platforms//os:windows"],
 )
 
-cc_test(
+restricted_exec_cc_test(
     name = "windows_generated_def_test",
     srcs = ["windows_generated_def_test.cc"],
-    exec_compatible_with = [
-        "@platforms//os:windows",
-    ],
-    tags = ["no-remote"],
+    exec_constraints = ["@platforms//os:windows"],
     target_compatible_with = ["@platforms//os:windows"],
     deps = [":windows_generated_def_import"],
 )
@@ -754,45 +751,34 @@ platform_transition_binary(
     target_platform = "@llvm//platforms:linux_x86_64",
 )
 
-cc_test(
+restricted_exec_cc_test(
     name = "windows_test",
     srcs = ["windows_test.cc"],
-    exec_compatible_with = [
-        "@platforms//os:windows",
-    ],
+    exec_constraints = ["@platforms//os:windows"],
     linkopts = [
         "-luuid",
     ],
-    # TODO(zbarsky): Tests can't execute remotely from Windows hosts
-    tags = ["no-remote"],
     target_compatible_with = [
         "@platforms//os:windows",
     ],
 )
 
-cc_test(
+restricted_exec_cc_test(
     name = "windows_unicode_test",
     srcs = ["windows_unicode_test.cc"],
-    exec_compatible_with = [
-        "@platforms//os:windows",
-    ],
+    exec_constraints = ["@platforms//os:windows"],
     linkopts = ["-municode"],
-    # TODO(zbarsky): Tests can't execute remotely from Windows hosts
-    tags = ["no-remote"],
     target_compatible_with = [
         "@platforms//os:windows",
     ],
 )
 
-cc_test(
+restricted_exec_cc_test(
     name = "pthread_test",
     srcs = ["pthread.cc"],
     copts = ["-pthread"],
-    exec_compatible_with = HOST_CONSTRAINTS,
+    exec_constraints = HOST_CONSTRAINTS,
     linkopts = ["-pthread"],
-    # remote-exec tests can't run without forcing the target platform to match
-    # the remote exec platform.
-    tags = ["no-remote"],
 )
 
 cc_test(
@@ -892,7 +878,7 @@ cc_static_library(
     deps = [":comm_symbol_defs"],
 )
 
-cc_test(
+restricted_exec_cc_test(
     name = "duplicate_static_library_validator_test",
     size = "large",
     srcs = ["duplicate_static_library_failure_test.cc"],
@@ -903,8 +889,8 @@ cc_test(
         "duplicate_symbol_b.cc",
     ],
     env_inherit = ["PATH"],
-    exec_compatible_with = HOST_CONSTRAINTS,
-    tags = ["local"],
+    exec_constraints = HOST_CONSTRAINTS,
+    local = True,
     target_compatible_with = _VALIDATE_STATIC_LIBRARY_COMPATIBLE,
     deps = ["@bazel_tools//tools/cpp/runfiles"],
 )
