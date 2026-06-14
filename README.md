@@ -348,6 +348,7 @@ See https://github.com/hermeticbuild/hermetic-llvm/milestone/1
 - [Nativelink](https://github.com/TraceMachina/nativelink)
 - [formatjs](https://github.com/formatjs/formatjs)
 - [Etsy](https://etsy.com)
+- [Patagia](https://patagia.se)
 
 ## Prior art
 
