@@ -365,8 +365,6 @@ cc_binary(
 cc_test(
     name = "windows_explicit_def_test",
     srcs = ["windows_explicit_def_test.cc"],
-    # Force only the test execution onto the (windows) host; the build actions
-    # cross-compile on the remote exec platform so they share one toolchain.
     exec_properties = {"test.no-remote": "1"},
     target_compatible_with = ["@platforms//os:windows"],
     deps = [":windows_explicit_def_import"],
@@ -386,8 +384,6 @@ cc_binary(
     features = ["windows_export_all_symbols"],
     linkopts = ["-Wl,--exclude-all-symbols"],
     linkshared = True,
-    # The DefParser and link actions use Windows-only tools (def_parser.exe),
-    # which can't run on the Linux remote executor.
     tags = ["no-remote"],
     target_compatible_with = ["@platforms//os:windows"],
     deps = [":windows_generated_def_library"],
@@ -890,8 +886,6 @@ cc_test(
         "duplicate_symbol_b.cc",
     ],
     env_inherit = ["PATH"],
-    # This test runs bazel-in-bazel, so its execution must stay local; the
-    # build actions still run on the (remote) default exec platform.
     exec_properties = {"test.local": "1"},
     target_compatible_with = _VALIDATE_STATIC_LIBRARY_COMPATIBLE,
     deps = ["@bazel_tools//tools/cpp/runfiles"],

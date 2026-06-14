@@ -31,13 +31,6 @@ def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
         ],
     )
 
-    # Runtime configurations have no opt-in features beyond what is already
-    # enabled, so this set is intentionally empty.
-    cc_feature_set(
-        name = name + "_runtimes_only_known_features",
-        all_of = [],
-    )
-
     cc_feature_set(
         name = name + "_enabled_features",
         all_of = select({
@@ -104,9 +97,9 @@ def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
             "//conditions:default": [],
         }),
         known_features = select({
-            "@llvm//toolchain:runtimes_none": [name + "_runtimes_only_known_features"],
-            "@llvm//toolchain:runtimes_stage1": [name + "_runtimes_only_known_features"],
-            "@llvm//toolchain:runtimes_stage1_hosted": [name + "_runtimes_only_known_features"],
+            "@llvm//toolchain:runtimes_none": [],
+            "@llvm//toolchain:runtimes_stage1": [],
+            "@llvm//toolchain:runtimes_stage1_hosted": [],
             "//conditions:default": [name + "_known_features"],
         }),
         enabled_features = select({
