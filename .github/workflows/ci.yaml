@@ -30,6 +30,11 @@ jobs:
           - "e2e/cross_compilation"
           - "e2e/wasm"
           - "examples/custom_targets"
+      include:
+        # Path mapping requires Bazel 9+.
+        - bazel_version: last_rc
+          folder: "e2e/rules_cc"
+          extra_flags: "--experimental_output_paths=strip"
     runs-on: ${{ matrix.os }}
 
     # Configure a human readable name for each job
@@ -69,6 +74,7 @@ jobs:
             --bazelrc=.bazelrc \
             test \
             --remote_header=x-buildbuddy-api-key=4jtaxdhxtyu4ylxdEwI7 \
+            ${{ matrix.extra_flags }} \
             //...
 
   test_windows:
