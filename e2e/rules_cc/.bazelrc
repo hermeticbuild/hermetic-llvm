@@ -2,3 +2,4 @@ import %workspace%/../../.bazelrc
 
 common --config=cc
 common --process_headers_in_dependencies
+common --modify_execution_info=CppModuleMap=+supports-path-mapping,CppArchive=+supports-path-mapping,CppCompile=+supports-path-mapping
