@@ -33,6 +33,14 @@ dfsan_cc_binary, _dfsan_cc_binary_internal = with_cfg(cc_binary).set(
     True,
 ).build()
 
+fission_cc_binary, _fission_cc_binary_internal = with_cfg(cc_binary).set(
+    "compilation_mode",
+    "dbg",
+).set(
+    "fission",
+    ["dbg"],
+).build()
+
 nsan_cc_binary, _nsan_cc_binary_internal = with_cfg(cc_binary).set(
     Label("@llvm//config:nsan"),
     True,

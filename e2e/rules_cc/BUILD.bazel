@@ -17,6 +17,7 @@ load(
     "asan_cc_binary",
     "cfi_cc_binary",
     "dfsan_cc_binary",
+    "fission_cc_binary",
     "fuzzer_asan_cc_binary",
     "fuzzer_cc_binary",
     "lsan_cc_binary",
@@ -50,6 +51,11 @@ _DSYM_OUTPUT_TEST_ENV = {
     "DSYM_BUNDLE": "$(rootpath :main_dsym_bundle)",
     "DWARF_FILE": "main_dsym",
 } if _DSYM_OUTPUT_TEST_BAZEL9_COMPATIBLE else {}
+
+_FISSION_TEST_COMPATIBLE = select({
+    "@platforms//os:linux": [],
+    "//conditions:default": ["@platforms//:incompatible"],
+}) if bazel_features.cc.supports_starlarkified_toolchains else ["@platforms//:incompatible"]
 
 musl_header_generation_tests(name = "musl_header_generation_tests")
 
@@ -448,6 +454,20 @@ cc_binary(
         "@platforms//os:windows": ["@platforms//:incompatible"],
         "//conditions:default": [],
     }),
+)
+
+fission_cc_binary(
+    name = "fission_main",
+    srcs = ["main.cc"],
+    target_compatible_with = _FISSION_TEST_COMPATIBLE,
+)
+
+sh_test(
+    name = "fission_debug_package_test",
+    srcs = ["fission_debug_package_test.sh"],
+    data = [":fission_main.dwp"],
+    env = {"DWP": "$(rootpath :fission_main.dwp)"},
+    target_compatible_with = _FISSION_TEST_COMPATIBLE,
 )
 
 cc_binary(

@@ -17,7 +17,7 @@ _DSYM_COMPILE_ACTIONS = [
 # [] fastbuild
 # [] static_linking_mode - does this do anything? Seems obsolete
 # [] dynamic_linking_mode
-# [] per_object_debug_info
+# [x] per_object_debug_info
 # [x] static_link_cpp_runtimes
 
 cc_feature(
