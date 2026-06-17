@@ -4,11 +4,18 @@ load("@rules_cc//cc/toolchains:feature_set.bzl", "cc_feature_set")
 
 package(default_visibility = ["//visibility:public"])
 
-_DSYM_COMPILE_ACTIONS = [
+_DEBUG_INFO_COMPILE_ACTIONS = [
     "@rules_cc//cc/toolchains/actions:c_compile",
     "@rules_cc//cc/toolchains/actions:cpp_compile",
+    "@rules_cc//cc/toolchains/actions:lto_backend",
     "@rules_cc//cc/toolchains/actions:objc_compile",
     "@rules_cc//cc/toolchains/actions:objcpp_compile",
+]
+
+_FINAL_LINK_ACTIONS = [
+    "@rules_cc//cc/toolchains/actions:cpp_link_dynamic_library",
+    "@rules_cc//cc/toolchains/actions:cpp_link_executable",
+    "@rules_cc//cc/toolchains/actions:cpp_link_nodeps_dynamic_library",
     "@rules_cc//cc/toolchains/actions:objc_executable",
 ]
 
@@ -213,15 +220,13 @@ cc_feature(
 
 cc_args(
     name = "generate_dsym_file_compile_args",
-    actions = _DSYM_COMPILE_ACTIONS,
+    actions = _DEBUG_INFO_COMPILE_ACTIONS,
     args = ["-g"],
 )
 
 cc_args(
     name = "generate_dsym_file_link_args",
-    actions = [
-        "@rules_cc//cc/toolchains/actions:link_actions",
-    ],
+    actions = _FINAL_LINK_ACTIONS,
     env = {
         "LLVM_DSYM_PATH": "{dsym_path}",
         "LLVM_LINK_OUTPUT": "{output_execpath}",
@@ -240,6 +245,27 @@ cc_feature(
         ":generate_dsym_file_link_args",
     ],
     overrides = "@rules_cc//cc/toolchains/features/legacy:generate_dsym_file",
+)
+
+cc_args(
+    name = "generate_pdb_file_compile_args",
+    actions = _DEBUG_INFO_COMPILE_ACTIONS,
+    args = ["-gcodeview"],
+)
+
+cc_args(
+    name = "generate_pdb_file_link_args",
+    actions = _FINAL_LINK_ACTIONS,
+    args = ["-Wl,--pdb="],
+)
+
+cc_feature(
+    name = "generate_pdb_file",
+    args = [
+        ":generate_pdb_file_compile_args",
+        ":generate_pdb_file_link_args",
+    ],
+    feature_name = "generate_pdb_file",
 )
 
 # TODO: Remove after https://github.com/bazelbuild/rules_cc/pull/385
