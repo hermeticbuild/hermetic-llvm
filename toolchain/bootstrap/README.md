@@ -7,8 +7,8 @@ and source-built C++ toolchains. The bootstrap stages are:
 2. `stage1_from_source` compiles the stage2 LLVM binaries with ThinLTO and FDO
    instrumentation.
 3. `stage2_lto_and_fdo_instrumented` runs workloads for every
-   `SUPPORTED_TARGETS` target and compiles the stage3 LLVM binaries with the
-   merged profile for the target CPU.
+   `SUPPORTED_TARGETS` target. `stage1_from_source` compiles the stage3 LLVM
+   binaries with the merged profile for the target CPU.
 4. `stage3_lto_and_fdo_applied` uses the stage3 LLVM binaries as the C++
    toolchain.
 

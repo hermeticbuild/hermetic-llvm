@@ -25,9 +25,7 @@ def _bootstrap_transition_impl(settings, attr):
     copts = settings["//command_line_option:copt"]
     features = settings["//command_line_option:features"]
     needs_llvm_optimization = fdo_profile or fdo_instrumented
-    if fdo_profile:
-        bootstrap_stage = "stage2_lto_and_fdo_instrumented"
-    elif fdo_instrumented:
+    if needs_llvm_optimization:
         bootstrap_stage = "stage1_from_source"
     else:
         bootstrap_stage = "stage0_prebuilt_seed"
