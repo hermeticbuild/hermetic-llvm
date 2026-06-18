@@ -15,6 +15,18 @@ alias(
 )
 
 alias(
+    name = "rbe_linux_x86_64",
+    actual = "@rbe_platform//:rbe_linux_x86_64",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "rbe_linux_aarch64",
+    actual = "@rbe_platform//:rbe_linux_aarch64",
+    visibility = ["//visibility:public"],
+)
+
+alias(
     name = "builtin_resource_dir",
     actual = select({
         "//platforms/config:macos_x86_64_stage0_prebuilt_seed": "@llvm-toolchain-minimal-%s-darwin-amd64//:builtin_resource_dir" % LLVM_VERSION,

@@ -404,12 +404,6 @@ declare_toolchains()
 declare_bootstrap_toolchains()
 
 bzl_library(
-    name = "bootstrap_stages",
-    srcs = ["bootstrap_stages.bzl"],
-    visibility = ["//visibility:public"],
-)
-
-bzl_library(
     name = "cc_toolchain",
     srcs = ["cc_toolchain.bzl"],
     deps = [
@@ -431,4 +425,11 @@ bzl_library(
     name = "selects",
     srcs = ["selects.bzl"],
     deps = ["//platforms:common"],
+)
+
+# keep
+bzl_library(
+    name = "bootstrap_stages",
+    srcs = ["bootstrap_stages.bzl"],
+    visibility = ["//visibility:public"],
 )
