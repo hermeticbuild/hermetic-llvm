@@ -9,4 +9,5 @@ cc_binary(
 cc_test(
     name = "hello_test",
     srcs = ["hello.cc"],
+    exec_properties = {"test.no-remote": "1"},
 )

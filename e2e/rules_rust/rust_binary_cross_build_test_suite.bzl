@@ -1,5 +1,4 @@
 load("@bazel_lib//lib:transitions.bzl", "platform_transition_binary")
-load("@llvm//:defs.bzl", "exec_test")
 load("@rules_rust//rust:defs.bzl", "rust_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 
@@ -18,8 +17,7 @@ def rust_binary_test_suite(name, check, platform = None, **kwargs):
     )
 
     # Test if the host binary works.
-    exec_test(
-        rule = sh_test,
+    sh_test(
         name = name,
         srcs = ["test_platform.sh"] if platform else ["test_hello_world.sh"],
         args = [
@@ -32,6 +30,7 @@ def rust_binary_test_suite(name, check, platform = None, **kwargs):
             "FILE_BINARY": "$(rootpath @libmagic//:file)",
             "MAGIC_FILE": "$(rootpath @libmagic//:magic.mgc)",
         } if platform else {},
+        exec_properties = {"test.no-remote": "1"},
         tools = ([
             "@libmagic//:file",
             "@libmagic//:magic.mgc",
