@@ -21,7 +21,7 @@ def llvm_release(name, bin_suffix = ""):
     )
 
     bin_files = {
-        "@llvm-project//llvm:llvm.stripped": "bin/llvm" + bin_suffix,
+        "//toolchain/bootstrap/stage3:llvm": "bin/llvm" + bin_suffix,
         "@llvm-project//compiler-rt:asan_ignorelist": "lib/clang/{llvm_major}/share/asan_ignorelist.txt",
         "@llvm-project//compiler-rt:msan_ignorelist": "lib/clang/{llvm_major}/share/msan_ignorelist.txt",
     }

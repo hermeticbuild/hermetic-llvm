@@ -1,5 +1,6 @@
 load("@bazel_lib//lib:copy_file.bzl", "COPY_FILE_TOOLCHAINS", "copy_file_action")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory_bin_action")
+load("//tools:defs.bzl", "TOOLCHAIN_BINARIES")
 load(":transition_settings.bzl", "LLVM_TOOLS", "SANITIZER_FLAGS", "disable_sanitizers")
 
 _LLVM_TOOL_COPTS = [
@@ -17,17 +18,17 @@ def _append_unique(values, extra_values):
 
 def _bootstrap_transition_impl(settings, attr):
     fdo_profile = getattr(attr, "fdo_profile", None)
-    profile_instrumented = getattr(attr, "profile_instrumented", False)
-    if fdo_profile and profile_instrumented:
-        fail("fdo_profile and profile_instrumented are mutually exclusive")
+    fdo_instrumented = getattr(attr, "fdo_instrumented", False)
+    if fdo_profile and fdo_instrumented:
+        fail("fdo_profile and fdo_instrumented are mutually exclusive")
 
     copts = settings["//command_line_option:copt"]
     features = settings["//command_line_option:features"]
-    needs_llvm_optimization = fdo_profile or profile_instrumented
+    needs_llvm_optimization = fdo_profile or fdo_instrumented
     transition_settings = {
         # we are compiling final programs, so we want all runtimes.
         "//toolchain:runtime_stage": "complete",
-        "//toolchain:bootstrap_stage": "prebuilt",
+        "//toolchain:bootstrap_stage": "stage0_prebuilt_seed",
         "//command_line_option:compilation_mode": "opt" if needs_llvm_optimization else settings["//command_line_option:compilation_mode"],
         "//command_line_option:copt": _append_unique(copts, _LLVM_TOOL_COPTS) if needs_llvm_optimization else copts,
         "//command_line_option:features": features + ["thin_lto"],
@@ -38,9 +39,9 @@ def _bootstrap_transition_impl(settings, attr):
     disable_sanitizers(transition_settings)
 
     if fdo_profile:
-        transition_settings["//toolchain:bootstrap_stage"] = "instrumented"
-    elif profile_instrumented:
-        transition_settings["//toolchain:bootstrap_stage"] = "stage1"
+        transition_settings["//toolchain:bootstrap_stage"] = "stage2_lto_and_fdo_instrumented"
+    elif fdo_instrumented:
+        transition_settings["//toolchain:bootstrap_stage"] = "stage1_from_source"
         transition_settings["//config:host_profile"] = True
 
     if attr.platform:
@@ -113,13 +114,22 @@ bootstrap_binary = rule(
             default = None,
             doc = "If set, build the actual binary with this LLVM FDO profile.",
         ),
-        "profile_instrumented": attr.bool(
+        "fdo_instrumented": attr.bool(
             default = False,
             doc = "If set, build the actual binary with LLVM profile instrumentation.",
         ),
     },
     toolchains = COPY_FILE_TOOLCHAINS,
 )
+
+def bootstrap_binaries(**kwargs):
+    for tool in ["llvm"] + TOOLCHAIN_BINARIES:
+        bootstrap_binary(
+            name = tool,
+            actual = "@llvm-project//llvm",
+            visibility = ["//visibility:public"],
+            **kwargs
+        )
 
 def _bootstrap_directory_impl(ctx):
     copy_to_directory_bin = ctx.toolchains["@bazel_lib//lib:copy_to_directory_toolchain_type"].copy_to_directory_info.bin

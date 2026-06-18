@@ -258,7 +258,7 @@ llvm_source.version(llvm_version = "22.1.0")
 
 Important: Since this module uses prebuilt compiler archives by default. If you set `llvm_source.version(...)` to another version, use:
 
-`--@llvm//toolchain:bootstrap_stage=bootstrapped`
+`--@llvm//toolchain:bootstrap_stage=stage3_lto_and_fdo_applied`
 
 This switches to source bootstrapping (building the compiler), which is required when prebuilts for your exact version are not available.
 

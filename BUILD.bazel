@@ -17,12 +17,12 @@ alias(
 alias(
     name = "builtin_resource_dir",
     actual = select({
-        "//platforms/config:macos_x86_64_prebuilt": "@llvm-toolchain-minimal-%s-darwin-amd64//:builtin_resource_dir" % LLVM_VERSION,
-        "//platforms/config:macos_aarch64_prebuilt": "@llvm-toolchain-minimal-%s-darwin-arm64//:builtin_resource_dir" % LLVM_VERSION,
-        "//platforms/config:linux_x86_64_prebuilt": "@llvm-toolchain-minimal-%s-linux-amd64//:builtin_resource_dir" % LLVM_VERSION,
-        "//platforms/config:linux_aarch64_prebuilt": "@llvm-toolchain-minimal-%s-linux-arm64//:builtin_resource_dir" % LLVM_VERSION,
-        "//platforms/config:windows_aarch64_prebuilt": "@llvm-toolchain-minimal-%s-windows-arm64//:builtin_resource_dir" % LLVM_VERSION,
-        "//platforms/config:windows_x86_64_prebuilt": "@llvm-toolchain-minimal-%s-windows-amd64//:builtin_resource_dir" % LLVM_VERSION,
+        "//platforms/config:macos_x86_64_stage0_prebuilt_seed": "@llvm-toolchain-minimal-%s-darwin-amd64//:builtin_resource_dir" % LLVM_VERSION,
+        "//platforms/config:macos_aarch64_stage0_prebuilt_seed": "@llvm-toolchain-minimal-%s-darwin-arm64//:builtin_resource_dir" % LLVM_VERSION,
+        "//platforms/config:linux_x86_64_stage0_prebuilt_seed": "@llvm-toolchain-minimal-%s-linux-amd64//:builtin_resource_dir" % LLVM_VERSION,
+        "//platforms/config:linux_aarch64_stage0_prebuilt_seed": "@llvm-toolchain-minimal-%s-linux-arm64//:builtin_resource_dir" % LLVM_VERSION,
+        "//platforms/config:windows_aarch64_stage0_prebuilt_seed": "@llvm-toolchain-minimal-%s-windows-arm64//:builtin_resource_dir" % LLVM_VERSION,
+        "//platforms/config:windows_x86_64_stage0_prebuilt_seed": "@llvm-toolchain-minimal-%s-windows-amd64//:builtin_resource_dir" % LLVM_VERSION,
     }),
     visibility = ["//visibility:public"],
 )

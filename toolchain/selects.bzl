@@ -1,27 +1,32 @@
+load("//platforms:common.bzl", "SUPPORTED_EXECS")
+
 LLVM_VERSION = "22.1.7"
 
+def _tool_repo(exec_os, exec_cpu):
+    os_part = "darwin" if exec_os == "macos" else exec_os
+    cpu_part = "amd64" if exec_cpu == "x86_64" else "arm64"
+    return "@llvm-toolchain-minimal-%s-%s-%s//" % (LLVM_VERSION, os_part, cpu_part)
+
+def _platform_bootstrap_stage(exec_os, exec_cpu, bootstrap_stage):
+    return "@llvm//platforms/config:{}_{}_{}".format(exec_os, exec_cpu, bootstrap_stage)
+
 def platform_llvm_binary(binary):
-    return select({
-        "@llvm//platforms/config:macos_x86_64_prebuilt": Label("@llvm-toolchain-minimal-%s-darwin-amd64//:bin/%s" % (LLVM_VERSION, binary)),
-        "@llvm//platforms/config:macos_aarch64_prebuilt": Label("@llvm-toolchain-minimal-%s-darwin-arm64//:bin/%s" % (LLVM_VERSION, binary)),
-        "@llvm//platforms/config:linux_x86_64_prebuilt": Label("@llvm-toolchain-minimal-%s-linux-amd64//:bin/%s" % (LLVM_VERSION, binary)),
-        "@llvm//platforms/config:linux_aarch64_prebuilt": Label("@llvm-toolchain-minimal-%s-linux-arm64//:bin/%s" % (LLVM_VERSION, binary)),
-        "@llvm//platforms/config:windows_aarch64_prebuilt": Label("@llvm-toolchain-minimal-%s-windows-arm64//:bin/%s.exe" % (LLVM_VERSION, binary)),
-        "@llvm//platforms/config:windows_x86_64_prebuilt": Label("@llvm-toolchain-minimal-%s-windows-amd64//:bin/%s.exe" % (LLVM_VERSION, binary)),
-        "@llvm//platforms/config:macos_x86_64_instrumented": Label("@llvm//toolchain:instrumented_macos_x86_64/bin/%s" % binary),
-        "@llvm//platforms/config:macos_aarch64_instrumented": Label("@llvm//toolchain:instrumented_macos_aarch64/bin/%s" % binary),
-        "@llvm//platforms/config:linux_x86_64_instrumented": Label("@llvm//toolchain:instrumented_linux_x86_64/bin/%s" % binary),
-        "@llvm//platforms/config:linux_aarch64_instrumented": Label("@llvm//toolchain:instrumented_linux_aarch64/bin/%s" % binary),
-        "@llvm//platforms/config:windows_aarch64_instrumented": Label("@llvm//toolchain:instrumented_windows_aarch64/bin/%s" % binary),
-        "@llvm//platforms/config:windows_x86_64_instrumented": Label("@llvm//toolchain:instrumented_windows_x86_64/bin/%s" % binary),
-        "@llvm//platforms/config:macos_x86_64_stage1": Label("@llvm//toolchain:stage1_macos_x86_64/bin/%s" % binary),
-        "@llvm//platforms/config:macos_aarch64_stage1": Label("@llvm//toolchain:stage1_macos_aarch64/bin/%s" % binary),
-        "@llvm//platforms/config:linux_x86_64_stage1": Label("@llvm//toolchain:stage1_linux_x86_64/bin/%s" % binary),
-        "@llvm//platforms/config:linux_aarch64_stage1": Label("@llvm//toolchain:stage1_linux_aarch64/bin/%s" % binary),
-        "@llvm//platforms/config:windows_aarch64_stage1": Label("@llvm//toolchain:stage1_windows_aarch64/bin/%s" % binary),
-        "@llvm//platforms/config:windows_x86_64_stage1": Label("@llvm//toolchain:stage1_windows_x86_64/bin/%s" % binary),
-        "@llvm//toolchain:bootstrap_stage_bootstrapped": Label("@llvm//toolchain/bootstrap:" + binary),
-    })
+    binaries = {
+        _platform_bootstrap_stage(exec_os, exec_cpu, "stage0_prebuilt_seed"): Label(
+            _tool_repo(exec_os, exec_cpu) + ":bin/" + binary + (".exe" if exec_os == "windows" else ""),
+        )
+        for exec_os, exec_cpu in SUPPORTED_EXECS
+    }
+    binaries["@llvm//toolchain:bootstrap_stage_stage1_from_source"] = Label(
+        "@llvm//toolchain/bootstrap/stage1:" + binary,
+    )
+    binaries["@llvm//toolchain:bootstrap_stage_stage2_lto_and_fdo_instrumented"] = Label(
+        "@llvm//toolchain/bootstrap/stage2:" + binary,
+    )
+    binaries["@llvm//toolchain:bootstrap_stage_stage3_lto_and_fdo_applied"] = Label(
+        "@llvm//toolchain/bootstrap/stage3:" + binary,
+    )
+    return select(binaries)
 
 def platform_extra_binary(binary):
     return select({
@@ -33,11 +38,6 @@ def platform_extra_binary(binary):
         "@llvm//platforms/config:windows_aarch64": Label("@toolchain-extra-prebuilts-windows-arm64//:%s" % binary),
         "@llvm//platforms/config:windows_x86_64": Label("@toolchain-extra-prebuilts-windows-amd64//:%s" % binary),
     })
-
-def _tool_repo(exec_os, exec_cpu):
-    os_part = "darwin" if exec_os == "macos" else exec_os
-    cpu_part = "amd64" if exec_cpu == "x86_64" else "arm64"
-    return "@llvm-toolchain-minimal-%s-%s-%s//" % (LLVM_VERSION, os_part, cpu_part)
 
 def platform_module_map(exec_os, exec_cpu):
     return Label(_tool_repo(exec_os, exec_cpu) + ":module_map")

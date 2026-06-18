@@ -52,7 +52,7 @@ def _profile_generation_transition_impl(_settings, attr):
         "//command_line_option:fdo_profile": None,
         "//command_line_option:platforms": str(attr.target_platform),
         "//toolchain:runtime_stage": "complete",
-        "//toolchain:bootstrap_stage": "prebuilt",
+        "//toolchain:bootstrap_stage": "stage2_lto_and_fdo_instrumented",
         "@llvm-project//llvm:driver-tools": LLVM_TOOLS,
     }
 
@@ -88,8 +88,6 @@ def _llvm_fdo_profile_workload_impl(ctx):
     cc_toolchain = find_cc_toolchain(ctx)
 
     if ctx.attr.workload_kind == "hosted":
-        if not ctx.executable.linker:
-            fail("The hosted workload requires linker")
         compile_flags = _COMMON_COMPILE_FLAGS + _HOSTED_COMPILE_FLAGS
     else:
         compile_flags = _COMMON_COMPILE_FLAGS + _FREESTANDING_COMPILE_FLAGS
@@ -103,6 +101,10 @@ def _llvm_fdo_profile_workload_impl(ctx):
         cc_toolchain = cc_toolchain,
         requested_features = ctx.features,
         unsupported_features = ctx.disabled_features,
+    )
+    compile_executable = cc_common.get_tool_for_action(
+        feature_configuration = feature_configuration,
+        action_name = ACTION_NAMES.c_compile,
     )
     profraws = []
     objects = []
@@ -119,7 +121,7 @@ def _llvm_fdo_profile_workload_impl(ctx):
         )
 
         ctx.actions.run(
-            executable = ctx.executable.clangxx,
+            executable = compile_executable,
             arguments = cc_common.get_memory_inefficient_command_line(
                 feature_configuration = feature_configuration,
                 action_name = ACTION_NAMES.c_compile,
@@ -167,18 +169,16 @@ def _llvm_fdo_profile_workload_impl(ctx):
     link_args.add_all(objects)
 
     link_profraw = ctx.actions.declare_file(ctx.label.name + ".link.profraw")
-    link_tools = depset(
-        [ctx.executable.linker],
-        transitive = [
-            cc_toolchain.all_files,
-        ],
+    link_executable = cc_common.get_tool_for_action(
+        feature_configuration = feature_configuration,
+        action_name = ACTION_NAMES.cpp_link_executable,
     )
     ctx.actions.run(
-        executable = ctx.executable.clangxx,
+        executable = link_executable,
         arguments = [link_args],
         env = _profile_environment(feature_configuration, ACTION_NAMES.cpp_link_executable, link_variables, link_profraw),
         inputs = objects,
-        tools = link_tools,
+        tools = cc_toolchain.all_files,
         outputs = [
             binary_file,
             link_profraw,
@@ -199,18 +199,6 @@ def _llvm_fdo_profile_workload_impl(ctx):
 llvm_fdo_profile_workload = rule(
     implementation = _llvm_fdo_profile_workload_impl,
     attrs = {
-        "clangxx": attr.label(
-            executable = True,
-            cfg = "exec",
-            mandatory = True,
-            doc = "Instrumented clang++ driver used to collect the profile.",
-        ),
-        "linker": attr.label(
-            allow_single_file = True,
-            executable = True,
-            cfg = "exec",
-            doc = "Instrumented linker executable used by clangxx for target_platform.",
-        ),
         "srcs": attr.label(
             allow_files = [".c", ".h"],
             mandatory = True,

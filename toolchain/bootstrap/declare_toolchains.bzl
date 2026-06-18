@@ -44,7 +44,7 @@ def _bootstrap_cc_tool(prefix, tool, bootstrap_binary_kwargs, *, capabilities = 
         data = data,
     )
 
-def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, profile_instrumented = False):
+def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_instrumented = False):
     if not prefix:
         prefix = _exec_prefix(exec_os, exec_cpu)
 
@@ -52,7 +52,7 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, profi
     bootstrap_binary_kwargs = {
         "fdo_profile": fdo_profile,
         "platform": platform_name,
-        "profile_instrumented": profile_instrumented,
+        "fdo_instrumented": fdo_instrumented,
         "visibility": ["//visibility:public"],
     }
 
@@ -351,13 +351,13 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
             exec_os,
             exec_cpu,
             prefix = exec_prefix,
-            fdo_profile = "//toolchain/bootstrap:llvm_fdo_profdata",
+            fdo_profile = "//toolchain/bootstrap/stage3:llvm_fdo_profdata",
         )
         declare_tool_map(
             exec_os,
             exec_cpu,
             prefix = instrumented_prefix,
-            profile_instrumented = True,
+            fdo_instrumented = True,
         )
         declare_tool_map(
             exec_os,
@@ -366,9 +366,9 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
         )
 
         for toolchain_kind, tool_prefix, target_setting in [
-            ("bootstrap", exec_prefix, "@llvm//toolchain:bootstrap_stage_bootstrapped"),
-            ("instrumented", instrumented_prefix, "@llvm//toolchain:bootstrap_stage_instrumented"),
-            ("stage1", stage1_prefix, "@llvm//toolchain:bootstrap_stage_stage1"),
+            ("bootstrap", exec_prefix, "@llvm//toolchain:bootstrap_stage_stage3_lto_and_fdo_applied"),
+            ("instrumented", instrumented_prefix, "@llvm//toolchain:bootstrap_stage_stage2_lto_and_fdo_instrumented"),
+            ("stage1", stage1_prefix, "@llvm//toolchain:bootstrap_stage_stage1_from_source"),
         ]:
             cc_toolchain_name = "{}_{}_{}_cc_toolchain".format(toolchain_kind, exec_os, exec_cpu)
 
