@@ -343,20 +343,21 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
 
     for (exec_os, exec_cpu) in execs:
         exec_prefix = _exec_prefix(exec_os, exec_cpu)
-        instrumented_prefix = "instrumented_" + exec_prefix
         stage1_prefix = "stage1_" + exec_prefix
+        stage2_prefix = "stage2_" + exec_prefix
+        stage3_prefix = "stage3_" + exec_prefix
 
         _declare_exec_platform(exec_os, exec_cpu)
         declare_tool_map(
             exec_os,
             exec_cpu,
-            prefix = exec_prefix,
+            prefix = stage3_prefix,
             fdo_profile = "//toolchain/bootstrap/stage3:llvm_fdo_profdata",
         )
         declare_tool_map(
             exec_os,
             exec_cpu,
-            prefix = instrumented_prefix,
+            prefix = stage2_prefix,
             fdo_instrumented = True,
         )
         declare_tool_map(
@@ -365,12 +366,12 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
             prefix = stage1_prefix,
         )
 
-        for toolchain_kind, tool_prefix, target_setting in [
-            ("bootstrap", exec_prefix, "@llvm//toolchain:bootstrap_stage3_lto_and_fdo_applied"),
-            ("instrumented", instrumented_prefix, "@llvm//toolchain:bootstrap_stage2_lto_and_fdo_instrumented"),
+        for stage_name, tool_prefix, target_setting in [
+            ("stage3", stage3_prefix, "@llvm//toolchain:bootstrap_stage3_lto_and_fdo_applied"),
+            ("stage2", stage2_prefix, "@llvm//toolchain:bootstrap_stage2_lto_and_fdo_instrumented"),
             ("stage1", stage1_prefix, "@llvm//toolchain:bootstrap_stage1_from_source"),
         ]:
-            cc_toolchain_name = "%s_%s_%s_cc_toolchain" % (toolchain_kind, exec_os, exec_cpu)
+            cc_toolchain_name = "%s_%s_%s_cc_toolchain" % (stage_name, exec_os, exec_cpu)
 
             # Even though `tool_map` has an exec transition, Bazel doesn't properly handle
             # binding a single `cc_toolchain` to multiple toolchains with different `exec_compatible_with`.
@@ -387,7 +388,7 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
 
             for (target_os, target_cpu) in targets:
                 native.toolchain(
-                    name = "%s_%s_%s_to_%s_%s" % (toolchain_kind, exec_os, exec_cpu, target_os, target_cpu),
+                    name = "%s_%s_%s_to_%s_%s" % (stage_name, exec_os, exec_cpu, target_os, target_cpu),
                     exec_compatible_with = [
                         "@platforms//cpu:" + exec_cpu,
                         "@platforms//os:" + exec_os,

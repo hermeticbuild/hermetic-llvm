@@ -24,8 +24,9 @@ def _bootstrap_transition_impl(settings, attr):
 
     copts = settings["//command_line_option:copt"]
     features = settings["//command_line_option:features"]
-    needs_llvm_optimization = fdo_profile or fdo_instrumented
-    if needs_llvm_optimization:
+    is_after_stage1 = fdo_profile or fdo_instrumented
+
+    if is_after_stage1:
         bootstrap_stage = "stage1_from_source"
     else:
         bootstrap_stage = "stage0_prebuilt_seed"
@@ -34,9 +35,9 @@ def _bootstrap_transition_impl(settings, attr):
         # we are compiling final programs, so we want all runtimes.
         "//toolchain:runtime_stage": "complete",
         "//toolchain:bootstrap_stage": bootstrap_stage,
-        "//command_line_option:compilation_mode": "opt" if needs_llvm_optimization else settings["//command_line_option:compilation_mode"],
-        "//command_line_option:copt": _append_unique(copts, _LLVM_TOOL_COPTS) if needs_llvm_optimization else copts,
-        "//command_line_option:features": features + ["thin_lto"],
+        "//command_line_option:compilation_mode": "opt",
+        "//command_line_option:copt": _append_unique(copts, _LLVM_TOOL_COPTS) if is_after_stage1 else copts,
+        "//command_line_option:features": _append_unique(features, ["thin_lto"]) if is_after_stage1 else features,
         "//command_line_option:fdo_profile": fdo_profile,
         "@llvm-project//llvm:driver-tools": LLVM_TOOLS,
     }
@@ -57,7 +58,6 @@ bootstrap_transition = transition(
     implementation = _bootstrap_transition_impl,
     inputs = [
         "//command_line_option:copt",
-        "//command_line_option:compilation_mode",
         "//command_line_option:features",
         "//command_line_option:platforms",
     ],

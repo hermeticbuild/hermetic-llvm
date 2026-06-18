@@ -35,7 +35,7 @@ bazel \
   --bazelrc=".github/workflows/ci.bazelrc" \
   build \
   --remote_header=x-buildbuddy-api-key=4jtaxdhxtyu4ylxdEwI7 \
-  --config=prebuilt \
+  --config=release \
   --config=remote \
   --remote_download_outputs=toplevel \
   //prebuilt/llvm:all
