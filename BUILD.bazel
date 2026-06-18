@@ -8,21 +8,33 @@ exports_files([
     ".buildifier.json",
 ])
 
-alias(
-    name = "rbe_platform",
-    actual = "@rbe_platform//:rbe_platform",
-    visibility = ["//visibility:public"],
-)
-
-alias(
+platform(
     name = "rbe_linux_x86_64",
-    actual = "@rbe_platform//:rbe_linux_x86_64",
+    constraint_values = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+        "//constraints/libc:gnu.2.28",
+    ],
+    exec_properties = {
+        "Arch": "amd64",
+        "OSFamily": "Linux",
+        "container-image": "docker://ubuntu:22.04",
+    },
     visibility = ["//visibility:public"],
 )
 
-alias(
+platform(
     name = "rbe_linux_aarch64",
-    actual = "@rbe_platform//:rbe_linux_aarch64",
+    constraint_values = [
+        "@platforms//cpu:aarch64",
+        "@platforms//os:linux",
+        "//constraints/libc:gnu.2.28",
+    ],
+    exec_properties = {
+        "Arch": "arm64",
+        "OSFamily": "Linux",
+        "container-image": "docker://ubuntu:22.04",
+    },
     visibility = ["//visibility:public"],
 )
 
@@ -81,11 +93,5 @@ bzl_library(
 bzl_library(
     name = "defs",
     srcs = ["defs.bzl"],
-    visibility = ["//visibility:public"],
-)
-
-bzl_library(
-    name = "rbe",
-    srcs = ["rbe.bzl"],
     visibility = ["//visibility:public"],
 )

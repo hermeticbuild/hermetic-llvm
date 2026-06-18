@@ -16,12 +16,6 @@ bazel_dep(name = "tar.bzl", version = "0.10.4")
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-rbe_platform_repository = use_repo_rule("//:rbe.bzl", "rbe_platform_repository")
-
-rbe_platform_repository(
-    name = "rbe_platform",
-)
-
 http_archive(
     name = "llvm_fdo_zstd",
     build_file = "//toolchain/bootstrap:zstd_fdo.BUILD.bazel",
