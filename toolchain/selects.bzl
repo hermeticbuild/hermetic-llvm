@@ -8,12 +8,12 @@ def _tool_repo(exec_os, exec_cpu):
     return "@llvm-toolchain-minimal-%s-%s-%s//" % (LLVM_VERSION, os_part, cpu_part)
 
 def _platform_bootstrap_stage(exec_os, exec_cpu, bootstrap_stage):
-    return "@llvm//platforms/config:{}_{}_{}".format(exec_os, exec_cpu, bootstrap_stage)
+    return "@llvm//platforms/config:%s_%s_%s" % (exec_os, exec_cpu, bootstrap_stage)
 
 def platform_llvm_binary(binary):
     binaries = {
         _platform_bootstrap_stage(exec_os, exec_cpu, "stage0_prebuilt_seed"): Label(
-            _tool_repo(exec_os, exec_cpu) + ":bin/" + binary + (".exe" if exec_os == "windows" else ""),
+            "%s:bin/%s%s" % (_tool_repo(exec_os, exec_cpu), binary, ".exe" if exec_os == "windows" else ""),
         )
         for exec_os, exec_cpu in SUPPORTED_EXECS
     }

@@ -72,6 +72,17 @@ _profile_generation_transition = transition(
     ] + SANITIZER_FLAGS,
 )
 
+def _profile_merge_transition_impl(_settings, _attr):
+    return {
+        "//toolchain:bootstrap_stage": "stage1_from_source",
+    }
+
+_profile_merge_transition = transition(
+    implementation = _profile_merge_transition_impl,
+    inputs = [],
+    outputs = ["//toolchain:bootstrap_stage"],
+)
+
 def _c_sources(files):
     return [file for file in files if file.extension == "c"]
 
@@ -109,8 +120,8 @@ def _llvm_fdo_profile_workload_impl(ctx):
     profraws = []
     objects = []
     for index, source in enumerate(_c_sources(ctx.files.srcs)):
-        object_file = ctx.actions.declare_file("{}.{}.o".format(ctx.label.name, index))
-        profraw = ctx.actions.declare_file("{}.{}.profraw".format(ctx.label.name, index))
+        object_file = ctx.actions.declare_file("%s.%s.o" % (ctx.label.name, index))
+        profraw = ctx.actions.declare_file("%s.%s.profraw" % (ctx.label.name, index))
         compile_variables = cc_common.create_compile_variables(
             cc_toolchain = cc_toolchain,
             feature_configuration = feature_configuration,
@@ -223,6 +234,17 @@ llvm_fdo_profile_workload = rule(
 )
 
 def _llvm_fdo_profile_data_impl(ctx):
+    cc_toolchain = find_cc_toolchain(ctx)
+    feature_configuration = cc_common.configure_features(
+        ctx = ctx,
+        cc_toolchain = cc_toolchain,
+        requested_features = ctx.features,
+        unsupported_features = ctx.disabled_features,
+    )
+    llvm_profdata = cc_common.get_tool_for_action(
+        feature_configuration = feature_configuration,
+        action_name = ACTION_NAMES.llvm_profdata,
+    )
     profdata = ctx.actions.declare_file(ctx.label.name + ".profdata")
     profraws = depset(transitive = [
         profile[LLVMFDOProfileRawInfo].profraws
@@ -236,14 +258,15 @@ def _llvm_fdo_profile_data_impl(ctx):
     merge_args.add_all(profraws)
 
     ctx.actions.run(
-        executable = ctx.executable.llvm_profdata,
+        executable = llvm_profdata,
         arguments = [merge_args],
         inputs = profraws,
-        tools = [ctx.attr.llvm_profdata[DefaultInfo].files_to_run],
+        tools = cc_toolchain.all_files,
         outputs = [profdata],
         mnemonic = "LLVMFDOProfileMerge",
         progress_message = "Merging LLVM FDO profiles for %{label}",
         execution_requirements = {"supports-path-mapping": "1"},
+        toolchain = CC_TOOLCHAIN_TYPE,
     )
 
     return [
@@ -258,17 +281,13 @@ def _llvm_fdo_profile_data_impl(ctx):
 llvm_fdo_profile_data = rule(
     implementation = _llvm_fdo_profile_data_impl,
     attrs = {
-        "llvm_profdata": attr.label(
-            allow_single_file = True,
-            executable = True,
-            cfg = "exec",
-            mandatory = True,
-            doc = "Uninstrumented llvm-profdata used to merge raw profiles.",
-        ),
         "profiles": attr.label_list(
             mandatory = True,
             providers = [LLVMFDOProfileRawInfo],
             doc = "Target-platform training workloads merged into this profile.",
         ),
     },
+    cfg = _profile_merge_transition,
+    fragments = ["cpp"],
+    toolchains = use_cc_toolchain(),
 )

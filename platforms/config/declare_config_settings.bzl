@@ -16,7 +16,7 @@ def declare_config_settings():
 
         for bootstrap_stage in BOOTSTRAP_STAGES:
             native.config_setting(
-                name = "{}_{}_{}".format(target_os, target_cpu, bootstrap_stage),
+                name = "%s_%s_%s" % (target_os, target_cpu, bootstrap_stage),
                 constraint_values = [
                     "@platforms//cpu:" + target_cpu,
                     "@platforms//os:" + target_os,

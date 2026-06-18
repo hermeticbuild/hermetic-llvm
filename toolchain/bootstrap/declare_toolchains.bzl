@@ -15,7 +15,7 @@ def _validate_static_library_tool(prefix):
     }
 
 def _exec_prefix(exec_os, exec_cpu):
-    return exec_os + "_" + exec_cpu
+    return "%s_%s" % (exec_os, exec_cpu)
 
 def _exec_platform_name(exec_os, exec_cpu):
     return _exec_prefix(exec_os, exec_cpu) + "_platform"
@@ -24,8 +24,8 @@ def _declare_exec_platform(exec_os, exec_cpu):
     native.platform(
         name = _exec_platform_name(exec_os, exec_cpu),
         constraint_values = [
-            "@platforms//cpu:{}".format(exec_cpu),
-            "@platforms//os:{}".format(exec_os),
+            "@platforms//cpu:" + exec_cpu,
+            "@platforms//os:" + exec_os,
         ],
     )
 
@@ -370,7 +370,7 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
             ("instrumented", instrumented_prefix, "@llvm//toolchain:bootstrap_stage_stage2_lto_and_fdo_instrumented"),
             ("stage1", stage1_prefix, "@llvm//toolchain:bootstrap_stage_stage1_from_source"),
         ]:
-            cc_toolchain_name = "{}_{}_{}_cc_toolchain".format(toolchain_kind, exec_os, exec_cpu)
+            cc_toolchain_name = "%s_%s_%s_cc_toolchain" % (toolchain_kind, exec_os, exec_cpu)
 
             # Even though `tool_map` has an exec transition, Bazel doesn't properly handle
             # binding a single `cc_toolchain` to multiple toolchains with different `exec_compatible_with`.
@@ -378,23 +378,23 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
             cc_toolchain(
                 name = cc_toolchain_name,
                 tool_map = select({
-                    "@llvm//toolchain:macos_complete_with_libtool": ":{}/tools_with_dsym_and_libtool".format(tool_prefix),
-                    "@llvm//toolchain:macos_complete": ":{}/tools_with_dsym".format(tool_prefix),
-                    "@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_apple_setting": ":{}/tools_with_libtool_for_runtime".format(tool_prefix),
-                    "//conditions:default": ":{}/default_tools_for_runtime".format(tool_prefix),
+                    "@llvm//toolchain:macos_complete_with_libtool": ":%s/tools_with_dsym_and_libtool" % tool_prefix,
+                    "@llvm//toolchain:macos_complete": ":%s/tools_with_dsym" % tool_prefix,
+                    "@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_apple_setting": ":%s/tools_with_libtool_for_runtime" % tool_prefix,
+                    "//conditions:default": ":%s/default_tools_for_runtime" % tool_prefix,
                 }),
             )
 
             for (target_os, target_cpu) in targets:
                 native.toolchain(
-                    name = "{}_{}_{}_to_{}_{}".format(toolchain_kind, exec_os, exec_cpu, target_os, target_cpu),
+                    name = "%s_%s_%s_to_%s_%s" % (toolchain_kind, exec_os, exec_cpu, target_os, target_cpu),
                     exec_compatible_with = [
-                        "@platforms//cpu:{}".format(exec_cpu),
-                        "@platforms//os:{}".format(exec_os),
+                        "@platforms//cpu:" + exec_cpu,
+                        "@platforms//os:" + exec_os,
                     ],
                     target_compatible_with = [
-                        "@platforms//cpu:{}".format(target_cpu),
-                        "@platforms//os:{}".format(target_os),
+                        "@platforms//cpu:" + target_cpu,
+                        "@platforms//os:" + target_os,
                     ],
                     target_settings = [
                         target_setting,

@@ -25,10 +25,17 @@ def _bootstrap_transition_impl(settings, attr):
     copts = settings["//command_line_option:copt"]
     features = settings["//command_line_option:features"]
     needs_llvm_optimization = fdo_profile or fdo_instrumented
+    if fdo_profile:
+        bootstrap_stage = "stage2_lto_and_fdo_instrumented"
+    elif fdo_instrumented:
+        bootstrap_stage = "stage1_from_source"
+    else:
+        bootstrap_stage = "stage0_prebuilt_seed"
+
     transition_settings = {
         # we are compiling final programs, so we want all runtimes.
         "//toolchain:runtime_stage": "complete",
-        "//toolchain:bootstrap_stage": "stage0_prebuilt_seed",
+        "//toolchain:bootstrap_stage": bootstrap_stage,
         "//command_line_option:compilation_mode": "opt" if needs_llvm_optimization else settings["//command_line_option:compilation_mode"],
         "//command_line_option:copt": _append_unique(copts, _LLVM_TOOL_COPTS) if needs_llvm_optimization else copts,
         "//command_line_option:features": features + ["thin_lto"],
@@ -38,10 +45,7 @@ def _bootstrap_transition_impl(settings, attr):
 
     disable_sanitizers(transition_settings)
 
-    if fdo_profile:
-        transition_settings["//toolchain:bootstrap_stage"] = "stage2_lto_and_fdo_instrumented"
-    elif fdo_instrumented:
-        transition_settings["//toolchain:bootstrap_stage"] = "stage1_from_source"
+    if fdo_instrumented:
         transition_settings["//config:host_profile"] = True
 
     if attr.platform:
@@ -116,7 +120,7 @@ bootstrap_binary = rule(
         ),
         "fdo_instrumented": attr.bool(
             default = False,
-            doc = "If set, build the actual binary with LLVM profile instrumentation.",
+            doc = "If set, build the actual binary with FDO instrumentation.",
         ),
     },
     toolchains = COPY_FILE_TOOLCHAINS,

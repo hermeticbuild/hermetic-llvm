@@ -114,7 +114,7 @@ config_setting(
 
 [
     config_setting(
-        name = "bootstrap_stage_{}".format(bootstrap_stage),
+        name = "bootstrap_stage_" + bootstrap_stage,
         flag_values = {
             ":bootstrap_stage": bootstrap_stage,
         },
