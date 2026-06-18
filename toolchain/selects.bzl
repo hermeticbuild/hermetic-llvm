@@ -20,7 +20,7 @@ def platform_llvm_binary(binary):
         "@llvm//platforms/config:linux_aarch64_stage1": Label("@llvm//toolchain:stage1_linux_aarch64/bin/%s" % binary),
         "@llvm//platforms/config:windows_aarch64_stage1": Label("@llvm//toolchain:stage1_windows_aarch64/bin/%s" % binary),
         "@llvm//platforms/config:windows_x86_64_stage1": Label("@llvm//toolchain:stage1_windows_x86_64/bin/%s" % binary),
-        "@llvm//toolchain:bootstrapped_toolchain": Label("@llvm//toolchain/bootstrap:" + binary),
+        "@llvm//toolchain:bootstrap_stage_bootstrapped": Label("@llvm//toolchain/bootstrap:" + binary),
     })
 
 def platform_extra_binary(binary):

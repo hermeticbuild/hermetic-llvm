@@ -1,6 +1,7 @@
 load("@bazel_skylib//lib:selects.bzl", "selects")
 load("//constraints/libc:libc_versions.bzl", "GLIBCS", "LIBCS")
 load("//platforms:common.bzl", "LIBC_SUPPORTED_TARGETS", "SUPPORTED_TARGETS")
+load("//toolchain:bootstrap_stages.bzl", "BOOTSTRAP_STAGES")
 
 def declare_config_settings():
     for (target_os, target_cpu) in SUPPORTED_TARGETS:
@@ -13,15 +14,15 @@ def declare_config_settings():
             visibility = ["//visibility:public"],
         )
 
-        for source in ["prebuilt", "stage1", "instrumented"]:
+        for bootstrap_stage in BOOTSTRAP_STAGES:
             native.config_setting(
-                name = "{}_{}_{}".format(target_os, target_cpu, source),
+                name = "{}_{}_{}".format(target_os, target_cpu, bootstrap_stage),
                 constraint_values = [
                     "@platforms//cpu:" + target_cpu,
                     "@platforms//os:" + target_os,
                 ],
                 flag_values = {
-                    "//toolchain:source": source,
+                    "//toolchain:bootstrap_stage": bootstrap_stage,
                 },
                 visibility = ["//visibility:public"],
             )

@@ -52,7 +52,7 @@ def _profile_generation_transition_impl(_settings, attr):
         "//command_line_option:fdo_profile": None,
         "//command_line_option:platforms": str(attr.target_platform),
         "//toolchain:runtime_stage": "complete",
-        "//toolchain:source": "prebuilt",
+        "//toolchain:bootstrap_stage": "prebuilt",
         "@llvm-project//llvm:driver-tools": LLVM_TOOLS,
     }
 
@@ -67,7 +67,7 @@ _profile_generation_transition = transition(
         "//command_line_option:fdo_profile",
         "//command_line_option:platforms",
         "//toolchain:runtime_stage",
-        "//toolchain:source",
+        "//toolchain:bootstrap_stage",
         "@llvm-project//llvm:driver-tools",
     ] + SANITIZER_FLAGS,
 )

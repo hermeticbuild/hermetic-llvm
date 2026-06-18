@@ -27,7 +27,7 @@ def _bootstrap_transition_impl(settings, attr):
     transition_settings = {
         # we are compiling final programs, so we want all runtimes.
         "//toolchain:runtime_stage": "complete",
-        "//toolchain:source": "prebuilt",
+        "//toolchain:bootstrap_stage": "prebuilt",
         "//command_line_option:compilation_mode": "opt" if needs_llvm_optimization else settings["//command_line_option:compilation_mode"],
         "//command_line_option:copt": _append_unique(copts, _LLVM_TOOL_COPTS) if needs_llvm_optimization else copts,
         "//command_line_option:features": features + ["thin_lto"],
@@ -38,9 +38,9 @@ def _bootstrap_transition_impl(settings, attr):
     disable_sanitizers(transition_settings)
 
     if fdo_profile:
-        transition_settings["//toolchain:source"] = "instrumented"
+        transition_settings["//toolchain:bootstrap_stage"] = "instrumented"
     elif profile_instrumented:
-        transition_settings["//toolchain:source"] = "stage1"
+        transition_settings["//toolchain:bootstrap_stage"] = "stage1"
         transition_settings["//config:host_profile"] = True
 
     if attr.platform:
@@ -65,7 +65,7 @@ bootstrap_transition = transition(
         "//command_line_option:features",
         "//command_line_option:platforms",
         "//toolchain:runtime_stage",
-        "//toolchain:source",
+        "//toolchain:bootstrap_stage",
         "@llvm-project//llvm:driver-tools",
     ] + SANITIZER_FLAGS,
 )

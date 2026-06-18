@@ -35,7 +35,7 @@ common --incompatible_config_setting_private_default_visibility
 
 common:cc --@rules_python//python/config_settings:bootstrap_impl=script
 
-common:bootstrap   --@llvm//toolchain:source=bootstrapped
+common:bootstrap   --@llvm//toolchain:bootstrap_stage=bootstrapped
 
 common:prebuilt  -c opt
 common:prebuilt  --strip=always

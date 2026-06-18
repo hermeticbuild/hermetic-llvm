@@ -10,6 +10,7 @@ bzl_library(
     deps = [
         "//constraints/libc:libc_versions",
         "//platforms:common",
+        "//toolchain:bootstrap_stages",
         "@bazel_skylib//lib:selects",
     ],
 )
