@@ -17,13 +17,13 @@ def platform_llvm_binary(binary):
         )
         for exec_os, exec_cpu in SUPPORTED_EXECS
     }
-    binaries["@llvm//toolchain:bootstrap_stage_stage1_from_source"] = Label(
+    binaries["@llvm//toolchain:bootstrap_stage1_from_source"] = Label(
         "@llvm//toolchain/bootstrap/stage1:" + binary,
     )
-    binaries["@llvm//toolchain:bootstrap_stage_stage2_lto_and_fdo_instrumented"] = Label(
+    binaries["@llvm//toolchain:bootstrap_stage2_lto_and_fdo_instrumented"] = Label(
         "@llvm//toolchain/bootstrap/stage2:" + binary,
     )
-    binaries["@llvm//toolchain:bootstrap_stage_stage3_lto_and_fdo_applied"] = Label(
+    binaries["@llvm//toolchain:bootstrap_stage3_lto_and_fdo_applied"] = Label(
         "@llvm//toolchain/bootstrap/stage3:" + binary,
     )
     return select(binaries)

@@ -366,9 +366,9 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
         )
 
         for toolchain_kind, tool_prefix, target_setting in [
-            ("bootstrap", exec_prefix, "@llvm//toolchain:bootstrap_stage_stage3_lto_and_fdo_applied"),
-            ("instrumented", instrumented_prefix, "@llvm//toolchain:bootstrap_stage_stage2_lto_and_fdo_instrumented"),
-            ("stage1", stage1_prefix, "@llvm//toolchain:bootstrap_stage_stage1_from_source"),
+            ("bootstrap", exec_prefix, "@llvm//toolchain:bootstrap_stage3_lto_and_fdo_applied"),
+            ("instrumented", instrumented_prefix, "@llvm//toolchain:bootstrap_stage2_lto_and_fdo_instrumented"),
+            ("stage1", stage1_prefix, "@llvm//toolchain:bootstrap_stage1_from_source"),
         ]:
             cc_toolchain_name = "%s_%s_%s_cc_toolchain" % (toolchain_kind, exec_os, exec_cpu)
 

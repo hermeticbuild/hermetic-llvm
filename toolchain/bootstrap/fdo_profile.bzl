@@ -74,13 +74,17 @@ _profile_generation_transition = transition(
 
 def _profile_merge_transition_impl(_settings, _attr):
     return {
+        "//command_line_option:fdo_profile": None,
         "//toolchain:bootstrap_stage": "stage1_from_source",
     }
 
 _profile_merge_transition = transition(
     implementation = _profile_merge_transition_impl,
     inputs = [],
-    outputs = ["//toolchain:bootstrap_stage"],
+    outputs = [
+        "//command_line_option:fdo_profile",
+        "//toolchain:bootstrap_stage",
+    ],
 )
 
 def _c_sources(files):
