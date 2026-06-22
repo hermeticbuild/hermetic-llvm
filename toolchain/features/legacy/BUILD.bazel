@@ -62,23 +62,18 @@ cc_nested_args(
     requires_none = "@rules_cc//cc/toolchains/variables:dsym_path",
 )
 
-# Marker argv for the linker_wrapper when targeting macOS only.
-# This is needed because we run dsymutil on the linker binary, so we need to defer stripping after dsym generation.
-# nested_args so that we can do both requires_not_none on strip_debug_symbols and dsym_path.
-cc_nested_args(
-    name = "strip_debug_symbols_after_dsym",
-    args = ["LLVM_STRIP_DEBUG_SYMBOLS"],
-    requires_not_none = "@rules_cc//cc/toolchains/variables:dsym_path",
-)
-
 cc_args(
     name = "strip_debug_symbols_args",
     actions = [
         "@rules_cc//cc/toolchains/actions:link_actions",
     ],
+    env = select({
+        # The macOS link wrapper needs to defer stripping until after dSYM generation.
+        "@platforms//os:macos": {"LLVM_STRIP_DEBUG_SYMBOLS": "1"},
+        "//conditions:default": {},
+    }),
     nested = [
         ":strip_debug_symbols_when_no_dsym",
-        ":strip_debug_symbols_after_dsym",
     ],
     requires_not_none = "@rules_cc//cc/toolchains/variables:strip_debug_symbols",
 )

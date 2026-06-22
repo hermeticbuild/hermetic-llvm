@@ -12,13 +12,10 @@
 #include <unistd.h>
 #endif
 
-#define STRIP_DEBUG_SYMBOLS_ARG "LLVM_STRIP_DEBUG_SYMBOLS"
-
 typedef struct {
     char **clang_args;
     size_t clang_arg_count;
     size_t clang_arg_capacity;
-    int strip_debug_symbols;
 } parsed_args;
 
 static int error(const char *message) {
@@ -186,7 +183,6 @@ static void parsed_args_init(parsed_args *args) {
     args->clang_args = NULL;
     args->clang_arg_count = 0;
     args->clang_arg_capacity = 0;
-    args->strip_debug_symbols = 0;
 }
 
 static void parsed_args_destroy(parsed_args *args) {
@@ -348,11 +344,6 @@ static int process_argument(const char *arg, parsed_args *args) {
         }
     }
 
-    if (strcmp(arg, STRIP_DEBUG_SYMBOLS_ARG) == 0) {
-        args->strip_debug_symbols = 1;
-        return 0;
-    }
-
     return parsed_args_add(args, arg);
 }
 
@@ -419,6 +410,8 @@ fail:
 
 int main(int argc, char **argv) {
     const char *clangxx = required_env("LLVM_CLANGXX");
+    const char *strip_debug_symbols = getenv("LLVM_STRIP_DEBUG_SYMBOLS");
+    int should_strip_debug_symbols = strip_debug_symbols != NULL && strip_debug_symbols[0] != '\0';
 
     parsed_args args;
     parsed_args_init(&args);
@@ -478,7 +471,7 @@ int main(int argc, char **argv) {
     };
 
     status = run_process(dsym_args);
-    if (status != 0 || !args.strip_debug_symbols) {
+    if (status != 0 || !should_strip_debug_symbols) {
         parsed_args_destroy(&args);
         return status;
     }
