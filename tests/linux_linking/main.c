@@ -1,6 +1,6 @@
 #include <stdio.h>
 
 int main(void) {
-    printf("hello from musl static-pie\n");
+    printf("hello from linux linking test\n");
     return 0;
 }
