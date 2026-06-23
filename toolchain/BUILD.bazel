@@ -290,7 +290,7 @@ cc_args_list(
         "//platforms/config:musl": [
             #TODO: Handle musl dynamic linking
             # musl implies static linking for now
-            "//toolchain/features/pic_flags:static_link_executable",
+            "//toolchain/args:static_link_executable",
         ],
         "//conditions:default": [],
     }) + [
