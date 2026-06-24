@@ -587,6 +587,18 @@ cc_args(
     ],
 )
 
+# Link the shared compiler-rt DSO and add its rpath.
+cc_args(
+    name = "tsan_shared_linker_flags",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    args = [
+        "-shared-libsan",
+        "-frtlib-add-rpath",
+    ],
+)
+
 cc_args_list(
     name = "tsan_flags",
     args = select({
@@ -597,6 +609,11 @@ cc_args_list(
         "//config:host_tsan_enabled": [
             ":tsan_compiler_flags",
             ":tsan_linker_flags",
+        ],
+        "//conditions:default": [],
+    }) + select({
+        "//config:tsan_shared_enabled": [
+            ":tsan_shared_linker_flags",
         ],
         "//conditions:default": [],
     }),
@@ -628,6 +645,31 @@ cc_args(
     ],
 )
 
+# -Wno-macro-redefined: the asan runtime redefines _FORTIFY_SOURCE (error under -Werror).
+cc_args(
+    name = "asan_shared_compiler_flags",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:compile_actions",
+    ],
+    args = [
+        "-Wno-macro-redefined",
+    ],
+)
+
+# -Wl,--allow-shlib-undefined: don't require data deps to resolve the asan DSO's
+# undefined symbols.
+cc_args(
+    name = "asan_shared_linker_flags",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    args = [
+        "-shared-libsan",
+        "-frtlib-add-rpath",
+        "-Wl,--allow-shlib-undefined",
+    ],
+)
+
 cc_args_list(
     name = "asan_flags",
     args = select({
@@ -638,6 +680,12 @@ cc_args_list(
         "//config:host_asan_enabled": [
             ":asan_compiler_flags",
             ":asan_linker_flags",
+        ],
+        "//conditions:default": [],
+    }) + select({
+        "//config:asan_shared_enabled": [
+            ":asan_shared_compiler_flags",
+            ":asan_shared_linker_flags",
         ],
         "//conditions:default": [],
     }),

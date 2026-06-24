@@ -1,5 +1,6 @@
 load("@bazel_features//:features.bzl", "bazel_features")
 load("@bazel_lib//lib:transitions.bzl", "platform_transition_binary", "platform_transition_filegroup")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@llvm//:defs.bzl", "exec_test")
 load("@llvm//3rd_party/gcc:version.bzl", "DEFAULT_GCC_VERSION", "libstdcxx_constraint_value")
@@ -15,6 +16,7 @@ load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load(
     "//:defs.bzl",
     "asan_cc_binary",
+    "asan_shared_cc_binary",
     "cfi_cc_binary",
     "dfsan_cc_binary",
     "fission_cc_binary",
@@ -28,6 +30,7 @@ load(
     "rtsan_cc_binary",
     "safestack_cc_binary",
     "tsan_cc_binary",
+    "tsan_shared_cc_binary",
     "tysan_cc_binary",
     "ubsan_cc_binary",
     "xray_cc_binary",
@@ -732,6 +735,149 @@ exec_test(
     data = [":asan_fail"],
     env = {"BINARY": "$(rootpath :asan_fail)"},
     rule = sh_test,
+)
+
+# Shared (DSO) sanitizer runtime tests (--@llvm//config:shared_sanitizer).
+
+_LINUX_ONLY = select({
+    "@platforms//os:linux": [],
+    "//conditions:default": ["@platforms//:incompatible"],
+})
+
+_LINUX_X86_64_ONLY = select({
+    "@llvm//platforms/config:linux_x86_64": [],
+    "//conditions:default": ["@platforms//:incompatible"],
+})
+
+asan_shared_cc_binary(
+    name = "asan_shared_fail",
+    srcs = ["asan_fail.cc"],
+    linkopts = [
+        "-Wl,--icf=none",
+    ],
+    target_compatible_with = _LINUX_ONLY,
+)
+
+tsan_shared_cc_binary(
+    name = "tsan_shared_fail",
+    srcs = ["tsan_fail.cc"],
+    target_compatible_with = _LINUX_X86_64_ONLY,
+)
+
+# End-to-end: the shared-runtime binary loads the DSO and the sanitizer fires.
+exec_test(
+    name = "asan_shared_output_test",
+    srcs = ["asan_shared_output_test.sh"],
+    data = [
+        ":asan_shared_fail",
+        "@llvm//runtimes/compiler-rt:clang_rt.asan.shared",
+    ],
+    env = {
+        "BINARY": "$(rlocationpath :asan_shared_fail)",
+        "DSO": "$(rlocationpath @llvm//runtimes/compiler-rt:clang_rt.asan.shared)",
+    },
+    rule = sh_test,
+    target_compatible_with = _LINUX_ONLY,
+    deps = ["@bazel_tools//tools/bash/runfiles"],
+)
+
+exec_test(
+    name = "tsan_shared_output_test",
+    srcs = ["tsan_shared_output_test.sh"],
+    data = [
+        ":tsan_shared_fail",
+        "@llvm//runtimes/compiler-rt:clang_rt.tsan.shared",
+    ],
+    env = {
+        "BINARY": "$(rlocationpath :tsan_shared_fail)",
+        "DSO": "$(rlocationpath @llvm//runtimes/compiler-rt:clang_rt.tsan.shared)",
+    },
+    rule = sh_test,
+    target_compatible_with = _LINUX_X86_64_ONLY,
+    deps = ["@bazel_tools//tools/bash/runfiles"],
+)
+
+# The DSO is self-contained and exports the sanitizer interface.
+sh_test(
+    name = "asan_shared_dso_test",
+    srcs = ["shared_sanitizer_dso_test.sh"],
+    data = [
+        "@llvm//runtimes/compiler-rt:clang_rt.asan.shared",
+        "@llvm//tools:llvm-nm",
+        "@llvm//tools:llvm-readelf",
+    ],
+    env = {
+        "DSO": "$(rlocationpath @llvm//runtimes/compiler-rt:clang_rt.asan.shared)",
+        "IFACE_PREFIX": "__asan_",
+        "NM": "$(rlocationpath @llvm//tools:llvm-nm)",
+        "READELF": "$(rlocationpath @llvm//tools:llvm-readelf)",
+    },
+    target_compatible_with = _LINUX_ONLY,
+    deps = ["@bazel_tools//tools/bash/runfiles"],
+)
+
+sh_test(
+    name = "tsan_shared_dso_test",
+    srcs = ["shared_sanitizer_dso_test.sh"],
+    data = [
+        "@llvm//runtimes/compiler-rt:clang_rt.tsan.shared",
+        "@llvm//tools:llvm-nm",
+        "@llvm//tools:llvm-readelf",
+    ],
+    env = {
+        "DSO": "$(rlocationpath @llvm//runtimes/compiler-rt:clang_rt.tsan.shared)",
+        "IFACE_PREFIX": "__tsan_",
+        "NM": "$(rlocationpath @llvm//tools:llvm-nm)",
+        "READELF": "$(rlocationpath @llvm//tools:llvm-readelf)",
+    },
+    target_compatible_with = _LINUX_X86_64_ONLY,
+    deps = ["@bazel_tools//tools/bash/runfiles"],
+)
+
+# Static build has no sanitizer DSO dep; the shared build does.
+sh_test(
+    name = "asan_shared_link_mode_test",
+    srcs = ["shared_sanitizer_link_mode_test.sh"],
+    data = [
+        ":asan_fail",
+        ":asan_shared_fail",
+        "@llvm//tools:llvm-readelf",
+    ],
+    env = {
+        "READELF": "$(rlocationpath @llvm//tools:llvm-readelf)",
+        "SHARED_BIN": "$(rlocationpath :asan_shared_fail)",
+        "STATIC_BIN": "$(rlocationpath :asan_fail)",
+    },
+    target_compatible_with = _LINUX_ONLY,
+    deps = ["@bazel_tools//tools/bash/runfiles"],
+)
+
+sh_test(
+    name = "tsan_shared_link_mode_test",
+    srcs = ["shared_sanitizer_link_mode_test.sh"],
+    data = [
+        ":tsan_fail",
+        ":tsan_shared_fail",
+        "@llvm//tools:llvm-readelf",
+    ],
+    env = {
+        "READELF": "$(rlocationpath @llvm//tools:llvm-readelf)",
+        "SHARED_BIN": "$(rlocationpath :tsan_shared_fail)",
+        "STATIC_BIN": "$(rlocationpath :tsan_fail)",
+    },
+    target_compatible_with = _LINUX_X86_64_ONLY,
+    deps = ["@bazel_tools//tools/bash/runfiles"],
+)
+
+# Build coverage that the aliases resolve and the DSOs link.
+build_test(
+    name = "shared_sanitizer_targets_build_test",
+    target_compatible_with = _LINUX_ONLY,
+    targets = [
+        "@llvm//runtimes/compiler-rt:clang_rt.asan.shared",
+        "@llvm//runtimes/compiler-rt:clang_rt.asan-preinit.static",
+        "@llvm//runtimes/compiler-rt:clang_rt.tsan.shared",
+    ],
 )
 
 lsan_cc_binary(

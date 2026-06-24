@@ -2304,6 +2304,114 @@ cc_runtime_stage0_static_library(
     ],
 )
 
+# The static tsan library is compiled -fPIE, the shared runtime is compiled -fPIC.
+TSAN_RTL_CFLAGS_PIC = SANITIZER_COMMON_CFLAGS + [
+    "-fno-rtti",
+    "-fPIC",
+]
+
+cc_library(
+    name = "tsan_pic",
+    srcs = [
+        "lib/builtins/assembly.h",
+        ":tsan_preinit_sources",
+        ":tsan_rtl_headers",
+        ":tsan_rtl_sources",
+        ":ubsan_headers",
+    ],
+    copts = TSAN_RTL_CFLAGS_PIC,
+    implementation_deps = [
+        ":interception_impl_headers",
+        ":libcxx_headers",
+        ":sanitizer_impl_headers",
+    ],
+    includes = ["lib"],
+    textual_hdrs = [
+        "lib/tsan/rtl/tsan_flags.inc",
+        "lib/tsan/rtl/tsan_interface.inc",
+    ],
+)
+
+cc_library(
+    name = "tsan_cxx_pic",
+    srcs = [
+        ":tsan_rtl_cxx_sources",
+        ":tsan_rtl_headers",
+        ":ubsan_headers",
+    ],
+    copts = TSAN_RTL_CFLAGS_PIC,
+    implementation_deps = [
+        ":interception_impl_headers",
+        ":libcxx_headers",
+        ":sanitizer_impl_headers",
+    ],
+    includes = ["lib"],
+    textual_hdrs = [
+        "lib/tsan/rtl/tsan_flags.inc",
+        "lib/tsan/rtl/tsan_interface.inc",
+    ],
+)
+
+# Drops :sanitizer_common_symbolizer_internal; the DSO symbolizes via external llvm-symbolizer.
+cc_library(
+    name = "tsan_common_runtime",
+    deps = [
+        ":interception",
+        ":sanitizer_common",
+        ":sanitizer_common_coverage",
+        ":sanitizer_common_libc",
+        ":sanitizer_common_symbolizer",
+        ":ubsan_no_standalone",
+    ],
+)
+
+cc_library(
+    name = "tsan_dynamic",
+    deps = [
+        ":tsan_cxx_pic",
+        ":tsan_pic",
+    ],
+)
+
+cc_runtime_stage0_shared_library(
+    name = "tsan.shared",
+    additional_linker_inputs = select({
+        "@llvm//platforms/config:gnu": [
+            "@llvm//runtimes/glibc:glibc_library_search_directory",
+        ],
+        "@llvm//platforms/config:musl": [
+            "@llvm//runtimes/musl:musl_library_search_directory",
+        ],
+        "//conditions:default": [],
+    }),
+    shared_lib_name = "libclang_rt.tsan.so",
+    user_link_flags = select({
+        "@llvm//platforms/config:gnu": [
+            "-L$(location @llvm//runtimes/glibc:glibc_library_search_directory)",
+            "-lc",
+            "-ldl",
+            "-lm",
+            "-lpthread",
+            "-Wl,--allow-multiple-definition",
+        ],
+        "@llvm//platforms/config:musl": [
+            "-L$(location @llvm//runtimes/musl:musl_library_search_directory)",
+            "-lc",
+        ],
+        "//conditions:default": [],
+    }),
+    visibility = ["//visibility:public"],
+    deps = [
+        # builtins + libcxxabi + libunwind supply __gcc_personality_v0 /
+        # __gxx_personality_v0 / _Unwind_* for the DSO.
+        ":builtins",
+        ":tsan_common_runtime",
+        ":tsan_dynamic",
+        "@llvm-project//libcxxabi:libcxxabi",
+        "@llvm-project//libunwind:libunwind",
+    ],
+)
+
 ###
 ### compile-rt/lib/lsan/CMakeLists.txt.
 ###
@@ -2963,12 +3071,10 @@ ASAN_CFLAGS = SANITIZER_COMMON_CFLAGS + [
     "-Wno-format",
 ]
 
-# buildifier: disable=unused-variable
 ASAN_DYNAMIC_CFLAGS = [
     "-ftls-model=initial-exec",
 ]
 
-# buildifier: disable=unused-variable
 ASAN_DYNAMIC_COMMON_DEFINITIONS = [
     "ASAN_DYNAMIC=1",
 ]
@@ -3081,6 +3187,116 @@ cc_library(
     ],
 )
 
+# Forks of :asan / :lsan_common / :asan_common_runtime that drop
+# :sanitizer_common_symbolizer_internal (the in-process LLVM symbolizer) from the
+# DSO; it symbolizes via external llvm-symbolizer. The originals keep it for the
+# static runtimes (asan.static, lsan.static).
+cc_library(
+    name = "lsan_common_dynamic",
+    srcs = [
+        ":lsan_common_sources",
+        ":lsan_headers",
+    ],
+    copts = LSAN_CFLAGS,
+    implementation_deps = [
+        ":libcxx_headers",
+    ],
+    includes = ["lib"],
+    textual_hdrs = [
+        "lib/lsan/lsan_flags.inc",
+    ],
+    deps = [
+        ":sanitizer_common",
+        ":sanitizer_common_coverage",
+        ":sanitizer_common_libc",
+        ":sanitizer_common_symbolizer",
+    ],
+    alwayslink = True,
+)
+
+cc_library(
+    name = "asan_dynamic_runtime",
+    copts = ASAN_CFLAGS,
+    deps = [
+        ":interception",
+        ":lsan_common_dynamic",
+        ":sanitizer_common",
+        ":sanitizer_common_coverage",
+        ":sanitizer_common_libc",
+        ":sanitizer_common_symbolizer",
+        ":ubsan_no_standalone",
+    ],
+)
+
+cc_library(
+    name = "asan_no_internal_symbolizer",
+    srcs = [
+        ":asan_headers",
+        ":asan_sources",
+        ":ubsan_headers",
+    ],
+    copts = [
+        # The AddressSanitizer run-time should not be instrumented by AddressSanitizer.
+        "-fno-sanitize=address",
+    ] + select({
+        # Upstream adds these via SANITIZER_COMMON_CFLAGS for all supported platforms.
+        "@platforms//os:windows": [],
+        "//conditions:default": [
+            "-fPIC",
+            "-fvisibility=hidden",
+            "-fvisibility-inlines-hidden",
+        ],
+    }) + ASAN_DYNAMIC_CFLAGS,
+    implementation_deps = [
+        ":interception_impl_headers",
+        ":libcxx_headers",
+        ":lsan_common_headers",
+        ":sanitizer_impl_headers",
+    ],
+    includes = ["lib"],
+    # ASAN_DYNAMIC=1; without it the DSO fails asan's "incompatible ASan runtimes" check at load.
+    local_defines = ASAN_DYNAMIC_COMMON_DEFINITIONS,
+    textual_hdrs = [
+        "lib/asan/asan_activation_flags.inc",
+        "lib/asan/asan_flags.inc",
+        "lib/asan/asan_interface.inc",
+        ":sanitizer_common_interceptors_vfork_sources",
+    ],
+    deps = [
+        ":interception",
+        ":lsan_common_dynamic",
+        ":sanitizer_common",
+        ":sanitizer_common_coverage",
+        ":sanitizer_common_libc",
+        ":sanitizer_common_symbolizer",
+    ],
+)
+
+cc_library(
+    name = "asan_cxx_dynamic",
+    srcs = [
+        ":asan_cxx_sources",
+        ":asan_headers",
+    ],
+    copts = ASAN_CFLAGS + ASAN_DYNAMIC_CFLAGS,
+    implementation_deps = [
+        ":libcxx_headers",
+    ],
+    local_defines = ASAN_DYNAMIC_COMMON_DEFINITIONS,
+    deps = [
+        ":interception_impl_headers",
+        ":sanitizer_impl_headers",
+    ],
+)
+
+cc_library(
+    name = "asan_dynamic_shared",
+    deps = [
+        ":asan_cxx_dynamic",
+        ":asan_no_internal_symbolizer",
+    ],
+)
+
 ##
 
 cc_runtime_stage0_static_library(
@@ -3132,12 +3348,17 @@ cc_runtime_stage0_shared_library(
     shared_lib_name = select({
         # Darwin ships asan as a dylib named libclang_rt.asan_osx_dynamic.dylib.
         "@platforms//os:macos": "libclang_rt.asan_osx_dynamic.dylib",
-        "//conditions:default": "libasan.shared.so",
+        "//conditions:default": "libclang_rt.asan.so",
     }),
     user_link_flags = select({
         "@llvm//platforms/config:gnu": [
             "-L$(location @llvm//runtimes/glibc:glibc_library_search_directory)",
             "-lc",
+            "-ldl",
+            "-lm",
+            "-lpthread",
+            "-lrt",
+            "-Wl,--allow-multiple-definition",
         ],
         "@llvm//platforms/config:musl": [
             "-L$(location @llvm//runtimes/musl:musl_library_search_directory)",
@@ -3165,7 +3386,10 @@ cc_runtime_stage0_shared_library(
     }),
     visibility = ["//visibility:public"],
     deps = [
-        ":asan_common_runtime",
-        ":asan_dynamic",
+        # libcxxabi/libunwind supply __gxx_personality_v0 / _Unwind_* for the DSO.
+        ":asan_dynamic_runtime",
+        ":asan_dynamic_shared",
+        "@llvm-project//libcxxabi:libcxxabi",
+        "@llvm-project//libunwind:libunwind",
     ],
 )

@@ -154,3 +154,25 @@ def config_settings():
             build_setting_default = False,
         )
         _declare_sanitizer_config_setting(sanitizer)
+
+    # Opt-in: link the shared (DSO) sanitizer runtimes instead of the static archives.
+    bool_flag(
+        name = "shared_sanitizer",
+        build_setting_default = False,
+    )
+    native.config_setting(
+        name = "shared_sanitizer_enabled",
+        flag_values = {
+            ":shared_sanitizer": "true",
+        },
+    )
+
+    # True when the sanitizer is enabled and shared linking is opted in.
+    for sanitizer in ["asan", "tsan"]:
+        selects.config_setting_group(
+            name = sanitizer + "_shared_enabled",
+            match_all = [
+                ":{}_enabled".format(sanitizer),
+                ":shared_sanitizer_enabled",
+            ],
+        )

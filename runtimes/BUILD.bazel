@@ -246,7 +246,6 @@ copy_to_resource_directory(
             "//runtimes/compiler-rt:clang_rt.asan_cxx.static": "libclang_rt.asan_cxx",
             "//runtimes/compiler-rt:clang_rt.asan_static.static": "libclang_rt.asan_static",
             "//runtimes/compiler-rt:clang_rt.asan.static": "libclang_rt.asan",
-            "//runtimes/compiler-rt:clang_rt.asan.shared": "libclang_rt.asan",
         },
         "//conditions:default": {},
     }) | select({
@@ -256,6 +255,18 @@ copy_to_resource_directory(
         "//config:xray_enabled": {
             "//runtimes/compiler-rt:clang_rt.xray.static": "libclang_rt.xray",
             "//runtimes/compiler-rt:clang_rt.xray_basic.static": "libclang_rt.xray-basic",
+        },
+        "//conditions:default": {},
+    }) | select({
+        # Staged only when shared linking is opted in.
+        "//config:tsan_shared_enabled": {
+            "//runtimes/compiler-rt:clang_rt.tsan.shared": "libclang_rt.tsan",
+        },
+        "//conditions:default": {},
+    }) | select({
+        "//config:asan_shared_enabled": {
+            "//runtimes/compiler-rt:clang_rt.asan.shared": "libclang_rt.asan",
+            "//runtimes/compiler-rt:clang_rt.asan-preinit.static": "libclang_rt.asan-preinit",
         },
         "//conditions:default": {},
     }),
