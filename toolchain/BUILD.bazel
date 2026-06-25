@@ -131,6 +131,7 @@ cc_args_list(
         ],
         "@platforms//os:linux": [
             "//toolchain/args/linux:default_link_flags",
+            "//toolchain/args/linux:non_pie_executable_link_flags",
         ],
         "@platforms//os:windows": [],
         "@platforms//os:none": [],
