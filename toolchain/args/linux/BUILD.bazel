@@ -21,12 +21,12 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:link_executable_actions",
     ],
     # Clang 22 defaults Linux links to PIE. Preserve Bazel's non-force_pic
-    # executable semantics for GNU targets while still letting force_pic's
-    # later -pie flag win.
+    # executable semantics for GNU targets.
     args = select({
         "//platforms/config:gnu": ["-no-pie"],
         "//conditions:default": [],
     }),
+    requires_none = "@rules_cc//cc/toolchains/variables:force_pic",
 )
 
 cc_args(
