@@ -9,12 +9,14 @@ package(default_visibility = ["//visibility:public"])
 
 cc_sysroot(
     name = "macos_sdk_sysroot",
-    allowlist_include_directories = [
-        "@macos_sdk//sysroot",
+    allowlist_include_directories = ["@macos_sdk//sysroot"],
+    # NOTE: cc_sysroot automatically passes --sysroot=, but clang has some
+    # defaulting logic if we don't also pass -isysroot
+    args = [
+        "-isysroot",
+        "{sysroot}",
     ],
-    data = [
-        "@macos_sdk//sysroot",
-    ],
+    data = ["@macos_sdk//sysroot"],
     sysroot = "@macos_sdk//sysroot",
 )
 
