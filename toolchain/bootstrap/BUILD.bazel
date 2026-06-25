@@ -29,6 +29,7 @@ bzl_library(
     name = "transition_settings",
     srcs = ["transition_settings.bzl"],
     visibility = ["//visibility:public"],
+    deps = ["@llvm_config//:version"],
 )
 
 bzl_library(

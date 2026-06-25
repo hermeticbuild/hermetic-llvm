@@ -1,10 +1,13 @@
 """Shared settings for LLVM bootstrap transitions."""
 
+load("@llvm_config//:version.bzl", "LLVM_VERSION_MAJOR")
+
 # Enable the same set of tools we provide with prebuilts.
-LLVM_TOOLS = [
+LLVM_TOOLS = ([
     "clang-format",
     "clang-tidy",
     "clangd",
+] if int(LLVM_VERSION_MAJOR) >= 22 else []) + [
     "clang",
     "clang-scan-deps",
     "dsymutil",

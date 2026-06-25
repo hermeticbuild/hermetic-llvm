@@ -155,6 +155,48 @@ jobs:
             --remote_header=x-buildbuddy-api-key=4jtaxdhxtyu4ylxdEwI7 \
             //:main_default
 
+  llvm_version_analysis:
+    strategy:
+      fail-fast: false
+      matrix:
+        # Normal CI covers the current LLVM release. Keep one release for each
+        # supported prior LLVM major here.
+        llvm_version: ["21.1.8"]
+    runs-on: ubuntu-latest
+    name: Analyze LLVM ${{ matrix.llvm_version }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Select LLVM ${{ matrix.llvm_version }}
+        env:
+          LLVM_VERSION: ${{ matrix.llvm_version }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          module_file = Path("MODULE.bazel")
+          module_text = module_file.read_text()
+          module_text, replacement_count = re.subn(
+              r'^LLVM_VERSION = "[^"]+"$',
+              f'LLVM_VERSION = "{os.environ["LLVM_VERSION"]}"',
+              module_text,
+              count=1,
+              flags=re.MULTILINE,
+          )
+          if replacement_count != 1:
+              raise SystemExit("Expected exactly one LLVM_VERSION assignment in MODULE.bazel")
+          module_file.write_text(module_text)
+          PY
+
+      - name: Analyze LLVM ${{ matrix.llvm_version }} driver
+        shell: bash
+        run: |
+          bazel build --nobuild //toolchain/bootstrap/stage1:llvm
+
   docs:
     runs-on: macos-15-intel
     name: Verify public docs generation
