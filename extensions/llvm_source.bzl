@@ -22,11 +22,11 @@ _DEFAULT_SOURCE_PATCHES = [
     "//3rd_party/llvm-project/x.x/patches:pfm-rules-cc-load.patch",
     "//3rd_party/llvm-project/x.x/patches:clang-hardlink-filenames.patch",
     "//3rd_party/llvm-project/x.x/patches:llvm-configure-non-reproducible.patch",
-    "//3rd_party/llvm-project/x.x/patches:lld-coff-thinlto-lazy-index.patch",
     "//3rd_party/llvm-project/x.x/patches:lld-macho-thinlto-obj-path.patch",
 ]
 
 _LLVM_21_SOURCE_PATCHES = _DEFAULT_SOURCE_PATCHES + [
+    "//3rd_party/llvm-project/21.x/patches:lld-coff-thinlto-lazy-index.patch",
     "//3rd_party/llvm-project/21.x/patches:llvm-link-multicall.patch",
     "//3rd_party/llvm-project/21.x/patches:llvm-bazel9.patch",
     "//3rd_party/llvm-project/21.x/patches:windows_link_and_genrule.patch",
@@ -41,6 +41,7 @@ _LLVM_21_SOURCE_PATCHES = _DEFAULT_SOURCE_PATCHES + [
 ]
 
 _LLVM_22_SOURCE_PATCHES = _DEFAULT_SOURCE_PATCHES + [
+    "//3rd_party/llvm-project/22.x/patches:lld-coff-thinlto-lazy-index.patch",
     "//3rd_party/llvm-project/22.x/patches:llvm-link-multicall.patch",
     "//3rd_party/llvm-project/22.x/patches:llvm-profdata-multicall.patch",
     "//3rd_party/llvm-project/22.x/patches:clang-format-multicall.patch",
