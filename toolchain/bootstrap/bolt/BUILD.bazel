@@ -1,0 +1,20 @@
+load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load("//toolchain/bootstrap:bootstrap_binary.bzl", "bootstrap_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+bootstrap_binary(
+    name = "llvm-bolt",
+    actual = "@llvm-project//bolt:llvm-bolt",
+    is_after_stage1 = True,
+)
+
+bzl_library(
+    name = "bolt",
+    srcs = ["bolt.bzl"],
+    deps = [
+        "@rules_cc//cc:action_names_bzl",
+        "@rules_cc//cc:find_cc_toolchain_bzl",
+        "@rules_cc//cc/common",
+    ],
+)

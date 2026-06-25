@@ -23,6 +23,7 @@ _DEFAULT_SOURCE_PATCHES = [
     "//3rd_party/llvm-project/x.x/patches:clang-hardlink-filenames.patch",
     "//3rd_party/llvm-project/x.x/patches:llvm-configure-non-reproducible.patch",
     "//3rd_party/llvm-project/x.x/patches:lld-macho-thinlto-obj-path.patch",
+    "//3rd_party/llvm-project/x.x/patches:bolt-bazel-runtime-and-targets.patch",
 ]
 
 _LLVM_21_SOURCE_PATCHES = _DEFAULT_SOURCE_PATCHES + [
@@ -55,13 +56,20 @@ _LLVM_22_SOURCE_PATCHES = _DEFAULT_SOURCE_PATCHES + [
     "//3rd_party/llvm-project/22.x/patches:llvm-bazel-blake3-windows-gnu.patch",
     "//3rd_party/llvm-project/x.x/patches:llvm-abi-breaking-checks.patch",
     "//3rd_party/llvm-project/22.x/patches:thinlto-roundtrip-before-codegen.patch",
+    "//3rd_party/llvm-project/22.x/patches:bolt-static-pie-instrumentation.patch",
+]
+
+_LLVM_23_SOURCE_PATCHES = [
+    patch
+    for patch in _LLVM_22_SOURCE_PATCHES
+    if patch != "//3rd_party/llvm-project/22.x/patches:bolt-static-pie-instrumentation.patch"
 ]
 
 _LLVM_PATCHES_BY_MAJOR = {
     21: _LLVM_21_SOURCE_PATCHES,
     22: _LLVM_22_SOURCE_PATCHES,
     # So that anyone can test with the next LLVM major easily.
-    23: _LLVM_22_SOURCE_PATCHES,
+    23: _LLVM_23_SOURCE_PATCHES,
 }
 
 _LLVM_PROJECT_OVERLAY_FILES = {

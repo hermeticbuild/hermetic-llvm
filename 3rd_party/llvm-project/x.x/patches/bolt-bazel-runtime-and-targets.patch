@@ -1,0 +1,100 @@
+diff --git a/utils/bazel/llvm-project-overlay/bolt/BUILD.bazel b/utils/bazel/llvm-project-overlay/bolt/BUILD.bazel
+index 167447db86f0..b62b58c0e7bf 100644
+--- a/utils/bazel/llvm-project-overlay/bolt/BUILD.bazel
++++ b/utils/bazel/llvm-project-overlay/bolt/BUILD.bazel
+@@ -6,5 +6,14 @@
+ load(":targets.bzl", "bolt_targets")
+ 
++_BOLT_REWRITE_TARGETS = [
++    target
++    for target in bolt_targets
++    if target in [
++        "AArch64",
++        "X86",
++    ]
++]
++
+ package(
+     default_visibility = ["//visibility:public"],
+ )
+@@ -61,6 +70,45 @@ cc_binary(
+     ],
+ )
+ 
++expand_template(
++    name = "runtime_config",
++    out = "runtime/config.h",
++    substitutions = {
++        "#cmakedefine HAVE_ELF_H": "#define HAVE_ELF_H",
++    },
++    template = "runtime/config.h.in",
++)
++
++cc_library(
++    name = "bolt_rt_instr",
++    srcs = ["runtime/instr.cpp"],
++    hdrs = glob([
++        "runtime/*.h",
++    ]) + [":runtime_config"],
++    copts = [
++        "-ffreestanding",
++        "-fno-exceptions",
++        "-fno-rtti",
++        "-fno-stack-protector",
++        "-fPIC",
++        "-fomit-frame-pointer",
++    ] + select({
++        "@platforms//cpu:aarch64": [
++            "-mgeneral-regs-only",
++            "-mno-outline-atomics",
++        ],
++        "@platforms//cpu:x86_64": [
++            "-mgeneral-regs-only",
++            "-mno-sse",
++        ],
++        "//conditions:default": [],
++    }),
++    features = ["-thin_lto"],
++    includes = ["runtime"],
++    linkstatic = True,
++    target_compatible_with = ["@platforms//os:linux"],
++)
++
+ cc_binary(
+     name = "llvm-bolt",
+     srcs = glob([
+@@ -71,9 +119,11 @@ cc_binary(
+         ":Profile",
+         ":Rewrite",
+         ":RuntimeLibs",
+-        ":TargetAArch64",
+         ":TargetConfig",
+-        ":TargetX86",
++    ] + [
++        ":Target" + target
++        for target in _BOLT_REWRITE_TARGETS
++    ] + [
+         ":Utils",
+         "//llvm:AllTargetsAsmParsers",
+         "//llvm:AllTargetsCodeGens",
+@@ -94,12 +144,19 @@ cc_library(
+         "include/bolt/Rewrite/*.h",
+     ]),
+     includes = ["include"],
++    local_defines = [
++        target.upper() + "_AVAILABLE"
++        for target in _BOLT_REWRITE_TARGETS
++    ],
+     deps = [
+         ":Core",
+         ":Passes",
+         ":Profile",
+         ":RuntimeLibs",
+-        ":TargetX86",
++    ] + [
++        ":Target" + target
++        for target in _BOLT_REWRITE_TARGETS
++    ] + [
+         ":Utils",
+         "//llvm:Analysis",
+         "//llvm:BinaryFormat",

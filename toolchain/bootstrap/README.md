@@ -1,7 +1,8 @@
 # Bootstrap toolchain
 
 This package holds the LLVM bootstrap binaries, FDO profile generation rules,
-and source-built C++ toolchains. The bootstrap stages are:
+BOLT profile generation rules, and source-built C++ toolchains. The bootstrap
+stages are:
 
 1. `stage0_prebuilt_seed` compiles the stage1 LLVM binaries from source.
 2. `stage1_from_source` compiles the stage2 LLVM binaries with ThinLTO and FDO
@@ -15,4 +16,7 @@ and source-built C++ toolchains. The bootstrap stages are:
 `//toolchain/bootstrap/stage1:<tool>` builds the stage1 variant.
 `//toolchain/bootstrap/stage2:<tool>` builds the stage2 variant.
 `//toolchain/bootstrap/stage3:<tool>` builds the stage3 variant.
-`//prebuilt/llvm:all` packages `//toolchain/bootstrap/stage3:llvm`.
+`//prebuilt/llvm:all` runs BOLT instrumentation and BOLT optimization on
+`//toolchain/bootstrap/stage3:llvm` for Linux x86_64 and Linux AArch64 release
+archives. macOS and Windows release archives package
+`//toolchain/bootstrap/stage3:llvm` without BOLT optimization.
