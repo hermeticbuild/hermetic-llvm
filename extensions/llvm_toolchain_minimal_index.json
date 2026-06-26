@@ -1,10 +1,37 @@
 {
   "latest_by_llvm_version": {
+    "21.1.8": "llvm-21.1.8-10",
     "22.1.6": "llvm-22.1.6-1",
     "22.1.7": "llvm-22.1.7-2",
     "22.1.8": "llvm-22.1.8-1"
   },
   "releases": {
+    "llvm-21.1.8-10": {
+      "darwin-amd64": {
+        "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-21.1.8-10/llvm-toolchain-minimal-21.1.8-darwin-amd64.tar.zst",
+        "sha256": "1b94e73014a6fc025bf5e8aa1d6de9b8d9b956449cb5877d2b7cc9318b82fbca"
+      },
+      "darwin-arm64": {
+        "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-21.1.8-10/llvm-toolchain-minimal-21.1.8-darwin-arm64.tar.zst",
+        "sha256": "63227da57eae05cfe44ccd288abe30426767f94443b473a19b9a478d39b43c23"
+      },
+      "linux-amd64-musl": {
+        "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-21.1.8-10/llvm-toolchain-minimal-21.1.8-linux-amd64-musl.tar.zst",
+        "sha256": "76ea940cfe14859b78e6175ebae9176a92f3b4e3a5a5e3f4488d2a0853f01cd0"
+      },
+      "linux-arm64-musl": {
+        "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-21.1.8-10/llvm-toolchain-minimal-21.1.8-linux-arm64-musl.tar.zst",
+        "sha256": "ac70f0b0f448e7d6e36784877f8df533beb91e7ea7a61fc724e09a962adfb101"
+      },
+      "windows-amd64": {
+        "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-21.1.8-10/llvm-toolchain-minimal-21.1.8-windows-amd64.tar.zst",
+        "sha256": "f2f78e4ecf917135d231afb9000786a7555472ff356cd308aa1a35be04422a3c"
+      },
+      "windows-arm64": {
+        "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-21.1.8-10/llvm-toolchain-minimal-21.1.8-windows-arm64.tar.zst",
+        "sha256": "450cb7a89396874029a27d674faa8d9340421afa19e90d4bf3ae20faba7e931f"
+      }
+    },
     "llvm-22.1.6-1": {
       "darwin-amd64": {
         "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-22.1.6-1/llvm-toolchain-minimal-22.1.6-darwin-amd64.tar.zst",
