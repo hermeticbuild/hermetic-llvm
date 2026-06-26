@@ -23,6 +23,7 @@ _DEFAULT_SOURCE_PATCHES = [
     "//3rd_party/llvm-project/x.x/patches:clang-hardlink-filenames.patch",
     "//3rd_party/llvm-project/x.x/patches:llvm-configure-non-reproducible.patch",
     "//3rd_party/llvm-project/x.x/patches:lld-macho-thinlto-obj-path.patch",
+    "//3rd_party/llvm-project/x.x/patches:thinlto-roundtrip-before-codegen.patch",
 ]
 
 _LLVM_21_SOURCE_PATCHES = _DEFAULT_SOURCE_PATCHES + [
@@ -54,7 +55,6 @@ _LLVM_22_SOURCE_PATCHES = _DEFAULT_SOURCE_PATCHES + [
     "//3rd_party/llvm-project/22.x/patches:libcxx-lgamma_r.patch",
     "//3rd_party/llvm-project/22.x/patches:llvm-bazel-blake3-windows-gnu.patch",
     "//3rd_party/llvm-project/x.x/patches:llvm-abi-breaking-checks.patch",
-    "//3rd_party/llvm-project/22.x/patches:thinlto-roundtrip-before-codegen.patch",
 ]
 
 _LLVM_PATCHES_BY_MAJOR = {
