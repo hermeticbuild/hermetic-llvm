@@ -30,7 +30,7 @@ http_archive(
     urls = ["https://github.com/facebook/zstd/releases/download/v1.5.2/zstd-1.5.2.tar.gz"],
 )
 
-LLVM_VERSION = "22.1.7"
+LLVM_VERSION = "22.1.8"
 
 PREBUILT_LLVM_VERSION = "22.1.7"
 
