@@ -91,7 +91,7 @@ def _bootstrap_binary_impl(ctx):
         DefaultInfo(
             files = depset([out]),
             executable = out,
-            runfiles = actual.default_runfiles,
+            runfiles = ctx.runfiles(files = [exe]).merge(actual.default_runfiles),
         ),
     ]
 

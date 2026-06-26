@@ -321,6 +321,10 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
         }) + [
             prefix + "/bin/c++filt",
             prefix + "/bin/llvm-nm",
+            # CcToolchainInfo.all_files only includes rules_cc's
+            # LEGACY_FILE_GROUPS. Include llvm-profdata for
+            # LLVMFDOProfileMerge.
+            prefix + "/bin/llvm-profdata",
         ],
     )
 
