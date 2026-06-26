@@ -10,8 +10,9 @@ package(default_visibility = ["//visibility:public"])
 cc_sysroot(
     name = "macos_sdk_sysroot",
     allowlist_include_directories = ["@macos_sdk//sysroot"],
-    # NOTE: cc_sysroot automatically passes --sysroot=, but clang has some
-    # defaulting logic if we don't also pass -isysroot
+    # NOTE: cc_sysroot automatically passes --sysroot=, but Clang checks
+    # -isysroot, SDKROOT, then --sysroot:
+    # https://github.com/llvm/llvm-project/blob/8a531c3608c722ad529be448d6ecef06ba107228/clang/lib/Driver/ToolChains/Darwin.cpp#L2581-L2599
     args = [
         "-isysroot",
         "{sysroot}",
