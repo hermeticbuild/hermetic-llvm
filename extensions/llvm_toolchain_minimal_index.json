@@ -1,7 +1,8 @@
 {
   "latest_by_llvm_version": {
     "22.1.6": "llvm-22.1.6-1",
-    "22.1.7": "llvm-22.1.7-2"
+    "22.1.7": "llvm-22.1.7-2",
+    "22.1.8": "llvm-22.1.8-1"
   },
   "releases": {
     "llvm-22.1.6-1": {
@@ -80,6 +81,32 @@
       "windows-arm64": {
         "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-22.1.7-2/llvm-toolchain-minimal-22.1.7-windows-arm64.tar.zst",
         "sha256": "e35dc28b1f5aecc6ba3f78f6f5ef2d8cbd5fb682d36e4198b5a451acda471c47"
+      }
+    },
+    "llvm-22.1.8-1": {
+      "darwin-amd64": {
+        "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-22.1.8-1/llvm-toolchain-minimal-22.1.8-darwin-amd64.tar.zst",
+        "sha256": "fe044d62acf0b9aeaa8f1cf2ec9fa19fa4f4b9320a5e4152d91acde903dd809c"
+      },
+      "darwin-arm64": {
+        "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-22.1.8-1/llvm-toolchain-minimal-22.1.8-darwin-arm64.tar.zst",
+        "sha256": "53b7a8a8d4ff638c967e8cc4d19a796a82e1e082289afb2f1e30ca7432435b11"
+      },
+      "linux-amd64-musl": {
+        "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-22.1.8-1/llvm-toolchain-minimal-22.1.8-linux-amd64-musl.tar.zst",
+        "sha256": "89f29294a584267251edac00ab723a0a74514b8e1acb7f036840d13635c66bfa"
+      },
+      "linux-arm64-musl": {
+        "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-22.1.8-1/llvm-toolchain-minimal-22.1.8-linux-arm64-musl.tar.zst",
+        "sha256": "2914968f1fff964c654627599d15ade423e17ed310b09e2d6b61e82c16a1993d"
+      },
+      "windows-amd64": {
+        "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-22.1.8-1/llvm-toolchain-minimal-22.1.8-windows-amd64.tar.zst",
+        "sha256": "7109946742971dee78a325904bcfa414030317c26a84842b5998b15b5e2f7164"
+      },
+      "windows-arm64": {
+        "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-22.1.8-1/llvm-toolchain-minimal-22.1.8-windows-arm64.tar.zst",
+        "sha256": "b65f380f32cec910a761b5107a2fe25f8322c7e8a6561bfe40077e8360a2a647"
       }
     }
   }

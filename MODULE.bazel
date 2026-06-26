@@ -32,7 +32,7 @@ http_archive(
 
 LLVM_VERSION = "22.1.8"
 
-PREBUILT_LLVM_VERSION = "22.1.7"
+PREBUILT_LLVM_VERSION = "22.1.8"
 
 llvm_toolchain_minimal = use_extension("//extensions:llvm_toolchain_minimal.bzl", "llvm_toolchain_minimal")
 llvm_toolchain_minimal.index(file = "//extensions:llvm_toolchain_minimal_index.json")
@@ -41,12 +41,12 @@ llvm_toolchain_minimal.release(
 )
 use_repo(
     llvm_toolchain_minimal,
-    "llvm-toolchain-minimal-22.1.7-darwin-amd64",
-    "llvm-toolchain-minimal-22.1.7-darwin-arm64",
-    "llvm-toolchain-minimal-22.1.7-linux-amd64",
-    "llvm-toolchain-minimal-22.1.7-linux-arm64",
-    "llvm-toolchain-minimal-22.1.7-windows-amd64",
-    "llvm-toolchain-minimal-22.1.7-windows-arm64",
+    "llvm-toolchain-minimal-22.1.8-darwin-amd64",
+    "llvm-toolchain-minimal-22.1.8-darwin-arm64",
+    "llvm-toolchain-minimal-22.1.8-linux-amd64",
+    "llvm-toolchain-minimal-22.1.8-linux-arm64",
+    "llvm-toolchain-minimal-22.1.8-windows-amd64",
+    "llvm-toolchain-minimal-22.1.8-windows-arm64",
 )
 
 TOOLCHAIN_EXTRAS_SHA256 = {

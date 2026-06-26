@@ -1,6 +1,6 @@
 load("//platforms:common.bzl", "SUPPORTED_EXECS")
 
-LLVM_VERSION = "22.1.7"
+LLVM_VERSION = "22.1.8"
 
 def _tool_repo(exec_os, exec_cpu):
     os_part = "darwin" if exec_os == "macos" else exec_os
