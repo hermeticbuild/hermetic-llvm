@@ -10,15 +10,20 @@ index 570b8f9..c6be1ba 100644
 +++ b/lld/COFF/Driver.cpp
 @@ -14,0 +15 @@
 +#include "LTO.h"
-@@ -203 +204,2 @@ void LinkerDriver::addFile(InputFile *file) {
+@@ -200,9 +201,11 @@ void LinkerDriver::addFile(InputFile *file) {
+   Log(ctx) << "Reading " << toString(file);
+   if (file->lazy) {
 -    if (auto *f = dyn_cast<BitcodeFile>(file))
 +    if (auto *f = dyn_cast<BitcodeFile>(file)) {
 +      ctx.lazyBitcodeFileInstances.push_back(f);
-@@ -205 +207 @@ void LinkerDriver::addFile(InputFile *file) {
+       f->parseLazy();
 -    else
 +    } else {
-@@ -206,0 +209 @@ void LinkerDriver::addFile(InputFile *file) {
+       cast<ObjFile>(file)->parseLazy();
 +    }
+   } else {
+     file->parse();
+     if (auto *f = dyn_cast<ObjFile>(file)) {
 @@ -2650,0 +2654,2 @@ void LinkerDriver::linkerMain(ArrayRef<const char *> argsArr) {
 +  if (config->thinLTOIndexOnly)
 +    thinLTOCreateEmptyIndexFiles(ctx);
