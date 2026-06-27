@@ -1267,12 +1267,20 @@ cc_library(
     implementation_deps = [
         ":libcxx_headers",
         ":sanitizers_interface_headers",
+    ] + select({
         # sanitizer_symbolize.cpp compiles against LLVM's public headers
-        # (DIPrinter.h ...) and the generated Config/*.h. :config carries
-        # includes = ["include"] plus the generated config headers, which the
-        # overlay otherwise exposes only through the private llvm_copts.
-        "@llvm-project//llvm:config",
-    ],
+        # (DIPrinter.h ...) and the generated Config/*.h. On macOS the overlay
+        # exposes LLVM's include dirs only through the private llvm_copts, which
+        # does not propagate to dependents, so depend on :config (which carries
+        # includes = ["include"] plus the generated config headers). Other
+        # platforms already find these headers via the existing llvm deps.
+        #
+        # Keep this macOS-only: adding it everywhere fed the generated Config
+        # headers into the path-mapped compile and crashed Bazel 9 (last_rc)
+        # under --experimental_output_paths=strip on this target.
+        "@platforms//os:macos": ["@llvm-project//llvm:config"],
+        "//conditions:default": [],
+    }),
     includes = [
         "include",
         "lib",
