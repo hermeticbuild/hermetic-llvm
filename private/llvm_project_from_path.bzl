@@ -6,9 +6,9 @@ load(
 )
 
 def _materialize_third_party_build(rctx, source_root):
-    # symlink_source_and_overlay symlinks utils as one directory. Materialize
-    # utils/bazel/third_party_build before write_llvm_project_files overwrites
-    # its BUILD.bazel, so from_path does not modify source_root.
+    # symlink_source_and_overlay creates utils as a symlink to source_root/utils.
+    # Replace utils, utils/bazel, and utils/bazel/third_party_build with directories
+    # of symlinks before overwriting BUILD.bazel, so source_root remains unchanged.
     for directory in ["utils", "utils/bazel", "utils/bazel/third_party_build"]:
         rctx.delete(directory)
         target = rctx.path(directory)

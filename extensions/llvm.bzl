@@ -84,48 +84,29 @@ def _create_llvm_project_repository(mctx, source_archive, targets):
             if had_override:
                 fail("Only one LLVM source override is allowed")
             had_override = True
-            llvm_project_from_path(
-                name = "llvm-project",
-                path = tag.path,
-                targets = targets,
-            )
+            llvm_project_from_path(name = "llvm-project", path = tag.path, targets = targets)
 
         for tag in module.tags.from_git:
             if had_override:
                 fail("Only one LLVM source override is allowed")
             had_override = True
-            kwargs = structs.to_dict(tag)
-            kwargs["targets"] = targets
-            llvm_project_from_git(name = "llvm-project", **kwargs)
+            llvm_project_from_git(name = "llvm-project", targets = targets, **structs.to_dict(tag))
 
         for tag in module.tags.from_archive:
             if had_override:
                 fail("Only one LLVM source override is allowed")
             had_override = True
-
-            kwargs = structs.to_dict(tag)
-            kwargs["targets"] = targets
-            llvm_project_archive(name = "llvm-project", **kwargs)
+            llvm_project_archive(name = "llvm-project", targets = targets, **structs.to_dict(tag))
 
     if not had_override:
-        llvm_project_archive(
-            name = "llvm-project",
-            targets = targets,
-            **structs.to_dict(source_archive)
-        )
+        llvm_project_archive(name = "llvm-project", targets = targets, **structs.to_dict(source_archive))
 
 def _parse_llvm_major(llvm_version):
-    if not llvm_version:
-        fail("LLVM version must not be empty")
-
-    major_token = llvm_version.split(".", 1)[0]
-    if not major_token:
-        fail("Invalid LLVM version '{}': expected '<major>.<minor>.<patch>'".format(llvm_version))
-
-    if not major_token.isdigit():
+    major = llvm_version.partition(".")[0]
+    if not major.isdigit():
         fail("Invalid LLVM version '{}': expected numeric major version prefix".format(llvm_version))
 
-    return int(major_token)
+    return int(major)
 
 def _source_archive_for_version(llvm_version, llvm_version_index):
     major = _parse_llvm_major(llvm_version)

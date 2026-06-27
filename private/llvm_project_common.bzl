@@ -30,49 +30,45 @@ def _extract_cmake_settings(rctx, path):
 
         settings[key] = key_value[separator:].strip().partition(")")[0].partition(" ")[0]
 
-    settings["LLVM_VERSION"] = "{}.{}.{}".format(
-        settings["LLVM_VERSION_MAJOR"],
-        settings["LLVM_VERSION_MINOR"],
-        settings["LLVM_VERSION_PATCH"],
-    )
-    settings["PACKAGE_VERSION"] = "{}.{}.{}{}".format(
-        settings["LLVM_VERSION_MAJOR"],
-        settings["LLVM_VERSION_MINOR"],
-        settings["LLVM_VERSION_PATCH"],
-        settings["LLVM_VERSION_SUFFIX"],
-    )
     return settings
 
 def _write_llvm_vars(rctx):
     settings = _extract_cmake_settings(rctx, "llvm/CMakeLists.txt")
     version_settings = _extract_cmake_settings(rctx, "cmake/Modules/LLVMVersion.cmake")
     settings.update({key: value for key, value in version_settings.items() if value != None})
+    settings["LLVM_VERSION_SUFFIX"] = settings["LLVM_VERSION_SUFFIX"] or ""
+    settings["LLVM_VERSION"] = "{}.{}.{}".format(
+        settings["LLVM_VERSION_MAJOR"],
+        settings["LLVM_VERSION_MINOR"],
+        settings["LLVM_VERSION_PATCH"],
+    )
+    settings["PACKAGE_VERSION"] = settings["LLVM_VERSION"] + settings["LLVM_VERSION_SUFFIX"]
 
     content = "# Generated from llvm/CMakeLists.txt\n\n"
-    dictionary = "\nllvm_vars={\n"
+    dictionary = "\nllvm_vars = {\n"
     for key, value in settings.items():
         content += '{} = "{}"\n'.format(key, value)
         dictionary += '    "{}": "{}",\n'.format(key, value)
-    rctx.file("vars.bzl", content + dictionary + "}\n")
+    rctx.file("vars.bzl", content + dictionary + "}\n", executable = False)
 
 def _write_llvm_targets(rctx):
     rctx.file(
         "llvm/targets.bzl",
-        "llvm_targets = " + str(rctx.attr.targets),
+        "llvm_targets = {}\n".format(rctx.attr.targets),
         executable = False,
     )
 
     bolt_targets = [target for target in rctx.attr.targets if target in ["AArch64", "X86", "RISCV"]]
     rctx.file(
         "bolt/targets.bzl",
-        "bolt_targets = " + str(bolt_targets),
+        "bolt_targets = {}\n".format(bolt_targets),
         executable = False,
     )
 
 def _expose_third_party_build_files(rctx):
     # llvm_zlib, llvm_zstd, and the rules_foreign_cc pfm repository use BUILD
-    # files from utils/bazel/third_party_build. Ignore only the original overlay
-    # directory after merging the overlay into the repository root.
+    # files from utils/bazel/third_party_build. Replace the utils/bazel
+    # .bazelignore entry with LLVM_PROJECT_OVERLAY so those files remain visible.
     bazelignore = rctx.read(".bazelignore")
     rctx.delete(".bazelignore")
     rctx.file(
@@ -81,9 +77,10 @@ def _expose_third_party_build_files(rctx):
             "# Ignore the utils/bazel directory when this is overlayed onto the repo root.\nutils/bazel\n",
             "# Ignore {} after merging it into the repository root.\n{}\n".format(LLVM_PROJECT_OVERLAY, LLVM_PROJECT_OVERLAY),
         ),
+        executable = False,
     )
     rctx.delete("utils/bazel/third_party_build/BUILD.bazel")
-    rctx.file("utils/bazel/third_party_build/BUILD.bazel", """exports_files(["pfm.BUILD", "zlib-ng.BUILD", "zstd.BUILD"])\n""")
+    rctx.file("utils/bazel/third_party_build/BUILD.bazel", """exports_files(["pfm.BUILD", "zlib-ng.BUILD", "zstd.BUILD"])\n""", executable = False)
 
 def write_llvm_project_files(rctx):
     _expose_third_party_build_files(rctx)
@@ -95,7 +92,7 @@ bzl_library(
     srcs = ["vars.bzl"],
     visibility = ["//visibility:public"],
 )
-""")
+""", executable = False)
     _write_llvm_vars(rctx)
     _write_llvm_targets(rctx)
 
