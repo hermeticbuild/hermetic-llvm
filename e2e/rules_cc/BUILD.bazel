@@ -689,8 +689,15 @@ exec_test(
 tsan_cc_binary(
     name = "tsan_fail",
     srcs = ["tsan_fail.cc"],
+    # On macOS the TSan runtime is a dylib; declare it as a dynamic_dep so it is
+    # in runfiles with an @loader_path rpath and loads at run time.
+    dynamic_deps = select({
+        "@platforms//os:macos": ["@llvm//runtimes/compiler-rt:clang_rt.tsan.shared"],
+        "//conditions:default": [],
+    }),
     target_compatible_with = select({
         "@platforms//os:linux": [],
+        "@platforms//os:macos": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
 )
@@ -703,6 +710,9 @@ exec_test(
     rule = sh_test,
     target_compatible_with = select({
         # firecracker + docker on arm64 is too restrictive.
+        # macOS: the TSan dylib builds/links/loads, but the runtime crashes
+        # during init (allocator/shadow setup) on arm64 — runtime support is a
+        # separate follow-up, so the runtime test stays Linux-only for now.
         "@llvm//platforms/config:linux_x86_64": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),

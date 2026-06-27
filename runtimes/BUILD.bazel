@@ -297,6 +297,12 @@ copy_to_resource_directory(
             "//runtimes/compiler-rt:clang_rt.lsan.shared": "libclang_rt.lsan_osx_dynamic",
         },
         "//conditions:default": {},
+    }) | select({
+        "//config:tsan_enabled": {
+            # TSan is a dylib on Darwin (x86_64/arm64); no static runtime.
+            "//runtimes/compiler-rt:clang_rt.tsan.shared": "libclang_rt.tsan_osx_dynamic",
+        },
+        "//conditions:default": {},
     }),
     target_compatible_with = ["@platforms//os:macos"],
     target_triple = "darwin",
