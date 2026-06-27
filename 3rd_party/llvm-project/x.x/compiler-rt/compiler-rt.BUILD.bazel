@@ -12,6 +12,7 @@ load(
     "UBSAN_WEAK_SYMBOLS",
     "XRAY_WEAK_SYMBOLS",
     "weak_symbol_link_flags",
+    "weak_symbols_in_sync_tests",
 )
 load("@llvm//toolchain/args:llvm_target_triple.bzl", "LLVM_TARGET_TRIPLE")
 load("@llvm//toolchain/runtimes:cc_runtime_shared_library.bzl", "cc_runtime_stage0_shared_library")
@@ -20,6 +21,10 @@ load("@llvm//toolchain/runtimes:cc_stage0_object.bzl", "cc_stage0_object")
 load("@llvm//toolchain/runtimes:cc_unsanitized_library.bzl", "cc_unsanitized_library")
 load("@llvm-project//:vars.bzl", "LLVM_VERSION_MAJOR")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+# diff_tests asserting the weak-symbol lists in weak_symbols.bzl stay in sync
+# with upstream's compiler-rt/lib/<name>/weak_symbols.txt (run on any platform).
+weak_symbols_in_sync_tests()
 
 filegroup(
     name = "asan_ignorelist",

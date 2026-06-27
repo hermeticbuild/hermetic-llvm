@@ -6,7 +6,13 @@ override them at runtime (for example `__asan_default_options`). This mirrors
 `add_weak_symbols()` in `compiler-rt/cmake/Modules/SanitizerUtils.cmake`, which
 emits `-Wl,-U,${symbol}` per symbol. The symbol names are kept verbatim from the
 `weak_symbols.txt` files (Mach-O leading-underscore form).
+
+`weak_symbols_in_sync_tests()` guards these lists against drift from upstream
+on LLVM version bumps.
 """
+
+load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
 
 # compiler-rt/lib/sanitizer_common/weak_symbols.txt
 SANITIZER_COMMON_WEAK_SYMBOLS = [
@@ -80,3 +86,40 @@ def weak_symbol_link_flags(symbol_lists):
         for symbols in symbol_lists
         for symbol in symbols
     ]
+
+# Maps each runtime to (its weak-symbol list, the upstream weak_symbols.txt
+# under compiler-rt/lib/). Used by weak_symbols_in_sync_tests().
+_WEAK_SYMBOLS_BY_RUNTIME = {
+    "asan": ASAN_WEAK_SYMBOLS,
+    "lsan": LSAN_WEAK_SYMBOLS,
+    "sanitizer_common": SANITIZER_COMMON_WEAK_SYMBOLS,
+    "ubsan": UBSAN_WEAK_SYMBOLS,
+    "xray": XRAY_WEAK_SYMBOLS,
+}
+
+def weak_symbols_in_sync_tests():
+    """Asserts each *_WEAK_SYMBOLS list matches upstream lib/<name>/weak_symbols.txt.
+
+    The lists above are a verbatim copy of compiler-rt's weak_symbols.txt files;
+    these diff_tests fail if they drift (e.g. after an LLVM version bump), so the
+    lists must be updated to match upstream. Must be called from the compiler-rt
+    overlay package (the one that owns lib/<name>/weak_symbols.txt).
+    """
+    for name, symbols in _WEAK_SYMBOLS_BY_RUNTIME.items():
+        write_file(
+            name = "_{}_weak_symbols_expected".format(name),
+            out = "_{}_weak_symbols.expected.txt".format(name),
+            # Trailing "" reproduces the file's final newline so the exact
+            # diff_test matches lib/<name>/weak_symbols.txt.
+            content = symbols + [""],
+            newline = "unix",
+        )
+        diff_test(
+            name = "{}_weak_symbols_in_sync_test".format(name),
+            failure_message = (
+                "weak_symbols.bzl {}_WEAK_SYMBOLS is out of sync with ".format(name.upper()) +
+                "lib/{}/weak_symbols.txt; update it to match upstream.".format(name)
+            ),
+            file1 = "_{}_weak_symbols.expected.txt".format(name),
+            file2 = "lib/{}/weak_symbols.txt".format(name),
+        )
