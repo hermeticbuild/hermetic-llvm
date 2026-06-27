@@ -705,11 +705,23 @@ exec_test(
 asan_cc_binary(
     name = "asan_fail",
     srcs = ["asan_fail.cc"],
-    linkopts = [
-        "-Wl,--icf=none",
-    ],
+    # On macOS the ASan runtime is a dylib (libclang_rt.asan_osx_dynamic.dylib).
+    # Declaring it as a dynamic_dep puts it in the binary's runfiles and gives
+    # the binary an @loader_path rpath (via the runtime_library_search_directories
+    # feature), so dyld can load it at run time. On Linux the static runtime is
+    # linked into the binary, so no dynamic_dep is needed.
+    dynamic_deps = select({
+        "@platforms//os:macos": ["@llvm//runtimes/compiler-rt:clang_rt.asan.shared"],
+        "//conditions:default": [],
+    }),
+    linkopts = select({
+        # --icf is an ld.lld (ELF) flag; ld64.lld on macOS does not accept it.
+        "@platforms//os:linux": ["-Wl,--icf=none"],
+        "//conditions:default": [],
+    }),
     target_compatible_with = select({
         "@platforms//os:linux": [],
+        "@platforms//os:macos": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
 )
