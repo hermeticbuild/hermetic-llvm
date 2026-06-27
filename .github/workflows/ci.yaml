@@ -121,7 +121,7 @@ jobs:
             $EXTRA_ARGS \
             //...
 
-  # Smoke tests for macOS. Only //:main_default, no-remote.
+  # macOS: smoke build (//:main_default) plus the supported sanitizer e2e tests.
   test_macos:
     strategy:
       fail-fast: false
@@ -154,6 +154,30 @@ jobs:
             build \
             --remote_header=x-buildbuddy-api-key=4jtaxdhxtyu4ylxdEwI7 \
             //:main_default
+
+      # ASan and UBSan are fully supported on macOS: run their e2e tests (they
+      # execute locally — no remote executor is configured for macOS).
+      # TSan and LSan build, link and load on macOS, but their runtime support
+      # is a follow-up, so we only validate that their instrumented binaries
+      # build (the runtime e2e tests stay Linux-only).
+      - name: bazel test macOS sanitizers
+        env:
+          USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
+        working-directory: ${{ matrix.folder }}
+        shell: bash
+        run: |
+          bazel \
+            --bazelrc=.bazelrc \
+            test \
+            --remote_header=x-buildbuddy-api-key=4jtaxdhxtyu4ylxdEwI7 \
+            //:asan_output_test \
+            //:ubsan_output_test
+          bazel \
+            --bazelrc=.bazelrc \
+            build \
+            --remote_header=x-buildbuddy-api-key=4jtaxdhxtyu4ylxdEwI7 \
+            //:tsan_fail \
+            //:lsan_fail
 
   llvm_version_analysis:
     strategy:
