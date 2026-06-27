@@ -33,10 +33,10 @@ index 7a8cad56f6f7..312f298a8625 100644
    BumpPtrAllocator A;
    StringSaver Saver(A);
    TAPIOptTable Tbl;
-diff --git a/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel b/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel
+diff --git a/llvm/BUILD.bazel b/llvm/BUILD.bazel
 index c4955ed888cc..f58f7adb8b94 100644
---- a/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel
-+++ b/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel
+--- a/llvm/BUILD.bazel
++++ b/llvm/BUILD.bazel
 @@ -5592,15 +5592,13 @@ gentbl_cc_library(
      deps = [":OptParserTdFiles"],
  )
@@ -69,10 +69,10 @@ index c4955ed888cc..f58f7adb8b94 100644
  gentbl_cc_library(
      name = "TLICheckerOptsTableGen",
      strip_include_prefix = "tools/llvm-tli-checker",
-diff --git a/utils/bazel/llvm-project-overlay/llvm/driver.bzl b/utils/bazel/llvm-project-overlay/llvm/driver.bzl
+diff --git a/llvm/driver.bzl b/llvm/driver.bzl
 index 161ad2b1a936..43e563ee9d74 100644
---- a/utils/bazel/llvm-project-overlay/llvm/driver.bzl
-+++ b/utils/bazel/llvm-project-overlay/llvm/driver.bzl
+--- a/llvm/driver.bzl
++++ b/llvm/driver.bzl
 @@ -32,3 +32,4 @@ _TOOLS = {
      "llvm-readobj": "//llvm:llvm-readobj-lib",
 +    "llvm-readtapi": "//llvm:llvm-readtapi-lib",

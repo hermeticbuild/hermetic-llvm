@@ -11,7 +11,13 @@ bzl_library(
     name = "llvm",
     srcs = ["llvm.bzl"],
     visibility = ["//visibility:public"],
-    deps = ["@llvm-raw//utils/bazel:configure"],
+    deps = [
+        "//private:llvm_project_archive",
+        "//private:llvm_project_from_git",
+        "//private:llvm_project_from_path",
+        "@bazel_skylib//lib:structs",
+        "@bazel_tools//tools/build_defs/repo:http.bzl",
+    ],
 )
 
 bzl_library(
@@ -23,21 +29,6 @@ bzl_library(
         "@bazel_tools//tools/build_defs/repo:cache.bzl",
         "@bazel_tools//tools/build_defs/repo:http.bzl",
         "@bazel_tools//tools/build_defs/repo:utils.bzl",
-    ],
-)
-
-bzl_library(
-    name = "llvm_source",
-    srcs = ["llvm_source.bzl"],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//:http_bsdtar_archive",
-        "@bazel_skylib//lib:structs",
-        "@bazel_tools//tools/build_defs/repo:cache.bzl",
-        "@bazel_tools//tools/build_defs/repo:git.bzl",
-        "@bazel_tools//tools/build_defs/repo:git_worker.bzl",
-        "@bazel_tools//tools/build_defs/repo:http.bzl",
-        "@bazel_tools//tools/build_defs/repo:local.bzl",
     ],
 )
 

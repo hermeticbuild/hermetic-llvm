@@ -64,10 +64,10 @@ index 52610eff4f473..5106d369baf05 100644
 +  helpMain(argc, Argv);
    return 1;
  }
-diff --git a/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel b/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel
+diff --git a/llvm/BUILD.bazel b/llvm/BUILD.bazel
 index e83a237a5397f..403d0cedaddae 100644
---- a/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel
-+++ b/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel
+--- a/llvm/BUILD.bazel
++++ b/llvm/BUILD.bazel
 @@ -4891,14 +4891,13 @@ cc_binary(
      ],
  )
@@ -98,10 +98,10 @@ index e83a237a5397f..403d0cedaddae 100644
  gentbl_cc_library(
      name = "CvtResTableGen",
      strip_include_prefix = "tools/llvm-cvtres",
-diff --git a/utils/bazel/llvm-project-overlay/llvm/driver.bzl b/utils/bazel/llvm-project-overlay/llvm/driver.bzl
+diff --git a/llvm/driver.bzl b/llvm/driver.bzl
 index e38c681370ed1..a695b3b495cd0 100644
---- a/utils/bazel/llvm-project-overlay/llvm/driver.bzl
-+++ b/utils/bazel/llvm-project-overlay/llvm/driver.bzl
+--- a/llvm/driver.bzl
++++ b/llvm/driver.bzl
 @@ -16,6 +16,7 @@ _TOOLS = {
      "lld": "//lld:lld-lib",
      "llvm-ar": "//llvm:llvm-ar-lib",

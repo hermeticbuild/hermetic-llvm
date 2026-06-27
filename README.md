@@ -249,14 +249,14 @@ This module allows choosing a specific LLVM version for both the compiler and th
 
 ### Configure via `use_extension(...)`
 
-To select another LLVM release (for example `22.1.0`), configure the `llvm_source` extension before `use_repo(...)`:
+To select another LLVM release (for example `22.1.0`), configure the `llvm` extension before `use_repo(...)`:
 
 ```starlark
-llvm_source = use_extension("@llvm//extensions:llvm_source.bzl", "llvm_source")
-llvm_source.version(llvm_version = "22.1.0")
+llvm = use_extension("@llvm//extensions:llvm.bzl", "llvm")
+llvm.version(llvm_version = "22.1.0")
 ```
 
-Important: Since this module uses prebuilt compiler archives by default. If you set `llvm_source.version(...)` to another version, use:
+Important: Since this module uses prebuilt compiler archives by default. If you set `llvm.version(...)` to another version, use:
 
 `--@llvm//toolchain:bootstrap_stage=stage1_from_source`
 
@@ -264,18 +264,10 @@ This builds the compiler from source with the stage0 prebuilt seed, which is req
 
 ### Starlark LLVM version variables
 
-If you need LLVM version variables from Starlark, `llvm_source` generates an `llvm_config` repo exposing those values.
-This lets consumers read LLVM version vars without eagerly fetching the entire `@llvm-project` source tree.
+The `@llvm-project` repository exposes LLVM version variables:
 
 ```starlark
-llvm_source = use_extension("@llvm//extensions:llvm_source.bzl", "llvm_source")
-llvm_source.version(llvm_version = "22.1.0")
-use_repo(llvm_source, "llvm_config")
-```
-
-Then:
-```starlark
-load("@llvm_config//:version.bzl", "LLVM_VERSION", "llvm_vars")
+load("@llvm-project//:vars.bzl", "LLVM_VERSION", "llvm_vars")
 ```
 
 # Additional LLVM targets

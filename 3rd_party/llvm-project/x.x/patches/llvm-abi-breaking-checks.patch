@@ -1,6 +1,6 @@
-diff --git a/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel b/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel
---- a/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel
-+++ b/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel
+diff --git a/llvm/BUILD.bazel b/llvm/BUILD.bazel
+--- a/llvm/BUILD.bazel
++++ b/llvm/BUILD.bazel
 @@ -5,2 +5,2 @@
 -load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
 +load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "string_flag")

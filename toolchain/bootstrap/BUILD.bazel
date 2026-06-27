@@ -29,7 +29,7 @@ bzl_library(
     name = "transition_settings",
     srcs = ["transition_settings.bzl"],
     visibility = ["//visibility:public"],
-    deps = ["@llvm_config//:version"],
+    deps = ["@llvm-project//:version"],
 )
 
 bzl_library(
@@ -40,7 +40,7 @@ bzl_library(
         ":bootstrap_binary",
         "//platforms:common",
         "//toolchain:cc_toolchain",
-        "@llvm_config//:version",
+        "@llvm-project//:version",
         "@rules_cc//cc/toolchains:toolchain_rules",
     ],
 )

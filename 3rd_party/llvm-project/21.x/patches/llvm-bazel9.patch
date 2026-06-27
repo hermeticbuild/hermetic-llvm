@@ -20,10 +20,10 @@ index 5e28c3b67fc3..e041d8a497bc 100644
 +rules_shell_dependencies()
 +
 +rules_shell_toolchains()
-diff --git a/utils/bazel/llvm-project-overlay/clang/BUILD.bazel b/utils/bazel/llvm-project-overlay/clang/BUILD.bazel
+diff --git a/clang/BUILD.bazel b/clang/BUILD.bazel
 index ac4e3813fbba..a6e4bbb7bd60 100644
---- a/utils/bazel/llvm-project-overlay/clang/BUILD.bazel
-+++ b/utils/bazel/llvm-project-overlay/clang/BUILD.bazel
+--- a/clang/BUILD.bazel
++++ b/clang/BUILD.bazel
 @@ -2,6 +2,7 @@
  # See https://llvm.org/LICENSE.txt for license information.
  # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -87,10 +87,10 @@ index ac4e3813fbba..a6e4bbb7bd60 100644
  cc_library(
      name = "clang-fuzzer-initialize",
      srcs = ["tools/clang-fuzzer/fuzzer-initialize/fuzzer_initialize.cpp"],
-diff --git a/utils/bazel/llvm-project-overlay/compiler-rt/BUILD.bazel b/utils/bazel/llvm-project-overlay/compiler-rt/BUILD.bazel
+diff --git a/compiler-rt/BUILD.bazel b/compiler-rt/BUILD.bazel
 index bcf947a23014..f34d56dd3944 100644
---- a/utils/bazel/llvm-project-overlay/compiler-rt/BUILD.bazel
-+++ b/utils/bazel/llvm-project-overlay/compiler-rt/BUILD.bazel
+--- a/compiler-rt/BUILD.bazel
++++ b/compiler-rt/BUILD.bazel
 @@ -2,6 +2,8 @@
  # See https://llvm.org/LICENSE.txt for license information.
  # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -100,10 +100,10 @@ index bcf947a23014..f34d56dd3944 100644
  package(
      default_visibility = ["//visibility:public"],
      features = ["layering_check"],
-diff --git a/utils/bazel/llvm-project-overlay/libc/libc_build_rules.bzl b/utils/bazel/llvm-project-overlay/libc/libc_build_rules.bzl
+diff --git a/libc/libc_build_rules.bzl b/libc/libc_build_rules.bzl
 index e123e4d32b78..e41a5c357cde 100644
---- a/utils/bazel/llvm-project-overlay/libc/libc_build_rules.bzl
-+++ b/utils/bazel/llvm-project-overlay/libc/libc_build_rules.bzl
+--- a/libc/libc_build_rules.bzl
++++ b/libc/libc_build_rules.bzl
 @@ -6,6 +6,7 @@
  
  load("@bazel_skylib//lib:paths.bzl", "paths")
@@ -154,10 +154,10 @@ index e123e4d32b78..e41a5c357cde 100644
          name = name,
          hdrs = hdrs,
          # We put _hdr_deps in srcs, as they are not a part of this cc_library
-diff --git a/utils/bazel/llvm-project-overlay/libunwind/BUILD.bazel b/utils/bazel/llvm-project-overlay/libunwind/BUILD.bazel
+diff --git a/libunwind/BUILD.bazel b/libunwind/BUILD.bazel
 index f8448fb0e726..81bbf1602dc2 100644
---- a/utils/bazel/llvm-project-overlay/libunwind/BUILD.bazel
-+++ b/utils/bazel/llvm-project-overlay/libunwind/BUILD.bazel
+--- a/libunwind/BUILD.bazel
++++ b/libunwind/BUILD.bazel
 @@ -2,6 +2,8 @@
  # See https://llvm.org/LICENSE.txt for license information.
  # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -167,10 +167,10 @@ index f8448fb0e726..81bbf1602dc2 100644
  package(
      default_visibility = ["//visibility:public"],
  )
-diff --git a/utils/bazel/llvm-project-overlay/lld/BUILD.bazel b/utils/bazel/llvm-project-overlay/lld/BUILD.bazel
+diff --git a/lld/BUILD.bazel b/lld/BUILD.bazel
 index 76957a95a544..722b695e3bf2 100644
---- a/utils/bazel/llvm-project-overlay/lld/BUILD.bazel
-+++ b/utils/bazel/llvm-project-overlay/lld/BUILD.bazel
+--- a/lld/BUILD.bazel
++++ b/lld/BUILD.bazel
 @@ -2,6 +2,7 @@
  # See https://llvm.org/LICENSE.txt for license information.
  # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -179,10 +179,10 @@ index 76957a95a544..722b695e3bf2 100644
  load(
      "//:vars.bzl",
      "LLVM_VERSION",
-diff --git a/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel b/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel
+diff --git a/llvm/BUILD.bazel b/llvm/BUILD.bazel
 index 37e79db376b4..a8ec86a7500d 100644
---- a/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel
-+++ b/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel
+--- a/llvm/BUILD.bazel
++++ b/llvm/BUILD.bazel
 @@ -2,9 +2,12 @@
  # See https://llvm.org/LICENSE.txt for license information.
  # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
@@ -196,10 +196,10 @@ index 37e79db376b4..a8ec86a7500d 100644
  load("//mlir:tblgen.bzl", "gentbl_cc_library", "gentbl_filegroup", "td_library")
  load(":binary_alias.bzl", "binary_alias")
  load(":config.bzl", "llvm_config_defines")
-diff --git a/utils/bazel/llvm-project-overlay/llvm/driver.bzl b/utils/bazel/llvm-project-overlay/llvm/driver.bzl
+diff --git a/llvm/driver.bzl b/llvm/driver.bzl
 index 66e8af7db7d0..7d0201e7d0cf 100644
---- a/utils/bazel/llvm-project-overlay/llvm/driver.bzl
-+++ b/utils/bazel/llvm-project-overlay/llvm/driver.bzl
+--- a/llvm/driver.bzl
++++ b/llvm/driver.bzl
 @@ -6,6 +6,8 @@
  
  load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
@@ -218,10 +218,10 @@ index 66e8af7db7d0..7d0201e7d0cf 100644
          name = name,
          srcs = [name + "-driver.cpp"],
          deps = deps + ["//llvm:Support"],
-diff --git a/utils/bazel/llvm-project-overlay/mlir/build_defs.bzl b/utils/bazel/llvm-project-overlay/mlir/build_defs.bzl
+diff --git a/mlir/build_defs.bzl b/mlir/build_defs.bzl
 index 53767fd03c44..c91dfdb53953 100644
---- a/utils/bazel/llvm-project-overlay/mlir/build_defs.bzl
-+++ b/utils/bazel/llvm-project-overlay/mlir/build_defs.bzl
+--- a/mlir/build_defs.bzl
++++ b/mlir/build_defs.bzl
 @@ -4,6 +4,9 @@
  
  """Rules and macros for MLIR"""
@@ -256,10 +256,10 @@ index 53767fd03c44..c91dfdb53953 100644
          name = name + "Objects",
          srcs = srcs,
          hdrs = hdrs,
-diff --git a/utils/bazel/llvm-project-overlay/mlir/linalggen.bzl b/utils/bazel/llvm-project-overlay/mlir/linalggen.bzl
+diff --git a/mlir/linalggen.bzl b/mlir/linalggen.bzl
 index d893471e6249..7e7dacadeed8 100644
---- a/utils/bazel/llvm-project-overlay/mlir/linalggen.bzl
-+++ b/utils/bazel/llvm-project-overlay/mlir/linalggen.bzl
+--- a/mlir/linalggen.bzl
++++ b/mlir/linalggen.bzl
 @@ -4,6 +4,8 @@
  
  """BUILD extensions for MLIR linalg generation."""
@@ -278,10 +278,10 @@ index d893471e6249..7e7dacadeed8 100644
          name = name,
          hdrs = hdrs,
          textual_hdrs = hdrs,
-diff --git a/utils/bazel/llvm-project-overlay/mlir/tblgen.bzl b/utils/bazel/llvm-project-overlay/mlir/tblgen.bzl
+diff --git a/mlir/tblgen.bzl b/mlir/tblgen.bzl
 index 89b17735e005..cd3ae39f046d 100644
---- a/utils/bazel/llvm-project-overlay/mlir/tblgen.bzl
-+++ b/utils/bazel/llvm-project-overlay/mlir/tblgen.bzl
+--- a/mlir/tblgen.bzl
++++ b/mlir/tblgen.bzl
 @@ -4,6 +4,7 @@
  """BUILD extensions for MLIR table generation."""
  
@@ -299,10 +299,10 @@ index 89b17735e005..cd3ae39f046d 100644
          name = name,
          # strip_include_prefix does not apply to textual_hdrs.
          # https://github.com/bazelbuild/bazel/issues/12424
-diff --git a/utils/bazel/llvm-project-overlay/third-party/siphash/BUILD.bazel b/utils/bazel/llvm-project-overlay/third-party/siphash/BUILD.bazel
+diff --git a/third-party/siphash/BUILD.bazel b/third-party/siphash/BUILD.bazel
 index d5b9631e7d2a..3a6e908f4a06 100644
---- a/utils/bazel/llvm-project-overlay/third-party/siphash/BUILD.bazel
-+++ b/utils/bazel/llvm-project-overlay/third-party/siphash/BUILD.bazel
+--- a/third-party/siphash/BUILD.bazel
++++ b/third-party/siphash/BUILD.bazel
 @@ -2,6 +2,8 @@
  # See https://llvm.org/LICENSE.txt for license information.
  # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception

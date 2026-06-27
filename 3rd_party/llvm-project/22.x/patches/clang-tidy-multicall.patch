@@ -1050,10 +1050,10 @@ index 000000000000..6610d5fe5cd9
 +def p_EQ : Joined<["-", "--"], "p=">, Alias<p>, Flags<[HelpHidden]>;
 +defm load
 +    : Eq<"load", "<pluginfilename>", "Load the specified plugin">;
-diff --git a/utils/bazel/llvm-project-overlay/clang-tools-extra/clang-tidy/BUILD.bazel b/utils/bazel/llvm-project-overlay/clang-tools-extra/clang-tidy/BUILD.bazel
+diff --git a/clang-tools-extra/clang-tidy/BUILD.bazel b/clang-tools-extra/clang-tidy/BUILD.bazel
 index bd7b1e6a6893..8b8b71119942 100644
---- a/utils/bazel/llvm-project-overlay/clang-tools-extra/clang-tidy/BUILD.bazel
-+++ b/utils/bazel/llvm-project-overlay/clang-tools-extra/clang-tidy/BUILD.bazel
+--- a/clang-tools-extra/clang-tidy/BUILD.bazel
++++ b/clang-tools-extra/clang-tidy/BUILD.bazel
 @@ -6,6 +6,8 @@ load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
  load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
  load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
@@ -1103,10 +1103,10 @@ index bd7b1e6a6893..8b8b71119942 100644
      stamp = 0,
      deps = [":tool"],
  )
-diff --git a/utils/bazel/llvm-project-overlay/llvm/driver.bzl b/utils/bazel/llvm-project-overlay/llvm/driver.bzl
+diff --git a/llvm/driver.bzl b/llvm/driver.bzl
 index 842d7c1a848f..f432842abf9f 100644
---- a/utils/bazel/llvm-project-overlay/llvm/driver.bzl
-+++ b/utils/bazel/llvm-project-overlay/llvm/driver.bzl
+--- a/llvm/driver.bzl
++++ b/llvm/driver.bzl
 @@ -10,6 +10,7 @@ load("@rules_cc//cc:defs.bzl", "CcInfo", "cc_binary")
  
  # Mapping from every tool to the cc_library that implements the tool's entrypoint.
