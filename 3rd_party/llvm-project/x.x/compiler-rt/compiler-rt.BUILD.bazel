@@ -1267,6 +1267,11 @@ cc_library(
     implementation_deps = [
         ":libcxx_headers",
         ":sanitizers_interface_headers",
+        # sanitizer_symbolize.cpp compiles against LLVM's public headers
+        # (DIPrinter.h ...) and the generated Config/*.h. :config carries
+        # includes = ["include"] plus the generated config headers, which the
+        # overlay otherwise exposes only through the private llvm_copts.
+        "@llvm-project//llvm:config",
     ],
     includes = [
         "include",
