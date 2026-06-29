@@ -1546,11 +1546,11 @@ cc_runtime_stage0_shared_library(
     }),
     user_link_flags = select({
         "@llvm//platforms/config:gnu": [
-            "-L$(location @llvm//runtimes/glibc:glibc_library_search_directory)",
+            "-L$(execpath @llvm//runtimes/glibc:glibc_library_search_directory)",
             "-lc",
         ],
         "@llvm//platforms/config:musl": [
-            "-L$(location @llvm//runtimes/musl:musl_library_search_directory)",
+            "-L$(execpath @llvm//runtimes/musl:musl_library_search_directory)",
             "-lc",
         ],
         "//conditions:default": [],
@@ -2498,11 +2498,11 @@ cc_runtime_stage0_shared_library(
     }),
     user_link_flags = select({
         "@llvm//platforms/config:gnu": [
-            "-L$(location @llvm//runtimes/glibc:glibc_library_search_directory)",
+            "-L$(execpath @llvm//runtimes/glibc:glibc_library_search_directory)",
             "-lc",
         ],
         "@llvm//platforms/config:musl": [
-            "-L$(location @llvm//runtimes/musl:musl_library_search_directory)",
+            "-L$(execpath @llvm//runtimes/musl:musl_library_search_directory)",
             "-lc",
         ],
         "//conditions:default": [],

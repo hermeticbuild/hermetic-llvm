@@ -153,15 +153,9 @@ cc_args_list(
 
 cc_args_list(
     name = "resource_dir",
-    args = select({
-        # macOS now ships compiler-rt sanitizer runtimes (e.g. the asan dylib)
-        # in the resource directory, so the Clang driver needs -resource-dir to
-        # find them when linking (e.g. -fsanitize=address). This is a link-only
-        # arg, so it does not affect builtin-header resolution at compile time.
-        "//conditions:default": [
+    args = [
             "//toolchain/args:resource_dir",
-        ],
-    }),
+    ],
 )
 
 cc_args_list(
