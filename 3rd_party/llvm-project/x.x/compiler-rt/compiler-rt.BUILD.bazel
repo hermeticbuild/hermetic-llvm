@@ -4,6 +4,16 @@ load("@llvm//:directory.bzl", "headers_directory")
 load("@llvm//:sh_script.bzl", "sh_script")
 load("@llvm//3rd_party/llvm-project/x.x/compiler-rt:filter_builtin_sources.bzl", "filter_builtin_sources")
 load("@llvm//3rd_party/llvm-project/x.x/compiler-rt:targets.bzl", "atomic_helper_cc_library")
+load(
+    "@llvm//3rd_party/llvm-project/x.x/compiler-rt:weak_symbols.bzl",
+    "ASAN_WEAK_SYMBOLS",
+    "LSAN_WEAK_SYMBOLS",
+    "SANITIZER_COMMON_WEAK_SYMBOLS",
+    "UBSAN_WEAK_SYMBOLS",
+    "XRAY_WEAK_SYMBOLS",
+    "weak_symbol_link_flags",
+    "weak_symbols_in_sync_tests",
+)
 load("@llvm//toolchain/args:llvm_target_triple.bzl", "LLVM_TARGET_TRIPLE")
 load("@llvm//toolchain/runtimes:cc_runtime_shared_library.bzl", "cc_runtime_stage0_shared_library")
 load("@llvm//toolchain/runtimes:cc_runtime_static_library.bzl", "cc_runtime_stage0_static_library")
@@ -11,6 +21,10 @@ load("@llvm//toolchain/runtimes:cc_stage0_object.bzl", "cc_stage0_object")
 load("@llvm//toolchain/runtimes:cc_unsanitized_library.bzl", "cc_unsanitized_library")
 load("@llvm-project//:vars.bzl", "LLVM_VERSION_MAJOR")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+# diff_tests asserting the weak-symbol lists in weak_symbols.bzl stay in sync
+# with upstream's compiler-rt/lib/<name>/weak_symbols.txt (run on any platform).
+weak_symbols_in_sync_tests()
 
 filegroup(
     name = "asan_ignorelist",
@@ -1512,6 +1526,59 @@ cc_runtime_stage0_static_library(
     ],
 )
 
+# On Darwin, standalone UBSan ships as a dylib (libclang_rt.ubsan_osx_dynamic.dylib)
+# with no static standalone runtime; the C++ABI parts (ubsan_cxx) are folded into
+# the dylib. See lib/ubsan/CMakeLists.txt (APPLE branch).
+cc_runtime_stage0_shared_library(
+    name = "ubsan_standalone.shared",
+    additional_linker_inputs = select({
+        "@llvm//platforms/config:gnu": [
+            "@llvm//runtimes/glibc:glibc_library_search_directory",
+        ],
+        "@llvm//platforms/config:musl": [
+            "@llvm//runtimes/musl:musl_library_search_directory",
+        ],
+        "//conditions:default": [],
+    }),
+    shared_lib_name = select({
+        "@platforms//os:macos": "libclang_rt.ubsan_osx_dynamic.dylib",
+        "//conditions:default": "libubsan_standalone.shared.so",
+    }),
+    user_link_flags = select({
+        "@llvm//platforms/config:gnu": [
+            "-L$(location @llvm//runtimes/glibc:glibc_library_search_directory)",
+            "-lc",
+        ],
+        "@llvm//platforms/config:musl": [
+            "-L$(location @llvm//runtimes/musl:musl_library_search_directory)",
+            "-lc",
+        ],
+        "//conditions:default": [],
+    }) + select({
+        "@platforms//os:macos": [
+            "-Wl,-install_name,@rpath/libclang_rt.ubsan_osx_dynamic.dylib",
+            "-stdlib=libc++",
+            "-lc++",
+            "-lc++abi",
+        ] + weak_symbol_link_flags([
+            UBSAN_WEAK_SYMBOLS,
+            SANITIZER_COMMON_WEAK_SYMBOLS,
+        ]),
+        "//conditions:default": [],
+    }),
+    visibility = ["//visibility:public"],
+    deps = [
+        ":interception",
+        ":sanitizer_common",
+        ":sanitizer_common_coverage",
+        ":sanitizer_common_libc",
+        ":sanitizer_common_symbolizer",
+        ":sanitizer_common_symbolizer_internal",
+        ":ubsan_cxx",
+        ":ubsan_standalone",
+    ],
+)
+
 ###
 ### compiler-rt/lib/cfi/CMakeLists.txt.
 ###
@@ -2222,8 +2289,12 @@ filegroup(
 
 TSAN_RTL_CFLAGS = SANITIZER_COMMON_CFLAGS + [
     "-fno-rtti",
-    "-fPIE",
-]
+] + select({
+    # On Darwin TSan ships only as a dylib (TSAN_RTL_DYNAMIC_CFLAGS upstream),
+    # so the objects are -fPIC (the default); -fPIE is for executables/static.
+    "@platforms//os:macos": [],
+    "//conditions:default": ["-fPIE"],
+})
 
 cc_library(
     name = "tsan",
@@ -2287,6 +2358,63 @@ cc_runtime_stage0_static_library(
     visibility = ["//visibility:public"],
     deps = [
         ":tsan_cxx",
+    ],
+)
+
+# On Darwin, TSan ships only as a dylib (libclang_rt.tsan_osx_dynamic.dylib),
+# for x86_64 and arm64. It bundles the tsan runtime (+ tsan_cxx) with the
+# sanitizer_common stack, RTUbsan and interception, links the SDK libc++ and
+# libobjc, and uses ubsan+sanitizer_common weak symbols. See lib/tsan/rtl/
+# CMakeLists.txt (APPLE branch).
+cc_runtime_stage0_shared_library(
+    name = "tsan.shared",
+    additional_linker_inputs = select({
+        "@llvm//platforms/config:gnu": [
+            "@llvm//runtimes/glibc:glibc_library_search_directory",
+        ],
+        "@llvm//platforms/config:musl": [
+            "@llvm//runtimes/musl:musl_library_search_directory",
+        ],
+        "//conditions:default": [],
+    }),
+    shared_lib_name = select({
+        "@platforms//os:macos": "libclang_rt.tsan_osx_dynamic.dylib",
+        "//conditions:default": "libtsan.shared.so",
+    }),
+    user_link_flags = select({
+        "@llvm//platforms/config:gnu": [
+            "-L$(location @llvm//runtimes/glibc:glibc_library_search_directory)",
+            "-lc",
+        ],
+        "@llvm//platforms/config:musl": [
+            "-L$(location @llvm//runtimes/musl:musl_library_search_directory)",
+            "-lc",
+        ],
+        "//conditions:default": [],
+    }) + select({
+        "@platforms//os:macos": [
+            "-Wl,-install_name,@rpath/libclang_rt.tsan_osx_dynamic.dylib",
+            "-stdlib=libc++",
+            "-lc++",
+            "-lc++abi",
+            "-lobjc",
+        ] + weak_symbol_link_flags([
+            UBSAN_WEAK_SYMBOLS,
+            SANITIZER_COMMON_WEAK_SYMBOLS,
+        ]),
+        "//conditions:default": [],
+    }),
+    visibility = ["//visibility:public"],
+    deps = [
+        ":interception",
+        ":sanitizer_common",
+        ":sanitizer_common_coverage",
+        ":sanitizer_common_libc",
+        ":sanitizer_common_symbolizer",
+        ":sanitizer_common_symbolizer_internal",
+        ":tsan",
+        ":tsan_cxx",
+        ":ubsan_no_standalone",
     ],
 )
 
@@ -2399,6 +2527,58 @@ cc_library(
 
 cc_runtime_stage0_static_library(
     name = "lsan.static",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":interception",
+        ":lsan",
+        ":lsan_common",
+        ":sanitizer_common",
+        ":sanitizer_common_coverage",
+        ":sanitizer_common_libc",
+        ":sanitizer_common_symbolizer",
+        ":sanitizer_common_symbolizer_internal",
+    ],
+)
+
+# On Darwin, LSan ships as a dylib (libclang_rt.lsan_osx_dynamic.dylib); there is
+# no static standalone runtime. See lib/lsan/CMakeLists.txt (APPLE branch).
+cc_runtime_stage0_shared_library(
+    name = "lsan.shared",
+    additional_linker_inputs = select({
+        "@llvm//platforms/config:gnu": [
+            "@llvm//runtimes/glibc:glibc_library_search_directory",
+        ],
+        "@llvm//platforms/config:musl": [
+            "@llvm//runtimes/musl:musl_library_search_directory",
+        ],
+        "//conditions:default": [],
+    }),
+    shared_lib_name = select({
+        "@platforms//os:macos": "libclang_rt.lsan_osx_dynamic.dylib",
+        "//conditions:default": "liblsan.shared.so",
+    }),
+    user_link_flags = select({
+        "@llvm//platforms/config:gnu": [
+            "-L$(location @llvm//runtimes/glibc:glibc_library_search_directory)",
+            "-lc",
+        ],
+        "@llvm//platforms/config:musl": [
+            "-L$(location @llvm//runtimes/musl:musl_library_search_directory)",
+            "-lc",
+        ],
+        "//conditions:default": [],
+    }) + select({
+        "@platforms//os:macos": [
+            "-Wl,-install_name,@rpath/libclang_rt.lsan_osx_dynamic.dylib",
+            "-stdlib=libc++",
+            "-lc++",
+            "-lc++abi",
+        ] + weak_symbol_link_flags([
+            LSAN_WEAK_SYMBOLS,
+            SANITIZER_COMMON_WEAK_SYMBOLS,
+        ]),
+        "//conditions:default": [],
+    }),
     visibility = ["//visibility:public"],
     deps = [
         ":interception",
@@ -3115,7 +3295,11 @@ cc_runtime_stage0_shared_library(
         ],
         "//conditions:default": [],
     }),
-    shared_lib_name = "libasan.shared.so",
+    shared_lib_name = select({
+        # Darwin ships asan as a dylib named libclang_rt.asan_osx_dynamic.dylib.
+        "@platforms//os:macos": "libclang_rt.asan_osx_dynamic.dylib",
+        "//conditions:default": "libasan.shared.so",
+    }),
     user_link_flags = select({
         "@llvm//platforms/config:gnu": [
             "-L$(location @llvm//runtimes/glibc:glibc_library_search_directory)",
@@ -3125,6 +3309,24 @@ cc_runtime_stage0_shared_library(
             "-L$(location @llvm//runtimes/musl:musl_library_search_directory)",
             "-lc",
         ],
+        "//conditions:default": [],
+    }) + select({
+        # Darwin: the asan runtime is a dylib loaded via @rpath (the Clang
+        # driver adds -rpath at link time), built against the SDK libc++.
+        # See lib/asan/CMakeLists.txt (APPLE branch) and DARWIN_COMMON_LINK_FLAGS
+        # in cmake/base-config-ix.cmake.
+        "@platforms//os:macos": [
+            "-Wl,-install_name,@rpath/libclang_rt.asan_osx_dynamic.dylib",
+            "-stdlib=libc++",
+            "-lc++",
+            "-lc++abi",
+        ] + weak_symbol_link_flags([
+            ASAN_WEAK_SYMBOLS,
+            LSAN_WEAK_SYMBOLS,
+            UBSAN_WEAK_SYMBOLS,
+            SANITIZER_COMMON_WEAK_SYMBOLS,
+            XRAY_WEAK_SYMBOLS,
+        ]),
         "//conditions:default": [],
     }),
     visibility = ["//visibility:public"],

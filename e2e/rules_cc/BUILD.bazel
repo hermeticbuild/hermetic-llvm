@@ -507,6 +507,12 @@ sh_test(
 ubsan_cc_binary(
     name = "ubsan_fail",
     srcs = ["ubsan_fail.cc"],
+    # On macOS the UBSan runtime is a dylib; declare it as a dynamic_dep so it is
+    # in runfiles with an @loader_path rpath and loads at run time.
+    dynamic_deps = select({
+        "@platforms//os:macos": ["@llvm//runtimes/compiler-rt:clang_rt.ubsan_standalone.shared"],
+        "//conditions:default": [],
+    }),
     target_compatible_with = select({
         "@platforms//os:windows": ["@platforms//:incompatible"],
         "//conditions:default": [],
@@ -683,8 +689,15 @@ exec_test(
 tsan_cc_binary(
     name = "tsan_fail",
     srcs = ["tsan_fail.cc"],
+    # On macOS the TSan runtime is a dylib; declare it as a dynamic_dep so it is
+    # in runfiles with an @loader_path rpath and loads at run time.
+    dynamic_deps = select({
+        "@platforms//os:macos": ["@llvm//runtimes/compiler-rt:clang_rt.tsan.shared"],
+        "//conditions:default": [],
+    }),
     target_compatible_with = select({
         "@platforms//os:linux": [],
+        "@platforms//os:macos": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
 )
@@ -697,6 +710,9 @@ exec_test(
     rule = sh_test,
     target_compatible_with = select({
         # firecracker + docker on arm64 is too restrictive.
+        # macOS: the TSan dylib builds/links/loads, but the runtime crashes
+        # during init (allocator/shadow setup) on arm64 — runtime support is a
+        # separate follow-up, so the runtime test stays Linux-only for now.
         "@llvm//platforms/config:linux_x86_64": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
@@ -705,11 +721,23 @@ exec_test(
 asan_cc_binary(
     name = "asan_fail",
     srcs = ["asan_fail.cc"],
-    linkopts = [
-        "-Wl,--icf=none",
-    ],
+    # On macOS the ASan runtime is a dylib (libclang_rt.asan_osx_dynamic.dylib).
+    # Declaring it as a dynamic_dep puts it in the binary's runfiles and gives
+    # the binary an @loader_path rpath (via the runtime_library_search_directories
+    # feature), so dyld can load it at run time. On Linux the static runtime is
+    # linked into the binary, so no dynamic_dep is needed.
+    dynamic_deps = select({
+        "@platforms//os:macos": ["@llvm//runtimes/compiler-rt:clang_rt.asan.shared"],
+        "//conditions:default": [],
+    }),
+    linkopts = select({
+        # --icf is an ld.lld (ELF) flag; ld64.lld on macOS does not accept it.
+        "@platforms//os:linux": ["-Wl,--icf=none"],
+        "//conditions:default": [],
+    }),
     target_compatible_with = select({
         "@platforms//os:linux": [],
+        "@platforms//os:macos": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
 )
@@ -725,8 +753,15 @@ exec_test(
 lsan_cc_binary(
     name = "lsan_fail",
     srcs = ["lsan_fail.cc"],
+    # On macOS the LSan runtime is a dylib; declare it as a dynamic_dep so it is
+    # in runfiles with an @loader_path rpath and loads at run time.
+    dynamic_deps = select({
+        "@platforms//os:macos": ["@llvm//runtimes/compiler-rt:clang_rt.lsan.shared"],
+        "//conditions:default": [],
+    }),
     target_compatible_with = select({
         "@platforms//os:linux": [],
+        "@platforms//os:macos": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
 )

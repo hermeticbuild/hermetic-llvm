@@ -154,7 +154,10 @@ cc_args_list(
 cc_args_list(
     name = "resource_dir",
     args = select({
-        "@platforms//os:macos": [],
+        # macOS now ships compiler-rt sanitizer runtimes (e.g. the asan dylib)
+        # in the resource directory, so the Clang driver needs -resource-dir to
+        # find them when linking (e.g. -fsanitize=address). This is a link-only
+        # arg, so it does not affect builtin-header resolution at compile time.
         "//conditions:default": [
             "//toolchain/args:resource_dir",
         ],
@@ -266,7 +269,14 @@ cc_args_list(
     args = [
         "//toolchain/args/macos:macos_minimum_os_flags",
         "//toolchain/args/macos:macos_default_framework_flags",
-    ],
+    ] + select({
+        # Only expose the sanitizer interface headers when compiling user
+        # programs (runtime_stage=complete), not when building the compiler-rt
+        # runtimes themselves (stage0). Those already include compiler-rt/include
+        # directly, and adding it again collides in the macOS sandbox.
+        ":runtimes_all": ["//toolchain/args/macos:sanitizer_headers_include_search_paths"],
+        "//conditions:default": [],
+    }),
 )
 
 # TODO(cerisier): extract those into proper semantic args list.
