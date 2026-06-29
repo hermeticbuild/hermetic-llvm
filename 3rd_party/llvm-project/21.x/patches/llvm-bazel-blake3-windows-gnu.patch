@@ -1,11 +1,11 @@
-Index: utils/bazel/llvm-project-overlay/llvm/BUILD.bazel
+Index: llvm/BUILD.bazel
 IDEA additional info:
 Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 <+>UTF-8
 ===================================================================
-diff --git a/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel b/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel
---- a/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel	(revision f79e608cdbb999269ba4e9ebe22a4b360e28afde)
-+++ b/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel	(date 1776967113869)
+diff --git a/llvm/BUILD.bazel b/llvm/BUILD.bazel
+--- a/llvm/BUILD.bazel	(revision f79e608cdbb999269ba4e9ebe22a4b360e28afde)
++++ b/llvm/BUILD.bazel	(date 1776967113869)
 @@ -2,6 +2,7 @@
  # See https://llvm.org/LICENSE.txt for license information.
  # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception

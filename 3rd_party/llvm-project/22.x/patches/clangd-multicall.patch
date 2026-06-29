@@ -2234,10 +2234,10 @@ index 000000000000..a542872a7be9
 +    : Joined<["--", "-"], "include-cleaner-stdlib=">,
 +      Group<retired_group>,
 +      Flags<[HelpHidden]>;
-diff --git a/utils/bazel/llvm-project-overlay/clang-tools-extra/clang-tidy/BUILD.bazel b/utils/bazel/llvm-project-overlay/clang-tools-extra/clang-tidy/BUILD.bazel
+diff --git a/clang-tools-extra/clang-tidy/BUILD.bazel b/clang-tools-extra/clang-tidy/BUILD.bazel
 index 8b8b71119942..13d270011a41 100644
---- a/utils/bazel/llvm-project-overlay/clang-tools-extra/clang-tidy/BUILD.bazel
-+++ b/utils/bazel/llvm-project-overlay/clang-tools-extra/clang-tidy/BUILD.bazel
+--- a/clang-tools-extra/clang-tidy/BUILD.bazel
++++ b/clang-tools-extra/clang-tidy/BUILD.bazel
 @@ -411,6 +411,11 @@ gentbl_cc_library(
      deps = ["//llvm:OptParserTdFiles"],
  )
@@ -2250,10 +2250,10 @@ index 8b8b71119942..13d270011a41 100644
  cc_library(
      name = "tool",
      srcs = [
-diff --git a/utils/bazel/llvm-project-overlay/clang-tools-extra/clangd/BUILD.bazel b/utils/bazel/llvm-project-overlay/clang-tools-extra/clangd/BUILD.bazel
+diff --git a/clang-tools-extra/clangd/BUILD.bazel b/clang-tools-extra/clangd/BUILD.bazel
 index 4151e55a938d..55265dd4be11 100644
---- a/utils/bazel/llvm-project-overlay/clang-tools-extra/clangd/BUILD.bazel
-+++ b/utils/bazel/llvm-project-overlay/clang-tools-extra/clangd/BUILD.bazel
+--- a/clang-tools-extra/clangd/BUILD.bazel
++++ b/clang-tools-extra/clangd/BUILD.bazel
 @@ -3,6 +3,9 @@
  # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  
@@ -2395,10 +2395,10 @@ index 4151e55a938d..55265dd4be11 100644
 +    stamp = 0,
 +    deps = [":tool"],
  )
-diff --git a/utils/bazel/llvm-project-overlay/llvm/driver.bzl b/utils/bazel/llvm-project-overlay/llvm/driver.bzl
+diff --git a/llvm/driver.bzl b/llvm/driver.bzl
 index 9cf72076ff55..8bac6463d620 100644
---- a/utils/bazel/llvm-project-overlay/llvm/driver.bzl
-+++ b/utils/bazel/llvm-project-overlay/llvm/driver.bzl
+--- a/llvm/driver.bzl
++++ b/llvm/driver.bzl
 @@ -12,6 +12,7 @@ load("@rules_cc//cc:defs.bzl", "CcInfo", "cc_binary")
  _TOOLS = {
      "clang-format": "//clang:clang-format-lib",

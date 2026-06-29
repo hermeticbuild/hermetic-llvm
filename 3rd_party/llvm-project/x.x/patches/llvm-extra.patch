@@ -1,7 +1,7 @@
-diff --git a/utils/bazel/llvm-project-overlay/clang/BUILD.bazel b/utils/bazel/llvm-project-overlay/clang/BUILD.bazel
+diff --git a/clang/BUILD.bazel b/clang/BUILD.bazel
 index a17b0b54a49b..12aa69678e2c 100644
---- a/utils/bazel/llvm-project-overlay/clang/BUILD.bazel
-+++ b/utils/bazel/llvm-project-overlay/clang/BUILD.bazel
+--- a/clang/BUILD.bazel
++++ b/clang/BUILD.bazel
 @@ -1900,6 +1900,11 @@ genrule(
      toolchains = [":workspace_root"],
  )
@@ -14,10 +14,10 @@ index a17b0b54a49b..12aa69678e2c 100644
  cc_library(
      name = "frontend",
      srcs = glob([
-diff --git a/utils/bazel/llvm-project-overlay/llvm/config.bzl b/utils/bazel/llvm-project-overlay/llvm/config.bzl
+diff --git a/llvm/config.bzl b/llvm/config.bzl
 index 2309175d04a9..4b3c6b2791db 100644
---- a/utils/bazel/llvm-project-overlay/llvm/config.bzl
-+++ b/utils/bazel/llvm-project-overlay/llvm/config.bzl
+--- a/llvm/config.bzl
++++ b/llvm/config.bzl
 @@ -28,8 +28,8 @@ def native_arch_defines(arch, triple):
 
  posix_defines = [
@@ -38,10 +38,10 @@ index 2309175d04a9..4b3c6b2791db 100644
      "HAVE_SBRK=1",
      "HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC=1",
  ]
-diff --git a/utils/bazel/llvm-project-overlay/mlir/tblgen.bzl b/utils/bazel/llvm-project-overlay/mlir/tblgen.bzl
+diff --git a/mlir/tblgen.bzl b/mlir/tblgen.bzl
 index e45ba1fe0ef7..5af5db59c608 100644
---- a/utils/bazel/llvm-project-overlay/mlir/tblgen.bzl
-+++ b/utils/bazel/llvm-project-overlay/mlir/tblgen.bzl
+--- a/mlir/tblgen.bzl
++++ b/mlir/tblgen.bzl
 @@ -172,7 +172,7 @@ def _gentbl_rule_impl(ctx):
          # Make sure action_env settings are honored so the env is the same as
          # when the tool was built. Important for locating shared libraries with

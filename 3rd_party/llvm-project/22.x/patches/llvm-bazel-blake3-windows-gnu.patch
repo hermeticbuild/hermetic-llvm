@@ -2,14 +2,14 @@ Subject: [PATCH] blake3.patch 3
 blake3.patch 2
 blake3.patch
 ---
-Index: utils/bazel/llvm-project-overlay/llvm/BUILD.bazel
+Index: llvm/BUILD.bazel
 IDEA additional info:
 Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 <+>UTF-8
 ===================================================================
-diff --git a/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel b/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel
---- a/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel	(revision ce6b71a665d55db6d6329a254092226eb030cbe8)
-+++ b/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel	(revision acfd66b043cfa923097dff1679190459a4fd580d)
+diff --git a/llvm/BUILD.bazel b/llvm/BUILD.bazel
+--- a/llvm/BUILD.bazel	(revision ce6b71a665d55db6d6329a254092226eb030cbe8)
++++ b/llvm/BUILD.bazel	(revision acfd66b043cfa923097dff1679190459a4fd580d)
 @@ -2,6 +2,7 @@
  # See https://llvm.org/LICENSE.txt for license information.
  # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception

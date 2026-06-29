@@ -4,10 +4,10 @@ Date:   Sat Dec 13 13:27:17 2025 -0500
 
     Rewrite bundle_resources to c++
 
-diff --git a/utils/bazel/llvm-project-overlay/clang/BUILD.bazel b/utils/bazel/llvm-project-overlay/clang/BUILD.bazel
+diff --git a/clang/BUILD.bazel b/clang/BUILD.bazel
 index ae6d4d28d3a8..5ceb2e42c23d 100644
---- a/utils/bazel/llvm-project-overlay/clang/BUILD.bazel
-+++ b/utils/bazel/llvm-project-overlay/clang/BUILD.bazel
+--- a/clang/BUILD.bazel
++++ b/clang/BUILD.bazel
 @@ -963,6 +963,72 @@ cc_library(
      ],
  )

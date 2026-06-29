@@ -1,5 +1,5 @@
 load("@bazel_features//:features.bzl", "bazel_features")
-load("@llvm_config//:version.bzl", "LLVM_VERSION_MAJOR")
+load("@llvm-project//:vars.bzl", "LLVM_VERSION_MAJOR")
 load("@rules_cc//cc/toolchains:tool.bzl", "cc_tool")
 load("@rules_cc//cc/toolchains:tool_map.bzl", "cc_tool_map")
 load("//platforms:common.bzl", "SUPPORTED_TARGETS")

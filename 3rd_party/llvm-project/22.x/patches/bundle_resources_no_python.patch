@@ -1,7 +1,7 @@
-diff --git a/utils/bazel/llvm-project-overlay/clang/BUILD.bazel b/utils/bazel/llvm-project-overlay/clang/BUILD.bazel
+diff --git a/clang/BUILD.bazel b/clang/BUILD.bazel
 index 06fed73..3ae48c1 100644
---- a/utils/bazel/llvm-project-overlay/clang/BUILD.bazel
-+++ b/utils/bazel/llvm-project-overlay/clang/BUILD.bazel
+--- a/clang/BUILD.bazel
++++ b/clang/BUILD.bazel
 @@ -978,6 +978,72 @@ cc_library(
      ],
  )

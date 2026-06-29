@@ -1,6 +1,6 @@
 """Shared settings for LLVM bootstrap transitions."""
 
-load("@llvm_config//:version.bzl", "LLVM_VERSION_MAJOR")
+load("@llvm-project//:vars.bzl", "LLVM_VERSION_MAJOR")
 
 # Enable the same set of tools we provide with prebuilts.
 LLVM_TOOLS = ([

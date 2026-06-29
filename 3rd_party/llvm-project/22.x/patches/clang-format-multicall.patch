@@ -691,10 +691,10 @@ index 000000000000..48f01ece0b51
 +    : B<"fail-on-incomplete-format",
 +        "If set, fail with exit code 1 on incomplete format.">;
 +defm list_ignored : BH<"list-ignored", "List ignored files.">;
-diff --git a/utils/bazel/llvm-project-overlay/clang/BUILD.bazel b/utils/bazel/llvm-project-overlay/clang/BUILD.bazel
+diff --git a/clang/BUILD.bazel b/clang/BUILD.bazel
 index 2b9c849e90c4..61f185783113 100644
---- a/utils/bazel/llvm-project-overlay/clang/BUILD.bazel
-+++ b/utils/bazel/llvm-project-overlay/clang/BUILD.bazel
+--- a/clang/BUILD.bazel
++++ b/clang/BUILD.bazel
 @@ -2300,22 +2300,38 @@ cc_binary(
      ],
  )
@@ -737,10 +737,10 @@ index 2b9c849e90c4..61f185783113 100644
  cc_binary(
      name = "clang-diff",
      srcs = glob(["tools/clang-diff/*.cpp"]),
-diff --git a/utils/bazel/llvm-project-overlay/llvm/driver.bzl b/utils/bazel/llvm-project-overlay/llvm/driver.bzl
+diff --git a/llvm/driver.bzl b/llvm/driver.bzl
 index e38c681370ed..be3e32bbf5f3 100644
---- a/utils/bazel/llvm-project-overlay/llvm/driver.bzl
-+++ b/utils/bazel/llvm-project-overlay/llvm/driver.bzl
+--- a/llvm/driver.bzl
++++ b/llvm/driver.bzl
 @@ -10,6 +10,7 @@ load("@rules_cc//cc:defs.bzl", "CcInfo", "cc_binary")
  
  # Mapping from every tool to the cc_library that implements the tool's entrypoint.

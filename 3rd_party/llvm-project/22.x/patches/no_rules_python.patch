@@ -1,7 +1,7 @@
-diff --git a/utils/bazel/llvm-project-overlay/clang/BUILD.bazel b/utils/bazel/llvm-project-overlay/clang/BUILD.bazel
+diff --git a/clang/BUILD.bazel b/clang/BUILD.bazel
 index 3ae48c1..78c2383 100644
---- a/utils/bazel/llvm-project-overlay/clang/BUILD.bazel
-+++ b/utils/bazel/llvm-project-overlay/clang/BUILD.bazel
+--- a/clang/BUILD.bazel
++++ b/clang/BUILD.bazel
 @@ -5,7 +5,6 @@
  load("@bazel_skylib//rules:run_binary.bzl", "run_binary")
  load("@bazel_skylib//rules:write_file.bzl", "write_file")
@@ -25,10 +25,10 @@ index 3ae48c1..78c2383 100644
  cc_library(
      name = "basic",
      srcs = [
-diff --git a/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel b/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel
+diff --git a/llvm/BUILD.bazel b/llvm/BUILD.bazel
 index e89ad57..efcd940 100644
---- a/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel
-+++ b/utils/bazel/llvm-project-overlay/llvm/BUILD.bazel
+--- a/llvm/BUILD.bazel
++++ b/llvm/BUILD.bazel
 @@ -6,7 +6,6 @@ load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
  load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
  load("@bazel_skylib//rules:write_file.bzl", "write_file")

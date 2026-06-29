@@ -1,7 +1,7 @@
-diff --git a/utils/bazel/llvm-project-overlay/llvm/lit_test.bzl b/utils/bazel/llvm-project-overlay/llvm/lit_test.bzl
+diff --git a/llvm/lit_test.bzl b/llvm/lit_test.bzl
 index 000000000000..111111111111 100644
---- a/utils/bazel/llvm-project-overlay/llvm/lit_test.bzl
-+++ b/utils/bazel/llvm-project-overlay/llvm/lit_test.bzl
+--- a/llvm/lit_test.bzl
++++ b/llvm/lit_test.bzl
 @@ -4,7 +4,7 @@
  """Rules for running lit tests."""
  
