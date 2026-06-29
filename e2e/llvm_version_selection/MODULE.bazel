@@ -1,0 +1,17 @@
+module(name = "llvm_version_selection")
+
+bazel_dep(name = "rules_cc", version = "0.2.20")
+bazel_dep(name = "llvm", version = "")
+local_path_override(
+    module_name = "llvm",
+    path = "../..",
+)
+
+llvm_source = use_extension("@llvm//extensions:llvm_source.bzl", "llvm_source")
+llvm_source.version(llvm_version = "21.1.8")
+use_repo(llvm_source, "llvm-raw", "llvm_config", "llvm_zlib", "llvm_zstd")
+
+toolchain = use_extension("@llvm//extensions:toolchain.bzl", "toolchain")
+use_repo(toolchain, "llvm_toolchains")
+
+register_toolchains("@llvm_toolchains//:all")

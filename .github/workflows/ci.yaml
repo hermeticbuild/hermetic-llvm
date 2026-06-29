@@ -197,6 +197,20 @@ jobs:
         run: |
           bazel build --nobuild //toolchain/bootstrap/stage1:llvm
 
+      - name: Verify consumer prebuilt LLVM ${{ matrix.llvm_version }} selection
+        env:
+          LLVM_VERSION: ${{ matrix.llvm_version }}
+        working-directory: e2e/llvm_version_selection
+        shell: bash
+        run: |
+          bazel --bazelrc=/dev/null build --nobuild //:hello --lockfile_mode=off
+          resource_dir="$(bazel --bazelrc=/dev/null cquery @llvm//:builtin_resource_dir --output=files --lockfile_mode=off)"
+          expected_suffix="/lib/clang/${LLVM_VERSION%%.*}"
+          if [[ "${resource_dir}" != *"${expected_suffix}" ]]; then
+            echo "Expected LLVM ${LLVM_VERSION} resource directory ending in ${expected_suffix}, got ${resource_dir}" >&2
+            exit 1
+          fi
+
   docs:
     runs-on: macos-15-intel
     name: Verify public docs generation

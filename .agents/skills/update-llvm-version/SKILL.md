@@ -24,9 +24,9 @@ argument-hint: 'Target LLVM version, optionally with prebuilt suffix number'
 This workflow has two phases:
 
 1. Build and publish prebuilts from a branch named llvm-<version>-<suffix>.
-2. Consume those prebuilts from a branch named update-llvm-<version> by updating MODULE.bazel, the prebuilt index, and opening a PR.
+2. Consume those prebuilts from a branch named update-llvm-<version> by updating the prebuilt index and opening a PR.
 
-The first branch must keep PREBUILT_LLVM_VERSION unchanged. The second branch switches PREBUILT_LLVM_VERSION and the checked-in llvm-toolchain-minimal index to the newly published release.
+The first branch changes LLVM_VERSION before the new prebuilt release exists, so the llvm_toolchain_minimal extension uses default_prebuilt_llvm_version from the checked-in index as the bootstrap seed. The second branch maps the new LLVM_VERSION to the newly published release in the checked-in llvm-toolchain-minimal index.
 Pushes, release inspection, and PR creation should be performed automatically unless the user overrides that behavior.
 Do not run local builds unless the user explicitly asks. Default verification is the LLVM Prebuilt Release workflow plus the final PR CI.
 
@@ -45,7 +45,7 @@ Do not run local builds unless the user explicitly asks. Default verification is
 
 3. Edit MODULE.bazel:
    - Set LLVM_VERSION to the new version.
-   - Leave PREBUILT_LLVM_VERSION unchanged.
+   - Do not change default_prebuilt_llvm_version in extensions/llvm_toolchain_minimal_index.json; it remains the bootstrap seed until the new release is published.
 4. Commit the change and push the branch.
 5. Monitor the LLVM Prebuilt Release workflow for that branch push.
    - Expect the successful run to often take roughly 20 to 30 minutes.
@@ -72,11 +72,8 @@ Do not run local builds unless the user explicitly asks. Default verification is
 5. Edit extensions/llvm_toolchain_minimal_index.json:
    - Add or replace the new `llvm-<version>-<suffix>` entry under `releases` with the published URLs and sha256 values.
    - Set `latest_by_llvm_version["<version>"]` to `llvm-<version>-<suffix>`.
-6. Edit MODULE.bazel:
-   - Set PREBUILT_LLVM_VERSION to the new version.
-   - Keep LLVM_VERSION at the new version.
-7. Edit toolchain/selects.bzl:
-   - Set LLVM_VERSION to the new version.
+6. Set `default_prebuilt_llvm_version` to the new version when the repository default should advance to the new release.
+7. Keep LLVM_VERSION in MODULE.bazel at the new version. The llvm_toolchain_minimal extension automatically materializes the release selected by latest_by_llvm_version.
 8. Commit and push update-llvm-<version>.
 9. Open a PR from update-llvm-<version> to main.
 10. Make it explicit in the PR body or branch strategy that the PR intentionally includes the commits from the prior llvm-* branch when the branch is stacked that way.
@@ -123,8 +120,8 @@ gh pr create --base main --head update-llvm-<version> --fill
 - LLVM_VERSION is updated to the target version.
 - The llvm-<version>-<suffix> branch successfully published its GitHub release.
 - The release contains SHA256.txt and all six minimal toolchain archives.
-- PREBUILT_LLVM_VERSION matches the published prebuilt version.
 - extensions/llvm_toolchain_minimal_index.json maps the LLVM version to the chosen release suffix.
+- default_prebuilt_llvm_version identifies the intended fallback bootstrap seed.
 - extensions/llvm_toolchain_minimal_index.json matches the published release URLs and checksums exactly.
 - The update-llvm-<version> branch is pushed.
 - A PR targeting main exists for the final branch.

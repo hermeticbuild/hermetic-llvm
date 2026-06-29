@@ -1,11 +1,9 @@
 load("//platforms:common.bzl", "SUPPORTED_EXECS")
 
-LLVM_VERSION = "22.1.8"
-
 def _tool_repo(exec_os, exec_cpu):
     os_part = "darwin" if exec_os == "macos" else exec_os
     cpu_part = "amd64" if exec_cpu == "x86_64" else "arm64"
-    return "@llvm-toolchain-minimal-%s-%s-%s//" % (LLVM_VERSION, os_part, cpu_part)
+    return "@llvm-toolchain-minimal-%s-%s//" % (os_part, cpu_part)
 
 def _platform_bootstrap_stage(exec_os, exec_cpu, bootstrap_stage):
     return "@llvm//platforms/config:%s_%s_%s" % (exec_os, exec_cpu, bootstrap_stage)

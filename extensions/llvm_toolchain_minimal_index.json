@@ -1,4 +1,5 @@
 {
+  "default_prebuilt_llvm_version": "22.1.8",
   "latest_by_llvm_version": {
     "21.1.8": "llvm-21.1.8-10",
     "22.1.6": "llvm-22.1.6-1",
