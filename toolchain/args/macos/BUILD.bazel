@@ -45,6 +45,40 @@ cc_args(
     ],
 )
 
+# Make compiler-rt's public sanitizer interface headers (sanitizer/*.h)
+# available when compiling instrumented user code (e.g. abseil's
+# <sanitizer/common_interface_defs.h>). Mirrors
+# //toolchain/args/linux:sanitizer_headers_include_search_paths.
+#
+# This is only added for user-program (runtime_stage=complete) builds, never
+# when building the compiler-rt runtimes themselves: those already pull in
+# compiler-rt/include via includes=["include"], and on macOS the copy-based
+# sandbox rejects staging that directory twice ("File exists"). See
+# macos_toolchain_args in //toolchain:BUILD.bazel.
+cc_args(
+    name = "sanitizer_headers_include_search_paths",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:source_compile_actions",
+    ],
+    allowlist_include_directories = [
+        "//sanitizers:sanitizers_headers_include_search_directory",
+    ],
+    # Make sure these sanitizer paths come after any user supplied paths, which
+    # might also include another version of llvm's sanitizer headers.
+    args = [
+        "-Xclang",
+        "-internal-isystem",
+        "-Xclang",
+        "{sanitizer_headers_include_search_paths}",
+    ],
+    data = [
+        "//sanitizers:sanitizers_headers_include_search_directory",
+    ],
+    format = {
+        "sanitizer_headers_include_search_paths": "//sanitizers:sanitizers_headers_include_search_directory",
+    },
+)
+
 # TODO(cerisier): Extract those into proper semantic args list.
 cc_args(
     name = "default_link_flags",

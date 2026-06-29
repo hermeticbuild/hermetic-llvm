@@ -3,11 +3,6 @@ set -euo pipefail
 
 EXPECTED_OUTPUT="ERROR: AddressSanitizer: heap-use-after-free on address"
 
-if [[ "$(uname -s)" == "Darwin" ]]; then
-  echo "Skipping ASan runtime check on Darwin; runtime is only provided for Linux."
-  exit 0
-fi
-
 BIN="$BINARY"
 if [[ ! -x "$BIN" && -n "${RUNFILES_DIR:-}" ]]; then
   if [[ -x "${RUNFILES_DIR}/${BIN}" ]]; then

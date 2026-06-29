@@ -169,7 +169,7 @@ alias(
 )
 
 copy_to_resource_directory(
-    name = "resource_directory",
+    name = "resource_directory_default",
     srcs = select({
         "//platforms/config:none_bpfeb": {},
         "//platforms/config:none_bpfel": {},
@@ -258,6 +258,62 @@ copy_to_resource_directory(
             "//runtimes/compiler-rt:clang_rt.xray_basic.static": "libclang_rt.xray-basic",
         },
         "//conditions:default": {},
+    }),
+    # macOS uses :resource_directory_macos instead: the Darwin runtime naming
+    # differs (libclang_rt.<name>_osx[_dynamic]) and only a subset of runtimes
+    # is supported upstream. See the :resource_directory alias below.
+    target_compatible_with = select({
+        "@platforms//os:macos": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+    visibility = ["//visibility:public"],
+)
+
+# Darwin resource directory. Upstream compiler-rt supports only a subset of
+# runtimes on macOS, with different library names (libclang_rt.<name>_osx for
+# static archives, libclang_rt.<name>_osx_dynamic.dylib for shared runtimes).
+# Runtimes that upstream does not build on Darwin (msan, dfsan, hwasan,
+# safestack, scudo, gwp_asan, cfi, nsan, rtsan, tysan) are intentionally absent.
+copy_to_resource_directory(
+    name = "resource_directory_macos",
+    srcs = select({
+        "//config:asan_enabled": {
+            # asan ships as a dylib on Darwin (no static standalone runtime);
+            # asan_cxx is folded into the dylib. The asan_static archive carries
+            # the always-statically-linked portion.
+            "//runtimes/compiler-rt:clang_rt.asan.shared": "libclang_rt.asan_osx_dynamic",
+            "//runtimes/compiler-rt:clang_rt.asan_static.static": "libclang_rt.asan_static_osx",
+        },
+        "//conditions:default": {},
+    }) | select({
+        "//config:ubsan_enabled": {
+            # Standalone UBSan is a dylib on Darwin (cxxabi folded in); no static.
+            "//runtimes/compiler-rt:clang_rt.ubsan_standalone.shared": "libclang_rt.ubsan_osx_dynamic",
+        },
+        "//conditions:default": {},
+    }) | select({
+        "//config:lsan_enabled": {
+            # LSan is a dylib on Darwin; no static standalone runtime.
+            "//runtimes/compiler-rt:clang_rt.lsan.shared": "libclang_rt.lsan_osx_dynamic",
+        },
+        "//conditions:default": {},
+    }) | select({
+        "//config:tsan_enabled": {
+            # TSan is a dylib on Darwin (x86_64/arm64); no static runtime.
+            "//runtimes/compiler-rt:clang_rt.tsan.shared": "libclang_rt.tsan_osx_dynamic",
+        },
+        "//conditions:default": {},
+    }),
+    target_compatible_with = ["@platforms//os:macos"],
+    target_triple = "darwin",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "resource_directory",
+    actual = select({
+        "@platforms//os:macos": ":resource_directory_macos",
+        "//conditions:default": ":resource_directory_default",
     }),
     visibility = ["//visibility:public"],
 )
