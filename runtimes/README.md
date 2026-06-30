@@ -1,5 +1,25 @@
 # Runtimes
 
+# Semantic groups
+
+# TODO(cerisier): Make runtimes package only a group of semantic packages
+
+* builtins
+  * compiler-rt.builtins
+  * libgcc
+* unwindlib
+  * libunwind
+  * libgcc_s
+* libc
+  * musl
+  * glibc
+  * mingw
+* cxxstdlib
+  * libc++
+  * libstdc++
+* sanitizers
+  * compiler-rt.*san
+
 # Start files (CRTstuff)
 
 Location: %sysroot/usr/lib/\<triple\>/

@@ -909,18 +909,18 @@ cc_args(
 
 # Those are stubs since we link against static_runtime_libs / dynamic_runtime_libs.
 cc_args(
-    name = "libunwind_library_search_paths",
+    name = "unwindlib_library_search_paths",
     actions = [
         "@rules_cc//cc/toolchains/actions:link_actions",
     ],
     args = [
-        "-L{libunwind_library_search_path}",
+        "-L{unwindlib_library_search_path}",
     ],
     data = [
-        "//runtimes/libunwind:libunwind_library_search_directory",
+        "//runtimes/unwindlib:unwindlib_library_search_directory",
     ],
     format = {
-        "libunwind_library_search_path": "//runtimes/libunwind:libunwind_library_search_directory",
+        "unwindlib_library_search_path": "//runtimes/unwindlib:unwindlib_library_search_directory",
     },
 )
 

@@ -122,26 +122,56 @@ def config_settings():
         build_setting_default = True,
     )
 
-    # This flag makes a dummy gcc_s library to link against.
+    # This flag uses llvm-libgcc runtime libraries instead of libunwind directly.
     #
-    # libgcc_s is a shared library (only libgcc_s.so exists) that is required
-    # when creating or linking against a shared library that uses c++ exceptions
-    # that may cross the library boundary.
+    # This also makes dummy gcc, gcc_eh, and gcc_s libraries available in the
+    # libunwind search directory for third-party link flags.
     #
-    # This toolchain currently doesn't support linking dynamically against an
-    # unwinder, which means that this toolchain doesn't support cross boundary
-    # c++ exceptions for the moment (and the only unwinder supported is libunwind).
-    # Yet, it is possible for dependencies that you do not control to pass -lgcc_s
-    # linker flags.
-    #
-    # Since rustc passes this flag, we default to enabling this flag to make this toolchain
-    # more broadly compatible out-of-the-box. If you know what you are doing and do not want
-    # to no-op these flags, you can disable this behavior.
-    #
-    # In theory, we should implement llvm-libgcc and provide these libs into the resource directory.
+    # This is the default because most projects expect to link against libgcc.
+    # Under the hood, this is actually compiler-rt.builtins and libunwind disguised as libgcc.
     bool_flag(
-        name = "experimental_stub_libgcc_s",
+        name = "experimental_use_llvm_libgcc",
+        build_setting_default = False,
+    )
+    native.config_setting(
+        name = "experimental_use_llvm_libgcc_enabled",
+        flag_values = {
+            ":experimental_use_llvm_libgcc": "True",
+        },
+    )
+    native.config_setting(
+        name = "experimental_use_llvm_libgcc_disabled",
+        flag_values = {
+            ":experimental_use_llvm_libgcc": "False",
+        },
+    )
+
+    # This flag provides a dummy gcc_s, gcc and gcc_eh library while still linking libunwind as
+    # the unwinder runtime and compiler-rt.builtins as the builtins.
+    #
+    # It is ignored when use_llvm_libgcc is enabled.
+    bool_flag(
+        name = "experimental_stub_libgcc",
         build_setting_default = True,
+    )
+
+    # Compat
+    native.alias(
+        name = "experimental_stub_libgcc_s",
+        actual = ":experimental_stub_libgcc",
+    )
+    native.config_setting(
+        name = "experimental_stub_libgcc_enabled",
+        flag_values = {
+            ":experimental_stub_libgcc": "True",
+        },
+    )
+    selects.config_setting_group(
+        name = "stub_libgcc_enabled",
+        match_any = [
+            ":experimental_use_llvm_libgcc_enabled",
+            ":experimental_stub_libgcc_enabled",
+        ],
     )
 
     for sanitizer in SANITIZERS:

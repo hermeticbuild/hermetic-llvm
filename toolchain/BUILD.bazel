@@ -198,17 +198,17 @@ cc_args_list(
 
 # Those are stubs since we link against static_runtime_libs / dynamic_runtime_libs.
 cc_args_list(
-    name = "libunwind_library_search_paths",
+    name = "unwindlib_library_search_paths",
     args = select({
         "@platforms//os:macos": [
             # We want to provide the stubs for macOS.
-            "//toolchain/args:libunwind_library_search_paths",
+            "//toolchain/args:unwindlib_library_search_paths",
         ],
         "@platforms//os:linux": [
-            "//toolchain/args:libunwind_library_search_paths",
+            "//toolchain/args:unwindlib_library_search_paths",
         ],
         "@platforms//os:windows": [
-            "//toolchain/args:libunwind_library_search_paths",
+            "//toolchain/args:unwindlib_library_search_paths",
         ],
         "//conditions:default": [],
     }),
@@ -364,7 +364,7 @@ cc_args_list(
         "//toolchain/args:lto_plugin_target_flags",
     ] + [
         ":cxxstdlib_library_search_paths",
-        ":libunwind_library_search_paths",
+        ":unwindlib_library_search_paths",
         ":rtlib",
         ":stdlib",
         ":unwindlib",
