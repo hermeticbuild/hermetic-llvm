@@ -64,33 +64,24 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
+# macOS + a target sanitizer flag. Using <san>_target_config (the exec-forced
+# wrapper) keeps host tools out even when the sanitizer flag is set globally.
 config_setting(
-    name = "_macos",
-    constraint_values = ["@platforms//os:macos"],
-)
-
-selects.config_setting_group(
     name = "_asan_dynamic_runtime_macos",
-    match_all = [
-        "//config:asan_enabled",
-        ":_macos",
-    ],
+    constraint_values = ["@platforms//os:macos"],
+    flag_values = {"//config:asan_target_config": "true"},
 )
 
-selects.config_setting_group(
+config_setting(
     name = "_ubsan_dynamic_runtime_macos",
-    match_all = [
-        "//config:ubsan_enabled",
-        ":_macos",
-    ],
+    constraint_values = ["@platforms//os:macos"],
+    flag_values = {"//config:ubsan_target_config": "true"},
 )
 
-selects.config_setting_group(
+config_setting(
     name = "_lsan_dynamic_runtime_macos",
-    match_all = [
-        "//config:lsan_enabled",
-        ":_macos",
-    ],
+    constraint_values = ["@platforms//os:macos"],
+    flag_values = {"//config:lsan_target_config": "true"},
 )
 
 # On Darwin the sanitizer runtimes are dylibs. Adding an enabled sanitizer's
