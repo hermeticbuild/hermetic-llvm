@@ -57,6 +57,11 @@ _FISSION_TEST_COMPATIBLE = select({
     "//conditions:default": ["@platforms//:incompatible"],
 }) if bazel_features.cc.supports_starlarkified_toolchains else ["@platforms//:incompatible"]
 
+_EXTERNAL_INCLUDE_PATHS_TEST_COMPATIBLE = select({
+    "@platforms//os:linux": [],
+    "//conditions:default": ["@platforms//:incompatible"],
+}) if bazel_features.cc.supports_starlarkified_toolchains else ["@platforms//:incompatible"]
+
 musl_header_generation_tests(name = "musl_header_generation_tests")
 
 cc_library(
@@ -508,10 +513,7 @@ sh_test(
     srcs = ["external_include_paths_test.sh"],
     args = ["$(rootpath @external_include_paths_test//:error_header_binary)"],
     data = ["@external_include_paths_test//:error_header_binary"],
-    target_compatible_with = select({
-        "@platforms//os:linux": [],
-        "//conditions:default": ["@platforms//:incompatible"],
-    }),
+    target_compatible_with = _EXTERNAL_INCLUDE_PATHS_TEST_COMPATIBLE,
 )
 
 # TODO(zbarsky): Turn more of this into a macro once we have more sanitizers?
