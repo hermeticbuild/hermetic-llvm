@@ -504,13 +504,13 @@ sh_test(
 )
 
 sh_test(
-    name = "nasm_test",
-    srcs = ["nasm_test.sh"],
-    args = ["$(rootpath @nasm//:nasm)"],
-    data = ["@nasm"],
+    name = "external_include_paths_test",
+    srcs = ["external_include_paths_test.sh"],
+    args = ["$(rootpath @external_include_paths_test//:error_header_binary)"],
+    data = ["@external_include_paths_test//:error_header_binary"],
     target_compatible_with = select({
-        "@platforms//os:windows": ["@platforms//:incompatible"],
-        "//conditions:default": [],
+        "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
     }),
 )
 

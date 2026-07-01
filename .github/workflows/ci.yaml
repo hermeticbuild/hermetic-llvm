@@ -34,7 +34,7 @@ jobs:
           # Path mapping requires Bazel 9+.
           - bazel_version: last_rc
             folder: "e2e/rules_cc"
-            extra_flags: "--experimental_output_paths=strip --features=external_include_paths --host_features=external_include_paths"
+            extra_flags: "--experimental_output_paths=strip"
     runs-on: ${{ matrix.os }}
 
     # Configure a human readable name for each job
