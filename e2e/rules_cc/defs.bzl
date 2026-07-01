@@ -89,6 +89,28 @@ asan_cc_binary, _asan_cc_binary_internal = with_cfg(cc_binary).set(
     True,
 ).build()
 
+asan_shared_cc_binary, _asan_shared_cc_binary_internal = with_cfg(cc_binary).set(
+    Label("@llvm//config:asan"),
+    True,
+).set(
+    Label("@llvm//config:host_asan"),
+    True,
+).set(
+    Label("@llvm//config:shared_sanitizer"),
+    True,
+).build()
+
+tsan_shared_cc_binary, _tsan_shared_cc_binary_internal = with_cfg(cc_binary).set(
+    Label("@llvm//config:tsan"),
+    True,
+).set(
+    Label("@llvm//config:host_tsan"),
+    True,
+).set(
+    Label("@llvm//config:shared_sanitizer"),
+    True,
+).build()
+
 lsan_cc_binary, _lsan_cc_binary_internal = with_cfg(cc_binary).set(
     Label("@llvm//config:lsan"),
     True,

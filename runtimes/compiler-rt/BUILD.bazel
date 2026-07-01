@@ -119,6 +119,12 @@ alias(
 )
 
 alias(
+    name = "clang_rt.tsan.shared",
+    actual = "@llvm-project//compiler-rt:tsan.shared",
+    visibility = ["//visibility:public"],
+)
+
+alias(
     name = "clang_rt.asan.static",
     actual = "@llvm-project//compiler-rt:asan.static",
     visibility = ["//visibility:public"],
@@ -139,6 +145,12 @@ alias(
 alias(
     name = "clang_rt.asan.shared",
     actual = "@llvm-project//compiler-rt:asan.shared",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "clang_rt.asan-preinit.static",
+    actual = "@llvm-project//compiler-rt:asan_preinit.static",
     visibility = ["//visibility:public"],
 )
 

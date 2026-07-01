@@ -158,6 +158,8 @@ cc_library(
         "src/**/*.h",
         "src/**/*.def",
     ]),
+    # Public so the shared compiler-rt runtimes can satisfy __gxx_personality_v0.
+    visibility = ["//visibility:public"],
 )
 
 cc_runtime_stage0_static_library(
