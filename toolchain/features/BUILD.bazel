@@ -1,3 +1,4 @@
+load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 load("@rules_cc//cc/toolchains:feature.bzl", "cc_feature")
 load("@rules_cc//cc/toolchains:feature_set.bzl", "cc_feature_set")
@@ -66,6 +67,31 @@ cc_feature(
     feature_name = "no_windows_export_all_symbols",
 )
 
+# --icf=safe is LLD/ELF-only: sanitizer runtimes forbid ICF, wasm and Windows
+# don't support it, and macOS links with ld64 (which rejects the flag). Grouped
+# via match_any so overlapping conditions (e.g. macOS + a sanitizer) don't
+# produce an ambiguous select.
+selects.config_setting_group(
+    name = "_icf_unsupported",
+    match_any = [
+        "//config:asan_enabled",
+        "//config:cfi_enabled",
+        "//config:dfsan_enabled",
+        "//config:lsan_enabled",
+        "//config:msan_enabled",
+        "//config:nsan_enabled",
+        "//config:rtsan_enabled",
+        "//config:safestack_enabled",
+        "//config:tsan_enabled",
+        "//config:tysan_enabled",
+        "//config:ubsan_enabled",
+        "@platforms//cpu:wasm32",
+        "@platforms//cpu:wasm64",
+        "@platforms//os:macos",
+        "@platforms//os:windows",
+    ],
+)
+
 cc_args(
     name = "opt_link_flags",
     actions = [
@@ -82,20 +108,7 @@ cc_args(
             "-Wl,--gc-sections",
         ],
     }) + select({
-        "//config:asan_enabled": [],
-        "//config:msan_enabled": [],
-        "//config:dfsan_enabled": [],
-        "//config:nsan_enabled": [],
-        "//config:safestack_enabled": [],
-        "//config:rtsan_enabled": [],
-        "//config:tysan_enabled": [],
-        "//config:tsan_enabled": [],
-        "//config:ubsan_enabled": [],
-        "//config:cfi_enabled": [],
-        "//config:lsan_enabled": [],
-        "@platforms//cpu:wasm32": [],
-        "@platforms//cpu:wasm64": [],
-        "@platforms//os:windows": [],
+        ":_icf_unsupported": [],
         "//conditions:default": ["-Wl,--icf=safe"],
     }),
 )
