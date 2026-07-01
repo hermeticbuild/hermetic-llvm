@@ -1526,6 +1526,60 @@ cc_runtime_stage0_static_library(
     ],
 )
 
+# On Darwin, standalone UBSan ships as a dylib (libclang_rt.ubsan_osx_dynamic.dylib)
+# with no static standalone runtime; the C++ABI parts (ubsan_cxx) are folded into
+# the dylib.
+# See https://github.com/llvm/llvm-project/blob/main/compiler-rt/lib/ubsan/CMakeLists.txt (APPLE branch).
+cc_runtime_stage0_shared_library(
+    name = "ubsan_standalone.shared",
+    additional_linker_inputs = select({
+        "@llvm//platforms/config:gnu": [
+            "@llvm//runtimes/glibc:glibc_library_search_directory",
+        ],
+        "@llvm//platforms/config:musl": [
+            "@llvm//runtimes/musl:musl_library_search_directory",
+        ],
+        "//conditions:default": [],
+    }),
+    shared_lib_name = select({
+        "@platforms//os:macos": "libclang_rt.ubsan_osx_dynamic.dylib",
+        "//conditions:default": "libubsan_standalone.shared.so",
+    }),
+    user_link_flags = select({
+        "@llvm//platforms/config:gnu": [
+            "-L$(execpath @llvm//runtimes/glibc:glibc_library_search_directory)",
+            "-lc",
+        ],
+        "@llvm//platforms/config:musl": [
+            "-L$(execpath @llvm//runtimes/musl:musl_library_search_directory)",
+            "-lc",
+        ],
+        "//conditions:default": [],
+    }) + select({
+        "@platforms//os:macos": [
+            "-Wl,-install_name,@rpath/libclang_rt.ubsan_osx_dynamic.dylib",
+            "-stdlib=libc++",
+            "-lc++",
+            "-lc++abi",
+        ] + weak_symbol_link_flags([
+            UBSAN_WEAK_SYMBOLS,
+            SANITIZER_COMMON_WEAK_SYMBOLS,
+        ]),
+        "//conditions:default": [],
+    }),
+    visibility = ["//visibility:public"],
+    deps = [
+        ":interception",
+        ":sanitizer_common",
+        ":sanitizer_common_coverage",
+        ":sanitizer_common_libc",
+        ":sanitizer_common_symbolizer",
+        ":sanitizer_common_symbolizer_internal",
+        ":ubsan_cxx",
+        ":ubsan_standalone",
+    ],
+)
+
 ###
 ### compiler-rt/lib/cfi/CMakeLists.txt.
 ###
@@ -2426,6 +2480,58 @@ cc_runtime_stage0_static_library(
     ],
 )
 
+# On Darwin, LSan ships as a dylib (libclang_rt.lsan_osx_dynamic.dylib); there is
+# no static standalone runtime. See lib/lsan/CMakeLists.txt (APPLE branch).
+cc_runtime_stage0_shared_library(
+    name = "lsan.shared",
+    additional_linker_inputs = select({
+        "@llvm//platforms/config:gnu": [
+            "@llvm//runtimes/glibc:glibc_library_search_directory",
+        ],
+        "@llvm//platforms/config:musl": [
+            "@llvm//runtimes/musl:musl_library_search_directory",
+        ],
+        "//conditions:default": [],
+    }),
+    shared_lib_name = select({
+        "@platforms//os:macos": "libclang_rt.lsan_osx_dynamic.dylib",
+        "//conditions:default": "liblsan.shared.so",
+    }),
+    user_link_flags = select({
+        "@llvm//platforms/config:gnu": [
+            "-L$(execpath @llvm//runtimes/glibc:glibc_library_search_directory)",
+            "-lc",
+        ],
+        "@llvm//platforms/config:musl": [
+            "-L$(execpath @llvm//runtimes/musl:musl_library_search_directory)",
+            "-lc",
+        ],
+        "//conditions:default": [],
+    }) + select({
+        "@platforms//os:macos": [
+            "-Wl,-install_name,@rpath/libclang_rt.lsan_osx_dynamic.dylib",
+            "-stdlib=libc++",
+            "-lc++",
+            "-lc++abi",
+        ] + weak_symbol_link_flags([
+            LSAN_WEAK_SYMBOLS,
+            SANITIZER_COMMON_WEAK_SYMBOLS,
+        ]),
+        "//conditions:default": [],
+    }),
+    visibility = ["//visibility:public"],
+    deps = [
+        ":interception",
+        ":lsan",
+        ":lsan_common",
+        ":sanitizer_common",
+        ":sanitizer_common_coverage",
+        ":sanitizer_common_libc",
+        ":sanitizer_common_symbolizer",
+        ":sanitizer_common_symbolizer_internal",
+    ],
+)
+
 ###
 ### compiler-rt/lib/xray/CMakeLists.txt.
 ###
@@ -3136,11 +3242,11 @@ cc_runtime_stage0_shared_library(
     }),
     user_link_flags = select({
         "@llvm//platforms/config:gnu": [
-            "-L$(location @llvm//runtimes/glibc:glibc_library_search_directory)",
+            "-L$(execpath @llvm//runtimes/glibc:glibc_library_search_directory)",
             "-lc",
         ],
         "@llvm//platforms/config:musl": [
-            "-L$(location @llvm//runtimes/musl:musl_library_search_directory)",
+            "-L$(execpath @llvm//runtimes/musl:musl_library_search_directory)",
             "-lc",
         ],
         "//conditions:default": [],

@@ -41,6 +41,12 @@ alias(
 )
 
 alias(
+    name = "clang_rt.ubsan_standalone.shared",
+    actual = "@llvm-project//compiler-rt:ubsan_standalone.shared",
+    visibility = ["//visibility:public"],
+)
+
+alias(
     name = "clang_rt.cfi.static",
     actual = "@llvm-project//compiler-rt:cfi.static",
     visibility = ["//visibility:public"],
@@ -145,6 +151,12 @@ alias(
 alias(
     name = "clang_rt.lsan.static",
     actual = "@llvm-project//compiler-rt:lsan.static",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "clang_rt.lsan.shared",
+    actual = "@llvm-project//compiler-rt:lsan.shared",
     visibility = ["//visibility:public"],
 )
 

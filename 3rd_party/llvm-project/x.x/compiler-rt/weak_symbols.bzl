@@ -82,7 +82,7 @@ def weak_symbol_link_flags(symbol_lists):
       symbol_lists: a list of symbol-name lists (e.g. [ASAN_WEAK_SYMBOLS, ...]).
     """
     return [
-        "-Wl,-U,{}".format(symbol)
+        "-Wl,-U," + symbol
         for symbols in symbol_lists
         for symbol in symbols
     ]
