@@ -1,4 +1,5 @@
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@with_cfg.bzl", "with_cfg")
 
 # Wrap a with_cfg sanitizer cc_binary so it pulls in its macOS runtime
@@ -192,4 +193,32 @@ profile_cc_binary, _profile_cc_binary_internal = with_cfg(cc_binary).set(
 opt_binary, _opt_binary_internal = with_cfg(cc_binary).set(
     "compilation_mode",
     "opt",
+).build()
+
+# Sanitizer cc_test variants. cc_test links dynamically, so on macOS the
+# sanitizer runtime dylib is supplied by the toolchain (dynamic_runtime_lib +
+# the runtime_library_search_directories feature) -- no dynamic_deps needed
+# here, unlike the cc_binary macros. These only apply the sanitizer settings.
+ubsan_cc_test, _ubsan_cc_test_internal = with_cfg(cc_test).set(
+    Label("@llvm//config:ubsan"),
+    True,
+).set(
+    Label("@llvm//config:host_ubsan"),
+    True,
+).build()
+
+asan_cc_test, _asan_cc_test_internal = with_cfg(cc_test).set(
+    Label("@llvm//config:asan"),
+    True,
+).set(
+    Label("@llvm//config:host_asan"),
+    True,
+).build()
+
+lsan_cc_test, _lsan_cc_test_internal = with_cfg(cc_test).set(
+    Label("@llvm//config:lsan"),
+    True,
+).set(
+    Label("@llvm//config:host_lsan"),
+    True,
 ).build()

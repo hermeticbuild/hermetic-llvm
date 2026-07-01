@@ -15,12 +15,14 @@ load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load(
     "//:defs.bzl",
     "asan_cc_binary",
+    "asan_cc_test",
     "cfi_cc_binary",
     "dfsan_cc_binary",
     "fission_cc_binary",
     "fuzzer_asan_cc_binary",
     "fuzzer_cc_binary",
     "lsan_cc_binary",
+    "lsan_cc_test",
     "msan_cc_binary",
     "nsan_cc_binary",
     "opt_binary",
@@ -30,6 +32,7 @@ load(
     "tsan_cc_binary",
     "tysan_cc_binary",
     "ubsan_cc_binary",
+    "ubsan_cc_test",
     "xray_cc_binary",
 )
 load(":bazel_version.bzl", "validate_static_library_compatible")
@@ -744,6 +747,37 @@ exec_test(
     target_compatible_with = select({
         "@platforms//os:linux": [],
         "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)
+
+# A cc_test links dynamically, so on macOS its sanitizer runtime dylib is
+# supplied by the toolchain (no per-target dynamic_deps). These verify that
+# wiring end to end -- the runtime loads and is functional -- per sanitizer, on
+# each OS that supports the sanitizer's runtime.
+asan_cc_test(
+    name = "asan_runtime_cc_test",
+    srcs = ["asan_runtime_cc_test.cc"],
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+)
+
+ubsan_cc_test(
+    name = "ubsan_runtime_cc_test",
+    srcs = ["ubsan_runtime_cc_test.cc"],
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+)
+
+lsan_cc_test(
+    name = "lsan_runtime_cc_test",
+    srcs = ["lsan_runtime_cc_test.cc"],
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
     }),
 )
 
