@@ -503,6 +503,17 @@ sh_test(
     target_compatible_with = _DSYM_OUTPUT_TEST_COMPATIBLE,
 )
 
+sh_test(
+    name = "nasm_test",
+    srcs = ["nasm_test.sh"],
+    args = ["$(rootpath @nasm//:nasm)"],
+    data = ["@nasm"],
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+)
+
 # TODO(zbarsky): Turn more of this into a macro once we have more sanitizers?
 ubsan_cc_binary(
     name = "ubsan_fail",

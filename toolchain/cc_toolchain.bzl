@@ -99,9 +99,18 @@ def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
             "//conditions:default": [],
         }),
         known_features = select({
-            "@llvm//toolchain:runtimes_none": ["@llvm//toolchain/features:fdo_optimize"],
-            "@llvm//toolchain:runtimes_stage1": ["@llvm//toolchain/features:fdo_optimize"],
-            "@llvm//toolchain:runtimes_stage1_hosted": ["@llvm//toolchain/features:fdo_optimize"],
+            "@llvm//toolchain:runtimes_none": [
+                "@llvm//toolchain/features:external_include_paths",
+                "@llvm//toolchain/features:fdo_optimize",
+            ],
+            "@llvm//toolchain:runtimes_stage1": [
+                "@llvm//toolchain/features:external_include_paths",
+                "@llvm//toolchain/features:fdo_optimize",
+            ],
+            "@llvm//toolchain:runtimes_stage1_hosted": [
+                "@llvm//toolchain/features:external_include_paths",
+                "@llvm//toolchain/features:fdo_optimize",
+            ],
             "//conditions:default": [name + "_known_features"],
         }),
         enabled_features = select({
