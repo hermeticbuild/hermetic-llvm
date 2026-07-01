@@ -19,8 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # only test on linux for now, macos is not ready.
-        os: [ubuntu-latest, ubuntu-24.04-arm]
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest]
         bazel_version: [8.x, last_rc]
         folder:
           - "e2e/rules_cc"
@@ -69,12 +68,17 @@ jobs:
         working-directory: ${{ matrix.folder }}
         shell: bash
         run: |
+          MATRIX_FLAGS="${{ matrix.extra_flags }}"
+          if [[ "${{ runner.os }}" == "macOS" ]]; then
+            MATRIX_FLAGS="$MATRIX_FLAGS --jobs=100"
+          fi
+
           bazel \
             --bazelrc=$GITHUB_WORKSPACE/.github/workflows/ci.bazelrc \
             --bazelrc=.bazelrc \
             test \
             --remote_header=x-buildbuddy-api-key=4jtaxdhxtyu4ylxdEwI7 \
-            ${{ matrix.extra_flags }} \
+            $MATRIX_FLAGS \
             //...
 
   test_windows:

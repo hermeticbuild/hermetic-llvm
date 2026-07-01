@@ -1,5 +1,5 @@
 load("@gazelle//:def.bzl", "gazelle")
-load("@llvm//:defs.bzl", "exec_test")
+load("@platforms//host:constraints.bzl", "HOST_CONSTRAINTS")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_go//go:def.bzl", "go_test")
 load("@rules_platform//platform_data:defs.bzl", "platform_data")
@@ -45,11 +45,12 @@ platform_data(
 )
 
 # TODO: Add a wasm64 test once wazero gains memory64 support.
-exec_test(
+go_test(
     name = "wasm_test",
     srcs = ["wasm_test.go"],
     data = [":wasm_blob"],
-    rule = go_test,
+    exec_compatible_with = HOST_CONSTRAINTS,
+    tags = ["no-remote"],
     x_defs = {
         "wasmBlobRlocationpath": "$(rlocationpath :wasm_blob)",
     },

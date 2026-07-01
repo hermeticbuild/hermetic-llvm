@@ -28,6 +28,14 @@ toolchain.target(
     arch = "aarch64",
     os = "linux",
 )
+toolchain.target(
+    arch = "x86_64",
+    os = "macos",
+)
+toolchain.target(
+    arch = "aarch64",
+    os = "macos",
+)
 use_repo(toolchain, "llvm_toolchains")
 
 register_toolchains("@llvm_toolchains//:all")
