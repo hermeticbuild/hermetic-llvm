@@ -37,6 +37,7 @@ HDRS = glob(
         # These are template stubs with unconditional #error directives.
         # The real versions come from arch-specific sysdeps/ or system headers.
         "bits/endian.h",
+        "bits/errno.h",
         "bits/link.h",
         "bits/wordsize.h",
     ],

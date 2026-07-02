@@ -1,6 +1,23 @@
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@with_cfg.bzl", "with_cfg")
 
+_EXTERNAL_INCLUDE_PATHS_GLIBC_PLATFORM = select({
+    "@platforms//cpu:aarch64": [Label("@llvm//platforms:linux_aarch64_gnu.2.34")],
+    "@platforms//cpu:x86_64": [Label("@llvm//platforms:linux_x86_64_gnu.2.34")],
+    "//conditions:default": [],
+})
+
+external_include_paths_glibc_filegroup, _external_include_paths_glibc_filegroup_internal = with_cfg(native.filegroup).set(
+    "platforms",
+    _EXTERNAL_INCLUDE_PATHS_GLIBC_PLATFORM,
+).extend(
+    "features",
+    ["external_include_paths"],
+).extend(
+    "host_features",
+    ["external_include_paths"],
+).build()
+
 ubsan_cc_binary, _ubsan_cc_binary_internal = with_cfg(cc_binary).set(
     Label("@llvm//config:ubsan"),
     True,

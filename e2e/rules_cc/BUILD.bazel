@@ -17,6 +17,7 @@ load(
     "asan_cc_binary",
     "cfi_cc_binary",
     "dfsan_cc_binary",
+    "external_include_paths_glibc_filegroup",
     "fission_cc_binary",
     "fuzzer_asan_cc_binary",
     "fuzzer_cc_binary",
@@ -57,10 +58,17 @@ _FISSION_TEST_COMPATIBLE = select({
     "//conditions:default": ["@platforms//:incompatible"],
 }) if bazel_features.cc.supports_starlarkified_toolchains else ["@platforms//:incompatible"]
 
-_EXTERNAL_INCLUDE_PATHS_TEST_COMPATIBLE = select({
-    "@platforms//os:linux": [],
-    "//conditions:default": ["@platforms//:incompatible"],
-}) if bazel_features.cc.supports_starlarkified_toolchains else ["@platforms//:incompatible"]
+_EXTERNAL_INCLUDE_PATHS_TEST_COMPATIBLE = (
+    select({
+        "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }) +
+    select({
+        "@platforms//cpu:aarch64": [],
+        "@platforms//cpu:x86_64": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    })
+) if bazel_features.cc.supports_starlarkified_toolchains else ["@platforms//:incompatible"]
 
 musl_header_generation_tests(name = "musl_header_generation_tests")
 
@@ -508,11 +516,24 @@ sh_test(
     target_compatible_with = _DSYM_OUTPUT_TEST_COMPATIBLE,
 )
 
+external_include_paths_glibc_filegroup(
+    name = "external_include_paths_glibc_crt1",
+    srcs = ["@llvm//runtimes/glibc:glibc_crt1.object"],
+    tags = ["manual"],
+    target_compatible_with = _EXTERNAL_INCLUDE_PATHS_TEST_COMPATIBLE,
+)
+
 sh_test(
     name = "external_include_paths_test",
     srcs = ["external_include_paths_test.sh"],
-    args = ["$(rootpath @external_include_paths_test//:error_header_binary)"],
-    data = ["@external_include_paths_test//:error_header_binary"],
+    args = [
+        "$(rootpath @external_include_paths_test//:error_header_binary)",
+        "$(rootpath :external_include_paths_glibc_crt1)",
+    ],
+    data = [
+        ":external_include_paths_glibc_crt1",
+        "@external_include_paths_test//:error_header_binary",
+    ],
     target_compatible_with = _EXTERNAL_INCLUDE_PATHS_TEST_COMPATIBLE,
 )
 
