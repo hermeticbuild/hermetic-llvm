@@ -340,6 +340,10 @@ cc_args_list(
         ":sysroot_flags",
         ":hermetic_compile_flags",
 
+        # Keep external -isystem directories before the toolchain C and C++
+        # -isystem directories in :platform_specific_args.
+        "@rules_cc//cc/toolchains/args/external_include_paths:external_include_paths",
+
         # TODO(cerisier): Explode this into specific args instead
         ":platform_specific_args",
 

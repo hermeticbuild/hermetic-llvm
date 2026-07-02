@@ -1,0 +1,11 @@
+load(":defs.bzl", "external_include_paths_ubsan_cc_binary")
+
+external_include_paths_ubsan_cc_binary(
+    name = "error_header_binary",
+    srcs = [
+        "error_header_test.c",
+        "include/error.h",
+    ],
+    includes = ["include"],
+    visibility = ["//visibility:public"],
+)

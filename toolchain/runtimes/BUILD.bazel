@@ -112,6 +112,10 @@ cc_args_list(
         "//toolchain:hermetic_compile_flags",
         ":hermetic_link_flags",
 
+        # Keep external -isystem directories before the toolchain C
+        # -isystem directories in :staged_platform_specific_args.
+        "@rules_cc//cc/toolchains/args/external_include_paths:external_include_paths",
+
         # TODO(cerisier): Explode this into specific args instead
         ":staged_platform_specific_args",
 
