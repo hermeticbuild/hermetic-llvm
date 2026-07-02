@@ -365,6 +365,16 @@ cc_feature(
     visibility = ["//visibility:public"],
 )
 
+# Enables C++20 standard modules. rules_cc gates its module compilation pipeline
+# (dependency scanning, module interface compilation, modmap generation) on this
+# feature, so it must be enabled (e.g. via --features=cpp_modules) together with
+# --experimental_cpp_modules to build targets that use `module_interfaces`.
+cc_feature(
+    name = "cpp_modules",
+    feature_name = "cpp_modules",
+    visibility = ["//visibility:public"],
+)
+
 ###
 
 cc_feature_set(
@@ -376,6 +386,7 @@ cc_feature_set(
         ":dbg_stub",
         ":static_link_cpp_runtimes",
         ":parse_headers",
+        ":cpp_modules",
         # TODO: Re-enable once coverage is supported
         # ":coverage_stub",
         # ":llvm_coverage_map_format",

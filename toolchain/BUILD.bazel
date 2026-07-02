@@ -332,11 +332,21 @@ cc_args_list(
 cc_args_list(
     name = "toolchain_args",
     args = [
+        # C++20 modules flags. The -c / -o / -MD -MF / copt flags come from
+        # rules_cc's legacy compile features (which cover cpp20_module_actions);
+        # only the compiler-specific module flags and the dependency-scanner
+        # output env are defined here. No-ops unless the corresponding build
+        # variables are set (i.e. when compiling/scanning modules).
+        "//toolchain/args:cpp_module_deps_scanning_output_env",
+        "//toolchain/args:cpp20_module_output_flag",
+        "//toolchain/args:cpp_module_modmap_flag",
+
         # Common default compile flags.
         "//toolchain/args:target_flags",
         "//toolchain/args:no_absolute_paths_for_builtins",
         "//toolchain/args:deterministic_compile_flags",
         "//toolchain/args:module_map",
+        "//toolchain/args:no_cxx_modules",
         ":sysroot_flags",
         ":hermetic_compile_flags",
 
@@ -402,6 +412,10 @@ cc_action_type_set(
         "@rules_cc//cc/toolchains/actions:cpp_compile",
         "@rules_cc//cc/toolchains/actions:cpp_module_compile",
         "@rules_cc//cc/toolchains/actions:cpp_module_codegen",
+        # C++20 module interface compilation and codegen are also driven by
+        # clang++.
+        "@rules_cc//cc/toolchains/actions:cpp20_module_compile",
+        "@rules_cc//cc/toolchains/actions:cpp20_module_codegen",
         "@rules_cc//cc/toolchains/actions:lto_backend",
         "@rules_cc//cc/toolchains/actions:clif_match",
         "@rules_cc//cc/toolchains/actions:objcpp_compile",

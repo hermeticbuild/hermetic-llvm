@@ -1029,3 +1029,21 @@ sh_test(
         "//conditions:default": ["@platforms//:incompatible"],
     }),
 )
+
+# C++20 standard modules. Building these requires --experimental_cpp_modules
+# (to allow the module_interfaces attribute) and the cpp_modules feature, which
+# gates rules_cc's module compilation pipeline.
+cc_library(
+    name = "math_module",
+    copts = ["-std=c++20"],
+    features = ["cpp_modules"],
+    module_interfaces = ["math.cppm"],
+)
+
+cc_test(
+    name = "cpp20_modules_test",
+    srcs = ["modules_main.cc"],
+    copts = ["-std=c++20"],
+    features = ["cpp_modules"],
+    deps = [":math_module"],
+)

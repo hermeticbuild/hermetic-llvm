@@ -1,0 +1,4 @@
+exports_files([
+    "0001-support-cpp20-modules-rules-based-toolchain-api.patch",
+    "0002-fix-cpp20-modules-compilation-analysis.patch",
+])

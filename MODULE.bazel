@@ -9,6 +9,21 @@ bazel_dep(name = "bazel_skylib", version = "1.8.2")
 bazel_dep(name = "bazel_features", version = "1.42.0")
 bazel_dep(name = "platforms", version = "1.1.0")
 bazel_dep(name = "rules_cc", version = "0.2.20")
+
+# TODO: Drop once a rules_cc release registers the C++20 module build variables
+# (cpp_module_output_file, cpp_module_modmap_file) in the rules-based toolchain
+# variable set and ships the compile.bzl analysis fix. The patches are
+# bazelbuild/rules_cc PRs #750 and #775.
+single_version_override(
+    module_name = "rules_cc",
+    patch_strip = 1,
+    patches = [
+        "//3rd_party/rules_cc:0001-support-cpp20-modules-rules-based-toolchain-api.patch",
+        "//3rd_party/rules_cc:0002-fix-cpp20-modules-compilation-analysis.patch",
+    ],
+    version = "0.2.20",
+)
+
 bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "rules_python", version = "1.7.0")
 bazel_dep(name = "with_cfg.bzl", version = "0.12.0")

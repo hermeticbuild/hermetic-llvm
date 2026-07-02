@@ -1,0 +1,178 @@
+diff --git a/cc/toolchains/actions/BUILD b/cc/toolchains/actions/BUILD
+index abda346..80cac26 100644
+--- a/cc/toolchains/actions/BUILD
++++ b/cc/toolchains/actions/BUILD
+@@ -272,6 +272,15 @@ cc_action_type_set(
+     ],
+ )
+ 
++cc_action_type_set(
++    name = "cpp20_module_actions",
++    actions = [
++        ":cpp20_module_compile",
++        ":cpp20_module_codegen",
++        ":cpp_module_deps_scanning",
++    ],
++)
++
+ cc_action_type_set(
+     name = "compile_actions_without_header_parsing",
+     actions = [
+diff --git a/cc/toolchains/args/compile_flags/BUILD b/cc/toolchains/args/compile_flags/BUILD
+index 90d8a51..123892a 100644
+--- a/cc/toolchains/args/compile_flags/BUILD
++++ b/cc/toolchains/args/compile_flags/BUILD
+@@ -37,7 +37,10 @@ cc_feature(
+ 
+ cc_args(
+     name = "user_compile_flags",
+-    actions = ["//cc/toolchains/actions:compile_actions"],
++    actions = [
++        "//cc/toolchains/actions:compile_actions",
++        "//cc/toolchains/actions:cpp20_module_actions",
++    ],
+     args = ["{user_compile_flags}"],
+     format = {"user_compile_flags": "//cc/toolchains/variables:user_compile_flags"},
+     iterate_over = "//cc/toolchains/variables:user_compile_flags",
+diff --git a/cc/toolchains/args/compiler_input_flags/BUILD b/cc/toolchains/args/compiler_input_flags/BUILD
+index 1cca4c9..9bfe6a4 100644
+--- a/cc/toolchains/args/compiler_input_flags/BUILD
++++ b/cc/toolchains/args/compiler_input_flags/BUILD
+@@ -13,7 +13,10 @@ cc_feature(
+ 
+ cc_args(
+     name = "flags",
+-    actions = ["//cc/toolchains/actions:compile_actions_without_header_parsing"],
++    actions = [
++        "//cc/toolchains/actions:compile_actions_without_header_parsing",
++        "//cc/toolchains/actions:cpp20_module_actions",
++    ],
+     args = [
+         "-c",
+         "{source_file}",
+diff --git a/cc/toolchains/args/compiler_output_flags/BUILD b/cc/toolchains/args/compiler_output_flags/BUILD
+index dc73c49..068d310 100644
+--- a/cc/toolchains/args/compiler_output_flags/BUILD
++++ b/cc/toolchains/args/compiler_output_flags/BUILD
+@@ -34,7 +34,10 @@ cc_args(
+ 
+ cc_args(
+     name = "output_flags",
+-    actions = ["//cc/toolchains/actions:compile_actions"],
++    actions = [
++        "//cc/toolchains/actions:compile_actions",
++        "//cc/toolchains/actions:cpp20_module_actions",
++    ],
+     args = [
+         "-o",
+         "{output_file}",
+diff --git a/cc/toolchains/args/dependency_file/BUILD b/cc/toolchains/args/dependency_file/BUILD
+index 3c80781..812092b 100644
+--- a/cc/toolchains/args/dependency_file/BUILD
++++ b/cc/toolchains/args/dependency_file/BUILD
+@@ -10,7 +10,10 @@ cc_feature(
+ 
+ cc_args(
+     name = "flags",
+-    actions = ["//cc/toolchains/actions:compile_actions"],
++    actions = [
++        "//cc/toolchains/actions:compile_actions",
++        "//cc/toolchains/actions:cpp20_module_actions",
++    ],
+     args = [
+         "-MD",
+         "-MF",
+diff --git a/cc/toolchains/legacy_file_group.bzl b/cc/toolchains/legacy_file_group.bzl
+index 6910d9c..dc51569 100644
+--- a/cc/toolchains/legacy_file_group.bzl
++++ b/cc/toolchains/legacy_file_group.bzl
+@@ -28,6 +28,9 @@ LEGACY_FILE_GROUPS = {
+         Label("//cc/toolchains/actions:c_compile"),
+         Label("//cc/toolchains/actions:cpp_compile"),
+         Label("//cc/toolchains/actions:cpp_header_parsing"),
++        Label("//cc/toolchains/actions:cpp20_module_compile"),
++        Label("//cc/toolchains/actions:cpp20_module_codegen"),
++        Label("//cc/toolchains/actions:cpp_module_deps_scanning"),
+     ],
+     # There are no actions listed for coverage and objcopy in action_names.bzl.
+     "coverage_files": [],
+diff --git a/cc/toolchains/variables/BUILD b/cc/toolchains/variables/BUILD
+index 1732769..e55a675 100644
+--- a/cc/toolchains/variables/BUILD
++++ b/cc/toolchains/variables/BUILD
+@@ -2,6 +2,22 @@ load("//cc/toolchains/impl:variables.bzl", "cc_builtin_variables", "cc_variable"
+ 
+ package(default_visibility = ["//visibility:public"])
+ 
++cc_variable(
++    name = "cpp_module_modmap_file",
++    actions = [
++        "//cc/toolchains/actions:cpp_compile",
++        "//cc/toolchains/actions:cpp20_module_compile",
++        "//cc/toolchains/actions:cpp20_module_codegen",
++    ],
++    type = types.option(types.file),
++)
++
++cc_variable(
++    name = "cpp_module_output_file",
++    actions = ["//cc/toolchains/actions:cpp20_module_compile"],
++    type = types.option(types.file),
++)
++
+ cc_variable(
+     name = "cs_fdo_instrument_path",
+     actions = [
+@@ -19,7 +35,10 @@ cc_variable(
+ 
+ cc_variable(
+     name = "dependency_file",
+-    actions = ["//cc/toolchains/actions:compile_actions"],
++    actions = [
++        "//cc/toolchains/actions:compile_actions",
++        "//cc/toolchains/actions:cpp20_module_actions",
++    ],
+     type = types.option(types.file),
+ )
+ 
+@@ -412,6 +431,7 @@ cc_variable(
+     name = "output_file",
+     actions = [
+         "//cc/toolchains/actions:compile_actions",
++        "//cc/toolchains/actions:cpp20_module_actions",
+         "//cc/toolchains/actions:strip",
+     ],
+     type = types.option(types.file),
+@@ -473,7 +493,10 @@ cc_variable(
+ 
+ cc_variable(
+     name = "source_file",
+-    actions = ["//cc/toolchains/actions:compile_actions"],
++    actions = [
++        "//cc/toolchains/actions:compile_actions",
++        "//cc/toolchains/actions:cpp20_module_actions",
++    ],
+     type = types.option(types.file),
+ )
+ 
+@@ -554,7 +577,10 @@ cc_variable(
+ 
+ cc_variable(
+     name = "user_compile_flags",
+-    actions = ["//cc/toolchains/actions:compile_actions"],
++    actions = [
++        "//cc/toolchains/actions:compile_actions",
++        "//cc/toolchains/actions:cpp20_module_actions",
++    ],
+     type = types.option(types.list(types.string)),
+ )
+ 
+@@ -569,6 +595,8 @@ cc_builtin_variables(
+     srcs = [
+         ":attr_linkopts",
+         ":cc_library_exec_paths",
++        ":cpp_module_modmap_file",
++        ":cpp_module_output_file",
+         ":cs_fdo_instrument_path",
+         ":def_file_path",
+         ":dep_linkopts",

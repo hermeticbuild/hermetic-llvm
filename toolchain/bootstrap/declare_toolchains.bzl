@@ -72,6 +72,7 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
 
     COMPLETE_ONLY_TOOLS = {
         "@rules_cc//cc/toolchains/actions:cpp_header_parsing": prefix + "/header-parser",
+        "@rules_cc//cc/toolchains/actions:cpp_module_deps_scanning": prefix + "/deps-scanner",
     } | _validate_static_library_tool(prefix)
 
     cc_tool_map(
@@ -184,6 +185,30 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
         },
         format = {
             "clangxx": prefix + "/bin/clang++",
+        },
+    )
+
+    bootstrap_binary(
+        name = prefix + "/bin/clang-scan-deps",
+        platform = prefix + "_platform",
+        actual = "@llvm-project//llvm:llvm.stripped",
+    )
+
+    cc_tool(
+        name = prefix + "/deps-scanner",
+        src = "@llvm//tools/internal:deps-scanner",
+        data = [
+            prefix + "/clang_builtin_headers_include_directory",
+            prefix + "/bin/clang++",
+            prefix + "/bin/clang-scan-deps",
+        ],
+        env = {
+            "LLVM_CLANGXX": "{clangxx}",
+            "LLVM_CLANG_SCAN_DEPS": "{clang_scan_deps}",
+        },
+        format = {
+            "clangxx": prefix + "/bin/clang++",
+            "clang_scan_deps": prefix + "/bin/clang-scan-deps",
         },
     )
 

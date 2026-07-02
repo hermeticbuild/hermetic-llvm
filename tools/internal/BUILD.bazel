@@ -13,6 +13,12 @@ cc_runtime_stage1_hosted_binary(
 )
 
 cc_runtime_stage1_hosted_binary(
+    name = "deps-scanner",
+    srcs = ["deps_scanner.c"],
+    visibility = ["//visibility:public"],
+)
+
+cc_runtime_stage1_hosted_binary(
     name = "link-wrapper",
     srcs = ["link_wrapper.c"],
     features = ["-generate_dsym_file"],

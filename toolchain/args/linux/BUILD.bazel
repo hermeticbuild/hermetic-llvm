@@ -19,6 +19,7 @@ cc_args(
     name = "kernel_headers_include_search_paths",
     actions = [
         "@rules_cc//cc/toolchains/actions:source_compile_actions",
+        "@rules_cc//cc/toolchains/actions:cpp20_module_actions",
     ],
     allowlist_include_directories = [
         "@kernel_headers//:kernel_headers_directory",
@@ -40,6 +41,7 @@ cc_args(
     name = "glibc_headers_include_search_paths",
     actions = [
         "@rules_cc//cc/toolchains/actions:source_compile_actions",
+        "@rules_cc//cc/toolchains/actions:cpp20_module_actions",
     ],
     allowlist_include_directories = [
         "//runtimes/glibc:glibc_headers_include_search_directory",
@@ -62,6 +64,7 @@ cc_args(
     name = "sanitizer_headers_include_search_paths",
     actions = [
         "@rules_cc//cc/toolchains/actions:source_compile_actions",
+        "@rules_cc//cc/toolchains/actions:cpp20_module_actions",
     ],
     allowlist_include_directories = [
         "//sanitizers:sanitizers_headers_include_search_directory",
@@ -115,6 +118,7 @@ cc_args(
     name = "musl_libc_headers_include_search_paths",
     actions = [
         "@rules_cc//cc/toolchains/actions:source_compile_actions",
+        "@rules_cc//cc/toolchains/actions:cpp20_module_actions",
     ],
     args = [
         "-isystem",

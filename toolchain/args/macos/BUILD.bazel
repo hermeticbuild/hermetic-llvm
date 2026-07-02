@@ -9,6 +9,16 @@ package(default_visibility = ["//visibility:public"])
 
 cc_sysroot(
     name = "macos_sdk_sysroot",
+    # Mirrors cc_sysroot's default actions plus the C++20 module actions, which
+    # also need the macOS SDK sysroot.
+    actions = [
+        "@rules_cc//cc/toolchains/actions:assembly_actions",
+        "@rules_cc//cc/toolchains/actions:c_compile",
+        "@rules_cc//cc/toolchains/actions:objc_compile",
+        "@rules_cc//cc/toolchains/actions:cpp_compile_actions",
+        "@rules_cc//cc/toolchains/actions:cpp20_module_actions",
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
     allowlist_include_directories = ["@macos_sdk//sysroot"],
     # NOTE: cc_sysroot automatically passes --sysroot=, but Clang checks
     # -isysroot, SDKROOT, then --sysroot:
@@ -29,6 +39,7 @@ cc_args(
     name = "macos_minimum_os_flags",
     actions = [
         "@rules_cc//cc/toolchains/actions:compile_actions",
+        "@rules_cc//cc/toolchains/actions:cpp20_module_actions",
         "@rules_cc//cc/toolchains/actions:link_actions",
     ],
     args = ["-mmacosx-version-min={version}"],

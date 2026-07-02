@@ -51,10 +51,30 @@ def declare_llvm_targets(*, suffix = ""):
         allowlist_include_directories = [":builtin_resource_dir"],
     )
 
+    cc_tool(
+        name = "deps_scanner",
+        src = "@llvm//tools/internal:deps-scanner",
+        data = [
+            ":builtin_resource_dir",
+            ":clangxx_file",
+            "bin/clang-scan-deps" + suffix,
+        ],
+        env = {
+            "LLVM_CLANGXX": "{clangxx}",
+            "LLVM_CLANG_SCAN_DEPS": "{clang_scan_deps}",
+        },
+        format = {
+            "clangxx": ":clangxx_file",
+            "clang_scan_deps": "bin/clang-scan-deps" + suffix,
+        },
+        allowlist_include_directories = [":builtin_resource_dir"],
+    )
+
     cc_args(
         name = "compile_resource_dir",
         actions = [
             "@rules_cc//cc/toolchains/actions:compile_actions",
+            "@rules_cc//cc/toolchains/actions:cpp20_module_actions",
         ],
         allowlist_include_directories = [
             ":builtin_resource_dir",
@@ -110,6 +130,7 @@ def declare_llvm_targets(*, suffix = ""):
 
     COMPLETE_ONLY_TOOLS = {
         "@rules_cc//cc/toolchains/actions:cpp_header_parsing": ":header_parser",
+        "@rules_cc//cc/toolchains/actions:cpp_module_deps_scanning": ":deps_scanner",
     } | _VALIDATE_STATIC_LIBRARY_TOOL
 
     cc_tool_map(

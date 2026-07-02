@@ -6,6 +6,7 @@ cc_args(
     name = "mingw_headers_include_search_paths",
     actions = [
         "@rules_cc//cc/toolchains/actions:compile_actions",
+        "@rules_cc//cc/toolchains/actions:cpp20_module_actions",
     ],
     allowlist_include_directories = [
         "@mingw//:mingw_generated_headers_crt_directory",
