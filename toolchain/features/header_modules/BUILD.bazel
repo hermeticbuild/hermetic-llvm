@@ -1,0 +1,121 @@
+load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
+load("@rules_cc//cc/toolchains:feature.bzl", "cc_feature")
+load("@rules_cc//cc/toolchains:feature_set.bzl", "cc_feature_set")
+
+package(default_visibility = ["//visibility:public"])
+
+# Based on https://github.com/bazelbuild/bazel/issues/4005#issuecomment-1212952697.
+
+_MODULE_CONSUMING_ACTIONS = [
+    "@rules_cc//cc/toolchains/actions:cpp_compile",
+    "@rules_cc//cc/toolchains/actions:cpp_header_parsing",
+    "@rules_cc//cc/toolchains/actions:cpp_module_compile",
+    "@rules_cc//cc/toolchains/actions:cpp_module_codegen",
+]
+
+# The args for the cpp_module_compile action itself live in
+# //toolchain/args:header_module_compile since they include the positional
+# `-x` flag, which has to be attached to the action config to end up before
+# the source file on the command line.
+cc_feature(
+    name = "header_modules",
+    feature_name = "header_modules",
+    implies = [
+        ":header_module_codegen",
+        ":header_modules_codegen_functions",
+    ],
+    requires_any_of = [":use_header_modules"],
+)
+
+cc_feature(
+    name = "generate_submodules",
+    feature_name = "generate_submodules",
+    requires_any_of = [":header_modules"],
+)
+
+cc_feature(
+    name = "header_module_codegen",
+    feature_name = "header_module_codegen",
+)
+
+cc_args(
+    name = "header_modules_codegen_functions_args",
+    actions = ["@rules_cc//cc/toolchains/actions:cpp_module_compile"],
+    args = [
+        "-Xclang",
+        "-fmodules-codegen",
+    ],
+)
+
+cc_feature(
+    name = "header_modules_codegen_functions",
+    args = [":header_modules_codegen_functions_args"],
+    feature_name = "header_modules_codegen_functions",
+    implies = [":header_module_codegen"],
+)
+
+cc_args(
+    name = "header_modules_codegen_debuginfo_args",
+    actions = ["@rules_cc//cc/toolchains/actions:cpp_module_compile"],
+    args = [
+        "-Xclang",
+        "-fmodules-debuginfo",
+    ],
+)
+
+cc_feature(
+    name = "header_modules_codegen_debuginfo",
+    args = [":header_modules_codegen_debuginfo_args"],
+    feature_name = "header_modules_codegen_debuginfo",
+    implies = [":header_module_codegen"],
+)
+
+cc_args(
+    name = "use_header_modules_args",
+    actions = _MODULE_CONSUMING_ACTIONS,
+    args = [
+        "-fmodules",
+        "-fmodule-file-deps",
+        "-fno-implicit-modules",
+        "-fno-implicit-module-maps",
+        "-Wno-modules-ambiguous-internal-linkage",
+        "-Wno-module-import-in-extern-c",
+        "-Wno-modules-import-nested-redundant",
+    ],
+)
+
+cc_args(
+    name = "use_header_modules_module_files_args",
+    actions = _MODULE_CONSUMING_ACTIONS,
+    args = [
+        "-Xclang",
+        "-fmodule-file={module_files}",
+    ],
+    format = {
+        "module_files": "@rules_cc//cc/toolchains/variables:module_files",
+    },
+    iterate_over = "@rules_cc//cc/toolchains/variables:module_files",
+    requires_not_none = "@rules_cc//cc/toolchains/variables:module_files",
+)
+
+cc_feature(
+    name = "use_header_modules",
+    args = [
+        ":use_header_modules_args",
+        ":use_header_modules_module_files_args",
+    ],
+    feature_name = "use_header_modules",
+    requires_any_of = ["@rules_cc//cc/toolchains/args/layering_check:layering_check"],
+)
+
+cc_feature_set(
+    name = "all_header_module_features",
+    all_of = [
+        ":header_modules",
+        ":generate_submodules",
+        ":header_module_codegen",
+        ":header_modules_codegen_functions",
+        ":header_modules_codegen_debuginfo",
+        ":use_header_modules",
+    ],
+)

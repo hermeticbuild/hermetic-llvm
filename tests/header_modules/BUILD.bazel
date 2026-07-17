@@ -1,0 +1,26 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+
+package(features = [
+    "header_modules",
+    "use_header_modules",
+    "layering_check",
+])
+
+cc_library(
+    name = "counter",
+    srcs = ["counter.cc"],
+    hdrs = ["counter.h"],
+)
+
+cc_library(
+    name = "double_counter",
+    hdrs = ["double_counter.h"],
+    deps = [":counter"],
+)
+
+cc_test(
+    name = "main_test",
+    srcs = ["main_test.cc"],
+    deps = [":double_counter"],
+)

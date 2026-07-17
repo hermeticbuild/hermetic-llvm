@@ -98,6 +98,7 @@ def cc_toolchain(
             "@llvm//toolchain/features:static_link_cpp_runtimes",
             "@llvm//toolchain/features/runtime_library_search_directories:feature",
             "@llvm//toolchain/features:parse_headers",
+            "@llvm//toolchain/features/header_modules:all_header_module_features",
             "@llvm//toolchain/features:external_include_paths",
             "@llvm//toolchain/features:generate_pdb_file",
             "@llvm//toolchain/features:fdo_optimize",
