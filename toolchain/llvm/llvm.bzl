@@ -490,6 +490,10 @@ def declare_llvm_targets(*, exec_os, exec_cpu, suffix = ""):
             ":builtin_resource_include_dir",
             "@macos_sdk//sysroot",
             "@llvm//sanitizers:sanitizers_headers_include_search_directory",
+            # The C++ standard library headers as provided via the include
+            # search paths (-nostdinc++ replaces the copies in the SDK).
+            "@llvm//runtimes/cxxstdlib:public_headers_directory",
+            "@llvm//runtimes/cxxstdlib:detail_headers_directory",
         ],
     )
 

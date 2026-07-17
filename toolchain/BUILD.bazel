@@ -202,7 +202,7 @@ cc_args_list(
     name = "macos_nostdincxx",
     args = select({
         "//config:nostdincxx_enabled": ["//toolchain/args:nostdincxx"],
-        "//conditions:default": [],
+        "//conditions:default": ["//toolchain/args:macos_cxxstdlib_headers_include_search_paths"],
     }),
 )
 
@@ -672,6 +672,7 @@ bzl_library(
         ":selects",
         "//platforms:common",
         "//toolchain/args:resource_directory_args",
+        "@bazel_features//:features",
     ],
 )
 
