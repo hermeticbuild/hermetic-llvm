@@ -134,6 +134,25 @@ cc_args(
     }),
 )
 
+# Toolchain args gated on the header_module_compile feature rather than args
+# of the feature: toolchain args render before any feature's args, and the
+# positional `-x` flag has to precede the `-c <source>` emitted by the legacy
+# features.
+cc_args(
+    name = "header_module_compile",
+    actions = ["@rules_cc//cc/toolchains/actions:cpp_module_compile"],
+    args = [
+        "-xc++",
+        "-Xclang",
+        "-emit-module",
+        "-Xclang",
+        "-fmodules-embed-all-files",
+        "-Xclang",
+        "-fmodules-local-submodule-visibility",
+    ],
+    requires_any_of = ["//toolchain/features/header_modules:header_module_compile"],
+)
+
 cc_args(
     name = "cxxstdlib_headers_include_search_paths",
     actions = [
