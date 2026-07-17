@@ -164,7 +164,7 @@ cc_args_list(
 cc_args_list(
     name = "cxxstdlib_headers_include_search_paths",
     args = select({
-        "@platforms//os:linux": ["//toolchain/args:cxxstdlib_headers_include_search_paths"],
+        "@platforms//os:linux": ["//toolchain/args/linux:cxxstdlib_headers_include_search_paths"],
         "@platforms//os:windows": ["//toolchain/args/windows:cxxstdlib_headers_include_search_paths"],
         "//conditions:default": [],
     }),
@@ -282,6 +282,7 @@ cc_args_list(
     args = [
         "//toolchain/args/macos:macos_minimum_os_flags",
         "//toolchain/args/macos:macos_default_framework_flags",
+        "//toolchain/args:macos_cxxstdlib_headers_include_search_paths",
     ] + select({
         # Only expose the sanitizer interface headers when compiling user
         # programs (runtime_stage=complete), not when building the compiler-rt
@@ -576,6 +577,7 @@ bzl_library(
         ":selects",
         "//platforms:common",
         "//toolchain/args:resource_directory_args",
+        "@bazel_features//:features",
     ],
 )
 

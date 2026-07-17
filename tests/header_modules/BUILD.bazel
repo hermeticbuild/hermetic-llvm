@@ -32,18 +32,50 @@ cc_test(
     deps = [":double_counter"],
 )
 
-# Targets with system includes work without compiled modules for them: system
-# headers are declared as textual headers in the toolchain's module map and
-# are parsed textually even in `-fmodules` builds.
+# C system headers are declared as textual headers in the toolchain's module
+# map and are parsed textually even in `-fmodules` builds. The C++ standard
+# library headers are compiled into a Clang module by the libc++ target that
+# the cc_runtimes toolchain adds to the dependencies of every C++ target, and
+# are imported instead.
 
 cc_library(
-    name = "textual_greeter",
+    name = "greeter",
     srcs = ["greeter.cc"],
     hdrs = ["greeter.h"],
+    copts = _COPTS,
 )
 
 cc_test(
-    name = "greeter_textual_test",
+    name = "greeter_test",
     srcs = ["greeter_main.cc"],
-    deps = [":textual_greeter"],
+    copts = _COPTS,
+    deps = [":greeter"],
+)
+
+# With module codegen, modules are additionally compiled into object files
+# that provide the template instantiations triggered inside the module, which
+# importing translation units then no longer emit. The codegen action of
+# item_store loads the libc++ module that its module imports, which exercises
+# the input tracking that https://github.com/bazelbuild/bazel/pull/30396 added
+# to Bazel.
+
+_CODEGEN_FEATURES = [
+    "header_module_codegen",
+    "header_modules_codegen_functions",
+]
+
+cc_library(
+    name = "item_store",
+    srcs = ["item_store.cc"],
+    hdrs = ["item_store.h"],
+    copts = _COPTS,
+    features = _CODEGEN_FEATURES,
+)
+
+cc_test(
+    name = "item_store_test",
+    srcs = ["item_store_main.cc"],
+    copts = _COPTS,
+    features = _CODEGEN_FEATURES,
+    deps = [":item_store"],
 )
