@@ -29,6 +29,12 @@ jobs:
           - "e2e/rules_rs"
           - "e2e/cross_compilation"
           - "examples/custom_targets"
+          - "examples/header_modules"
+        exclude:
+          # Header modules require the Starlark implementation of the C++
+          # rules (Bazel 9+).
+          - bazel_version: 8.x
+            folder: "examples/header_modules"
         include:
           # Path mapping requires Bazel 9+.
           - bazel_version: last_rc

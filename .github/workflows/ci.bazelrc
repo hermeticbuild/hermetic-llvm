@@ -2,6 +2,10 @@
 # It is referenced with a --bazelrc option in the call to bazel in ci.yaml
 common --config=ci
 
+# The default heap size (1/4 of the runner's 16 GB) is not enough for the
+# larger e2e workspaces with Bazel 8.
+startup --host_jvm_args=-Xmx6g
+
 # Enable remote execution on CI by default.
 common --config remote
 
