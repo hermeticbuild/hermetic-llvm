@@ -3,7 +3,8 @@ load("@bazel_skylib//rules/directory:providers.bzl", "DirectoryInfo", "create_di
 load("@bazel_skylib//rules/directory:subdirectory.bzl", "subdirectory")
 
 # We want to put a source directory into the DefaultInfo but still propagate
-# the DirectoryInfo for header inclusion checking.
+# the DirectoryInfo for header inclusion checking and the toolchain's module
+# map.
 def headers_directory(name, path, visibility = None):
     if path == ".":
         directory(
@@ -34,12 +35,9 @@ def headers_directory(name, path, visibility = None):
         visibility = visibility,
     )
 
-SourceDirectoryInfo = provider("Marker Provider", fields = [])
-
 def _headers_directory_impl(ctx):
     return [
         ctx.attr.directory[DirectoryInfo],
-        SourceDirectoryInfo(),
         DefaultInfo(
             files = ctx.attr.source_directory[DefaultInfo].files,
         ),

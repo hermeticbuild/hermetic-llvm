@@ -1,23 +1,12 @@
 load("@bazel_features//:features.bzl", "bazel_features")
-load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//rules/directory:providers.bzl", "DirectoryInfo")
-load("//:directory.bzl", "SourceDirectoryInfo")
 
 IncludePathInfo = provider(
     "IncludePathInfo",
     fields = {
-        "submodule_directories": "A depset of File objects representing directories to be included as umbrella submodules.",
-        "textual_headers": "A depset of File objects representing headers to be included as textual headers.",
+        "textual_headers": "A depset of File objects representing headers to be declared as textual headers.",
     },
 )
-
-def _umbrella_submodule(directory):
-    path = paths.normalize(directory.path).replace("//", "/")
-
-    return """
-  module "{path}" {{
-    umbrella "{path}"
-  }}""".format(path = path)
 
 def _module_map_impl(ctx):
     module_map = ctx.actions.declare_file(ctx.attr.name + ".modulemap")
@@ -28,18 +17,12 @@ def _module_map_impl(ctx):
     module_map_args.set_param_file_format("multiline")
     module_map_args.add('module "crosstool" [system] {')
 
-    module_map_args.add_joined(
-        include_path_info.submodule_directories,
-        join_with = "\n",
-        map_each = _umbrella_submodule,
-        expand_directories = False,
-    )
-
+    # Tree artifacts among the textual headers are expanded to their
+    # constituent files at execution time.
     module_map_args.add_joined(
         include_path_info.textual_headers,
         join_with = "\n",
         format_each = "  textual header \"%s\"",
-        expand_directories = False,
     )
 
     module_map_args.add("}")
@@ -58,8 +41,10 @@ def _module_map_impl(ctx):
 module_map = rule(
     doc = """Generates a Clang module map for the toolchain and system headers.
 
-    Source and output directories are included as umbrella submodules.
-    Individual header files (typically `run_binary` outputs like in mingw) are included as textual headers.""",
+    All headers are declared as textual headers: this preserves
+    `layering_check` semantics, but never requires a compiled module for them
+    in `-fmodules` builds (`use_header_modules`), which the toolchain doesn't
+    provide.""",
     implementation = _module_map_impl,
     attrs = {
         "include_path": attr.label(
@@ -70,20 +55,21 @@ module_map = rule(
 )
 
 def _include_path_impl(ctx):
-    submodule_directories = []
-    textual_headers_depsets = []
+    textual_headers = []
 
     for src in ctx.attr.srcs:
-        if SourceDirectoryInfo in src or DirectoryInfo not in src:
-            # We're either a source directory or an output directory (Tree Artifact).
-            submodule_directories.append(src[DefaultInfo].files)
+        if DirectoryInfo in src:
+            # Source directories are opaque even at execution time, but
+            # `headers_directory` enumerates their files in a DirectoryInfo.
+            textual_headers.append(src[DirectoryInfo].transitive_files)
         else:
-            textual_headers_depsets.append(src[DirectoryInfo].transitive_files)
+            # Output directories (tree artifacts) are expanded to their
+            # constituent files when the module map is written.
+            textual_headers.append(src[DefaultInfo].files)
 
     return [
         IncludePathInfo(
-            submodule_directories = depset([], transitive = submodule_directories),
-            textual_headers = depset([], transitive = textual_headers_depsets),
+            textual_headers = depset([], transitive = textual_headers),
         ),
     ]
 
