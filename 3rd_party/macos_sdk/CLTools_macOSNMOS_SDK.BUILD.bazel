@@ -1,7 +1,25 @@
+load("@bazel_skylib//rules/directory:directory.bzl", "directory")
 load("@llvm//:directory.bzl", "headers_directory")
 
 headers_directory(
     name = "sysroot",
     path = ".",
+    visibility = ["//visibility:public"],
+)
+
+# The C and C++ standard library headers as an enumerated list rather than a
+# directory. Used to declare them as `textual header`s in the toolchain's
+# module map: since explicit entries win over the sysroot umbrella submodule,
+# these headers stay textual even in `-fmodules` builds, where umbrella-owned
+# headers could only be included via a compiled module. With
+# --@llvm//toolchain:libcxx_modules, the modular declarations in libc++'s own
+# module map take precedence over the textual ones (see
+# @llvm//toolchain/features/header_modules).
+directory(
+    name = "c_headers",
+    srcs = glob(
+        ["usr/include/**"],
+        allow_empty = True,
+    ),
     visibility = ["//visibility:public"],
 )

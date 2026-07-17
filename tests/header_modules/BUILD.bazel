@@ -24,3 +24,19 @@ cc_test(
     srcs = ["main_test.cc"],
     deps = [":double_counter"],
 )
+
+# Targets with system includes work without compiled modules for them: system
+# headers are declared as textual headers in the toolchain's module map and
+# are parsed textually even in `-fmodules` builds.
+
+cc_library(
+    name = "textual_greeter",
+    srcs = ["greeter.cc"],
+    hdrs = ["greeter.h"],
+)
+
+cc_test(
+    name = "greeter_textual_test",
+    srcs = ["greeter_main.cc"],
+    deps = [":textual_greeter"],
+)
