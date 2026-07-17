@@ -1,7 +1,10 @@
 load("@llvm//:directory.bzl", "headers_directory")
+load("@llvm//3rd_party/macos_sdk:sdk_headers.bzl", "macos_sdk_libcxx_headers")
 
 headers_directory(
     name = "sysroot",
     path = ".",
     visibility = ["//visibility:public"],
 )
+
+macos_sdk_libcxx_headers()
