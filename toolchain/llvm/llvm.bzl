@@ -401,8 +401,9 @@ def declare_llvm_targets(*, suffix = ""):
     include_path(
         name = "macos_target_headers",
         srcs = [
-            ":builtin_resource_dir",
+            ":builtin_resource_include_dir",
             "@macos_sdk//sysroot",
+            "@llvm//sanitizers:sanitizers_headers_include_search_directory",
         ],
     )
 
@@ -410,7 +411,7 @@ def declare_llvm_targets(*, suffix = ""):
     include_path(
         name = "linux_target_headers",
         srcs = [
-            ":builtin_resource_dir",
+            ":builtin_resource_include_dir",
         ] + select({
             "@llvm//toolchain:runtimes_all": [
                 "@llvm//runtimes/cxxstdlib:headers_include_search_directory",
@@ -434,7 +435,7 @@ def declare_llvm_targets(*, suffix = ""):
     include_path(
         name = "windows_target_headers",
         srcs = [
-            ":builtin_resource_dir",
+            ":builtin_resource_include_dir",
         ] + select({
             "@llvm//toolchain:runtimes_all": [
                 "@llvm//runtimes/cxxstdlib:headers_include_search_directory",
@@ -452,7 +453,7 @@ def declare_llvm_targets(*, suffix = ""):
     include_path(
         name = "wasm_target_headers",
         srcs = [
-            ":builtin_resource_dir",
+            ":builtin_resource_include_dir",
             # TODO(zbarsky): We'll want to add wasi libc headers here.
         ],
     )
