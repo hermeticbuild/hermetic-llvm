@@ -1,4 +1,5 @@
 load("@bazel_skylib//rules/directory:directory.bzl", "directory")
+load("@llvm//3rd_party/macos_sdk:sdk_headers.bzl", "macos_sdk_headers")
 load(":host_sdk_config.bzl", "HOST_SDK_EXCLUDES", "HOST_SDK_INCLUDES")
 
 directory(
@@ -9,4 +10,15 @@ directory(
         exclude = HOST_SDK_EXCLUDES,
     ),
     visibility = ["//visibility:public"],
+)
+
+macos_sdk_headers(
+    excludes = HOST_SDK_EXCLUDES,
+    # Only the frameworks included in the sysroot.
+    framework_globs = [
+        pattern.removesuffix("/**") + "/**/Headers/**"
+        for pattern in HOST_SDK_INCLUDES
+        if pattern.startswith("System/Library/Frameworks/")
+    ],
+    sysroot_directory = ":sysroot",
 )

@@ -16,3 +16,12 @@ alias(
     actual = "@llvm-project//compiler-rt:sanitizers_headers_include_search_directory",
     visibility = ["//visibility:public"],
 )
+
+# The sanitizer interface headers as an enumerated list rather than a
+# directory, for declaring them as textual headers in the toolchain's module
+# map.
+alias(
+    name = "sanitizers_headers_files",
+    actual = "@llvm-project//compiler-rt:sanitizers_headers_include_search_directory_directory",
+    visibility = ["//visibility:public"],
+)

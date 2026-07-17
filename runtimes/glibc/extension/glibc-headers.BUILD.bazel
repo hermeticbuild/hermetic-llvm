@@ -1,3 +1,4 @@
+load("@bazel_skylib//rules/directory:directory.bzl", "directory")
 load("@llvm//:directory.bzl", "headers_directory")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 
@@ -14,5 +15,18 @@ cc_library(
 headers_directory(
     name = "glibc_headers_directory",
     path = "include",
+    visibility = ["//visibility:public"],
+)
+
+# The glibc headers as an enumerated list rather than a directory. Used to
+# declare them as `textual header`s in the toolchain's module map, which
+# preserves `layering_check` semantics but doesn't require a compiled module
+# for them in `-fmodules` builds.
+directory(
+    name = "glibc_headers_files",
+    srcs = glob(
+        ["include/**"],
+        allow_empty = True,
+    ),
     visibility = ["//visibility:public"],
 )

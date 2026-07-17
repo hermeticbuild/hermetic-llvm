@@ -17,6 +17,13 @@ declare_glibc_repository_target(
 )
 
 declare_glibc_repository_target(
+    name = "glibc_headers_files",
+    bazel_repository = "@glibc_headers",
+    bazel_target = "glibc_headers_files",
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+declare_glibc_repository_target(
     name = "glibc_c_nonshared.static",
     bazel_repository = "@glibc",
     bazel_target = "c_nonshared",
