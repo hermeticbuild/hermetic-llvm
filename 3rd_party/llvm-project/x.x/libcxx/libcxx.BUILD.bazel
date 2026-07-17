@@ -220,6 +220,55 @@ copy_to_directory(
     visibility = ["//visibility:public"],
 )
 
+# The libc++ headers, split into the public (includable) headers and the
+# implementation details so that the public headers can be compiled into a
+# Clang module (see @llvm//toolchain/features/header_modules/libcxx). The
+# public headers are the extensionless top-level headers such as <vector>.
+filegroup(
+    name = "libcxx_public_headers_files",
+    srcs = [
+        f
+        for f in (LIBCXX_HEADERS_FILES_22 if int(LLVM_VERSION_MAJOR) >= 22 else LIBCXX_HEADERS_FILES_21)
+        if "/" not in f.removeprefix("include/") and
+           "." not in f.removeprefix("include/") and
+           not f.removeprefix("include/").startswith("__")
+    ],
+)
+
+filegroup(
+    name = "libcxx_detail_headers_files",
+    srcs = [
+        ":__assertion_handler",
+        ":__config_site",
+    ] + [
+        f
+        for f in (LIBCXX_HEADERS_FILES_22 if int(LLVM_VERSION_MAJOR) >= 22 else LIBCXX_HEADERS_FILES_21)
+        if not ("/" not in f.removeprefix("include/") and
+                "." not in f.removeprefix("include/") and
+                not f.removeprefix("include/").startswith("__"))
+    ],
+)
+
+copy_to_directory(
+    name = "libcxx_public_headers_directory",
+    srcs = [":libcxx_public_headers_files"],
+    out = "libcxx_public_headers",
+    root_paths = [
+        "libcxx/include",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+copy_to_directory(
+    name = "libcxx_detail_headers_directory",
+    srcs = [":libcxx_detail_headers_files"],
+    out = "libcxx_detail_headers",
+    root_paths = [
+        "libcxx/include",
+    ],
+    visibility = ["//visibility:public"],
+)
+
 cc_library(
     name = "headers",
     hdrs = [

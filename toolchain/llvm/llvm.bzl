@@ -419,6 +419,10 @@ def declare_llvm_targets(*, suffix = ""):
             # Explicit textual entries win over the sysroot umbrella above, so
             # C library headers stay textual even in `-fmodules` builds.
             "@macos_sdk//sysroot:c_headers",
+            # The C++ standard library headers as provided via the include
+            # search paths (-nostdinc++ replaces the copies in the SDK).
+            "@llvm//runtimes/cxxstdlib:public_headers_directory",
+            "@llvm//runtimes/cxxstdlib:detail_headers_directory",
         ],
     )
 
@@ -429,7 +433,8 @@ def declare_llvm_targets(*, suffix = ""):
             ":builtin_resource_headers",
         ] + select({
             "@llvm//toolchain:runtimes_all": [
-                "@llvm//runtimes/cxxstdlib:headers_include_search_directory",
+                "@llvm//runtimes/cxxstdlib:public_headers_directory",
+                "@llvm//runtimes/cxxstdlib:detail_headers_directory",
                 "@llvm//runtimes/cxxstdlib:abi_headers_include_search_directory",
             ],
             "//conditions:default": [],
@@ -459,7 +464,8 @@ def declare_llvm_targets(*, suffix = ""):
             ":builtin_resource_headers",
         ] + select({
             "@llvm//toolchain:runtimes_all": [
-                "@llvm//runtimes/cxxstdlib:headers_include_search_directory",
+                "@llvm//runtimes/cxxstdlib:public_headers_directory",
+                "@llvm//runtimes/cxxstdlib:detail_headers_directory",
                 "@llvm//runtimes/cxxstdlib:abi_headers_include_search_directory",
             ],
             "//conditions:default": [],

@@ -1,0 +1,49 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+# The C++ standard library as an ordinary cc_library whose public headers are
+# compiled into a Clang module by the regular header module machinery,
+# matching Google's setup for their standard library. C++ targets that
+# include C++ standard library headers in builds with the use_header_modules
+# feature enabled need to depend on this target:
+#
+# - Its generated module map declares the public standard library headers as
+#   modular, taking precedence over the textual declarations in the
+#   toolchain's module map, so that they are compiled once into a module and
+#   imported instead of being textually absorbed into every module (which is
+#   known to trip up Clang's declaration merging once several such modules
+#   are imported together).
+# - The dependency makes generated module maps of depending targets declare
+#   the module as used, which layering_check requires.
+#
+# The implementation detail headers stay textual: they include mutually
+# exclusive variants that can't all be compiled into a module, and the C
+# standard library wrappers include the C standard library headers via
+# include_next.
+#
+# The headers resolve to the same files that the toolchain provides via its
+# include search paths, so targets without this dependency simply keep
+# parsing them textually.
+cc_library(
+    name = "libcxx",
+    hdrs = ["//runtimes/cxxstdlib:public_headers_directory"],
+    features = [
+        # Compile the public headers into a module regardless of the features
+        # of the depending targets' packages.
+        "header_modules",
+        "use_header_modules",
+        "layering_check",
+        # Parse each header in its own submodule so that the headers are
+        # isolated from each other under local submodule visibility: without
+        # it, the detail headers textually absorbed into one submodule would
+        # not be visible to the others.
+        "generate_submodules",
+    ],
+    tags = [
+        # Only used together with the header_modules feature, which requires
+        # the Starlark implementation of the C++ rules.
+        "manual",
+    ],
+    textual_hdrs = ["//runtimes/cxxstdlib:detail_headers_directory"],
+    visibility = ["//visibility:public"],
+    deps = [],
+)

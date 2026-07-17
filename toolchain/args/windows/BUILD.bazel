@@ -144,11 +144,14 @@ cc_args_list(
     }),
 )
 
+# MinGW serves the libc++ headers from split public/detail directories so that
+# the public headers can be compiled into a Clang module (see
+# //runtimes/cxxstdlib).
 cc_args_list(
     name = "cxxstdlib_headers_include_search_paths",
     args = select({
         "//constraints/windows/abi:msvc": ["//toolchain/args:clang_cl_cxxstdlib_headers_include_search_paths"],
-        "//conditions:default": ["//toolchain/args:cxxstdlib_headers_include_search_paths"],
+        "//conditions:default": ["//toolchain/args:split_cxxstdlib_headers_include_search_paths"],
     }),
 )
 

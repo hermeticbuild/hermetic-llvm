@@ -7,6 +7,43 @@ headers_directory(
     visibility = ["//visibility:public"],
 )
 
+# The public (includable) C++ standard library headers: the extensionless
+# top-level libc++ headers such as <vector>. These are compiled into a Clang
+# module by @llvm//toolchain/features/header_modules/libcxx.
+filegroup(
+    name = "libcxx_public_headers",
+    srcs = glob(
+        ["usr/include/c++/v1/*"],
+        allow_empty = True,
+        exclude = [
+            "usr/include/c++/v1/*.h",
+            "usr/include/c++/v1/*.imp",
+            "usr/include/c++/v1/*.modulemap",
+            "usr/include/c++/v1/*.txt",
+            "usr/include/c++/v1/__*",
+        ],
+    ),
+    visibility = ["//visibility:public"],
+)
+
+# All other C++ standard library headers: implementation details, which
+# include mutually exclusive variants that can't all be compiled into a
+# module, and the C standard library wrappers, which include the C standard
+# library headers via include_next and thus have to be textual.
+filegroup(
+    name = "libcxx_textual_headers",
+    srcs = glob(
+        [
+            "usr/include/c++/v1/*.h",
+            "usr/include/c++/v1/__*",
+            "usr/include/c++/v1/*/**",
+        ],
+        allow_empty = True,
+        exclude = ["usr/include/c++/v1/*.modulemap"],
+    ),
+    visibility = ["//visibility:public"],
+)
+
 # The C and C++ standard library headers as an enumerated list rather than a
 # directory. Used to declare them as `textual header`s in the toolchain's
 # module map: since explicit entries win over the sysroot umbrella submodule,

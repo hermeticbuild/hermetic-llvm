@@ -1,6 +1,18 @@
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
+load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
 
 package(default_visibility = ["//visibility:public"])
+
+# libc++ headers are served from split public/detail directories so that the
+# public headers can be compiled into a Clang module (see //runtimes/cxxstdlib);
+# libstdc++ keeps its single header tree.
+cc_args_list(
+    name = "cxxstdlib_headers_include_search_paths",
+    args = select({
+        "//runtimes/cxxstdlib:libstdcxx_linux": ["//toolchain/args:cxxstdlib_headers_include_search_paths"],
+        "//conditions:default": ["//toolchain/args:split_cxxstdlib_headers_include_search_paths"],
+    }),
+)
 
 # Extracted from rules_cc unix_cc_configure.bzl
 # TODO(cerisier): Extract those into proper semantic args list.

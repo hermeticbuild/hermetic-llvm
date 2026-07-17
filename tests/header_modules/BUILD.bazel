@@ -40,3 +40,42 @@ cc_test(
     srcs = ["greeter_main.cc"],
     deps = [":textual_greeter"],
 )
+
+# With a dependency on the libcxx target, the C++ standard library headers are
+# instead imported as a compiled module.
+
+cc_library(
+    name = "greeter",
+    srcs = ["greeter.cc"],
+    hdrs = ["greeter.h"],
+    deps = ["@llvm//toolchain/features/header_modules/libcxx"],
+)
+
+cc_test(
+    name = "greeter_test",
+    srcs = ["greeter_main.cc"],
+    deps = [
+        ":greeter",
+        "@llvm//toolchain/features/header_modules/libcxx",
+    ],
+)
+
+# The module codegen action of item_store loads the libcxx module that its
+# module imports, which exercises the input tracking that
+# https://github.com/bazelbuild/bazel/pull/30396 added to Bazel.
+
+cc_library(
+    name = "item_store",
+    srcs = ["item_store.cc"],
+    hdrs = ["item_store.h"],
+    deps = ["@llvm//toolchain/features/header_modules/libcxx"],
+)
+
+cc_test(
+    name = "item_store_test",
+    srcs = ["item_store_main.cc"],
+    deps = [
+        ":item_store",
+        "@llvm//toolchain/features/header_modules/libcxx",
+    ],
+)

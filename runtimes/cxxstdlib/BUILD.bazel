@@ -1,6 +1,58 @@
+load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@bazel_skylib//lib:selects.bzl", "selects")
 
 package(default_visibility = ["//visibility:public"])
+
+# The C++ standard library headers, split into the public (includable)
+# headers and the implementation details. The split allows compiling the
+# public headers into a Clang module (see
+# @llvm//toolchain/features/header_modules/libcxx): implementation details
+# include mutually exclusive variants that can't all be compiled into a
+# module, and the C standard library wrappers include the C standard library
+# headers via include_next and thus have to be textual.
+#
+# On macOS, the libc++ headers are copied out of the SDK since files inside
+# the sysroot directory can't be used as headers of a target: the sysroot is
+# staged as a single directory and would collide with them in the sandbox.
+copy_to_directory(
+    name = "macos_cxx_public_headers",
+    srcs = ["@macos_sdk//sysroot:libcxx_public_headers"],
+    include_external_repositories = ["*"],
+    root_paths = ["sysroot/usr/include/c++/v1"],
+)
+
+copy_to_directory(
+    name = "macos_cxx_detail_headers",
+    srcs = ["@macos_sdk//sysroot:libcxx_textual_headers"],
+    include_external_repositories = ["*"],
+    root_paths = ["sysroot/usr/include/c++/v1"],
+)
+
+filegroup(
+    name = "no_headers",
+)
+
+alias(
+    name = "public_headers_directory",
+    actual = select({
+        "@platforms//os:macos": ":macos_cxx_public_headers",
+        ":libstdcxx_linux": "//runtimes/libstdcxx:headers_include_search_directory",
+        ":libstdcxx_windows": ":libstdcxx_windows_unsupported",
+        "//conditions:default": "@llvm-project//libcxx:libcxx_public_headers_directory",
+    }),
+)
+
+alias(
+    name = "detail_headers_directory",
+    actual = select({
+        "@platforms//os:macos": ":macos_cxx_detail_headers",
+        # libstdc++ is not split; all of its headers are in
+        # :public_headers_directory.
+        ":libstdcxx_linux": ":no_headers",
+        ":libstdcxx_windows": ":libstdcxx_windows_unsupported",
+        "//conditions:default": "@llvm-project//libcxx:libcxx_detail_headers_directory",
+    }),
+)
 
 config_setting(
     name = "libcxx_linux",
