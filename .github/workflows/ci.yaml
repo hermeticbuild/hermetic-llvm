@@ -257,19 +257,13 @@ jobs:
       - name: bazel test //tests/...
         env:
           USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
-          BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
         shell: bash
         run: |
-          REMOTE_HEADER_ARGS=()
-          if [[ -n "${BUILDBUDDY_API_KEY:-}" ]]; then
-            REMOTE_HEADER_ARGS=(--remote_header="x-buildbuddy-api-key=${BUILDBUDDY_API_KEY}")
-          fi
-
           bazel \
             --bazelrc=$GITHUB_WORKSPACE/.github/workflows/ci.bazelrc \
             --bazelrc=.bazelrc \
             test \
-            "${REMOTE_HEADER_ARGS[@]}" \
+            --remote_header=x-buildbuddy-api-key=4jtaxdhxtyu4ylxdEwI7 \
             //tests/...
 
   docs:
