@@ -11,6 +11,7 @@ bzl_library(
         ":common",
         "//constraints/cxxstdlib:cxxstdlib_versions",
         "//constraints/libc:libc_versions",
+        "//constraints/windows/abi:abis",
     ],
 )
 

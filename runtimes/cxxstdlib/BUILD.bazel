@@ -18,6 +18,15 @@ config_setting(
     ],
 )
 
+config_setting(
+    name = "libcxx_windows_msvc",
+    constraint_values = [
+        "//constraints/cxxstdlib:libcxx",
+        "//constraints/windows/abi:msvc",
+        "@platforms//os:windows",
+    ],
+)
+
 selects.config_setting_group(
     name = "libstdcxx_linux",
     match_all = [
@@ -93,6 +102,7 @@ filegroup(
             "@llvm-project//libcxxabi:libcxxabi.static",
             "@llvm-project//libunwind:libunwind.static",
         ],
+        ":libcxx_windows_msvc": [],
         ":libcxx_windows": [
             "@llvm-project//libcxx:libcxx.static",
             "@llvm-project//libcxxabi:libcxxabi.static",

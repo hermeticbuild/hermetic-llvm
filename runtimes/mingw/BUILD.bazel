@@ -3,8 +3,10 @@ load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@bazel_lib//lib:run_binary.bzl", "run_binary")
 load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("@llvm//toolchain/runtimes:cc_runtime_library.bzl", "cc_runtime_stage0_library")
+load("@llvm//toolchain/runtimes:cc_runtime_static_library.bzl", "cc_runtime_stage0_static_library")
 load("//runtimes:defs.bzl", "stub_library")
 load(":crt_object.bzl", "crt_object")
+load(":import_libs.bzl", "non_pic_static_archive")
 
 exports_files(["mingw.BUILD.bazel"])
 
@@ -86,13 +88,18 @@ cc_runtime_stage0_library(
     ],
 )
 
+non_pic_static_archive(
+    name = "ucrt_extra_non_pic_archive",
+    src = ":ucrt_extra",
+)
+
 # Mirror mingw-w64's libucrtbase import lib assembly: merge the DEF-based
 # import library with the extra object archive. Using llvm-ar directly matches
 # the MRI result for this simple merge.
 run_binary(
     name = "ucrtbase",
     srcs = [
-        ":ucrt_extra",
+        ":ucrt_extra_non_pic_archive",
         "@mingw//:import_lib_ucrtbase",
     ],
     outs = ["libucrtbase.a"],
@@ -100,7 +107,7 @@ run_binary(
         "qcsDL",
         "$(location libucrtbase.a)",
         "$(location @mingw//:import_lib_ucrtbase)",
-        "$(location ucrt_extra)",
+        "$(location :ucrt_extra_non_pic_archive)",
     ],
     tool = "//tools:llvm-ar",
     visibility = ["//visibility:public"],
@@ -110,7 +117,7 @@ run_binary(
 run_binary(
     name = "ucrtbased",
     srcs = [
-        ":ucrt_extra",
+        ":ucrt_extra_non_pic_archive",
         "@mingw//:import_lib_ucrtbased",
     ],
     outs = ["libucrtbased.a"],
@@ -118,7 +125,7 @@ run_binary(
         "qcsDL",
         "$(location libucrtbased.a)",
         "$(location @mingw//:import_lib_ucrtbased)",
-        "$(location ucrt_extra)",
+        "$(location :ucrt_extra_non_pic_archive)",
     ],
     tool = "//tools:llvm-ar",
     visibility = ["//visibility:public"],
@@ -128,7 +135,7 @@ run_binary(
 run_binary(
     name = "ucrt",
     srcs = [
-        ":ucrt_extra",
+        ":ucrt_extra_non_pic_archive",
         "@mingw//:import_lib_api-ms-win-crt-conio-l1-1-0",
         "@mingw//:import_lib_api-ms-win-crt-convert-l1-1-0",
         "@mingw//:import_lib_api-ms-win-crt-environment-l1-1-0",
@@ -164,7 +171,7 @@ run_binary(
         "$(location @mingw//:import_lib_api-ms-win-crt-string-l1-1-0)",
         "$(location @mingw//:import_lib_api-ms-win-crt-time-l1-1-0)",
         "$(location @mingw//:import_lib_api-ms-win-crt-utility-l1-1-0)",
-        "$(location ucrt_extra)",
+        "$(location :ucrt_extra_non_pic_archive)",
     ],
     tool = "//tools:llvm-ar",
     visibility = ["//visibility:public"],
@@ -232,7 +239,7 @@ run_binary(
 )
 
 cc_runtime_stage0_library(
-    name = "ws2_32_extra",
+    name = "ws2_32_extra_objects",
     srcs = ["@mingw//:ws2_32_srcs"],
     copts = MINGW_CRT_COMMON_COPTS,
     implementation_deps = [
@@ -241,10 +248,20 @@ cc_runtime_stage0_library(
     ],
 )
 
+cc_runtime_stage0_static_library(
+    name = "ws2_32_extra",
+    deps = [":ws2_32_extra_objects"],
+)
+
+non_pic_static_archive(
+    name = "ws2_32_extra_non_pic_archive",
+    src = ":ws2_32_extra",
+)
+
 run_binary(
     name = "libws2_32",
     srcs = [
-        ":ws2_32_extra",
+        ":ws2_32_extra_non_pic_archive",
         "@mingw//:import_lib_ws2_32",
     ],
     outs = ["libws2_32.a"],
@@ -252,13 +269,13 @@ run_binary(
         "qcsDL",
         "$(location :libws2_32.a)",
         "$(location @mingw//:import_lib_ws2_32)",
-        "$(location :ws2_32_extra)",
+        "$(location :ws2_32_extra_non_pic_archive)",
     ],
     tool = "@llvm//tools:llvm-ar",
 )
 
 cc_runtime_stage0_library(
-    name = "kernel32_intrinsics",
+    name = "kernel32_intrinsics_objects",
     srcs = [
         "@mingw//:mingw-w64-crt/intrincs/RtlSecureZeroMemory.c",
     ],
@@ -269,12 +286,22 @@ cc_runtime_stage0_library(
     ],
 )
 
+cc_runtime_stage0_static_library(
+    name = "kernel32_intrinsics",
+    deps = [":kernel32_intrinsics_objects"],
+)
+
+non_pic_static_archive(
+    name = "kernel32_intrinsics_non_pic_archive",
+    src = ":kernel32_intrinsics",
+)
+
 # Match mingw's build by adding the RtlSecureZeroMemory object into the
 # kernel32 import library archive.
 run_binary(
     name = "kernel32",
     srcs = [
-        ":kernel32_intrinsics",
+        ":kernel32_intrinsics_non_pic_archive",
         "@mingw//:import_lib_kernel32",
     ],
     outs = ["libkernel32.a"],
@@ -282,7 +309,7 @@ run_binary(
         "qcsDL",
         "$(location libkernel32.a)",
         "$(location @mingw//:import_lib_kernel32)",
-        "$(location :kernel32_intrinsics)",
+        "$(location :kernel32_intrinsics_non_pic_archive)",
     ],
     tool = "//tools:llvm-ar",
     visibility = ["//visibility:public"],
@@ -310,9 +337,14 @@ cc_runtime_stage0_library(
     ],
 )
 
+non_pic_static_archive(
+    name = "winpthread_non_pic_archive",
+    src = ":winpthread",
+)
+
 copy_file(
     name = "pthread",
-    src = ":winpthread",
+    src = ":winpthread_non_pic_archive",
     out = "libpthread.a",
     allow_symlink = True,
     visibility = ["//visibility:public"],
@@ -476,7 +508,9 @@ bzl_library(
     name = "import_libs",
     srcs = ["import_libs.bzl"],
     visibility = ["//visibility:public"],
-    deps = ["@bazel_lib//lib:run_binary"],
+    deps = [
+        "@bazel_lib//lib:run_binary",
+    ],
 )
 
 bzl_library(

@@ -1,20 +1,17 @@
+load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load(":declare_abis_constraints.bzl", "declare_abis_constraints")
+
 package(default_visibility = ["//visibility:public"])
 
-constraint_setting(
-    name = "abi",
+declare_abis_constraints()
+
+bzl_library(
+    name = "abis",
+    srcs = ["abis.bzl"],
 )
 
-constraint_value(
-    name = "gnu",
-    constraint_setting = ":abi",
-)
-
-constraint_value(
-    name = "gnullvm",
-    constraint_setting = ":abi",
-)
-
-constraint_value(
-    name = "msvc",
-    constraint_setting = ":abi",
+bzl_library(
+    name = "declare_abis_constraints",
+    srcs = ["declare_abis_constraints.bzl"],
+    deps = [":abis"],
 )

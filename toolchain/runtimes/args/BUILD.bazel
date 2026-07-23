@@ -198,6 +198,27 @@ cc_args_list(
     }),
 )
 
+cc_args_list(
+    name = "sanitizer_flags",
+    args = select({
+        "@llvm//constraints/windows/abi:msvc": [],  # TODO(archangelx360) support supported sanitizer in MSVC
+        "//conditions:default": [
+            ":ubsan_flags",
+            ":cfi_flags",
+            ":msan_flags",
+            ":dfsan_flags",
+            ":nsan_flags",
+            ":safestack_flags",
+            ":rtsan_flags",
+            ":tysan_flags",
+            ":tsan_flags",
+            ":asan_flags",
+            ":lsan_flags",
+            ":profile_flags",
+        ],
+    }),
+)
+
 # TODO(cerisier): this needs to differ per runtime (e.g libc++ still need crtbegin)
 cc_args(
     name = "hermetic_link_flags",

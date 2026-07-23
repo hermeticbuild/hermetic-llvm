@@ -9,9 +9,11 @@ LLVM_TOOLS = ([
     "clangd",
 ] if int(LLVM_VERSION_MAJOR) >= 22 else []) + [
     "clang",
+    "clang-cl",
     "clang-scan-deps",
     "dsymutil",
     "lld",
+    "lld-link",
     "llvm-ar",
     "llvm-cgdata",
     "llvm-cov",

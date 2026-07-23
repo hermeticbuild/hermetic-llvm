@@ -324,10 +324,17 @@ cc_library(
         "@llvm//platforms/config:gnu": [
             "@glibc//:gnu_libc_headers",
         ],
-        "@platforms//os:windows": [
+        "@platforms//os:windows": [],
+        "@platforms//os:macos": [],
+    }) + select({
+        "@llvm//constraints/windows/abi:gnu": [
             "@mingw//:mingw_headers",
         ],
-        "@platforms//os:macos": [],
+        "@llvm//constraints/windows/abi:gnullvm": [
+            "@mingw//:mingw_headers",
+        ],
+        "@llvm//constraints/windows/abi:msvc": [],
+        "@llvm//constraints/windows/abi:unconstrained": [],
     }),
     includes = [
         "include",
