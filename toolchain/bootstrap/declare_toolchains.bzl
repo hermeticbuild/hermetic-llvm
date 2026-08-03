@@ -76,6 +76,12 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
     BASE_TOOLS = TOOLS_WITHOUT_LINKER | {
         "@rules_cc//cc/toolchains/actions:link_actions": prefix + "/lld",
     }
+    UEFI_TOOLS_WITHOUT_LINKER = TOOLS_WITHOUT_LINKER | {
+        "@rules_cc//cc/toolchains/actions:assembly_actions": prefix + "/uefi-clang",
+        "@rules_cc//cc/toolchains/actions:c_compile": prefix + "/uefi-clang",
+        "@rules_cc//cc/toolchains/actions:objc_compile": prefix + "/uefi-clang",
+        "@llvm//toolchain:cpp_compile_actions_without_header_parsing": prefix + "/uefi-clang++",
+    }
 
     COMPLETE_ONLY_TOOLS = {
         "@rules_cc//cc/toolchains/actions:cpp_header_parsing": prefix + "/header-parser",
@@ -128,6 +134,14 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
             "@llvm//toolchain:runtimes_all": prefix + "/complete_tools_for_msvc",
             "//conditions:default": prefix + "/construction_tools_for_msvc",
         }),
+    )
+
+    cc_tool_map(
+        name = prefix + "/uefi_tools",
+        tools = UEFI_TOOLS_WITHOUT_LINKER | COMPLETE_ONLY_TOOLS | {
+            "@rules_cc//cc/toolchains/actions:ar_actions": prefix + "/llvm-ar",
+            "@rules_cc//cc/toolchains/actions:link_actions": prefix + "/lld-link",
+        },
     )
 
     cc_tool_map(
@@ -273,20 +287,28 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
         allowlist_include_directories = resource_allowlist_directories,
     )
 
-    # clang-cl discovers this raw sibling by InstalledDir. It is action data,
-    # not an independently selected rules_cc action tool.
-    bootstrap_binary(
-        name = prefix + "/bin/lld-link",
-        actual = "@llvm-project//llvm:llvm.stripped",
-        **bootstrap_binary_kwargs
-    )
-
     cc_tool(
         name = prefix + "/def-file-generator",
         src = "@llvm//tools/def_file_generator",
         data = [prefix + "/bin/llvm-nm"],
         env = {"LLVM_NM": "{llvm_nm}"},
         format = {"llvm_nm": prefix + "/bin/llvm-nm"},
+    )
+
+    cc_tool(
+        name = prefix + "/uefi-clang",
+        src = prefix + "/bin/clang",
+        data = [
+            prefix + "/clang_builtin_headers_include_directory",
+        ],
+    )
+
+    cc_tool(
+        name = prefix + "/uefi-clang++",
+        src = prefix + "/bin/clang++",
+        data = [
+            prefix + "/clang_builtin_headers_include_directory",
+        ],
     )
 
     bootstrap_binary(
@@ -381,6 +403,10 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
         actual = "@llvm-project//llvm:llvm.stripped",
         **bootstrap_binary_kwargs
     )
+
+    # clang-cl discovers the lld-link sibling by InstalledDir, so it is plain
+    # action data for that tool; the uefi tool map selects the cc_tool wrapper.
+    _bootstrap_cc_tool(prefix, "lld-link", bootstrap_binary_kwargs)
 
     cc_tool(
         name = prefix + "/lld",
@@ -524,6 +550,7 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
             ("stage1", stage1_prefix, "@llvm//toolchain:bootstrap_stage1_from_source"),
         ]:
             cc_toolchain_name = "%s_%s_%s_cc_toolchain" % (stage_name, exec_os, exec_cpu)
+            uefi_cc_toolchain_name = "%s_%s_%s_uefi_cc_toolchain" % (stage_name, exec_os, exec_cpu)
             merged_resource_directory(
                 name = cc_toolchain_name + "_resource_directory",
                 parent = tool_prefix + "/clang_resource_directory",
@@ -562,6 +589,12 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
                 }),
             )
 
+            cc_toolchain(
+                name = uefi_cc_toolchain_name,
+                tool_map = ":%s/uefi_tools" % tool_prefix,
+                uefi_link = True,
+            )
+
             for (target_os, target_cpu) in targets:
                 target_settings = [target_setting]
                 if target_os == "windows":
@@ -578,7 +611,7 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
                         "@platforms//os:" + target_os,
                     ],
                     target_settings = target_settings,
-                    toolchain = cc_toolchain_name,
+                    toolchain = uefi_cc_toolchain_name if target_os == "uefi" else cc_toolchain_name,
                     toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
                     visibility = ["//visibility:public"],
                 )

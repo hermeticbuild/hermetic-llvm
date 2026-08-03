@@ -1,28 +1,21 @@
+load("@llvm//:defs.bzl", "exec_test")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_platform//platform_data:defs.bzl", "platform_data")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
-load("@toolchains_llvm_bootstrapped//:defs.bzl", "exec_test")
 
 cc_binary(
     name = "uefi_app",
     srcs = ["uefi.c"],
-    copts = ["-ffreestanding"],
-    linkopts = [
-        "-nostdlib",
-        "-Wl,/entry:efi_main",
-        "-Wl,/subsystem:efi_application",
-    ],
     tags = ["manual"],
 )
 
 platform_data(
     name = "uefi_x86_64_app",
-    platform = "@toolchains_llvm_bootstrapped//platforms:uefi_x86_64",
+    platform = "@llvm//platforms:uefi_x86_64",
     target = ":uefi_app",
 )
 
 exec_test(
-    sh_test,
     name = "uefi_build_test",
     srcs = ["uefi_build_test.sh"],
     args = [
@@ -31,4 +24,5 @@ exec_test(
     data = [
         ":uefi_x86_64_app",
     ],
+    rule = sh_test,
 )

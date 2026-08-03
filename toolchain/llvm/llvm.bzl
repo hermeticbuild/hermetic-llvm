@@ -120,6 +120,12 @@ def declare_llvm_targets(*, suffix = ""):
     BASE_TOOLS = TOOLS_WITHOUT_LINKER | {
         "@rules_cc//cc/toolchains/actions:link_actions": ":lld",
     }
+    UEFI_TOOLS_WITHOUT_LINKER = TOOLS_WITHOUT_LINKER | {
+        "@rules_cc//cc/toolchains/actions:assembly_actions": ":uefi-clang",
+        "@rules_cc//cc/toolchains/actions:c_compile": ":uefi-clang",
+        "@rules_cc//cc/toolchains/actions:objc_compile": ":uefi-clang",
+        "@llvm//toolchain:cpp_compile_actions_without_header_parsing": ":uefi-clang++",
+    }
 
     COMPLETE_ONLY_TOOLS = {
         "@rules_cc//cc/toolchains/actions:cpp_header_parsing": ":header_parser",
@@ -176,6 +182,15 @@ def declare_llvm_targets(*, suffix = ""):
             "@llvm//toolchain:runtimes_all": ":complete_tools_for_msvc",
             "//conditions:default": ":construction_tools_for_msvc",
         }),
+        visibility = ["//visibility:public"],
+    )
+
+    cc_tool_map(
+        name = "uefi_tools",
+        tools = UEFI_TOOLS_WITHOUT_LINKER | COMPLETE_ONLY_TOOLS | {
+            "@rules_cc//cc/toolchains/actions:ar_actions": ":llvm-ar",
+            "@rules_cc//cc/toolchains/actions:link_actions": ":lld-link",
+        },
         visibility = ["//visibility:public"],
     )
 
@@ -289,6 +304,27 @@ def declare_llvm_targets(*, suffix = ""):
         allowlist_include_directories = builtin_resource_allowlist_directories,
     )
 
+    # The Windows ABI used by UEFI does not support Clang's -fPIC option.
+    # Keep these tools separate so the regular hosted toolchains retain their
+    # supports_pic capability.
+    cc_tool(
+        name = "uefi-clang",
+        src = "bin/clang" + suffix,
+        data = [
+            ":builtin_resource_dir",
+        ],
+        allowlist_include_directories = [":builtin_resource_dir"],
+    )
+
+    cc_tool(
+        name = "uefi-clang++",
+        src = "bin/clang++" + suffix,
+        data = [
+            ":builtin_resource_dir",
+        ],
+        allowlist_include_directories = [":builtin_resource_dir"],
+    )
+
     cc_tool(
         name = "lld",
         src = "bin/clang++" + suffix,
@@ -299,6 +335,11 @@ def declare_llvm_targets(*, suffix = ""):
             "bin/wasm-ld" + suffix,
         ],
         capabilities = ["@rules_cc//cc/toolchains/capabilities:supports_start_end_lib"],
+    )
+
+    cc_tool(
+        name = "lld-link",
+        src = "bin/lld-link" + suffix,
     )
 
     cc_tool(
@@ -451,6 +492,19 @@ def declare_llvm_targets(*, suffix = ""):
     )
 
     include_path(
+        name = "uefi_target_headers",
+        srcs = [
+            ":builtin_resource_dir",
+        ] + select({
+            "@llvm//toolchain:runtimes_all": [
+                "@llvm//runtimes/cxxstdlib:headers_include_search_directory",
+                "@llvm//runtimes/cxxstdlib:abi_headers_include_search_directory",
+            ],
+            "//conditions:default": [],
+        }),
+    )
+
+    include_path(
         name = "wasm_target_headers",
         srcs = [
             ":builtin_resource_include_dir",
@@ -464,6 +518,7 @@ def declare_llvm_targets(*, suffix = ""):
             "@platforms//os:macos": ":macos_target_headers",
             "@platforms//os:linux": ":linux_target_headers",
             "@platforms//os:windows": ":windows_target_headers",
+            "@platforms//os:uefi": ":uefi_target_headers",
             "@platforms//os:none": ":wasm_target_headers",
         }),
         # The generator is built with the stage1_hosted toolchain, whose own

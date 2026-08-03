@@ -254,6 +254,7 @@ filegroup(
         "//conditions:default": [],
     }) + select({
         "@platforms//os:none": [],
+        "@platforms//os:uefi": [],
         "//conditions:default": [
             # Not Fuchsia and not a bare-metal build.
             "lib/builtins/emutls.c",
@@ -312,6 +313,7 @@ filter_builtin_sources(
         "lib/builtins/x86_64/floatdisf.c",
     ] + select({
         ":windows_msvc": [],
+        "@platforms//os:uefi": [],
         "//conditions:default": [
             "builtins_generic_tf_sources",
             "builtins_x86_80_bit_sources",
@@ -320,6 +322,9 @@ filter_builtin_sources(
     }) + select({
         ":windows_msvc": [],
         "@platforms//os:windows": [
+            "lib/builtins/x86_64/chkstk.S",
+        ],
+        "@platforms//os:uefi": [
             "lib/builtins/x86_64/chkstk.S",
         ],
         "//conditions:default": [
@@ -348,6 +353,9 @@ filter_builtin_sources(
         ":windows_msvc": [],
         "@platforms//os:windows": [
             "lib/builtins/aarch64/chkstk.S",  # if MINGW
+        ],
+        "@platforms//os:uefi": [
+            "lib/builtins/aarch64/chkstk.S",  # if Windows ABI
         ],
         "//conditions:default": [],
     }),
@@ -652,6 +660,10 @@ cc_library(
             "-Wno-missing-declarations",
             "-Wno-pragma-pack",
         ],
+        "@platforms//os:uefi": [
+            "-ffreestanding",
+            "-DKERNEL_USE",
+        ],
         "//conditions:default": [],
     }) + CF_PROTECTION_COPTS,
     features = select({
@@ -668,6 +680,7 @@ cc_library(
             "@kernel_headers",
         ],
         "@platforms//os:windows": [],
+        "@platforms//os:uefi": [],
         "@platforms//os:none": [],
     }) + select({
         "@llvm//platforms/config:musl": [
@@ -683,6 +696,7 @@ cc_library(
         "@platforms//os:windows": [
             "@mingw//:mingw_headers",
         ],
+        "@platforms//os:uefi": [],
         "@platforms//os:none": [],
     }),
     includes = ["lib/builtins"],

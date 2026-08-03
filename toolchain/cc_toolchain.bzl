@@ -7,7 +7,8 @@ def cc_toolchain(
         name,
         tool_map,
         module_map = None,
-        extra_args = None):
+        extra_args = None,
+        uefi_link = False):
     extra_args = extra_args or []
     cc_feature_set(
         name = name + "_msvc_known_features",
@@ -158,6 +159,7 @@ def cc_toolchain(
                 "@rules_cc//cc/toolchains/args/def_file:def_file",
                 "@llvm//toolchain/features:targets_windows",
             ],
+            "@platforms//os:uefi": [],
             "@platforms//os:none": [],
         }) + [
             "@llvm//toolchain/features:prefer_pic_for_opt_binaries",
@@ -279,12 +281,12 @@ def cc_toolchain(
 
     _cc_toolchain(
         name = name,
-        args = select({
+        args = (["@llvm//toolchain:uefi_link_toolchain_args"] if uefi_link else select({
             "@llvm//toolchain:runtimes_none": ["@llvm//toolchain/runtimes:toolchain_args"],
             "@llvm//toolchain:runtimes_stage1": ["@llvm//toolchain/runtimes:toolchain_args"],
             "@llvm//toolchain:runtimes_stage1_hosted": ["@llvm//toolchain/runtimes:toolchain_args"],
             "//conditions:default": ["@llvm//toolchain:toolchain_args"],
-        }) + extra_args,
+        })) + extra_args,
         # clang-cl header parsing remains a named unsupported boundary. It can
         # become true only with a dialect-correct parse-only action and proved
         # module-map/layering behavior.
@@ -319,12 +321,12 @@ def cc_toolchain(
             ],
             "//conditions:default": [],
         }),
-        known_features = [name + "_selected_known_features"],
-        enabled_features = [name + "_selected_enabled_features"],
+        known_features = (["@llvm//toolchain/features/uefi:features"] if uefi_link else [name + "_selected_known_features"]),
+        enabled_features = (["@llvm//toolchain/features/uefi:features"] if uefi_link else [name + "_selected_enabled_features"]),
         tool_map = tool_map,
         module_map = module_map,
-        static_runtime_lib = name + "_static_runtime_lib",
-        dynamic_runtime_lib = name + "_dynamic_runtime_lib",
+        static_runtime_lib = ("@llvm//runtimes:none" if uefi_link else name + "_static_runtime_lib"),
+        dynamic_runtime_lib = ("@llvm//runtimes:none" if uefi_link else name + "_dynamic_runtime_lib"),
         compiler = select({
             "@llvm//constraints/windows/abi:msvc": "clang-cl",
             "//conditions:default": "clang",
@@ -335,6 +337,7 @@ def cc_toolchain(
             "@llvm//platforms/config:windows_crt_msvcrt": "msvcrt",
             "@llvm//platforms/config:windows_crt_ucrt": "ucrt",
             "@platforms//os:macos": "macosx",
+            "@platforms//os:uefi": "none",
             "@platforms//os:none": "none",
         }, no_match_error = "Unsupported target libc"),
     )

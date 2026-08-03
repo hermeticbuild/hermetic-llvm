@@ -1,6 +1,6 @@
 load("//platforms:common.bzl", "MSVC_TARGET_STAGE0_SUPPORTED_EXECS", "SUPPORTED_EXECS", "SUPPORTED_TARGETS")
 load("//toolchain:merged_resource_directory.bzl", "merged_resource_directory")
-load("//toolchain:selects.bzl", "platform_cc_tool_map", "platform_module_map", "platform_resource_dir")
+load("//toolchain:selects.bzl", "platform_cc_tool_map", "platform_cc_uefi_tool_map", "platform_module_map", "platform_resource_dir")
 load("//toolchain/args:resource_directory_args.bzl", "resource_directory_args")
 load(":cc_toolchain.bzl", "cc_toolchain")
 
@@ -49,6 +49,18 @@ def declare_toolchains(*, execs = SUPPORTED_EXECS, targets = SUPPORTED_TARGETS):
             }),
         )
 
+        uefi_cc_toolchain_name = "{}_{}_uefi_cc_toolchain".format(exec_os, exec_cpu)
+        # UEFI links /nodefaultlib and never consumes assembled target
+        # runtimes, so unlike the hosted toolchains it binds no
+        # merged_resource_directory. Compiles find the packaged builtin
+        # headers through the compiler's adjacent resource directory.
+        cc_toolchain(
+            name = uefi_cc_toolchain_name,
+            tool_map = platform_cc_uefi_tool_map(exec_os, exec_cpu),
+            module_map = platform_module_map(exec_os, exec_cpu),
+            uefi_link = True,
+        )
+
         for (target_os, target_cpu) in targets:
             target_settings = ["@llvm//toolchain:bootstrap_stage0_prebuilt_seed"]
             if target_os == "windows":
@@ -65,7 +77,7 @@ def declare_toolchains(*, execs = SUPPORTED_EXECS, targets = SUPPORTED_TARGETS):
                     "@platforms//os:" + target_os,
                 ],
                 target_settings = target_settings,
-                toolchain = cc_toolchain_name,
+                toolchain = uefi_cc_toolchain_name if target_os == "uefi" else cc_toolchain_name,
                 toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
                 visibility = ["//visibility:public"],
             )

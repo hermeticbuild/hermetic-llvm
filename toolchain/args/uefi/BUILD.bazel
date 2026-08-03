@@ -1,0 +1,65 @@
+load("@llvm//toolchain/args:llvm_target_triple.bzl", "LLVM_TARGET_TRIPLE")
+load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
+
+package(default_visibility = ["//visibility:public"])
+
+genrule(
+    name = "fltused",
+    srcs = ["fltused.c"],
+    outs = ["fltused.o"],
+    cmd = select({
+        "@platforms//cpu:x86_64": "$(location @llvm//tools:clang) -target x86_64-unknown-windows -fno-ms-compatibility -fno-ms-extensions -ffreestanding -c $(location :fltused.c) -o $@",
+        "@platforms//cpu:aarch64": "$(location @llvm//tools:clang) -target aarch64-unknown-windows -fno-ms-compatibility -fno-ms-extensions -ffreestanding -c $(location :fltused.c) -o $@",
+    }),
+    tools = ["@llvm//tools:clang"],
+)
+
+cc_args(
+    name = "default_link_flags",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    args = [
+        "/subsystem:efi_application",
+        "/entry:efi_main",
+        "/base:0x0",
+        "/brepro",
+        "{fltused}",
+    ],
+    data = [":fltused"],
+    format = {"fltused": ":fltused"},
+)
+
+# lld-link does not understand the Clang driver's -target option, so apply the
+# target triple only to compile actions.
+cc_args(
+    name = "target_compile_flags",
+    actions = ["@rules_cc//cc/toolchains/actions:compile_actions"],
+    args = ["-target"] + LLVM_TARGET_TRIPLE,
+)
+
+cc_args(
+    name = "empty_sysroot_flags",
+    actions = ["@rules_cc//cc/toolchains/actions:compile_actions"],
+    args = select({
+        "@llvm//toolchain/args:empty_sysroot": ["--sysroot=/dev/null"],
+        "//conditions:default": [],
+    }),
+)
+
+# Keep the Windows ABI while accepting GNU source extensions such as
+# __attribute__((packed)).
+cc_args(
+    name = "hybrid_gnu_msvc",
+    actions = ["@rules_cc//cc/toolchains/actions:compile_actions"],
+    args = [
+        "-D_MSC_VER=1920",
+        "-ffreestanding",
+        "-fno-ms-compatibility",
+        "-fno-ms-extensions",
+    ],
+)
+
+cc_args(
+    name = "nostdlib",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    args = ["/nodefaultlib"],
+)
