@@ -1,7 +1,6 @@
-load("@llvm//:defs.bzl", "exec_test")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_platform//platform_data:defs.bzl", "platform_data")
-load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load(":uefi_qemu_test.bzl", "qemu_system_target", "uefi_qemu_test")
 
 cc_binary(
     name = "uefi_app",
@@ -15,14 +14,23 @@ platform_data(
     target = ":uefi_app",
 )
 
-exec_test(
-    name = "uefi_build_test",
-    srcs = ["uefi_build_test.sh"],
-    args = [
-        "$(rootpath :uefi_x86_64_app)",
-    ],
-    data = [
-        ":uefi_x86_64_app",
-    ],
-    rule = sh_test,
+qemu_system_target(
+    name = "qemu_system_target",
+    build_setting_default = "x86_64",
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "qemu_system_x86_64",
+    flag_values = {
+        ":qemu_system_target": "x86_64",
+    },
+    visibility = ["//visibility:public"],
+)
+
+uefi_qemu_test(
+    name = "uefi_x86_64_test",
+    size = "medium",
+    application = ":uefi_x86_64_app",
+    target_compatible_with = ["@platforms//os:linux"],
 )
