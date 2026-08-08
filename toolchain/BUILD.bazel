@@ -145,6 +145,7 @@ cc_args_list(
             "//toolchain/args/linux:non_pie_executable_link_flags",
         ],
         "@platforms//os:windows": [],
+        "@platforms//os:uefi": [],
         "@platforms//os:none": [],
     }),
 )
@@ -159,6 +160,7 @@ cc_args_list(
         "@platforms//os:windows": [
             "//toolchain/args:crt_search_directory",
         ],
+        "@platforms//os:uefi": [],
         "@platforms//os:none": [],
     }),
 )
@@ -324,12 +326,23 @@ cc_args_list(
 )
 
 cc_args_list(
+    name = "uefi_toolchain_args",
+    args = [
+        "//toolchain/args:cxxstdlib_headers_include_search_paths",
+        "//toolchain/args/uefi:default_link_flags",
+        "//toolchain/args/uefi:hybrid_gnu_msvc",
+        "//toolchain/args/uefi:nostdlib",
+    ],
+)
+
+cc_args_list(
     name = "platform_specific_args",
     args = select({
         # Platform specific flags.
         "@platforms//os:macos": [":macos_toolchain_args"],
         "@platforms//os:linux": [":linux_toolchain_args"],
         "@platforms//os:windows": [":windows_toolchain_args"],
+        "@platforms//os:uefi": [":uefi_toolchain_args"],
         "@platforms//os:none": [],
         "//conditions:default": [],
     }),
@@ -384,6 +397,24 @@ cc_args_list(
         # Needs to stay out of resource_dir since clang does not always search for crtstuff for all targets.
         ":default_startfiles",
         ":default_libs",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# Toolchain arguments for direct lld-link actions. Driver-only link flags such
+# as -target, -fuse-ld, and -resource-dir are deliberately excluded.
+cc_args_list(
+    name = "uefi_link_toolchain_args",
+    args = [
+        "//toolchain/args/uefi:target_compile_flags",
+        "//toolchain/args:no_absolute_paths_for_builtins",
+        "//toolchain/args:deterministic_compile_flags",
+        "//toolchain/args:module_map",
+        "//toolchain/args/uefi:empty_sysroot_flags",
+        ":hermetic_compile_flags",
+        "@rules_cc//cc/toolchains/args/external_include_paths:external_include_paths",
+        ":platform_specific_args",
+        "//toolchain/args:validate_static_library_args",
     ],
     visibility = ["//visibility:public"],
 )

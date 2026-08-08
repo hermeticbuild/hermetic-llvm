@@ -1,7 +1,7 @@
 load("@rules_cc//cc/toolchains:feature_set.bzl", "cc_feature_set")
 load("@rules_cc//cc/toolchains:toolchain.bzl", _cc_toolchain = "cc_toolchain")
 
-def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
+def cc_toolchain(name, tool_map, module_map = None, extra_args = [], uefi_link = False):
     cc_feature_set(
         name = name + "_known_features",
         all_of = [
@@ -62,6 +62,7 @@ def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
                 "@rules_cc//cc/toolchains/args/def_file:def_file",
                 "@llvm//toolchain/features:targets_windows",
             ],
+            "@platforms//os:uefi": [],
             "@platforms//os:none": [],
         }) + [
             "@llvm//toolchain/features:prefer_pic_for_opt_binaries",
@@ -95,12 +96,12 @@ def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
 
     _cc_toolchain(
         name = name,
-        args = select({
+        args = (["@llvm//toolchain:uefi_link_toolchain_args"] if uefi_link else select({
             "@llvm//toolchain:runtimes_none": ["@llvm//toolchain/runtimes:toolchain_args"],
             "@llvm//toolchain:runtimes_stage1": ["@llvm//toolchain/runtimes:toolchain_args"],
             "@llvm//toolchain:runtimes_stage1_hosted": ["@llvm//toolchain/runtimes:toolchain_args"],
             "//conditions:default": ["@llvm//toolchain:toolchain_args"],
-        }) + [
+        })) + [
             # TODO: rules_cc passes extra args to these actions, ideally these would be fixed in rules_cc.
             "@llvm//toolchain/args:ignore_unused_command_line_argument",
         ] + extra_args,
@@ -116,7 +117,7 @@ def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
             ],
             "//conditions:default": [],
         }),
-        known_features = select({
+        known_features = (["@llvm//toolchain/features/msvc:features"] if uefi_link else select({
             "@llvm//toolchain:runtimes_none": [
                 "@llvm//toolchain/features:external_include_paths",
                 "@llvm//toolchain/features:fdo_optimize",
@@ -130,26 +131,26 @@ def cc_toolchain(name, tool_map, module_map = None, extra_args = []):
                 "@llvm//toolchain/features:fdo_optimize",
             ],
             "//conditions:default": [name + "_known_features"],
-        }),
-        enabled_features = select({
+        })),
+        enabled_features = (["@llvm//toolchain/features/msvc:features"] if uefi_link else select({
             "@llvm//toolchain:runtimes_none": [name + "_runtimes_only_enabled_features"],
             "@llvm//toolchain:runtimes_stage1": [name + "_runtimes_only_enabled_features"],
             "@llvm//toolchain:runtimes_stage1_hosted": [name + "_runtimes_only_enabled_features"],
             "//conditions:default": [name + "_enabled_features"],
-        }),
+        })),
         tool_map = tool_map,
         module_map = module_map,
-        static_runtime_lib = select({
+        static_runtime_lib = ("@llvm//runtimes:none" if uefi_link else select({
             "@llvm//toolchain:runtimes_none": "@llvm//runtimes:none",
             "@llvm//toolchain:runtimes_stage1": "@llvm//runtimes:none",
             "@llvm//toolchain:runtimes_stage1_hosted": "@llvm//runtimes:none",
             "//conditions:default": "@llvm//runtimes:static_runtime_lib",
-        }),
-        dynamic_runtime_lib = select({
+        })),
+        dynamic_runtime_lib = ("@llvm//runtimes:none" if uefi_link else select({
             "@llvm//toolchain:runtimes_none": "@llvm//runtimes:none",
             "@llvm//toolchain:runtimes_stage1": "@llvm//runtimes:none",
             "@llvm//toolchain:runtimes_stage1_hosted": "@llvm//runtimes:none",
             "//conditions:default": "@llvm//runtimes:dynamic_runtime_lib",
-        }),
+        })),
         compiler = "clang",
     )

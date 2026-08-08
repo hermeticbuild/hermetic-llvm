@@ -14,6 +14,8 @@ LLVM_TARGET_TRIPLE = select({
     "@llvm//platforms/config:macos_aarch64": ["aarch64-apple-darwin"],
     "@llvm//platforms/config:windows_x86_64": ["x86_64-w64-windows-gnu"],
     "@llvm//platforms/config:windows_aarch64": ["aarch64-w64-windows-gnu"],
+    "@llvm//platforms/config:uefi_x86_64": ["x86_64-unknown-windows"],
+    "@llvm//platforms/config:uefi_aarch64": ["aarch64-unknown-windows"],
     "@llvm//platforms/config:none_bpfeb": ["bpfeb"],
     "@llvm//platforms/config:none_bpfel": ["bpfel"],
     "@llvm//platforms/config:none_wasm32": ["wasm32-unknown-unknown"],

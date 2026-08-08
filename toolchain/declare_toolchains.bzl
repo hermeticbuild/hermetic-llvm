@@ -1,5 +1,5 @@
 load("//platforms:common.bzl", "SUPPORTED_EXECS", "SUPPORTED_TARGETS")
-load("//toolchain:selects.bzl", "platform_cc_tool_map", "platform_module_map", "resource_dir_arg")
+load("//toolchain:selects.bzl", "platform_cc_tool_map", "platform_cc_uefi_tool_map", "platform_module_map", "resource_dir_arg")
 load(":cc_toolchain.bzl", "cc_toolchain")
 
 def declare_toolchains(*, execs = SUPPORTED_EXECS, targets = SUPPORTED_TARGETS):
@@ -24,6 +24,17 @@ def declare_toolchains(*, execs = SUPPORTED_EXECS, targets = SUPPORTED_TARGETS):
             ],
         )
 
+        uefi_cc_toolchain_name = "{}_{}_uefi_cc_toolchain".format(exec_os, exec_cpu)
+        cc_toolchain(
+            name = uefi_cc_toolchain_name,
+            tool_map = platform_cc_uefi_tool_map(exec_os, exec_cpu),
+            module_map = platform_module_map(exec_os, exec_cpu),
+            uefi_link = True,
+            extra_args = [
+                resource_dir_arg(exec_os, exec_cpu),
+            ],
+        )
+
         for (target_os, target_cpu) in targets:
             native.toolchain(
                 name = "{}_{}_to_{}_{}".format(exec_os, exec_cpu, target_os, target_cpu),
@@ -38,7 +49,7 @@ def declare_toolchains(*, execs = SUPPORTED_EXECS, targets = SUPPORTED_TARGETS):
                 target_settings = [
                     "@llvm//toolchain:bootstrap_stage0_prebuilt_seed",
                 ],
-                toolchain = cc_toolchain_name,
+                toolchain = uefi_cc_toolchain_name if target_os == "uefi" else cc_toolchain_name,
                 toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
                 visibility = ["//visibility:public"],
             )

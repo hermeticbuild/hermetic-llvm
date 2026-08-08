@@ -60,7 +60,10 @@ filegroup(
 
 filegroup(
     name = "static_runtime_lib",
-    srcs = ["//runtimes/cxxstdlib:static_runtime_lib"],
+    srcs = select({
+        "@platforms//os:uefi": [],
+        "//conditions:default": ["//runtimes/cxxstdlib:static_runtime_lib"],
+    }),
     visibility = ["//visibility:public"],
 )
 
@@ -100,7 +103,10 @@ config_setting(
 # targets are Darwin-only, hence the macOS gate.
 filegroup(
     name = "dynamic_runtime_lib",
-    srcs = ["//runtimes/cxxstdlib:dynamic_runtime_lib"] + select({
+    srcs = select({
+        "@platforms//os:uefi": [],
+        "//conditions:default": ["//runtimes/cxxstdlib:dynamic_runtime_lib"],
+    }) + select({
         ":_asan_dynamic_runtime_macos": ["//runtimes/compiler-rt:clang_rt.asan.shared"],
         "//conditions:default": [],
     }) + select({
@@ -209,6 +215,7 @@ alias(
     target_compatible_with = select({
         "@platforms//os:linux": [],
         "@platforms//os:windows": [],
+        "@platforms//os:uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
     visibility = ["//visibility:public"],

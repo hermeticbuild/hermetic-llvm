@@ -230,6 +230,7 @@ filegroup(
         "//conditions:default": [],
     }) + select({
         "@platforms//os:none": [],
+        "@platforms//os:uefi": [],
         "//conditions:default": [
             # Not Fuchsia and not a bare-metal build.
             "lib/builtins/emutls.c",
@@ -282,13 +283,20 @@ filter_builtin_sources(
     srcs = [
         "lib/builtins/x86_64/floatdidf.c",
         "lib/builtins/x86_64/floatdisf.c",
-        "lib/builtins/x86_64/floatdixf.c",  # if not ANDROID
         ":builtins_generic_srcs",
         ":builtins_generic_tf_sources",
-        ":builtins_x86_80_bit_sources",
         ":builtins_x86_arch_sources",
     ] + select({
-        "@platforms//os:windows": [
+        "@platforms//os:uefi": [],
+        "//conditions:default": [
+            "lib/builtins/x86_64/floatdixf.c",  # if not ANDROID
+            ":builtins_x86_80_bit_sources",
+        ],
+    }) + selects.with_or({
+        (
+            "@platforms//os:windows",
+            "@platforms//os:uefi",
+        ): [
             "lib/builtins/x86_64/chkstk.S",
         ],
         "//conditions:default": [
@@ -313,9 +321,12 @@ filter_builtin_sources(
         ":builtins_aarch64_arch_sources",
         ":builtins_generic_srcs",
         ":builtins_generic_tf_sources",
-    ] + select({
-        "@platforms//os:windows": [
-            "lib/builtins/aarch64/chkstk.S",  # if MINGW
+    ] + selects.with_or({
+        (
+            "@platforms//os:windows",
+            "@platforms//os:uefi",
+        ): [
+            "lib/builtins/aarch64/chkstk.S",  # if Windows ABI
         ],
         "//conditions:default": [],
     }),
@@ -596,6 +607,10 @@ cc_library(
             "-Wno-missing-declarations",
             "-Wno-pragma-pack",
         ],
+        "@platforms//os:uefi": [
+            "-ffreestanding",
+            "-DKERNEL_USE",
+        ],
         "//conditions:default": [],
     }) + CF_PROTECTION_COPTS,
     implementation_deps = select({
@@ -606,6 +621,7 @@ cc_library(
             "@kernel_headers",
         ],
         "@platforms//os:windows": [],
+        "@platforms//os:uefi": [],
         "@platforms//os:none": [],
     }) + select({
         "@llvm//platforms/config:musl": [
@@ -620,6 +636,7 @@ cc_library(
         "@platforms//os:windows": [
             "@mingw//:mingw_headers",
         ],
+        "@platforms//os:uefi": [],
         "@platforms//os:none": [],
     }),
     includes = ["lib/builtins"],

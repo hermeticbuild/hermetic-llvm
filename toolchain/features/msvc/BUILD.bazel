@@ -1,0 +1,109 @@
+load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
+load("@rules_cc//cc/toolchains:feature.bzl", "cc_feature")
+load("@rules_cc//cc/toolchains:feature_set.bzl", "cc_feature_set")
+
+# Feature overrides for invoking lld-link directly. They replace the GNU-style
+# output and library-path flags with their MSVC equivalents.
+
+cc_feature_set(
+    name = "features",
+    all_of = [
+        "@rules_cc//cc/toolchains/args/archiver_flags:feature",
+        "@rules_cc//cc/toolchains/args/libraries_to_link:feature",
+        "@rules_cc//cc/toolchains/args/preprocessor_defines:feature",
+        "@rules_cc//cc/toolchains/args/random_seed:feature",
+        ":strip_debug_symbols_feature",
+        "@rules_cc//cc/toolchains/args/strip_flags:feature",
+        "@rules_cc//cc/toolchains/args/include_flags:feature",
+        "@rules_cc//cc/toolchains/args/compiler_input_flags:feature",
+        "@rules_cc//cc/toolchains/args/compiler_output_flags:feature",
+        "@rules_cc//cc/toolchains/args/fission_flags:feature",
+        ":link_flags_feature",
+        "@rules_cc//cc/toolchains/args/linkstamp_flags:feature",
+        ":library_search_directories_feature",
+        "@rules_cc//cc/toolchains/args/dependency_file:feature",
+        "@rules_cc//cc/toolchains/args/compile_flags:feature",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+cc_feature(
+    name = "strip_debug_symbols_feature",
+    args = [":strip_debug_symbols"],
+    overrides = "@rules_cc//cc/toolchains/features/legacy:strip_debug_symbols",
+)
+
+cc_args(
+    name = "strip_debug_symbols",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    args = ["/debug:none"],
+    requires_not_none = "@rules_cc//cc/toolchains/variables:strip_debug_symbols",
+)
+
+cc_feature_set(
+    name = "link_flags_feature",
+    all_of = [
+        ":user_link_flags_feature",
+        ":legacy_link_flags_feature",
+        ":output_link_flags_feature",
+    ],
+)
+
+cc_feature(
+    name = "legacy_link_flags_feature",
+    args = [":legacy_link_flags"],
+    overrides = "@rules_cc//cc/toolchains/features/legacy:legacy_link_flags",
+)
+
+cc_args(
+    name = "legacy_link_flags",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    args = ["{legacy_link_flags}"],
+    format = {"legacy_link_flags": "@rules_cc//cc/toolchains/variables:legacy_link_flags"},
+    iterate_over = "@rules_cc//cc/toolchains/variables:legacy_link_flags",
+    requires_not_none = "@rules_cc//cc/toolchains/variables:legacy_link_flags",
+)
+
+cc_feature(
+    name = "user_link_flags_feature",
+    args = [":user_link_flags"],
+    overrides = "@rules_cc//cc/toolchains/features/legacy:user_link_flags",
+)
+
+cc_args(
+    name = "user_link_flags",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    args = ["{user_link_flags}"],
+    format = {"user_link_flags": "@rules_cc//cc/toolchains/variables:user_link_flags"},
+    iterate_over = "@rules_cc//cc/toolchains/variables:user_link_flags",
+    requires_not_none = "@rules_cc//cc/toolchains/variables:user_link_flags",
+)
+
+cc_feature(
+    name = "output_link_flags_feature",
+    args = [":output_link_flags"],
+    overrides = "@rules_cc//cc/toolchains/features/legacy:output_execpath_flags",
+)
+
+cc_args(
+    name = "output_link_flags",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    args = ["/out:{output_execpath}"],
+    format = {"output_execpath": "@rules_cc//cc/toolchains/variables:output_execpath"},
+    requires_not_none = "@rules_cc//cc/toolchains/variables:output_execpath",
+)
+
+cc_feature(
+    name = "library_search_directories_feature",
+    args = [":library_search_directories_flags"],
+    overrides = "@rules_cc//cc/toolchains/features/legacy:library_search_directories",
+)
+
+cc_args(
+    name = "library_search_directories_flags",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    args = ["/libpath:{library_search_directories}"],
+    format = {"library_search_directories": "@rules_cc//cc/toolchains/variables:library_search_directories"},
+    iterate_over = "@rules_cc//cc/toolchains/variables:library_search_directories",
+    requires_not_none = "@rules_cc//cc/toolchains/variables:library_search_directories",
+)
