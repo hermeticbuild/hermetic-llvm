@@ -40,6 +40,8 @@ bzl_library(
         ":bootstrap_binary",
         "//platforms:common",
         "//toolchain:cc_toolchain",
+        "@bazel_skylib//rules/directory",
+        "@bazel_skylib//rules/directory:subdirectory",
         "@llvm-project//:version",
         "@rules_cc//cc/toolchains:toolchain_rules",
     ],
