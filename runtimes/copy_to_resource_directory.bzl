@@ -22,6 +22,8 @@ TRIPLE_SELECT_DICT = {
     "@llvm//platforms/config:macos_aarch64": "darwin",
     "@llvm//platforms/config:windows_x86_64": "x86_64-w64-windows-gnu",
     "@llvm//platforms/config:windows_aarch64": "aarch64-w64-windows-gnu",
+    "@llvm//platforms/config:uefi_x86_64": "x86_64-unknown-windows",
+    "@llvm//platforms/config:uefi_aarch64": "aarch64-unknown-windows",
     "@llvm//platforms/config:none_bpfeb": "bpfeb-unknown-none",
     "@llvm//platforms/config:none_bpfel": "bpfel-unknown-none",
     "@llvm//platforms/config:none_wasm32": "wasm32-unknown-unknown",

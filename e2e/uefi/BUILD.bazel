@@ -1,0 +1,36 @@
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_platform//platform_data:defs.bzl", "platform_data")
+load(":uefi_qemu_test.bzl", "qemu_system_target", "uefi_qemu_test")
+
+cc_binary(
+    name = "uefi_app",
+    srcs = ["uefi.c"],
+    tags = ["manual"],
+)
+
+platform_data(
+    name = "uefi_x86_64_app",
+    platform = "@llvm//platforms:uefi_x86_64",
+    target = ":uefi_app",
+)
+
+qemu_system_target(
+    name = "qemu_system_target",
+    build_setting_default = "x86_64",
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "qemu_system_x86_64",
+    flag_values = {
+        ":qemu_system_target": "x86_64",
+    },
+    visibility = ["//visibility:public"],
+)
+
+uefi_qemu_test(
+    name = "uefi_x86_64_test",
+    size = "medium",
+    application = ":uefi_x86_64_app",
+    target_compatible_with = ["@platforms//os:linux"],
+)

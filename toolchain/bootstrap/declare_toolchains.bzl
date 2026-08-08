@@ -71,6 +71,12 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
     BASE_TOOLS = TOOLS_WITHOUT_LINKER | {
         "@rules_cc//cc/toolchains/actions:link_actions": prefix + "/lld",
     }
+    UEFI_TOOLS_WITHOUT_LINKER = TOOLS_WITHOUT_LINKER | {
+        "@rules_cc//cc/toolchains/actions:assembly_actions": prefix + "/uefi-clang",
+        "@rules_cc//cc/toolchains/actions:c_compile": prefix + "/uefi-clang",
+        "@rules_cc//cc/toolchains/actions:objc_compile": prefix + "/uefi-clang",
+        "@llvm//toolchain:cpp_compile_actions_without_header_parsing": prefix + "/uefi-clang++",
+    }
 
     COMPLETE_ONLY_TOOLS = {
         "@rules_cc//cc/toolchains/actions:cpp_header_parsing": prefix + "/header-parser",
@@ -80,6 +86,14 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
         name = prefix + "/default_tools",
         tools = BASE_TOOLS | COMPLETE_ONLY_TOOLS | {
             "@rules_cc//cc/toolchains/actions:ar_actions": prefix + "/llvm-ar",
+        },
+    )
+
+    cc_tool_map(
+        name = prefix + "/uefi_tools",
+        tools = UEFI_TOOLS_WITHOUT_LINKER | COMPLETE_ONLY_TOOLS | {
+            "@rules_cc//cc/toolchains/actions:ar_actions": prefix + "/llvm-ar",
+            "@rules_cc//cc/toolchains/actions:link_actions": prefix + "/lld-link",
         },
     )
 
@@ -177,6 +191,22 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
         capabilities = ["@rules_cc//cc/toolchains/capabilities:supports_pic"],
     )
 
+    cc_tool(
+        name = prefix + "/uefi-clang",
+        src = prefix + "/bin/clang",
+        data = [
+            prefix + "/clang_builtin_headers_include_directory",
+        ],
+    )
+
+    cc_tool(
+        name = prefix + "/uefi-clang++",
+        src = prefix + "/bin/clang++",
+        data = [
+            prefix + "/clang_builtin_headers_include_directory",
+        ],
+    )
+
     bootstrap_binary(
         name = prefix + "/bin/header-parser",
         actual = "@llvm//tools/internal:header-parser",
@@ -268,6 +298,8 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
         actual = "@llvm-project//llvm:llvm.stripped",
         **bootstrap_binary_kwargs
     )
+
+    _bootstrap_cc_tool(prefix, "lld-link", bootstrap_binary_kwargs)
 
     cc_tool(
         name = prefix + "/lld",
@@ -411,6 +443,7 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
             ("stage1", stage1_prefix, "@llvm//toolchain:bootstrap_stage1_from_source"),
         ]:
             cc_toolchain_name = "%s_%s_%s_cc_toolchain" % (stage_name, exec_os, exec_cpu)
+            uefi_cc_toolchain_name = "%s_%s_%s_uefi_cc_toolchain" % (stage_name, exec_os, exec_cpu)
 
             # Even though `tool_map` has an exec transition, Bazel doesn't properly handle
             # binding a single `cc_toolchain` to multiple toolchains with different `exec_compatible_with`.
@@ -424,6 +457,12 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
                     "@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_apple_setting": ":%s/tools_with_libtool_for_runtime" % tool_prefix,
                     "//conditions:default": ":%s/default_tools_for_runtime" % tool_prefix,
                 }),
+            )
+
+            cc_toolchain(
+                name = uefi_cc_toolchain_name,
+                tool_map = ":%s/uefi_tools" % tool_prefix,
+                uefi_link = True,
             )
 
             for (target_os, target_cpu) in targets:
@@ -440,7 +479,7 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
                     target_settings = [
                         target_setting,
                     ],
-                    toolchain = cc_toolchain_name,
+                    toolchain = uefi_cc_toolchain_name if target_os == "uefi" else cc_toolchain_name,
                     toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
                     visibility = ["//visibility:public"],
                 )
