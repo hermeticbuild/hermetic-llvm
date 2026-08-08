@@ -1,8 +1,6 @@
 load("@llvm-project//:vars.bzl", "LLVM_VERSION_MAJOR")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 
-EMPTY_STRING_LIST = [""][:0]  # empty list[string]
-
 # Only the subset of headers required to build libc++.
 #
 # See project hand-in-hand.
@@ -16,6 +14,7 @@ cc_library(
         "hdr/fenv_macros.h",
         "hdr/float_macros.h",
         "hdr/limits_macros.h",
+        "hdr/types/size_t.h",
     ] + (
         [
             "hdr/stdint_proxy.h",
@@ -23,7 +22,7 @@ cc_library(
             "hdr/wchar_overlay.h",
             "include/llvm-libc-macros/cfloat16-macros.h",
             "include/llvm-libc-macros/cfloat128-macros.h",
-        ] if int(LLVM_VERSION_MAJOR) >= 22 else EMPTY_STRING_LIST
+        ] if int(LLVM_VERSION_MAJOR) >= 22 else []
     ) + [
         "include/llvm-libc-macros/float-macros.h",
         "include/llvm-libc-macros/float16-macros.h",
@@ -31,6 +30,7 @@ cc_library(
         "include/llvm-libc-types/cfloat128.h",
         "include/llvm-libc-types/cfloat16.h",
         "include/llvm-libc-types/float128.h",
+        "include/llvm-libc-types/size_t.h",
         "shared/fp_bits.h",
         "shared/libc_common.h",
         "shared/str_to_float.h",
@@ -100,6 +100,12 @@ cc_library(
         "src/__support/CPP/type_traits/true_type.h",
         "src/__support/CPP/type_traits/type_identity.h",
         "src/__support/CPP/type_traits/void_t.h",
+    ] + (
+        [
+            "src/__support/CPP/type_traits/is_assignable.h",
+            "src/__support/CPP/type_traits/is_constructible.h",
+        ] if int(LLVM_VERSION_MAJOR) >= 23 else []
+    ) + [
         "src/__support/CPP/utility.h",
         "src/__support/CPP/utility/declval.h",
         "src/__support/CPP/utility/forward.h",
@@ -135,7 +141,7 @@ cc_library(
     ] + (
         [
             "src/__support/wctype_utils.h",
-        ] if int(LLVM_VERSION_MAJOR) >= 22 else EMPTY_STRING_LIST
+        ] if int(LLVM_VERSION_MAJOR) >= 22 else []
     ),
     includes = [
         ".",
@@ -144,4 +150,17 @@ cc_library(
     deps = [
         "@llvm-project//compiler-rt:sanitizers_interface_headers",
     ],
+)
+
+cc_library(
+    name = "shared_math_headers_for_apfloat",
+    hdrs = glob([
+        "hdr/**/*.h",
+        "include/**/*.h",
+        "shared/**/*.h",
+        "src/__support/**/*.h",
+    ]) if int(LLVM_VERSION_MAJOR) >= 23 else [],
+    features = ["-parse_headers"],
+    includes = ["."],
+    visibility = ["//visibility:public"],
 )

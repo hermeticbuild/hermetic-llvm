@@ -13,6 +13,7 @@ on LLVM version bumps.
 
 load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("@llvm-project//:vars.bzl", "LLVM_VERSION_MAJOR")
 
 # compiler-rt/lib/sanitizer_common/weak_symbols.txt
 SANITIZER_COMMON_WEAK_SYMBOLS = [
@@ -64,7 +65,7 @@ LSAN_WEAK_SYMBOLS = [
 # compiler-rt/lib/ubsan/weak_symbols.txt
 UBSAN_WEAK_SYMBOLS = [
     "___ubsan_default_options",
-]
+] + (["___ubsan_default_suppressions"] if int(LLVM_VERSION_MAJOR) >= 23 else [])
 
 # compiler-rt/lib/xray/weak_symbols.txt
 XRAY_WEAK_SYMBOLS = [

@@ -2,6 +2,7 @@ load("@bazel_lib//lib:run_binary.bzl", "run_binary")
 load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 load("@llvm//toolchain/runtimes:cc_runtime_library.bzl", "cc_runtime_stage0_library")
+load("@llvm-project//:vars.bzl", "LLVM_VERSION_MAJOR")
 load("@rules_python//python:defs.bzl", "py_binary")
 
 LIBOMP_COMMON_SOURCES = [
@@ -33,7 +34,12 @@ LIBOMP_COMMON_SOURCES = [
     "runtime/src/kmp_utility.cpp",
     "runtime/src/kmp_version.cpp",
     "runtime/src/kmp_wait_release.cpp",
-]
+] + (
+    [
+        "runtime/src/kmp_adt.cpp",
+        "runtime/src/kmp_invoke_microtask.cpp",
+    ] if int(LLVM_VERSION_MAJOR) >= 23 else []
+)
 
 _KMP_CONFIG_H_SUBSTITUTIONS = {
     "@LIBOMP_LIB_FILE@": "libomp.a",
@@ -56,7 +62,6 @@ _KMP_CONFIG_H_SUBSTITUTIONS = {
         "LIBOMP_OMPT_DEBUG",
         "LIBOMP_OMPT_SUPPORT",
         "LIBOMP_OMPD_SUPPORT",
-        "LIBOMP_OMPX_TASKGRAPH",
         "LIBOMP_PROFILING_SUPPORT",
         "LIBOMP_OMPT_OPTIONAL",
         "LIBOMP_USE_ADAPTIVE_LOCKS",
@@ -80,7 +85,12 @@ _KMP_CONFIG_H_SUBSTITUTIONS = {
         "LIBOMP_HAVE_POSIX_MEMALIGN",
         "LIBOMP_HAVE__ALIGNED_MALLOC",
         "OPENMP_ENABLE_LIBOMPTARGET",
-    ]
+    ] + (
+        [
+            "LIBOMP_TASKGRAPH_EXPERIMENTAL",
+            "LIBOMP_USE_CANCEL_THREADS",
+        ] if int(LLVM_VERSION_MAJOR) >= 23 else ["LIBOMP_OMPX_TASKGRAPH"]
+    )
 } | select({
     "@platforms//cpu:i386": {"@LIBOMP_LEGAL_ARCH@": "IA-32"},
     "@platforms//cpu:x86_32": {"@LIBOMP_LEGAL_ARCH@": "IA-32"},

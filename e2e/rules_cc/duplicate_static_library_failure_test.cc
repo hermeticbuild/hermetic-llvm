@@ -90,7 +90,12 @@ static std::string NestedBazelArgs() {
   // Do not let the inner Bazel inherit TEST_TMPDIR as its output root. Bazel
   // nests another full output tree under it, and on Windows that is enough to
   // push tool paths past what lld can handle.
-  const char *tmp = getenv("TEMP");
+  // GitHub Actions sets RUNNER_TEMP on D:. Prefer RUNNER_TEMP because
+  // extracting LLVM 23 in TEMP on C: exhausts C:.
+  const char *tmp = getenv("RUNNER_TEMP");
+  if (tmp == nullptr || tmp[0] == '\0') {
+    tmp = getenv("TEMP");
+  }
   if (tmp == nullptr || tmp[0] == '\0') {
     tmp = getenv("TMP");
   }

@@ -433,7 +433,12 @@ filter_builtin_sources(
         "lib/builtins/arm/sync_synchronize.S",
         # generic sources
         ":builtins_generic_srcs",
-    ],
+    ] + ([
+        "lib/builtins/arm/aeabi_uread4.S",
+        "lib/builtins/arm/aeabi_uread8.S",
+        "lib/builtins/arm/aeabi_uwrite4.S",
+        "lib/builtins/arm/aeabi_uwrite8.S",
+    ] if int(LLVM_VERSION_MAJOR) >= 23 else []),
 )
 
 filter_builtin_sources(
@@ -561,6 +566,9 @@ cc_library(
         "@platforms//cpu:armv7": [
             "lib/builtins/arm/sync-ops.h",
         ],
+        "@platforms//cpu:riscv64": [
+            "lib/builtins/cpu_model/riscv.h",
+        ] if int(LLVM_VERSION_MAJOR) >= 23 else [],
         "//conditions:default": [],
     }) + selects.with_or({
         (
@@ -668,7 +676,10 @@ cc_library(
         ],
         "@platforms//cpu:riscv64": [
             "lib/builtins/riscv/int_mul_impl.inc",
-        ],
+        ] + ([
+            "lib/builtins/cpu_model/riscv/hwprobe.inc",
+            "lib/builtins/cpu_model/riscv/unimplemented.inc",
+        ] if int(LLVM_VERSION_MAJOR) >= 23 else []),
         "//conditions:default": [],
     }) + select({
         "@llvm//platforms/config:windows_aarch64": [
@@ -854,6 +865,12 @@ cc_library(
             "@llvm-project//libcxxabi:headers",
             ":linux_libc_headers",
         ],
+        "@platforms//os:windows": [
+            "@llvm-project//libcxx:headers",
+            "@llvm-project//libcxxabi:headers",
+            "@mingw//:mingw_headers",
+        ],
+        "//conditions:default": [],
     }),
 )
 
@@ -1636,6 +1653,24 @@ cc_runtime_stage0_static_library(
     ],
 )
 
+cc_library(
+    name = "ubsan_loop_detect",
+    srcs = ["lib/ubsan/ubsan_loop_detect.cpp"] if int(LLVM_VERSION_MAJOR) >= 23 else [],
+    copts = UBSAN_CXXFLAGS,
+    implementation_deps = [
+        ":libcxx_headers",
+        ":sanitizers_interface_headers",
+    ],
+)
+
+cc_runtime_stage0_static_library(
+    name = "ubsan_loop_detect.static",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":ubsan_loop_detect",
+    ],
+)
+
 # On Darwin, standalone UBSan ships as a dylib (libclang_rt.ubsan_osx_dynamic.dylib)
 # with no static standalone runtime; the C++ABI parts (ubsan_cxx) are folded into
 # the dylib.
@@ -2118,6 +2153,7 @@ cc_library(
         ":interception_impl_headers",
         ":libcxx_headers",
         ":sanitizer_impl_headers",
+        ":sanitizers_interface_headers",
     ],
     includes = ["lib"],
 )
@@ -2289,7 +2325,9 @@ cc_runtime_stage0_static_library(
 ### compiler-rt/lib/tsan/CMakeLists.txt.
 ###
 
-TSAN_RTL_SOURCES = [
+TSAN_RTL_SOURCES = ([
+    "tsan_adaptive_delay.cpp",
+] if int(LLVM_VERSION_MAJOR) >= 23 else []) + [
     "tsan_debugging.cpp",
     "tsan_external.cpp",
     "tsan_fd.cpp",
@@ -2365,7 +2403,9 @@ filegroup(
     srcs = ["lib/tsan/rtl/" + f for f in TSAN_PREINIT_SOURCES],
 )
 
-TSAN_RTL_HEADERS = [
+TSAN_RTL_HEADERS = ([
+    "tsan_adaptive_delay.h",
+] if int(LLVM_VERSION_MAJOR) >= 23 else []) + [
     "tsan_defs.h",
     "tsan_dense_alloc.h",
     "tsan_fd.h",
@@ -3005,7 +3045,7 @@ PROFILE_SOURCES = [
     "InstrProfilingValue.c",
     "InstrProfilingVersionVar.c",
     "InstrProfilingWriter.c",
-]
+] + (["InstrProfilingPlatformGPU.c"] if int(LLVM_VERSION_MAJOR) >= 23 else [])
 
 filegroup(
     name = "profile_sources",

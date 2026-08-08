@@ -1,0 +1,25 @@
+load("@rules_foreign_cc//foreign_cc:defs.bzl", "make_variant")
+
+filegroup(
+    name = "sources",
+    srcs = glob(["**"]),
+)
+
+make_variant(
+    name = "pfm",
+    copts = ["-w"],
+    lib_name = "libpfm",
+    lib_source = ":sources",
+    target_compatible_with = select({
+        "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+    toolchain = "@rules_foreign_cc//toolchains:preinstalled_autoconf_toolchain",
+    visibility = ["//visibility:private"],
+)
+
+alias(
+    name = "pfm_external",
+    actual = ":pfm_",
+    visibility = ["//visibility:public"],
+)

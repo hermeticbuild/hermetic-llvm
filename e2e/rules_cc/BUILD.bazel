@@ -1023,7 +1023,10 @@ cc_test(
         "duplicate_symbol_a.cc",
         "duplicate_symbol_b.cc",
     ],
-    env_inherit = ["PATH"],
+    env_inherit = [
+        "PATH",
+        "RUNNER_TEMP",
+    ],
     exec_properties = {"test.local": "1"},
     target_compatible_with = _VALIDATE_STATIC_LIBRARY_COMPATIBLE,
     deps = ["@bazel_tools//tools/cpp/runfiles"],

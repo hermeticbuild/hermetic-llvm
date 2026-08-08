@@ -24,7 +24,7 @@ if [[ ! "${BRANCH_NAME}" =~ ^llvm- ]]; then
 fi
 
 BRANCH_PAYLOAD="${BRANCH_NAME#llvm-}"
-BASE_BRANCH_VERSION="${BRANCH_PAYLOAD%%-*}"
+BASE_BRANCH_VERSION="${BRANCH_PAYLOAD%-*}"
 
 if [[ "${BASE_BRANCH_VERSION}" != "${LLVM_VERSION}" ]]; then
   echo "Branch version '${BASE_BRANCH_VERSION}' does not match LLVM_VERSION '${LLVM_VERSION}'" >&2

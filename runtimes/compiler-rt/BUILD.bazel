@@ -41,6 +41,12 @@ alias(
 )
 
 alias(
+    name = "clang_rt.ubsan_loop_detect.static",
+    actual = "@llvm-project//compiler-rt:ubsan_loop_detect.static",
+    visibility = ["//visibility:public"],
+)
+
+alias(
     name = "clang_rt.ubsan_standalone.shared",
     actual = "@llvm-project//compiler-rt:ubsan_standalone.shared",
     visibility = ["//visibility:public"],

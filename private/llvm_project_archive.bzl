@@ -121,12 +121,15 @@ def _extract_source_and_overlay(rctx, archive):
     )
 
     overlay_prefix = paths.join(strip_prefix, LLVM_PROJECT_OVERLAY)
+
+    # openmp/BUILD.bazel treats openmp/runtime as part of the openmp package.
+    overlay_excludes = [paths.join(overlay_prefix, "openmp/runtime")]
     _extract(
         rctx,
         bsdtar,
         archive,
         [paths.join(overlay_prefix, "*")],
-        [],
+        overlay_excludes,
         overlay_prefix.count("/") + 1,
     )
 

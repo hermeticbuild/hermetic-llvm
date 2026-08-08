@@ -197,7 +197,7 @@ jobs:
       matrix:
         # Normal CI covers the current LLVM release. Keep one release for each
         # supported prior LLVM major here.
-        llvm_version: ["21.1.8"]
+        llvm_version: ["21.1.8", "22.1.8"]
     runs-on: ubuntu-latest
     name: Analyze LLVM ${{ matrix.llvm_version }}
 
@@ -214,18 +214,21 @@ jobs:
           import re
           from pathlib import Path
 
-          module_file = Path("MODULE.bazel")
-          module_text = module_file.read_text()
-          module_text, replacement_count = re.subn(
-              r'^LLVM_VERSION = "[^"]+"$',
-              f'LLVM_VERSION = "{os.environ["LLVM_VERSION"]}"',
-              module_text,
-              count=1,
-              flags=re.MULTILINE,
-          )
-          if replacement_count != 1:
-              raise SystemExit("Expected exactly one LLVM_VERSION assignment in MODULE.bazel")
-          module_file.write_text(module_text)
+          for module_file in [
+              Path("MODULE.bazel"),
+              Path("e2e/llvm_version_selection/MODULE.bazel"),
+          ]:
+              module_text = module_file.read_text()
+              module_text, replacement_count = re.subn(
+                  r'^LLVM_VERSION = "[^"]+"$',
+                  f'LLVM_VERSION = "{os.environ["LLVM_VERSION"]}"',
+                  module_text,
+                  count=1,
+                  flags=re.MULTILINE,
+              )
+              if replacement_count != 1:
+                  raise SystemExit(f"Expected exactly one LLVM_VERSION assignment in {module_file}")
+              module_file.write_text(module_text)
           PY
 
       - name: Analyze LLVM ${{ matrix.llvm_version }} driver

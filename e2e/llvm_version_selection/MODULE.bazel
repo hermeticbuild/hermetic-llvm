@@ -7,8 +7,10 @@ local_path_override(
     path = "../..",
 )
 
+LLVM_VERSION = "21.1.8"
+
 llvm = use_extension("@llvm//extensions:llvm.bzl", "llvm")
-llvm.version(llvm_version = "21.1.8")
+llvm.version(llvm_version = LLVM_VERSION)
 use_repo(llvm, "llvm-project")
 
 toolchain = use_extension("@llvm//extensions:toolchain.bzl", "toolchain")
