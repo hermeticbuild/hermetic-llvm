@@ -41,6 +41,8 @@ bzl_library(
         "//platforms:common",
         "//toolchain:cc_toolchain",
         "//toolchain/args:compiler_resource_headers",
+        "@bazel_skylib//rules/directory",
+        "@bazel_skylib//rules/directory:subdirectory",
         "@llvm-project//:version",
         "@rules_cc//cc/toolchains:toolchain_rules",
     ],

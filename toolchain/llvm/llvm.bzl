@@ -1,4 +1,5 @@
 load("@bazel_features//:features.bzl", "bazel_features")
+load("@bazel_skylib//rules/directory:directory.bzl", "directory")
 load("@llvm//runtimes:module_map.bzl", "include_path", "module_map")
 load("@rules_cc//cc/toolchains:tool.bzl", "cc_tool")
 load("@rules_cc//cc/toolchains:tool_map.bzl", "cc_tool_map")
@@ -37,9 +38,14 @@ def declare_llvm_targets(*, suffix = ""):
     # Convenient exports
     native.exports_files(native.glob(["bin/*"]))
 
-    native.filegroup(
+    cc_tool(
+        name = "strip" + suffix,
+        src = "bin/llvm-strip" + suffix,
+    )
+
+    directory(
         name = "llvm_bin_directory",
-        srcs = ["bin"],
+        srcs = [":strip" + suffix],
     )
 
     native.filegroup(
@@ -316,6 +322,7 @@ def declare_llvm_targets(*, suffix = ""):
         data = [
             ":clangxx_file",
             ":dsymutil_file",
+            ":llvm_bin_directory",
             ":strip_file",
             "bin/ld.lld" + suffix,
             "bin/ld64.lld" + suffix,
@@ -331,7 +338,7 @@ def declare_llvm_targets(*, suffix = ""):
             "@rules_cc//cc/toolchains/capabilities:supports_start_end_lib",
         ],
         env = {
-            "COMPILER_PATH": "{llvm_bin}/llvm-",
+            "COMPILER_PATH": "{llvm_bin}",
             "LLVM_CLANGXX": "{clangxx}",
             "LLVM_DSYMUTIL": "{dsymutil}",
             "LLVM_IFS": "{llvm_ifs}",

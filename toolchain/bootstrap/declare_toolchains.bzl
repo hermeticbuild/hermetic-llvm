@@ -1,4 +1,6 @@
 load("@bazel_features//:features.bzl", "bazel_features")
+load("@bazel_skylib//rules/directory:directory.bzl", "directory")
+load("@bazel_skylib//rules/directory:subdirectory.bzl", "subdirectory")
 load("@llvm-project//:vars.bzl", "LLVM_VERSION_MAJOR")
 load("@rules_cc//cc/toolchains:tool.bzl", "cc_tool")
 load("@rules_cc//cc/toolchains:tool_map.bzl", "cc_tool_map")
@@ -301,7 +303,6 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
     )
 
     for tool in [
-        "llvm",
         "llvm-ifs",
         "llvm-nm",
         "llvm-readtapi",
@@ -391,9 +392,26 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
     )
 
     cc_tool(
+        name = prefix + "/bin/strip",
+        src = prefix + "/bin/llvm-strip",
+    )
+
+    directory(
+        name = prefix + "_llvm_bin_files",
+        srcs = [prefix + "/bin/strip"],
+    )
+
+    subdirectory(
+        name = prefix + "_llvm_bin_directory",
+        parent = prefix + "_llvm_bin_files",
+        path = prefix + "/bin",
+    )
+
+    cc_tool(
         name = prefix + "/link-wrapper",
         src = prefix + "/bin/link-wrapper-clang++",
         data = [
+            prefix + "_llvm_bin_directory",
             prefix + "/bin/clang++",
             prefix + "/bin/dsymutil",
             prefix + "/bin/llvm-strip",
@@ -411,7 +429,7 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
             "@rules_cc//cc/toolchains/capabilities:supports_start_end_lib",
         ],
         env = {
-            "COMPILER_PATH": "{llvm}-",
+            "COMPILER_PATH": "{llvm_bin}",
             "LLVM_CLANGXX": "{clangxx}",
             "LLVM_DSYMUTIL": "{dsymutil}",
             "LLVM_IFS": "{llvm_ifs}",
@@ -422,7 +440,7 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
         format = {
             "clangxx": prefix + "/bin/clang++",
             "dsymutil": prefix + "/bin/dsymutil",
-            "llvm": prefix + "/bin/llvm",
+            "llvm_bin": prefix + "_llvm_bin_directory",
             "llvm_ifs": prefix + "/bin/llvm-ifs",
             "llvm_nm": prefix + "/bin/llvm-nm",
             "llvm_readtapi": prefix + "/bin/llvm-readtapi",
