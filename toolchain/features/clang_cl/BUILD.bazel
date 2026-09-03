@@ -619,18 +619,96 @@ cc_feature(
     feature_name = "def_file",
 )
 
-# Temporary compatibility boundary. The repository's e2e configuration
-# requests layering_check globally, but CL-mode module-map and header-parsing
-# actions have not yet been implemented. Register the names without enabling
-# module args; do not treat this no-op as support.
 cc_feature(
-    name = "pending_layering_check",
-    feature_name = "layering_check",
+    name = "module_maps",
+    feature_name = "module_maps",
+)
+
+cc_args(
+    name = "no_cxx_modules_args",
+    actions = ["@rules_cc//cc/toolchains/actions:compile_actions"],
+    # Clang header modules implement layering; this does not enable C++ named
+    # modules or header units.
+    args = ["/clang:-fno-cxx-modules"],
+)
+
+cc_args(
+    name = "dependent_module_map_files_args",
+    actions = ["@rules_cc//cc/toolchains/actions:compile_actions"],
+    args = ["/clang:-fmodule-map-file={dependent_module_map_files}"],
+    format = {
+        "dependent_module_map_files": "@rules_cc//cc/toolchains/variables:dependent_module_map_files",
+    },
+    iterate_over = "@rules_cc//cc/toolchains/variables:dependent_module_map_files",
+    requires_not_none = "@rules_cc//cc/toolchains/variables:dependent_module_map_files",
 )
 
 cc_feature(
-    name = "pending_use_module_maps",
+    name = "use_module_maps",
+    args = [
+        ":no_cxx_modules_args",
+        ":dependent_module_map_files_args",
+    ],
     feature_name = "use_module_maps",
+    requires_any_of = [":module_maps"],
+)
+
+cc_args(
+    name = "layering_check_args",
+    actions = ["@rules_cc//cc/toolchains/actions:compile_actions"],
+    args = [
+        "/clang:-fmodules-strict-decluse",
+        "/clang:-Wprivate-header",
+    ],
+)
+
+cc_args(
+    name = "module_name_args",
+    actions = ["@rules_cc//cc/toolchains/actions:compile_actions"],
+    args = ["/clang:-fmodule-name={module_name}"],
+    format = {
+        "module_name": "@rules_cc//cc/toolchains/variables:module_name",
+    },
+    requires_not_none = "@rules_cc//cc/toolchains/variables:module_name",
+)
+
+cc_args(
+    name = "module_map_file_args",
+    actions = ["@rules_cc//cc/toolchains/actions:compile_actions"],
+    args = ["/clang:-fmodule-map-file={module_map_file}"],
+    format = {
+        "module_map_file": "@rules_cc//cc/toolchains/variables:module_map_file",
+    },
+    requires_not_none = "@rules_cc//cc/toolchains/variables:module_map_file",
+)
+
+cc_feature(
+    name = "layering_check",
+    args = [
+        ":layering_check_args",
+        ":module_map_file_args",
+        ":module_name_args",
+    ],
+    feature_name = "layering_check",
+    implies = [":use_module_maps"],
+)
+
+cc_args(
+    name = "module_map_home_cwd_args",
+    actions = ["@rules_cc//cc/toolchains/actions:compile_actions"],
+    # This is a cc1-only option. /clang: selects Clang-driver parsing, then the
+    # transported -Xclang forwards the following transported value to cc1.
+    args = [
+        "/clang:-Xclang",
+        "/clang:-fmodule-map-file-home-is-cwd",
+    ],
+)
+
+cc_feature(
+    name = "module_map_home_cwd",
+    args = [":module_map_home_cwd_args"],
+    feature_name = "module_map_home_cwd",
+    requires_any_of = [":module_maps"],
 )
 
 cc_feature_set(
@@ -638,10 +716,10 @@ cc_feature_set(
     all_of = [
         ":compiler_param_file",
         ":def_file",
-        ":pending_layering_check",
-        ":pending_use_module_maps",
+        ":layering_check",
         ":supports_start_end_lib",
         ":thin_lto",
+        ":use_module_maps",
         ":windows_quoting_for_param_files",
     ],
 )
@@ -651,6 +729,8 @@ cc_feature_set(
     all_of = [
         ":compiler_param_file",
         ":def_file",
+        ":module_map_home_cwd",
+        ":module_maps",
         ":windows_quoting_for_param_files",
     ],
 )

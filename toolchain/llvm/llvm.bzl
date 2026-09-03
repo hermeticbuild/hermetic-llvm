@@ -407,6 +407,14 @@ def declare_llvm_targets(*, suffix = ""):
         ],
     )
 
+    # The include_path graph below defines the toolchain-owned header surface
+    # emitted into the generated crosstool module map. Compile actions expose
+    # that surface independently through their selected compile-argument graph
+    # and per-toolchain additions. When changing header composition, trace both
+    # graphs for the active target platform and ABI, then compare the materialized
+    # module map with a representative compile action and its declared inputs.
+
+    # macOS: apply the module-map/compile-action alignment invariant above.
     include_path(
         name = "macos_target_headers",
         srcs = [
@@ -415,7 +423,7 @@ def declare_llvm_targets(*, suffix = ""):
         ],
     )
 
-    # This must match //toolchain:linux_toolchain_args
+    # Linux: apply the module-map/compile-action alignment invariant above.
     include_path(
         name = "linux_target_headers",
         srcs = [
@@ -439,9 +447,9 @@ def declare_llvm_targets(*, suffix = ""):
         }),
     )
 
-    # This must match //toolchain:windows_toolchain_args.
+    # Windows MinGW: apply the module-map/compile-action alignment invariant above.
     include_path(
-        name = "windows_target_headers",
+        name = "windows_mingw_target_headers",
         srcs = [
             ":builtin_resource_dir",
         ] + select({
@@ -456,6 +464,38 @@ def declare_llvm_targets(*, suffix = ""):
             "@mingw//:mingw_w64_headers_crt_directory",
             "@mingw//:mingw_w64_winpthreads_include_directory",
         ],
+    )
+
+    # Windows MSVC: apply the module-map/compile-action alignment invariant above.
+    # Keep the filtered VC compiler/runtime surface separate from the excluded
+    # Microsoft STL headers.
+    include_path(
+        name = "windows_msvc_target_headers",
+        srcs = [
+            ":builtin_resource_dir",
+        ] + select({
+            "@llvm//toolchain:runtimes_all": [
+                "@llvm//runtimes/cxxstdlib:headers_include_search_directory",
+                "@llvm//runtimes/cxxstdlib:abi_headers_include_search_directory",
+            ],
+            "//conditions:default": [],
+        }),
+        umbrella_directories = [
+            "@llvm//runtimes/msvc:msvc_com_support_headers",
+            "@llvm//runtimes/msvc:msvc_vcruntime_headers",
+            "@llvm//runtimes/msvc:winsdk_ucrt_include",
+            "@llvm//runtimes/msvc:winsdk_shared_include",
+            "@llvm//runtimes/msvc:winsdk_um_include",
+            "@llvm//runtimes/msvc:winsdk_winrt_include",
+        ],
+    )
+
+    native.alias(
+        name = "windows_target_headers",
+        actual = select({
+            "@llvm//constraints/windows/abi:msvc": ":windows_msvc_target_headers",
+            "//conditions:default": ":windows_mingw_target_headers",
+        }),
     )
 
     include_path(

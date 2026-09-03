@@ -7,17 +7,21 @@ IncludePathInfo = provider(
     "IncludePathInfo",
     fields = {
         "submodule_directories": "A depset of File objects representing directories to be included as umbrella submodules.",
+        "submodule_directory_paths": "A list of directory paths to be included as umbrella submodules.",
         "textual_headers": "A depset of File objects representing headers to be included as textual headers.",
     },
 )
 
-def _umbrella_submodule(directory):
-    path = paths.normalize(directory.path).replace("//", "/")
+def _umbrella_submodule_path(path):
+    path = paths.normalize(path).replace("//", "/")
 
     return """
   module "{path}" {{
     umbrella "{path}"
   }}""".format(path = path)
+
+def _umbrella_submodule(directory):
+    return _umbrella_submodule_path(directory.path)
 
 def _module_map_impl(ctx):
     module_map = ctx.actions.declare_file(ctx.attr.name + ".modulemap")
@@ -33,6 +37,12 @@ def _module_map_impl(ctx):
         join_with = "\n",
         map_each = _umbrella_submodule,
         expand_directories = False,
+    )
+
+    module_map_args.add_joined(
+        include_path_info.submodule_directory_paths,
+        join_with = "\n",
+        map_each = _umbrella_submodule_path,
     )
 
     module_map_args.add_joined(
@@ -71,6 +81,7 @@ module_map = rule(
 
 def _include_path_impl(ctx):
     submodule_directories = []
+    submodule_directory_paths = []
     textual_headers_depsets = []
 
     for src in ctx.attr.srcs:
@@ -80,9 +91,13 @@ def _include_path_impl(ctx):
         else:
             textual_headers_depsets.append(src[DirectoryInfo].transitive_files)
 
+    for directory in ctx.attr.umbrella_directories:
+        submodule_directory_paths.append(directory[DirectoryInfo].path)
+
     return [
         IncludePathInfo(
             submodule_directories = depset([], transitive = submodule_directories),
+            submodule_directory_paths = submodule_directory_paths,
             textual_headers = depset([], transitive = textual_headers_depsets),
         ),
     ]
@@ -90,6 +105,7 @@ def _include_path_impl(ctx):
 include_path = rule(
     implementation = _include_path_impl,
     attrs = {
+        "umbrella_directories": attr.label_list(providers = [DirectoryInfo]),
         "srcs": attr.label_list(),
     },
 )
