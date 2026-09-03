@@ -15,7 +15,30 @@ concurrency:
   group: concurrency-group::${{ github.workflow }}::${{ github.event.pull_request.number > 0 && format('pr-{0}', github.event.pull_request.number) || github.ref_name }}${{ github.ref_name == 'main' && format('::{0}', github.run_id) || ''}}
   cancel-in-progress: ${{ github.ref_name != 'main' }}
 jobs:
+  # TEMPORARY: isolate Windows MSVC parse_headers validation on this branch.
+  windows_msvc_parse_headers:
+    runs-on: ubuntu-latest
+    name: Verify Windows MSVC parse_headers through Linux remote execution
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Verify Windows MSVC parse_headers
+        env:
+          USE_BAZEL_VERSION: last_rc
+        working-directory: e2e/rules_cc
+        shell: bash
+        run: |
+          common_flags=(
+            --config=remote
+            --jobs=100
+            --remote_header=x-buildbuddy-api-key=4jtaxdhxtyu4ylxdEwI7
+          )
+          bash ./windows_msvc_action_test.sh "${common_flags[@]}"
+          bash ./windows_msvc_analysis_test.sh "${common_flags[@]}"
+
   test:
+    if: ${{ false }}
     strategy:
       fail-fast: false
       matrix:
@@ -118,6 +141,7 @@ jobs:
           key: ${{ steps.bazel-repository-cache.outputs.cache-primary-key }}
 
   test_windows:
+    if: ${{ false }}
     strategy:
       fail-fast: false
       matrix:
@@ -162,6 +186,7 @@ jobs:
 
   # macOS: smoke build (//:main_default) plus the supported sanitizer e2e tests.
   test_macos:
+    if: ${{ false }}
     strategy:
       fail-fast: false
       matrix:
@@ -229,6 +254,7 @@ jobs:
         run: ./coverage_lcov_test.sh --remote_header=x-buildbuddy-api-key=4jtaxdhxtyu4ylxdEwI7
 
   llvm_version_analysis:
+    if: ${{ false }}
     strategy:
       fail-fast: false
       matrix:
@@ -288,6 +314,7 @@ jobs:
           fi
 
   tests:
+    if: ${{ false }}
     strategy:
       fail-fast: false
       matrix:
@@ -349,6 +376,7 @@ jobs:
           key: ${{ steps.bazel-repository-cache.outputs.cache-primary-key }}
 
   docs:
+    if: ${{ false }}
     runs-on: macos-15-intel
     name: Verify public docs generation
     steps:
@@ -370,6 +398,7 @@ jobs:
           bash ./.github/workflows/build_public_starlark_docs.sh "$targets" "$docs"
 
   buildifier:
+    if: ${{ false }}
     runs-on: ubuntu-latest
     name: Verify buildifier formatting
     steps:

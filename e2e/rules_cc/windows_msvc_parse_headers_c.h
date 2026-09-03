@@ -1,0 +1,6 @@
+#ifndef HERMETIC_LLVM_E2E_WINDOWS_MSVC_PARSE_HEADERS_C_H_
+#define HERMETIC_LLVM_E2E_WINDOWS_MSVC_PARSE_HEADERS_C_H_
+
+int windows_msvc_parse_headers_c_probe(int *restrict value);
+
+#endif

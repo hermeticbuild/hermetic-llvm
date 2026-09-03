@@ -37,5 +37,10 @@ assumed for every clang-cl toolchain.
 This protocol implements Bazel C++ header module maps and `layering_check` by
 transporting the required Clang frontend arguments through clang-cl's
 `/clang:` spelling. That support enforces direct-dependency header layering; it
-does not implement `parse_headers` or C++20 named modules, which remain
-unsupported.
+also implements `parse_headers` with an execution-platform wrapper that creates
+Bazel's processed-header marker before running clang-cl in syntax-only mode.
+clang-cl reparses `/clang:` operands after its CL arguments, so language
+selection uses the native global `/TP` and `/TC` switches rather than
+position-sensitive transported `-x` options. Parsing defaults to C++;
+`parse_headers_as_c` selects C17 for configurations containing C-only headers.
+None of these features enable C++20 named modules, which remain unsupported.

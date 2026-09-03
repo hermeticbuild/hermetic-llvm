@@ -92,7 +92,7 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
         "@rules_cc//cc/toolchains/actions:linkstamp_compile": prefix + "/clang-cl",
         "@rules_cc//cc/toolchains/actions:lto_backend": prefix + "/clang-cl",
         "@rules_cc//cc/toolchains/actions:preprocess_assemble": prefix + "/clang-cl",
-        "@rules_cc//cc/toolchains/actions:cpp_header_parsing": prefix + "/clang-cl",
+        "@rules_cc//cc/toolchains/actions:cpp_header_parsing": prefix + "/header-parser-clang-cl",
         "@rules_cc//cc/toolchains/actions:ar_actions": prefix + "/llvm-ar",
         "@rules_cc//cc/toolchains/actions:cpp_link_executable": prefix + "/clang-cl",
         "@rules_cc//cc/toolchains/actions:cpp_link_dynamic_library": prefix + "/clang-cl",
@@ -297,6 +297,22 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
         },
         format = {
             "clangxx": prefix + "/bin/clang++",
+        },
+    )
+
+    cc_tool(
+        name = prefix + "/header-parser-clang-cl",
+        src = prefix + "/bin/header-parser",
+        data = [
+            prefix + "/clang_builtin_headers_include_directory",
+            prefix + "/bin/clang-cl",
+        ],
+        env = {
+            "LIB": "__hermetic_llvm_empty_lib__",
+            "LLVM_CLANGXX": "{clangcl}",
+        },
+        format = {
+            "clangcl": prefix + "/bin/clang-cl",
         },
     )
 
