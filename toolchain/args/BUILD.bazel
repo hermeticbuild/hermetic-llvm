@@ -2,6 +2,7 @@ load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
 load("//toolchain/args:llvm_target_triple.bzl", "LLVM_TARGET_TRIPLE")
+load("//toolchain/args:microarch.bzl", "MARCH_FLAGS", "MTUNE_FLAGS")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -101,7 +102,7 @@ cc_args(
     }) + select({
         "//constraints/fpu:vfpv4-d16": ["-mfpu=vfpv4-d16"],
         "//conditions:default": [],
-    }),
+    }) + MARCH_FLAGS + MTUNE_FLAGS,
 )
 
 cc_args(
@@ -1148,4 +1149,13 @@ bzl_library(
     name = "llvm_target_triple",
     srcs = ["llvm_target_triple.bzl"],
     deps = ["//constraints/windows/abi:abis"],
+)
+
+bzl_library(
+    name = "microarch",
+    srcs = ["microarch.bzl"],
+    deps = [
+        "//constraints/march:march_values",
+        "//constraints/mtune:mtune_values",
+    ],
 )

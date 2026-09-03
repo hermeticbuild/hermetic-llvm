@@ -127,6 +127,39 @@ platform(
     ],
 )
 
+# Platforms that raise the instruction set baseline and select a tuning target.
+MICROARCH_PLATFORMS = {
+    "linux_x86_64_v2_sapphirerapids": [
+        "@platforms//cpu:x86_64",
+        "@llvm//constraints/march:x86-64-v2",
+        "@llvm//constraints/mtune:sapphirerapids",
+    ],
+    "linux_aarch64_armv8_a_crypto_neoverse_v2": [
+        "@platforms//cpu:aarch64",
+        "@llvm//constraints/march:armv8-a+crc+crypto",
+        "@llvm//constraints/mtune:neoverse-v2",
+    ],
+}
+
+[
+    platform(
+        name = name,
+        constraint_values = [
+            "@platforms//os:linux",
+        ] + constraint_values,
+    )
+    for name, constraint_values in MICROARCH_PLATFORMS.items()
+]
+
+[
+    platform_transition_binary(
+        name = "main_" + name,
+        binary = ":main",
+        target_platform = ":" + name,
+    )
+    for name in MICROARCH_PLATFORMS
+]
+
 QEMU_MUSL_PLATFORMS = {
     "linux_riscv64_musl": {
         "target_platform": "@llvm//platforms:linux_riscv64_musl",

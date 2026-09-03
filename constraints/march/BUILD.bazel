@@ -1,0 +1,30 @@
+load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load(":march_values.bzl", "MARCHES")
+
+package(default_visibility = ["//visibility:public"])
+
+# The instruction set baseline the compiler may emit, passed verbatim to
+# `-march=`. Unconstrained leaves LLVM's default for the target architecture;
+# platforms whose deployment environment guarantees something newer can raise it.
+constraint_setting(
+    name = "march",
+    default_constraint_value = "unconstrained",
+)
+
+constraint_value(
+    name = "unconstrained",
+    constraint_setting = "march",
+)
+
+[
+    constraint_value(
+        name = march,
+        constraint_setting = "march",
+    )
+    for march in MARCHES
+]
+
+bzl_library(
+    name = "march_values",
+    srcs = ["march_values.bzl"],
+)
