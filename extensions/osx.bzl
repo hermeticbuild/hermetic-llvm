@@ -15,10 +15,10 @@ _DEFAULT_FRAMEWORKS = [
 def _get_sdk_source(mctx):
     running_on_macos = mctx.os.name.startswith("mac os")
     force_host_sdk = mctx.getenv("BAZEL_MACOS_USE_HOST_SDK") == "1"
-    for mod in mctx.modules:
-        if not mod.is_root:
-            continue
+    root_source = None
+    dependency_source = None
 
+    for mod in mctx.modules:
         module_archives = [tag for tag in mod.tags.from_archive]
         if len(module_archives) > 1:
             fail("Only 1 osx.from_archive(...) tag is allowed per module")
@@ -28,13 +28,22 @@ def _get_sdk_source(mctx):
             fail("Only 1 osx.from_host() tag is allowed per module")
 
         module_source = None
-        if running_on_macos and (force_host_sdk or module_host_sdks):
+        if running_on_macos and module_host_sdks:
             module_source = struct(kind = "host")
         elif module_archives:
             module_source = struct(kind = "archive", tag = module_archives[0])
 
-        if module_source:
-            return module_source
+        if mod.is_root:
+            root_source = module_source
+        elif module_source:
+            dependency_source = module_source
+
+    if running_on_macos and force_host_sdk:
+        return struct(kind = "host")
+    if root_source:
+        return root_source
+    if dependency_source:
+        return dependency_source
 
     fail("Missing osx.from_archive(...): osx.from_host() and BAZEL_MACOS_USE_HOST_SDK=1 only apply when Bazel is running on macOS")
 
