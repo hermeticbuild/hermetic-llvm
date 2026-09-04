@@ -1,0 +1,12 @@
+load("@bazel_skylib//rules/directory:directory.bzl", "directory")
+load(":host_sdk_config.bzl", "HOST_SDK_EXCLUDES", "HOST_SDK_INCLUDES")
+
+directory(
+    name = "sysroot",
+    srcs = glob(
+        HOST_SDK_INCLUDES,
+        allow_empty = True,
+        exclude = HOST_SDK_EXCLUDES,
+    ),
+    visibility = ["//visibility:public"],
+)

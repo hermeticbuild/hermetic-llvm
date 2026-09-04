@@ -228,6 +228,27 @@ jobs:
         shell: bash
         run: ./coverage_lcov_test.sh --remote_header=x-buildbuddy-api-key=4jtaxdhxtyu4ylxdEwI7
 
+  test_macos_host_sdk:
+    runs-on: macos-15
+    name: Test host macOS SDK
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Test with host macOS SDK
+        env:
+          USE_BAZEL_VERSION: last_rc
+        working-directory: e2e/rules_cc
+        shell: bash
+        run: |
+          bazel \
+            --bazelrc=.bazelrc \
+            test \
+            --remote_header=x-buildbuddy-api-key=4jtaxdhxtyu4ylxdEwI7 \
+            --repo_env=BAZEL_MACOS_USE_HOST_SDK=1 \
+            //:objc_cc_test
+
+          test -L "$(bazel info output_base)/external/llvm++osx+macos_sdk/sysroot/System"
+
   llvm_version_analysis:
     strategy:
       fail-fast: false

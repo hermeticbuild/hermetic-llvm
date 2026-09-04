@@ -12,32 +12,95 @@ _DEFAULT_FRAMEWORKS = [
     "SystemConfiguration",
 ]
 
-def _get_from_archive(mctx):
-    module_selected_archive = None
+def _get_sdk_source(mctx):
+    running_on_macos = mctx.os.name.startswith("mac os")
+    force_host_sdk = mctx.getenv("BAZEL_MACOS_USE_HOST_SDK") == "1"
+    root_source = None
+    dependency_source = None
 
     for mod in mctx.modules:
         module_archives = [tag for tag in mod.tags.from_archive]
         if len(module_archives) > 1:
             fail("Only 1 osx.from_archive(...) tag is allowed per module")
 
-        if not module_archives:
-            continue
+        module_host_sdks = [tag for tag in mod.tags.from_host]
+        if len(module_host_sdks) > 1:
+            fail("Only 1 osx.from_host() tag is allowed per module")
 
-        if getattr(mod, "is_root", False):
-            return module_archives[0]
+        module_source = None
+        if running_on_macos and module_host_sdks:
+            module_source = struct(kind = "host")
+        elif module_archives:
+            module_source = struct(kind = "archive", tag = module_archives[0])
 
-        module_selected_archive = module_archives[0]
+        if mod.is_root:
+            root_source = module_source
+        elif module_source:
+            dependency_source = module_source
 
-    if module_selected_archive != None:
-        return module_selected_archive
+    if running_on_macos and force_host_sdk:
+        return struct(kind = "host")
+    if root_source:
+        return root_source
+    if dependency_source:
+        return dependency_source
 
-    fail("Missing osx.from_archive(...): set osx.from_archive(urls = [...], sha256 = ..., strip_prefix = ..., type = ...) in your MODULE.bazel")
+    fail("Missing osx.from_archive(...): osx.from_host() and BAZEL_MACOS_USE_HOST_SDK=1 only apply when Bazel is running on macOS")
+
+def _host_macos_sdk_repository_impl(rctx):
+    result = rctx.execute(
+        ["/usr/bin/xcrun", "--sdk", "macosx", "--show-sdk-path"],
+        environment = {
+            "DEVELOPER_DIR": rctx.os.environ.get("DEVELOPER_DIR", ""),
+        },
+    )
+    if result.return_code != 0:
+        fail("Failed to discover host macOS SDK, make sure you have Xcode or the Xcode Command Line Tools installed, and have launched Xcode at least once: {}".format(result.stderr.strip()))
+
+    sdk_path = rctx.path(result.stdout.strip())
+    if not sdk_path.exists:
+        fail("xcrun returned a macOS SDK path that does not exist: '{}'".format(sdk_path))
+
+    sdk_usr_include = sdk_path.get_child("usr").get_child("include")
+    if not sdk_usr_include.exists:
+        fail("Host macOS SDK is missing usr/include: {}".format(sdk_path))
+    sdk_usr_lib = sdk_path.get_child("usr").get_child("lib")
+    if not sdk_usr_lib.exists:
+        fail("Host macOS SDK is missing usr/lib: {}".format(sdk_path))
+
+    rctx.symlink(sdk_path.get_child("System"), "sysroot/System")
+    rctx.symlink(sdk_path.get_child("usr"), "sysroot/usr")
+    rctx.file("sysroot/BUILD.bazel", rctx.read(rctx.attr._build_file))
+    rctx.file(
+        "sysroot/host_sdk_config.bzl",
+        "HOST_SDK_INCLUDES = {}\nHOST_SDK_EXCLUDES = {}\n".format(
+            json.encode(rctx.attr.includes),
+            json.encode(rctx.attr.excludes),
+        ),
+    )
+
+    if bazel_features.external_deps.repo_metadata_has_reproducible:
+        return rctx.repo_metadata(reproducible = True)
+    return None
+
+_host_macos_sdk_repository = repository_rule(
+    implementation = _host_macos_sdk_repository_impl,
+    attrs = {
+        "_build_file": attr.label(
+            default = Label("//3rd_party/macos_sdk:HostMacOSSDK.BUILD.bazel"),
+        ),
+        "excludes": attr.string_list(),
+        "includes": attr.string_list(),
+    },
+    environ = ["DEVELOPER_DIR", "XCODE_VERSION"],
+    local = True,
+)
 
 def _osx_extension_impl(mctx):
     frameworks = []
     libraries = []
     experimental_include_all_sdk_libs = False
-    from_archive = _get_from_archive(mctx)
+    sdk_source = _get_sdk_source(mctx)
 
     for module in mctx.modules:
         for frameworks_tag in module.tags.frameworks:
@@ -60,7 +123,7 @@ def _osx_extension_impl(mctx):
     # Users can extend the sysroot via `osx.frameworks` module extension tag.
 
     includes = [
-        "usr/include/*",
+        "usr/include/**",
         "usr/lib/libc++*",
     ]
 
@@ -83,8 +146,8 @@ def _osx_extension_impl(mctx):
         includes.append("usr/lib/%s*" % library)
 
     for framework in frameworks:
-        includes.append("System/Library/Frameworks/%s.framework/*" % framework)
-        includes.append("System/Library/PrivateFrameworks/%s.framework/*" % framework)
+        includes.append("System/Library/Frameworks/%s.framework/**" % framework)
+        includes.append("System/Library/PrivateFrameworks/%s.framework/**" % framework)
 
     # The following directories are unused, deprecated, or private headers.
     # These components:
@@ -93,33 +156,33 @@ def _osx_extension_impl(mctx):
     # - May require entitlements or special privileges to use
     excludes = [
         "usr/include/device.modulemap",
-        "usr/share/*",
-        "usr/libexec/*",
-        # "usr/lib/log/*", # SIGNPOST ??
-        "usr/lib/swift/*",
-        "usr/lib/updaters/*",
-        "usr/include/apache2/*",
-        "usr/include/AppleArchive/*",
-        "usr/include/apr-1/*",
-        "usr/include/atm/*",
-        "usr/include/bank/*",
-        "usr/include/default_pager/*",
-        "usr/include/EndpointSecurity/*",
-        "usr/include/libexslt/*",
-        "usr/include/libxslt/*",
-        "usr/include/net-snmp/*",
-        "usr/include/netkey/*",
-        "usr/include/networkext/*",
-        "usr/include/pexpert/*",
-        "usr/include/Spatial/*",
-        "usr/include/tidy/*",
+        "usr/share/**",
+        "usr/libexec/**",
+        # "usr/lib/log/**", # SIGNPOST ??
+        "usr/lib/swift/**",
+        "usr/lib/updaters/**",
+        "usr/include/apache2/**",
+        "usr/include/AppleArchive/**",
+        "usr/include/apr-1/**",
+        "usr/include/atm/**",
+        "usr/include/bank/**",
+        "usr/include/default_pager/**",
+        "usr/include/EndpointSecurity/**",
+        "usr/include/libexslt/**",
+        "usr/include/libxslt/**",
+        "usr/include/net-snmp/**",
+        "usr/include/netkey/**",
+        "usr/include/networkext/**",
+        "usr/include/pexpert/**",
+        "usr/include/Spatial/**",
+        "usr/include/tidy/**",
 
         # Probably not needed, saves space
-        "usr/lib/log/*",
-        "usr/lib/rdma/*",
-        "usr/lib/system/*",
-        "usr/lib/usd/*",
-        "usr/lib/i18n/*",
+        "usr/lib/log/**",
+        "usr/lib/rdma/**",
+        "usr/lib/system/**",
+        "usr/lib/usd/**",
+        "usr/lib/i18n/**",
         "usr/lib/libicucore*",
 
         # These are symlinks to frameworks directory, which might not be included
@@ -145,39 +208,47 @@ def _osx_extension_impl(mctx):
     ]
 
     if "IOKit" not in frameworks:
-        excludes.append("usr/include/device/*")
+        excludes.append("usr/include/device/**")
     if "Security" not in frameworks:
-        excludes.append("usr/include/libDER/*")
+        excludes.append("usr/include/libDER/**")
     if "Tcl" not in frameworks:
         excludes.append("usr/include/tcl*")
     if "Tk" not in frameworks:
         excludes.append("usr/include/tk*")
     if "PrintCore" not in frameworks:
-        excludes.append("usr/include/cups/*")
+        excludes.append("usr/include/cups/**")
 
-    archive_kwargs = {
-        "name": "macos_sdk",
-        "files": {
-            "sysroot/BUILD.bazel": "//3rd_party/macos_sdk:CLTools_macOSNMOS_SDK.BUILD.bazel",
-        },
-        "sha256": from_archive.sha256,
-        "includes": includes,
-        "excludes": excludes,
-        "strip_prefix": from_archive.strip_prefix,
-        "urls": from_archive.urls,
-    }
-
-    if from_archive.type == "pkg":
-        http_pkg_archive(
-            dst = "sysroot",
-            **archive_kwargs
+    if sdk_source.kind == "host":
+        _host_macos_sdk_repository(
+            name = "macos_sdk",
+            excludes = excludes,
+            includes = includes,
         )
     else:
-        http_bsdtar_archive(
-            add_prefix = "sysroot",
-            type = from_archive.type,
-            **archive_kwargs
-        )
+        from_archive = sdk_source.tag
+        archive_kwargs = {
+            "name": "macos_sdk",
+            "files": {
+                "sysroot/BUILD.bazel": "//3rd_party/macos_sdk:CLTools_macOSNMOS_SDK.BUILD.bazel",
+            },
+            "sha256": from_archive.sha256,
+            "includes": includes,
+            "excludes": excludes,
+            "strip_prefix": from_archive.strip_prefix,
+            "urls": from_archive.urls,
+        }
+
+        if from_archive.type == "pkg":
+            http_pkg_archive(
+                dst = "sysroot",
+                **archive_kwargs
+            )
+        else:
+            http_bsdtar_archive(
+                add_prefix = "sysroot",
+                type = from_archive.type,
+                **archive_kwargs
+            )
 
     metadata_kwargs = {}
     if bazel_features.external_deps.extension_metadata_has_reproducible:
@@ -210,11 +281,16 @@ _from_archive_tag = tag_class(
     },
 )
 
+_from_host_tag = tag_class(
+    doc = "Use the host macOS SDK discovered locally with `xcrun --sdk macosx --show-sdk-path` when Bazel is running on macOS. This tag is ignored on other hosts.",
+)
+
 osx = module_extension(
     implementation = _osx_extension_impl,
     doc = "Generates an OSX sysroot with the requested set of frameworks (or a reasonable default)",
     tag_classes = {
         "from_archive": _from_archive_tag,
+        "from_host": _from_host_tag,
         "frameworks": _frameworks_tag,
         "libraries": _libraries_tag,
         "experimental_include_all_sdk_libs": _experimental_include_all_sdk_libs_tag,
