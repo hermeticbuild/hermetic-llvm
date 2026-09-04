@@ -139,6 +139,7 @@ int main() {
 
   std::string command = std::string(bazel_bin) + NestedBazelArgs() +
                         " --bazelrc=.bazelrc build --color=yes --curses=yes"
+                        " --experimental_remote_downloader="
                         " //:duplicate_symbol_lib" +
                         REDIRECT + "\"" + log + "\" 2>&1";
   int status = system(command.c_str());
