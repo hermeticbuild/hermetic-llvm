@@ -287,6 +287,13 @@ Cross-compiling to macOS from any host is supported.
 By default, the official macOS SDK is downloaded from Apple CDN and used hermetically.
 We use a cross-platform reimplementation of `pkgutil` to unpack SDK packages, which works on all hosts.
 
+To use the non-hermetic macOS SDK installed locally use:
+
+```starlark
+osx = use_extension("@llvm//extensions:osx.bzl", "osx")
+osx.from_host()
+```
+
 ### RISC-V
 
 For now, RISC-V support is limited to Linux and currently hard-wired to the
