@@ -39,6 +39,7 @@ load(
 )
 load(":bazel_version.bzl", "validate_static_library_compatible")
 load(":musl_header_generation_tests.bzl", "musl_header_generation_tests")
+load(":thin_lto_features_test.bzl", "thin_lto_features_test")
 load(":windows_msvc_artifacts.bzl", "windows_msvc_artifacts")
 load(":windows_runtime_dynamic_libraries_test.bzl", "windows_runtime_dynamic_libraries_assertion")
 
@@ -94,6 +95,20 @@ _EXTERNAL_INCLUDE_PATHS_TEST_COMPATIBLE = (
 ) if bazel_features.cc.supports_starlarkified_toolchains else ["@platforms//:incompatible"]
 
 musl_header_generation_tests(name = "musl_header_generation_tests")
+
+thin_lto_features_test(
+    name = "thin_lto_shared_backends_disabled_test",
+)
+
+thin_lto_features_test(
+    name = "thin_lto_linkstatic_tests_shared_backends_test",
+    shared_backend_features = ["thin_lto_linkstatic_tests_use_shared_nonlto_backends"],
+)
+
+thin_lto_features_test(
+    name = "thin_lto_all_linkstatic_shared_backends_test",
+    shared_backend_features = ["thin_lto_all_linkstatic_use_shared_nonlto_backends"],
+)
 
 cc_library(
     name = "objc_c_lib",
