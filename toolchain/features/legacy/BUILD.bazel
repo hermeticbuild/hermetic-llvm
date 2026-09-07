@@ -286,7 +286,7 @@ cc_feature_set(
         ":coff_runtime_library_search_directories",
         ":clang_cl_shared_flag",
         ":clang_cl_strip_debug_symbols",
-        # The generic strip action protocol is not registered for this route.
+        "@rules_cc//cc/toolchains/args/strip_flags:feature",
         # ObjC ARC and fission are explicit unsupported MSVC features.
         ":set_soname",
 
