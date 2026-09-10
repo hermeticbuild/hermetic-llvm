@@ -1,31 +1,29 @@
 load("//constraints/libc:libc_versions.bzl", "DEFAULT_LIBC", "LIBCS")
 load("//platforms:common.bzl", "LIBC_SUPPORTED_TARGETS")
 
-# Per-cpu remaps for zig target triples. Zig uses generic arch names with an
-# ABI-bearing libc suffix (e.g. arm/gnueabihf), not bazel's (armv7/gnu).
+# Zig uses arm rather than Bazel's armv7.
 _ZIG_CPU_OVERRIDES = {
     "armv7": "arm",
 }
 
-_ZIG_LIBC_FAMILY_OVERRIDES = {
-    ("armv7", "gnu"): "gnueabihf",
-    ("armv7", "musl"): "musleabihf",
-}
-
-def _zig_triple(target_os, target_cpu, target_libc_suffix):
-    zig_cpu = _ZIG_CPU_OVERRIDES.get(target_cpu, target_cpu)
-    libc_family, _, libc_version = target_libc_suffix.partition(".")
-    zig_libc_family = _ZIG_LIBC_FAMILY_OVERRIDES.get((target_cpu, libc_family), libc_family)
-    zig_libc_suffix = zig_libc_family + ("." + libc_version if libc_version else "")
-    return "{}-{}-{}".format(zig_cpu, target_os, zig_libc_suffix)
-
-# For use with zig tools that consume parse zig targets triples
-# Zig target triples only, not LLVM
+# Zig target triples only, not LLVM.
 def libc_aware_target_triple():
-    target = {}
-    for (target_os, target_cpu) in LIBC_SUPPORTED_TARGETS:
-        for libc_version in LIBCS + ["unconstrained"]:
-            target_libc_suffix = libc_version if libc_version != "unconstrained" else DEFAULT_LIBC
-            target["//platforms/config:{}_{}_{}".format(target_os, target_cpu, libc_version)] = _zig_triple(target_os, target_cpu, target_libc_suffix)
+    prefixes = {
+        "//platforms/config:{}_{}".format(target_os, target_cpu): "{}-{}-".format(_ZIG_CPU_OVERRIDES.get(target_cpu, target_cpu), target_os)
+        for (target_os, target_cpu) in LIBC_SUPPORTED_TARGETS
+    }
+    families = {}
+    versions = {}
+    for libc in LIBCS + ["unconstrained"]:
+        suffix = libc if libc != "unconstrained" else DEFAULT_LIBC
+        family, _, version = suffix.partition(".")
+        constraint = "//constraints/libc:{}".format(libc)
+        families[constraint] = family
+        versions[constraint] = "." + version if version else ""
 
-    return select(target)
+    # Keep architecture and libc predicates independent instead of matching
+    # their full cross-product. ARM's ABI suffix precedes the libc version.
+    return select(prefixes) + select(families) + select({
+        "//platforms/config:linux_armv7": "eabihf",
+        "//conditions:default": "",
+    }) + select(versions)
