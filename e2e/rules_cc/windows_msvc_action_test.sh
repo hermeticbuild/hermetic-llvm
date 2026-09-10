@@ -233,8 +233,7 @@ bazel --bazelrc=.bazelrc aquery "${common_flags[@]}" \
   >"${action_dir}/thin-lto-link.txt"
 bazel --bazelrc=.bazelrc aquery "${common_flags[@]}" \
   --features=thin_lto \
-  --features=-dynamic_link_msvcrt \
-  --features=static_link_msvcrt \
+  --@llvm//toolchain/features/msvc:crt_mode=static \
   --@llvm//toolchain:bootstrap_stage=stage1_from_source \
   --features=-compiler_param_file \
   --output=commands \
@@ -242,8 +241,7 @@ bazel --bazelrc=.bazelrc aquery "${common_flags[@]}" \
   >"${action_dir}/stage1-libcxx-compile.txt"
 bazel --bazelrc=.bazelrc aquery "${common_flags[@]}" \
   --features=thin_lto \
-  --features=-dynamic_link_msvcrt \
-  --features=static_link_msvcrt \
+  --@llvm//toolchain/features/msvc:crt_mode=static \
   --@llvm//toolchain:bootstrap_stage=stage1_from_source \
   --include_param_files \
   --output=text \
@@ -251,8 +249,7 @@ bazel --bazelrc=.bazelrc aquery "${common_flags[@]}" \
   >"${action_dir}/stage1-thin-lto-index.txt"
 bazel --bazelrc=.bazelrc aquery "${common_flags[@]}" \
   --features=thin_lto \
-  --features=-dynamic_link_msvcrt \
-  --features=static_link_msvcrt \
+  --@llvm//toolchain/features/msvc:crt_mode=static \
   --@llvm//toolchain:bootstrap_stage=stage1_from_source \
   --include_param_files \
   --output=text \
@@ -294,8 +291,7 @@ bazel --bazelrc=.bazelrc cquery "${common_flags[@]}" \
   'kind(".*cc_toolchain.*", deps(//:windows_msvc_crt_default_probe))' \
   >"${action_dir}/resolved-toolchains.txt"
 bazel --bazelrc=.bazelrc build "${common_flags[@]}" \
-  --features=-dynamic_link_msvcrt \
-  --features=static_link_msvcrt \
+  --@llvm//toolchain/features/msvc:crt_mode=static \
   --@llvm//toolchain:bootstrap_stage=stage1_from_source \
   //:windows_msvc_thinlto_weak_alias
 
