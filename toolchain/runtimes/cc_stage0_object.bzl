@@ -78,6 +78,12 @@ def _cc_stage0_object_impl(ctx):
 
     arguments = ctx.actions.args()
     arguments.add("-fuse-ld=lld")
+    # A -r link resolves no libraries, so nothing from a sysroot can reach the
+    # output, but without one the clang driver still scans the host
+    # /usr/lib/gcc for GCC installations and warns
+    # (-Wgcc-install-dir-libstdcxx) on hosts with more than one. Use the same
+    # empty sysroot every toolchain-configured action already gets.
+    arguments.add("--sysroot=/dev/null")
     arguments.add_all(ctx.attr.copts)
     arguments.add("-r")
     for src in ctx.files.srcs:
