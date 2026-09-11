@@ -1,6 +1,6 @@
 """Tests shared ThinLTO backend feature selection in the LLVM toolchain."""
 
-load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
+load("@bazel_skylib//lib:unittest.bzl", "analysistest")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain", "use_cpp_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 
@@ -16,20 +16,20 @@ def _thin_lto_features_test_impl(ctx):
         cc_toolchain = find_cpp_toolchain(ctx),
         requested_features = ["thin_lto"] + ctx.attr.shared_backend_features,
     )
-    asserts.true(env, cc_common.is_enabled(
+    thin_lto_enabled = cc_common.is_enabled(
         feature_configuration = feature_configuration,
         feature_name = "thin_lto",
-    ))
+    )
+    if not thin_lto_enabled:
+        fail("%s: thin_lto was not enabled" % ctx.label)
     for feature_name in _SHARED_BACKEND_FEATURES:
-        asserts.equals(
-            env,
-            feature_name in ctx.attr.shared_backend_features,
-            cc_common.is_enabled(
-                feature_configuration = feature_configuration,
-                feature_name = feature_name,
-            ),
-            "Unexpected state for %s" % feature_name,
+        enabled = cc_common.is_enabled(
+            feature_configuration = feature_configuration,
+            feature_name = feature_name,
         )
+        expected = feature_name in ctx.attr.shared_backend_features
+        if enabled != expected:
+            fail("%s: expected %s=%s, got %s" % (ctx.label, feature_name, expected, enabled))
     return analysistest.end(env)
 
 thin_lto_features_test = rule(

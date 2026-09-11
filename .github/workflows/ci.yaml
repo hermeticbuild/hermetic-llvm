@@ -65,6 +65,7 @@ jobs:
           repository_cache_flags=()
           if [[ "${{ matrix.folder }}" == "e2e/cross_compilation" ]]; then
             repository_cache_flags+=(--repository_cache= --repo_contents_cache=)
+            repository_cache_flags+=(--jobs=100)
           fi
 
           bazel \
@@ -154,8 +155,23 @@ jobs:
             --repository_cache= \
             --repo_contents_cache= \
             --jobs=100 \
+            --test_tag_filters=-thin_lto_feature \
             $EXTRA_ARGS \
             //...
+
+          if [[ "${{ matrix.folder }}" == "e2e/rules_cc" ]]; then
+            bazel \
+              --bazelrc=$GITHUB_WORKSPACE/.github/workflows/ci.bazelrc \
+              --bazelrc=.bazelrc \
+              --noexperimental_remote_repo_contents_cache \
+              build \
+              --repository_cache= \
+              --repo_contents_cache= \
+              --jobs=100 \
+              //:thin_lto_shared_backends_disabled_test \
+              //:thin_lto_linkstatic_tests_shared_backends_test \
+              //:thin_lto_all_linkstatic_shared_backends_test
+          fi
 
   # macOS: smoke build (//:main_default) plus the supported sanitizer e2e tests.
   test_macos:

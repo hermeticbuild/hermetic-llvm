@@ -96,18 +96,23 @@ _EXTERNAL_INCLUDE_PATHS_TEST_COMPATIBLE = (
 
 musl_header_generation_tests(name = "musl_header_generation_tests")
 
+# Windows CI checks these features with bazel build because the Windows test
+# wrapper cannot execute the analysis test's generated shell script.
 thin_lto_features_test(
     name = "thin_lto_shared_backends_disabled_test",
+    tags = ["thin_lto_feature"],
 )
 
 thin_lto_features_test(
     name = "thin_lto_linkstatic_tests_shared_backends_test",
     shared_backend_features = ["thin_lto_linkstatic_tests_use_shared_nonlto_backends"],
+    tags = ["thin_lto_feature"],
 )
 
 thin_lto_features_test(
     name = "thin_lto_all_linkstatic_shared_backends_test",
     shared_backend_features = ["thin_lto_all_linkstatic_use_shared_nonlto_backends"],
+    tags = ["thin_lto_feature"],
 )
 
 cc_library(
