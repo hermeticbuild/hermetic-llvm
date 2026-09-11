@@ -65,6 +65,7 @@ jobs:
           repository_cache_flags=()
           if [[ "${{ matrix.folder }}" == "e2e/cross_compilation" ]]; then
             repository_cache_flags+=(--repository_cache= --repo_contents_cache=)
+            repository_cache_flags+=(--jobs=100)
           fi
 
           bazel \
