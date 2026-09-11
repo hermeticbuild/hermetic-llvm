@@ -33,9 +33,11 @@ fi
 
 bazel \
   --bazelrc=".github/workflows/ci.bazelrc" \
+  --host_jvm_args=-Xmx8g \
   build \
   --config=remote \
   --config=release \
+  --discard_analysis_cache \
   --repo_env=BAZEL_MSVC_RUNTIME_VISUAL_STUDIO_EULA=1 \
   --repo_env=BAZEL_WINDOWS_SDK_EULA=1 \
   --remote_download_outputs=toplevel \
