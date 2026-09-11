@@ -105,6 +105,17 @@ cc_feature(
     feature_name = "prefer_pic_for_opt_binaries",
 )
 
+# Bazel uses these opt-in features to reuse library code generation across links.
+cc_feature(
+    name = "thin_lto_linkstatic_tests_use_shared_nonlto_backends",
+    feature_name = "thin_lto_linkstatic_tests_use_shared_nonlto_backends",
+)
+
+cc_feature(
+    name = "thin_lto_all_linkstatic_use_shared_nonlto_backends",
+    feature_name = "thin_lto_all_linkstatic_use_shared_nonlto_backends",
+)
+
 # Allow external repositories to get included with -isystem instead of -I in
 # order to silence warnings from external headers. The complete generic and
 # Windows toolchain compositions expand external_include_paths before their

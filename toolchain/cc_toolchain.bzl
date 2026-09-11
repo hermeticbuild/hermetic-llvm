@@ -25,6 +25,8 @@ def cc_toolchain(
             "@llvm//toolchain/features:no_windows_export_all_symbols",
             "@llvm//toolchain/features:static_link_cpp_runtimes",
             "@llvm//toolchain/features:targets_windows",
+            "@llvm//toolchain/features:thin_lto_linkstatic_tests_use_shared_nonlto_backends",
+            "@llvm//toolchain/features:thin_lto_all_linkstatic_use_shared_nonlto_backends",
             "@llvm//toolchain/features:windows_export_all_symbols",
             "@llvm//toolchain/features/legacy:clang_cl_all_legacy_builtin_features",
             "@llvm//toolchain/features/legacy:clang_cl_experimental_replace_legacy_action_config_features",
@@ -102,6 +104,8 @@ def cc_toolchain(
             "@llvm//toolchain/features:generate_pdb_file",
             "@llvm//toolchain/features:fdo_optimize",
             "@rules_cc//cc/toolchains/args/thin_lto:feature",
+            "@llvm//toolchain/features:thin_lto_linkstatic_tests_use_shared_nonlto_backends",
+            "@llvm//toolchain/features:thin_lto_all_linkstatic_use_shared_nonlto_backends",
         ] + select({
             "@platforms//os:linux": [
                 "@llvm//toolchain/features/interface_libraries:feature",
