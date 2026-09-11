@@ -1,0 +1,268 @@
+load("@bazel_lib//lib:transitions.bzl", "platform_transition_binary", "platform_transition_filegroup")
+load("@rules_cc//cc:cc_import.bzl", "cc_import")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load("//3rd_party/gcc:version.bzl", "DEFAULT_GCC_VERSION", "GCC_VERSIONS", "gcc_target_suffix", "libstdcxx_constraint_value")
+load(":defs.bzl", "llvm_libgcc_cc_binary")
+load(":libgcc_s_expectations.bzl", "libgcc_s_expectations")
+
+LINUX_ONLY = select({
+    "@platforms//os:linux": [],
+    "//conditions:default": ["@platforms//:incompatible"],
+})
+
+ARCHS = [
+    "x86_64",
+    "aarch64",
+]
+
+# libgcc's version scripts only change between major releases, so one version
+# per major, the latest, covers them. GCC_VERSIONS is sorted newest first.
+LIBGCC_S_MATRIX_VERSIONS = [
+    version
+    for index, version in enumerate(GCC_VERSIONS)
+    if index == 0 or version.split(".")[0] != GCC_VERSIONS[index - 1].split(".")[0]
+]
+
+# The default selection: no libstdc++ constraint, so DEFAULT_GCC_VERSION.
+sh_test(
+    name = "libgcc_s_shared_elf_test",
+    srcs = ["libgcc_s_shared_elf_test.sh"],
+    data = [
+        "//runtimes/unwindlib:libgcc_s.shared",
+        "@llvm//tools:llvm-readelf",
+    ],
+    env = {
+        "LIBGCC_S_SHARED": "$(rootpath //runtimes/unwindlib:libgcc_s.shared)",
+        "READELF": "$(rootpath @llvm//tools:llvm-readelf)",
+    } | select({
+        "@platforms//cpu:{}".format(arch): libgcc_s_expectations(arch, DEFAULT_GCC_VERSION)
+        for arch in ARCHS
+    }),
+    target_compatible_with = LINUX_ONLY,
+)
+
+[
+    platform_transition_filegroup(
+        name = "libgcc_s_shared_linux_{}_{}".format(
+            arch,
+            gcc_target_suffix(version),
+        ),
+        srcs = ["//runtimes/unwindlib:libgcc_s.shared"],
+        target_platform = "//runtimes/libstdcxx/tests:linux_{}_{}".format(
+            arch,
+            libstdcxx_constraint_value(version),
+        ),
+    )
+    for arch in ARCHS
+    for version in LIBGCC_S_MATRIX_VERSIONS
+]
+
+[
+    sh_test(
+        name = "libgcc_s_shared_elf_linux_{}_{}_test".format(
+            arch,
+            gcc_target_suffix(version),
+        ),
+        srcs = ["libgcc_s_shared_elf_test.sh"],
+        data = [
+            ":libgcc_s_shared_linux_{}_{}".format(
+                arch,
+                gcc_target_suffix(version),
+            ),
+            "@llvm//tools:llvm-readelf",
+        ],
+        env = {
+            "LIBGCC_S_SHARED": "$(rootpath :libgcc_s_shared_linux_{}_{})".format(
+                arch,
+                gcc_target_suffix(version),
+            ),
+            "READELF": "$(rootpath @llvm//tools:llvm-readelf)",
+        } | libgcc_s_expectations(arch, version),
+        target_compatible_with = LINUX_ONLY,
+    )
+    for arch in ARCHS
+    for version in LIBGCC_S_MATRIX_VERSIONS
+]
+
+# Binaries and shared objects that unwind through libgcc_s.so.1. The toolchain
+# delivers the unwinder with its dynamic runtime libraries, so a target gets
+# libgcc_s.so.1 when it links the C++ runtime dynamically: cc_binary with
+# linkstatic = False. Static links keep the static libunwind, with or without
+# the flag.
+cc_library(
+    name = "thrower",
+    srcs = ["thrower.cc"],
+    hdrs = ["thrower.h"],
+)
+
+# :thrower is linked statically: the Linux clang tool has no
+# supports_dynamic_linker capability, so cc_library builds no shared object of
+# its own. The exception unwinds within the binary, through libgcc_s.so.1.
+llvm_libgcc_cc_binary(
+    name = "throw_and_catch",
+    srcs = ["throw_and_catch.cc"],
+    linkstatic = False,
+    target_compatible_with = LINUX_ONLY,
+    deps = [":thrower"],
+)
+
+# A shared object that gets its unwinder from libgcc_s.so.1 instead of carrying
+# one of its own.
+llvm_libgcc_cc_binary(
+    name = "libthrower_shared.so",
+    srcs = ["thrower.cc"],
+    linkshared = True,
+    linkstatic = False,
+    target_compatible_with = LINUX_ONLY,
+    deps = [":thrower"],
+)
+
+# The genuinely cross-DSO case: thrown in libthrower_shared.so, caught in the
+# binary, both unwinding through the one libgcc_s.so.1.
+cc_import(
+    name = "libthrower_shared_import",
+    hdrs = ["thrower.h"],
+    shared_library = ":libthrower_shared.so",
+    target_compatible_with = LINUX_ONLY,
+)
+
+llvm_libgcc_cc_binary(
+    name = "cross_dso_exception",
+    srcs = ["throw_and_catch.cc"],
+    linkstatic = False,
+    target_compatible_with = LINUX_ONLY,
+    deps = [":libthrower_shared_import"],
+)
+
+# The default linkstatic = True keeps the static libunwind: nothing depends on
+# libgcc_s.so.1 or libunwind.so.1 even with the flag.
+llvm_libgcc_cc_binary(
+    name = "throw_and_catch_static",
+    srcs = ["throw_and_catch.cc"],
+    target_compatible_with = LINUX_ONLY,
+    deps = [":thrower"],
+)
+
+sh_test(
+    name = "static_unwinder_test",
+    srcs = ["static_cpp_runtime_binary_test.sh"],
+    args = [
+        "$(rootpath @llvm//tools:llvm-readelf)",
+        "$(rootpath :throw_and_catch_static)",
+        "libgcc_s.so.1",
+        "libunwind.so.1",
+    ],
+    data = [
+        ":throw_and_catch_static",
+        "@llvm//tools:llvm-readelf",
+    ],
+    target_compatible_with = LINUX_ONLY,
+)
+
+# libc++ on the host platform: checked and run.
+[
+    sh_test(
+        name = "libgcc_s_{}_libcxx_test".format(target),
+        srcs = ["libgcc_s_link_test.sh"],
+        args = [
+            "$(rootpath @llvm//tools:llvm-readelf)",
+            "$(rootpath :{})".format(target),
+            "run",
+        ],
+        data = [
+            ":" + target,
+            "@llvm//tools:llvm-readelf",
+        ],
+        target_compatible_with = LINUX_ONLY,
+    )
+    for target in [
+        "throw_and_catch",
+        "cross_dso_exception",
+    ]
+]
+
+sh_test(
+    name = "libgcc_s_shared_object_libcxx_test",
+    srcs = ["libgcc_s_shared_object_test.sh"],
+    args = [
+        "$(rootpath @llvm//tools:llvm-readelf)",
+        "$(rootpath :libthrower_shared.so)",
+    ],
+    data = [
+        ":libthrower_shared.so",
+        "@llvm//tools:llvm-readelf",
+    ],
+    target_compatible_with = LINUX_ONLY,
+)
+
+# libstdc++ on both glibc targets: checked, and run on the host's architecture.
+[
+    platform_transition_binary(
+        name = "{}_libstdcxx_{}".format(target, arch),
+        binary = ":" + target,
+        target_platform = "//runtimes/libstdcxx/tests:linux_{}_{}".format(
+            arch,
+            libstdcxx_constraint_value(DEFAULT_GCC_VERSION),
+        ),
+    )
+    for target in [
+        "throw_and_catch",
+        "cross_dso_exception",
+    ]
+    for arch in ARCHS
+]
+
+[
+    sh_test(
+        name = "libgcc_s_{}_libstdcxx_{}_test".format(target, arch),
+        srcs = ["libgcc_s_link_test.sh"],
+        args = [
+            "$(rootpath @llvm//tools:llvm-readelf)",
+            "$(rootpath :{}_libstdcxx_{})".format(target, arch),
+            "run",
+        ],
+        data = [
+            ":{}_libstdcxx_{}".format(target, arch),
+            "@llvm//tools:llvm-readelf",
+        ],
+        target_compatible_with = [
+            "@platforms//cpu:" + arch,
+            "@platforms//os:linux",
+        ],
+    )
+    for target in [
+        "throw_and_catch",
+        "cross_dso_exception",
+    ]
+    for arch in ARCHS
+]
+
+[
+    platform_transition_filegroup(
+        name = "libthrower_shared_libstdcxx_{}".format(arch),
+        srcs = [":libthrower_shared.so"],
+        target_platform = "//runtimes/libstdcxx/tests:linux_{}_{}".format(
+            arch,
+            libstdcxx_constraint_value(DEFAULT_GCC_VERSION),
+        ),
+    )
+    for arch in ARCHS
+]
+
+[
+    sh_test(
+        name = "libgcc_s_shared_object_libstdcxx_{}_test".format(arch),
+        srcs = ["libgcc_s_shared_object_test.sh"],
+        args = [
+            "$(rootpath @llvm//tools:llvm-readelf)",
+            "$(rootpath :libthrower_shared_libstdcxx_{})".format(arch),
+        ],
+        data = [
+            ":libthrower_shared_libstdcxx_{}".format(arch),
+            "@llvm//tools:llvm-readelf",
+        ],
+        target_compatible_with = LINUX_ONLY,
+    )
+    for arch in ARCHS
+]

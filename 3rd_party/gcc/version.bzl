@@ -308,6 +308,11 @@ def select_gcc_version_at_least(version, then, otherwise):
 def gcc_has_config_toolexeclibdir_m4(version):
     return gcc_version_at_least_for(version, "10.0.0")
 
+# libgcc/config/aarch64/t-softfp adds config/aarch64/libgcc-softfp.ver to
+# SHLIB_MAPFILES since GCC 11.
+def libgcc_has_aarch64_softfp_ver(version):
+    return gcc_version_at_least_for(version, "11.0.0")
+
 def libstdcxx_has_atomic_builtins_define(version):
     return gcc_version_less_than_for(version, "16.0.0")
 

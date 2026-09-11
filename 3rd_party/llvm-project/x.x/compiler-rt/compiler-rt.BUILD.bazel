@@ -652,6 +652,11 @@ cc_library(
             "-Wno-pragma-pack",
         ],
         "//conditions:default": [],
+    }) + select({
+        # libgcc_s.so.1 exports the builtins, so its builder compiles them
+        # with default visibility. The last -fvisibility flag wins.
+        "@llvm//config:compiler_rt_builtins_hide_symbols_disabled": ["-fvisibility=default"],
+        "//conditions:default": [],
     }) + CF_PROTECTION_COPTS,
     features = select({
         # clang-cl discovers builtins in its resource directory, outside
@@ -756,6 +761,8 @@ cc_library(
         ],
         "//conditions:default": [],
     }),
+    # llvm-libgcc links the builtins into libgcc_s.so.1.
+    visibility = ["//llvm-libgcc:__pkg__"],
     deps = select({
         "@platforms//cpu:aarch64": [
             ":builtins_aarch64_atomic",

@@ -1,0 +1,93 @@
+load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("//runtimes:defs.bzl", "stub_library")
+
+# The unwinder runtime: libunwind, or libgcc_s.so.1 built from libunwind and
+# the compiler-rt builtins with the symbol versions of GCC's libgcc_s
+# (llvm-libgcc, --//config:experimental_use_llvm_libgcc; see
+# //3rd_party/llvm-project/x.x/llvm-libgcc/README.md). Delivered to links
+# through the cc_toolchain runtime libraries, next to //runtimes/cxxstdlib.
+package(default_visibility = ["//visibility:public"])
+
+alias(
+    name = "libgcc_s.shared",
+    actual = "@llvm-project//llvm-libgcc:libgcc_s.shared",
+)
+
+# The unwinder that dynamically linked binaries depend on. Only this changes
+# with the flag: libstdc++.so.6 and libc++abi.so.1 import _Unwind_* without
+# recording an unwinder NEEDED entry of their own, so they resolve against
+# whichever unwinder the binary brings and need no relinking.
+alias(
+    name = "unwinder.shared",
+    actual = select({
+        "//config:experimental_use_llvm_libgcc_enabled": ":libgcc_s.shared",
+        "//conditions:default": "//runtimes/libunwind:libunwind.shared",
+    }),
+)
+
+config_setting(
+    name = "windows",
+    constraint_values = ["@platforms//os:windows"],
+)
+
+# The native Windows tuple gets its unwinder from VCRuntime.
+config_setting(
+    name = "windows_msvc",
+    constraint_values = [
+        "//constraints/windows/abi:msvc",
+        "@platforms//os:windows",
+    ],
+)
+
+# Static links keep the static libunwind, with or without llvm-libgcc.
+filegroup(
+    name = "static_runtime_lib",
+    srcs = select({
+        ":windows_msvc": [],
+        ":windows": ["//runtimes/libunwind:libunwind.static"],
+        "@platforms//os:linux": ["//runtimes/libunwind:libunwind.static"],
+        "//conditions:default": [],
+    }),
+)
+
+filegroup(
+    name = "dynamic_runtime_lib",
+    srcs = select({
+        "@platforms//os:linux": [":unwinder.shared"],
+        "//conditions:default": [],
+    }),
+)
+
+# Empty archives for the unwinder library names third-party link lines pass
+# (-lunwind, and -lgcc/-lgcc_eh/-lgcc_s when stubbed): the real unwinder comes
+# from the runtime libraries above, which also give it runfiles and an rpath,
+# so nothing found through this search directory must be a real library.
+stub_library(
+    name = "unwind",
+)
+
+stub_library(
+    name = "gcc",
+)
+
+stub_library(
+    name = "gcc_eh",
+)
+
+stub_library(
+    name = "gcc_s",
+)
+
+copy_to_directory(
+    name = "unwindlib_library_search_directory",
+    srcs = [
+        ":unwind",
+    ] + select({
+        "//config:stub_libgcc_enabled": [
+            ":gcc",
+            ":gcc_eh",
+            ":gcc_s",
+        ],
+        "//conditions:default": [],
+    }),
+)
