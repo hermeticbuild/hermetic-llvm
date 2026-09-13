@@ -39,18 +39,32 @@ def _make_select_kernel_headers_repository_target_for_linux_kernel(kernel_versio
 
     return select(selection)
 
-def _make_select_kernel_headers_repository_target_from_libc(bazel_target):
-    """Select the right kernel headers repository based on the target architecture and libc version."""
-    selection = {}
+def _declare_libc_kernel_headers_aliases(name, bazel_target):
+    """Select the architecture before its libc-derived kernel version."""
+    targets = {}
     for (target_os, target_arch) in LIBC_SUPPORTED_TARGETS:
+        versions = {}
         for libc_version in LIBCS + ["unconstrained"]:
             kernel_version = LIBC_KERNEL_VERSIONS[libc_version]
             if not _kernel_headers_available(target_arch, kernel_version):
                 continue
-            apparent_target = _kernel_headers_repository_target(target_arch, kernel_version, bazel_target)
-            selection["@llvm//platforms/config:{}_{}_{}".format(target_os, target_arch, libc_version)] = apparent_target
+            versions["@llvm//constraints/libc:{}".format(libc_version)] = _kernel_headers_repository_target(target_arch, kernel_version, bazel_target)
 
-    return select(selection)
+        if not versions:
+            continue
+
+        target_name = "{}_{}_{}".format(name, target_os, target_arch)
+        native.alias(
+            name = target_name,
+            actual = select(versions),
+            visibility = ["//visibility:private"],
+        )
+        targets["@llvm//platforms/config:{}_{}".format(target_os, target_arch)] = target_name
+
+    native.alias(
+        name = name,
+        actual = select(targets),
+    )
 
 def _make_select_kernel_headers_repository_target_from_linux_kernel(bazel_target):
     """Select explicit Linux kernel constraints, falling back to the libc-derived default."""
@@ -73,10 +87,7 @@ def declare_kernel_headers_repository_target(name, bazel_target = None, **kwargs
     if bazel_target == None:
         bazel_target = name
 
-    native.alias(
-        name = _fallback_alias_name(name),
-        actual = _make_select_kernel_headers_repository_target_from_libc(bazel_target),
-    )
+    _declare_libc_kernel_headers_aliases(_fallback_alias_name(name), bazel_target)
 
     for kernel_version in LINUX_KERNEL_VERSIONS:
         native.alias(

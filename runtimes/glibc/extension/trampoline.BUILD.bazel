@@ -1,33 +1,38 @@
-load("@llvm//runtimes/glibc/extension:make_select_glibc_repository_target.bzl", "make_select_glibc_repository_target")
+load("@llvm//runtimes/glibc/extension:make_select_glibc_repository_target.bzl", "declare_glibc_repository_target")
 
 package(default_visibility = ["//visibility:public"])
 
-alias(
+declare_glibc_repository_target(
     name = "gnu_libc_headers",
-    actual = make_select_glibc_repository_target("@glibc_headers", "gnu_libc_headers"),
+    bazel_repository = "@glibc_headers",
+    bazel_target = "gnu_libc_headers",
     target_compatible_with = ["@platforms//os:linux"],
 )
 
-alias(
+declare_glibc_repository_target(
     name = "glibc_headers_directory",
-    actual = make_select_glibc_repository_target("@glibc_headers", "glibc_headers_directory"),
+    bazel_repository = "@glibc_headers",
+    bazel_target = "glibc_headers_directory",
     target_compatible_with = ["@platforms//os:linux"],
 )
 
-alias(
+declare_glibc_repository_target(
     name = "glibc_c_nonshared.static",
-    actual = make_select_glibc_repository_target("@glibc", "c_nonshared"),
+    bazel_repository = "@glibc",
+    bazel_target = "c_nonshared",
     target_compatible_with = ["@platforms//os:linux"],
 )
 
-alias(
+declare_glibc_repository_target(
     name = "glibc_Scrt1.object",
-    actual = make_select_glibc_repository_target("@glibc", "glibc_Scrt1.object"),
+    bazel_repository = "@glibc",
+    bazel_target = "glibc_Scrt1.object",
     target_compatible_with = ["@platforms//os:linux"],
 )
 
-alias(
+declare_glibc_repository_target(
     name = "glibc_crt1.object",
-    actual = make_select_glibc_repository_target("@glibc", "glibc_crt1.object"),
+    bazel_repository = "@glibc",
+    bazel_target = "glibc_crt1.object",
     target_compatible_with = ["@platforms//os:linux"],
 )
