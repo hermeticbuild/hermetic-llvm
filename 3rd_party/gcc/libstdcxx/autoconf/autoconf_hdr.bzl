@@ -21,11 +21,11 @@ def _write_config_output(ctx, config_h, results):
             result_path = result.result.path
             inputs.append(result.result)
         result_ops.append([
-            result.check.name,
+            result.name,
             result.kind,
-            getattr(result.check, "value", ""),
+            result.value,
             result_path,
-            ",".join(getattr(result.check, "defines_on_success", [])),
+            ",".join(result.defines_on_success),
         ])
 
     ops_file = ctx.actions.declare_file("result_ops")

@@ -12,9 +12,8 @@ load(
     "cc_configure_probe_toolchains",
     "declare_compile_probe",
     "declare_link_probe",
-    "policy_result",
 )
-load(":providers.bzl", "AutoconfConfigInfo")
+load(":providers.bzl", "AutoconfConfigInfo", "AutoconfResultInfo")
 
 def _as_struct(value):
     return struct(**value)
@@ -107,13 +106,19 @@ def _autoconf_config_impl(ctx):
                 compile_extra_flags = extra_flags,
             )
         elif check_type in ["define", "string_define", "undef"]:
-            result = policy_result(check)
+            result = None
         else:
             fail("Check '{}' has unsupported autoconf check type '{}'.".format(check.name, check_type))
 
-        results.append(result)
-        if result.result:
-            result_files.append(result.result)
+        results.append(AutoconfResultInfo(
+            name = check.name,
+            kind = check_type,
+            value = getattr(check, "value", ""),
+            result = result,
+            defines_on_success = getattr(check, "defines_on_success", []),
+        ))
+        if result:
+            result_files.append(result)
 
     return [
         AutoconfConfigInfo(results = results),

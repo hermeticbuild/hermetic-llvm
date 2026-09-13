@@ -180,11 +180,7 @@ fi
         mnemonic = "CcConfigureCompileProbe",
         toolchain = CC_TOOLCHAIN_TYPE,
     )
-    return struct(
-        check = check,
-        kind = "compile",
-        result = result,
-    )
+    return result
 
 def declare_link_probe(ctx, probe_context, check, extra_inputs = [], compile_extra_flags = []):
     source = _declare_source(ctx, check)
@@ -296,15 +292,4 @@ fi
         mnemonic = "CcConfigureLinkProbe",
         toolchain = CC_TOOLCHAIN_TYPE,
     )
-    return struct(
-        check = check,
-        kind = "link",
-        result = result,
-    )
-
-def policy_result(policy):
-    return struct(
-        check = policy,
-        kind = policy.type,
-        result = None,
-    )
+    return result
