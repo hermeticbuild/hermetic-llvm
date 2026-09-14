@@ -318,4 +318,12 @@ def cc_toolchain(
             "@llvm//constraints/windows/abi:msvc": "clang-cl",
             "//conditions:default": "clang",
         }),
+        target_libc = select({
+            "@llvm//platforms/config:gnu": "glibc",
+            "@llvm//platforms/config:musl": "musl",
+            "@llvm//platforms/config:windows_crt_msvcrt": "msvcrt",
+            "@llvm//platforms/config:windows_crt_ucrt": "ucrt",
+            "@platforms//os:macos": "macosx",
+            "@platforms//os:none": "none",
+        }, no_match_error = "Unsupported target libc"),
     )

@@ -3,6 +3,24 @@ load(":declare_config_settings.bzl", "declare_config_settings")
 
 declare_config_settings()
 
+config_setting(
+    name = "windows_crt_msvcrt",
+    constraint_values = [
+        "@platforms//os:windows",
+        "//constraints/windows/crt:msvcrt",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "windows_crt_ucrt",
+    constraint_values = [
+        "@platforms//os:windows",
+        "//constraints/windows/crt:ucrt",
+    ],
+    visibility = ["//visibility:public"],
+)
+
 bzl_library(
     name = "declare_config_settings",
     srcs = ["declare_config_settings.bzl"],
