@@ -235,8 +235,12 @@ cc_args_list(
     args = ["generic_default_startfiles"],
 )
 
+# Use compiler-rt for intermediate links on every ABI: Microsoft's CRT does
+# not provide every compiler-generated helper (e.g. __udivti3). Stage0 builds
+# these libraries; complete toolchains add //toolchain:rtlib directly through
+# //toolchain:toolchain_args instead.
 cc_args_list(
-    name = "generic_rtlib",
+    name = "rtlib",
     args = select({
         "//toolchain:runtimes_all": [],
         "//toolchain:runtimes_stage1": [
@@ -246,22 +250,6 @@ cc_args_list(
             "//toolchain:rtlib",
         ],
         "//toolchain:runtimes_none": [],
-    }),
-)
-
-cc_args_list(
-    name = "msvc_rtlib",
-    args = select({
-        "//toolchain:runtimes_all": ["//toolchain:rtlib"],
-        "//conditions:default": [],
-    }),
-)
-
-cc_args_list(
-    name = "rtlib",
-    args = select({
-        "//constraints/windows/abi:msvc": [":msvc_rtlib"],
-        "//conditions:default": [":generic_rtlib"],
     }),
 )
 
