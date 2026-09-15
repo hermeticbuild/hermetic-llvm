@@ -283,8 +283,14 @@ cc_args_list(
     }),
 )
 
-# TODO(cerisier): extract those into proper semantic args list.
-# TODO(zbarsky): This must match llvm/toolchains/llvm.bzl
+# Toolchain-owned system headers have two independent representations. On the
+# compile side, trace cc_args_list composition and any per-toolchain additions.
+# On the module-map side, trace the include_path selected by module_map. Header
+# composition changes must keep the materialized surface aligned for each target
+# platform and ABI even though source labels and grouping need not match.
+
+# macOS: header roots contributed here follow the alignment invariant above.
+# TODO(cerisier): Extract these into semantic argument groups.
 cc_args_list(
     name = "macos_toolchain_args",
     args = [
@@ -300,8 +306,8 @@ cc_args_list(
     }),
 )
 
-# TODO(cerisier): extract those into proper semantic args list.
-# TODO(zbarsky): This must match llvm/toolchains/llvm.bzl
+# Linux: header roots contributed here follow the alignment invariant above.
+# TODO(cerisier): Extract these into semantic argument groups.
 cc_args_list(
     name = "linux_toolchain_args",
     args = select({
@@ -394,6 +400,8 @@ cc_args_list(
     ],
 )
 
+# Windows: header roots contributed below follow the alignment invariant above
+# for the selected ABI.
 # Keep the complete Windows composition explicit while its individual
 # compiler-personality, object-format, ABI, and runtime semantics are being
 # normalized. This mirrors :generic_toolchain_args instead of appending a bag

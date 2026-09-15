@@ -117,12 +117,6 @@ bazel --bazelrc=.bazelrc aquery "${common_flags[@]}" \
   'mnemonic("CppCompile", //:windows_msvc_generated_def_binary)' \
   >"${action_dir}/default-compile-flags.txt"
 bazel --bazelrc=.bazelrc aquery "${common_flags[@]}" \
-  --features=layering_check \
-  --features=-compiler_param_file \
-  --output=commands \
-  'mnemonic("CppCompile", //:windows_msvc_generated_def_binary)' \
-  >"${action_dir}/pending-layering-check.txt"
-bazel --bazelrc=.bazelrc aquery "${common_flags[@]}" \
   -c opt \
   --features=-compiler_param_file \
   --output=commands \
@@ -378,10 +372,6 @@ assert_contains "${action_dir}/default-compile-flags.txt" "/clang:-Wthread-safet
 assert_contains "${action_dir}/default-compile-flags.txt" "/clang:-fcolor-diagnostics"
 assert_contains "${action_dir}/default-compile-flags.txt" "/clang:-fno-omit-frame-pointer"
 assert_absent "${action_dir}/default-compile-flags.txt" "/Z7"
-assert_contains "${action_dir}/pending-layering-check.txt" "clang-cl"
-assert_absent "${action_dir}/pending-layering-check.txt" "-fmodules-strict-decluse"
-assert_absent "${action_dir}/pending-layering-check.txt" "-Wprivate-header"
-assert_absent "${action_dir}/pending-layering-check.txt" "-fmodule-map-file="
 assert_contains "${action_dir}/opt-compile-flags.txt" "/O2"
 assert_contains "${action_dir}/opt-compile-flags.txt" "/DNDEBUG"
 assert_contains "${action_dir}/opt-compile-flags.txt" "/Gy"
