@@ -4,6 +4,7 @@ load("@rules_cc//cc/toolchains:tool.bzl", "cc_tool")
 load("@rules_cc//cc/toolchains:tool_map.bzl", "cc_tool_map")
 load("//platforms:common.bzl", "MSVC_TARGET_BOOTSTRAP_SUPPORTED_EXECS", "SUPPORTED_TARGETS")
 load("//toolchain:cc_toolchain.bzl", "cc_toolchain")
+load("//toolchain/args:resource_dir.bzl", "declare_resource_dir")
 load(":bootstrap_binary.bzl", "bootstrap_binary", "bootstrap_directory")
 
 def _validate_static_library_tool(prefix):
@@ -506,14 +507,17 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
             ("stage1", stage1_prefix, "@llvm//toolchain:bootstrap_stage1_from_source"),
         ]:
             cc_toolchain_name = "%s_%s_%s_cc_toolchain" % (stage_name, exec_os, exec_cpu)
+            resource_dir_args = declare_resource_dir(
+                name = cc_toolchain_name,
+                resource_dir = tool_prefix + "/clang_resource_directory",
+            )
 
             # Even though `tool_map` has an exec transition, Bazel doesn't properly handle
             # binding a single `cc_toolchain` to multiple toolchains with different `exec_compatible_with`.
             # See https://github.com/bazelbuild/rules_cc/issues/299#issuecomment-2660340534
             cc_toolchain(
                 name = cc_toolchain_name,
-                compiler_resources = tool_prefix + "/clang_resource_directory",
-                extra_args = select({
+                extra_args = [resource_dir_args] + select({
                     "@llvm//platforms/config:windows_x86_64_msvc": [
                         "@llvm//toolchain/args/windows/msvc:normalized_default_libs_for_runtime",
                         "@llvm//toolchain/args/windows/msvc:normalized_sdk_compile_args",

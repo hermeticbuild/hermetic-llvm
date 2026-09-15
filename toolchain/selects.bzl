@@ -46,7 +46,7 @@ def platform_extra_binary(binary):
 def platform_module_map(exec_os, exec_cpu):
     return Label(_tool_repo(exec_os, exec_cpu) + ":module_map")
 
-def platform_compiler_resources(exec_os, exec_cpu):
+def platform_resource_dir(exec_os, exec_cpu):
     return Label(_tool_repo(exec_os, exec_cpu) + ":builtin_resource_dir")
 
 def platform_cc_tool_map(exec_os, exec_cpu):

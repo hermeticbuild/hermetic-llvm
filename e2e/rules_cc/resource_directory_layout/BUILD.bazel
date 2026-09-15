@@ -21,7 +21,7 @@ copy_to_directory(
 [
     resource_directory(
         name = compiler + "_resource_directory",
-        compiler_resources = compiler,
+        resource_dir = compiler,
         runtimes = "runtimes",
     )
     for compiler in [

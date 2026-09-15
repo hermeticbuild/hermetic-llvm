@@ -1,5 +1,6 @@
 load("//platforms:common.bzl", "MSVC_TARGET_STAGE0_SUPPORTED_EXECS", "SUPPORTED_EXECS", "SUPPORTED_TARGETS")
-load("//toolchain:selects.bzl", "platform_cc_tool_map", "platform_compiler_resources", "platform_module_map")
+load("//toolchain:selects.bzl", "platform_cc_tool_map", "platform_module_map", "platform_resource_dir")
+load("//toolchain/args:resource_dir.bzl", "declare_resource_dir")
 load(":cc_toolchain.bzl", "cc_toolchain")
 
 def declare_toolchains(*, execs = SUPPORTED_EXECS, targets = SUPPORTED_TARGETS):
@@ -12,17 +13,23 @@ def declare_toolchains(*, execs = SUPPORTED_EXECS, targets = SUPPORTED_TARGETS):
     for (exec_os, exec_cpu) in execs:
         cc_toolchain_name = exec_os + "_" + exec_cpu + "_cc_toolchain"
 
+        # Bind the directory beside the tool map, before another rule's exec
+        # transition can select a different compiler installation.
+        resource_dir_args = declare_resource_dir(
+            name = cc_toolchain_name,
+            resource_dir = platform_resource_dir(exec_os, exec_cpu),
+        )
+
         # Even though `tool_map` has an exec transition, Bazel doesn't properly handle
         # binding a single `cc_toolchain` to multiple toolchains with different `exec_compatible_with`.
         # See https://github.com/bazelbuild/rules_cc/issues/299#issuecomment-2660340534
         cc_toolchain(
             name = cc_toolchain_name,
             tool_map = platform_cc_tool_map(exec_os, exec_cpu),
-            compiler_resources = platform_compiler_resources(exec_os, exec_cpu),
             module_map = platform_module_map(exec_os, exec_cpu),
             # Paths below describe the concrete execution filesystem. Keep
             # target semantics in //toolchain's ordered argument composition.
-            extra_args = select({
+            extra_args = [resource_dir_args] + select({
                 "@llvm//platforms/config:windows_x86_64_msvc": [
                     "@llvm//toolchain/args/windows/msvc:normalized_default_libs_for_runtime",
                     "@llvm//toolchain/args/windows/msvc:normalized_sdk_compile_args",
