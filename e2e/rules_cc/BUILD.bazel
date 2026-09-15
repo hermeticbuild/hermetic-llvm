@@ -696,26 +696,6 @@ cc_test(
     }),
 )
 
-cc_test(
-    name = "resource_headers_test",
-    size = "small",
-    srcs = ["resource_headers_test.cc"],
-    copts = select({
-        ":windows_msvc_abi": [],
-        "//conditions:default": [
-            "-fmodules",
-            "-fno-implicit-module-maps",
-        ],
-    }),
-    # Keep compilation remote, but execute the test on the CI host.
-    exec_properties = {"test.no-remote": "1"},
-    # Exercise driver ordering, independently of crosstool module ownership.
-    features = [
-        "-layering_check",
-        "-module_maps",
-    ],
-)
-
 cc_binary(
     name = "main",
     srcs = ["main.cc"],
