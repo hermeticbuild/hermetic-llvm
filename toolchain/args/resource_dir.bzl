@@ -18,26 +18,17 @@ def declare_resource_dir(name, resource_dir):
         data = [name + "_resource_directory"],
         format = {"resource_dir": name + "_resource_directory"},
     )
-    cc_args_list(
-        name = name + "_generic_resource_dir",
-        args = select({
-            "@llvm//toolchain:runtimes_none": [],
-            "//conditions:default": [name + "_link_resource_dir"],
-        }),
-    )
-    cc_args_list(
-        name = name + "_msvc_resource_dir",
-        args = select({
-            "@llvm//toolchain:runtimes_all": [name + "_link_resource_dir"],
-            "//conditions:default": [],
-        }),
-    )
+
+    # Stage0 builds runtime libraries consumed by //runtimes:resource_directory
+    # (including compiler-rt builtins), so it must not depend on that tree.
+    # Later stages share the directory policy across ABIs, independently of
+    # whether their rtlib arguments select compiler-rt; see //toolchain/runtimes:rtlib.
     args = name + "_resource_dir"
     cc_args_list(
         name = args,
         args = select({
-            "@llvm//constraints/windows/abi:msvc": [name + "_msvc_resource_dir"],
-            "//conditions:default": [name + "_generic_resource_dir"],
+            "@llvm//toolchain:runtimes_none": [],
+            "//conditions:default": [name + "_link_resource_dir"],
         }),
     )
     return args
