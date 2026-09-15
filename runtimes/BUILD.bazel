@@ -385,9 +385,11 @@ alias(
     visibility = ["//visibility:public"],
 )
 
+# The runtime alias already owns the file-stem name Gazelle would generate.
+# Preserve the source of this explicitly named support library.
 bzl_library(
     name = "resource_directory_bzl",
-    srcs = ["resource_directory.bzl"],
+    srcs = ["resource_directory.bzl"],  # keep
     visibility = ["//visibility:public"],
     deps = [
         "//constraints/windows/abi:abis",

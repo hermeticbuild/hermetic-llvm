@@ -707,6 +707,8 @@ cc_test(
             "-fno-implicit-module-maps",
         ],
     }),
+    # Keep compilation remote, but execute the test on the CI host.
+    exec_properties = {"test.no-remote": "1"},
     # Exercise driver ordering, independently of crosstool module ownership.
     features = [
         "-layering_check",
