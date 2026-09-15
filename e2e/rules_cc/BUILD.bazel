@@ -39,6 +39,7 @@ load(
 )
 load(":bazel_version.bzl", "validate_static_library_compatible")
 load(":musl_header_generation_tests.bzl", "musl_header_generation_tests")
+load(":resource_directory_test.bzl", "resource_directory_compile")
 load(":windows_msvc_artifacts.bzl", "windows_msvc_artifacts")
 load(":windows_runtime_dynamic_libraries_test.bzl", "windows_runtime_dynamic_libraries_assertion")
 
@@ -693,6 +694,37 @@ cc_test(
         # We do not support musl libc.so
         "@llvm//constraints/libc:musl": ["@platforms//:incompatible"],
         "//conditions:default": [],
+    }),
+)
+
+cc_test(
+    name = "resource_headers_test",
+    size = "small",
+    srcs = ["resource_headers_test.cc"],
+    copts = select({
+        ":windows_msvc_abi": [],
+        "//conditions:default": [
+            "-fmodules",
+            "-fno-implicit-module-maps",
+        ],
+    }),
+    data = ["resource_headers_mixed"],
+    # Exercise driver ordering, independently of crosstool module ownership.
+    features = [
+        "-layering_check",
+        "-module_maps",
+    ],
+)
+
+resource_directory_compile(
+    name = "resource_headers_mixed",
+    src = "resource_headers_test.cc",
+    copts = select({
+        ":windows_msvc_abi": [],
+        "//conditions:default": [
+            "-fmodules",
+            "-fno-implicit-module-maps",
+        ],
     }),
 )
 

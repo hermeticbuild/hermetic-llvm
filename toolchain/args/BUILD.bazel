@@ -30,41 +30,6 @@ _CLANG_CL_CXX_FRONTEND_ACTIONS = [
 # -mcpu for arm assembly
 
 cc_args(
-    name = "resource_dir",
-    actions = [
-        "@rules_cc//cc/toolchains/actions:link_actions",
-    ],
-    args = [
-        "-resource-dir",
-        "{resource_dir}",
-    ],
-    data = [
-        "//runtimes:resource_directory",
-    ],
-    format = {
-        "resource_dir": "//runtimes:resource_directory",
-    },
-)
-
-cc_args(
-    name = "clang_cl_resource_dir",
-    actions = [
-        "@rules_cc//cc/toolchains/actions:link_actions",
-    ],
-    # clang-cl's response parser requires the option and its value in one
-    # token. Keep the personality-specific implementation separate so it can
-    # be chosen while constructing the toolchain without consulting the
-    # current-toolchain compiler flag and creating a dependency cycle.
-    args = ["-resource-dir={resource_dir}"],
-    data = [
-        "//runtimes:resource_directory",
-    ],
-    format = {
-        "resource_dir": "//runtimes:resource_directory",
-    },
-)
-
-cc_args(
     name = "clang_cl_suppress_compiler_banner",
     actions = ["@rules_cc//cc/toolchains/actions:source_compile_actions"],
     args = ["/nologo"],
@@ -203,7 +168,12 @@ cc_args(
     name = "clang_cl_cxxstdlib_headers_include_search_paths",
     actions = _CLANG_CL_CXX_FRONTEND_ACTIONS,
     args = select({
-        "//toolchain:runtimes_all": ["/imsvc{cxxstdlib_headers_include_search_path}"],
+        # /imsvc comes after implicit builtins. libc++ wrappers must precede
+        # them, so use the Clang system-include category instead.
+        "//toolchain:runtimes_all": [
+            "/clang:-isystem",
+            "/clang:{cxxstdlib_headers_include_search_path}",
+        ],
         "//conditions:default": [],
     }),
     data = select({
@@ -295,13 +265,10 @@ cc_args(
         "//constraints/windows/abi:msvc": _CLANG_CL_FRONTEND_ACTIONS,
         "//conditions:default": ["@rules_cc//cc/toolchains/actions:source_compile_actions"],
     }),
-    args = select({
-        "//constraints/windows/abi:msvc": ["/clang:-no-canonical-prefixes"],
-        # If the compiler sometimes rewrites paths in the .d files without
-        # symlinks (for example, when they are shorter), Bazel can no longer
-        # match included headers to declared action inputs.
-        "//conditions:default": ["-no-canonical-prefixes"],
-    }),
+    # Needed before executable-path resolution, including in clang-cl mode:
+    # /clang: forwarding happens too late and makes implicit resource headers
+    # absolute in dependency files, where Bazel cannot match declared inputs.
+    args = ["-no-canonical-prefixes"],
 )
 
 cc_args(
@@ -1136,12 +1103,6 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:cpp_header_parsing",
     ],
     args = ["-Wno-unused-command-line-argument"],
-)
-
-bzl_library(
-    name = "compiler_resource_headers",
-    srcs = ["compiler_resource_headers.bzl"],
-    deps = ["@rules_cc//cc/toolchains:toolchain_rules"],
 )
 
 bzl_library(

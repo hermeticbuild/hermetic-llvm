@@ -1,5 +1,5 @@
 load("//platforms:common.bzl", "MSVC_TARGET_STAGE0_SUPPORTED_EXECS", "SUPPORTED_EXECS", "SUPPORTED_TARGETS")
-load("//toolchain:selects.bzl", "clang_cl_resource_dir_arg", "platform_cc_tool_map", "platform_module_map", "resource_dir_arg")
+load("//toolchain:selects.bzl", "platform_cc_tool_map", "platform_compiler_resources", "platform_module_map")
 load(":cc_toolchain.bzl", "cc_toolchain")
 
 def declare_toolchains(*, execs = SUPPORTED_EXECS, targets = SUPPORTED_TARGETS):
@@ -18,21 +18,20 @@ def declare_toolchains(*, execs = SUPPORTED_EXECS, targets = SUPPORTED_TARGETS):
         cc_toolchain(
             name = cc_toolchain_name,
             tool_map = platform_cc_tool_map(exec_os, exec_cpu),
+            compiler_resources = platform_compiler_resources(exec_os, exec_cpu),
             module_map = platform_module_map(exec_os, exec_cpu),
             # Paths below describe the concrete execution filesystem. Keep
             # target semantics in //toolchain's ordered argument composition.
             extra_args = select({
                 "@llvm//platforms/config:windows_x86_64_msvc": [
                     "@llvm//toolchain/args/windows/msvc:normalized_default_libs_for_runtime",
-                    clang_cl_resource_dir_arg(exec_os, exec_cpu),
                     "@llvm//toolchain/args/windows/msvc:normalized_sdk_compile_args",
                 ],
                 "@llvm//platforms/config:windows_aarch64_msvc": [
                     "@llvm//toolchain/args/windows/msvc:normalized_default_libs_for_runtime",
-                    clang_cl_resource_dir_arg(exec_os, exec_cpu),
                     "@llvm//toolchain/args/windows/msvc:normalized_sdk_compile_args",
                 ],
-                "//conditions:default": [resource_dir_arg(exec_os, exec_cpu)],
+                "//conditions:default": [],
             }),
         )
 

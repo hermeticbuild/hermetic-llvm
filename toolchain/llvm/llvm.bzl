@@ -3,7 +3,6 @@ load("@llvm//runtimes:module_map.bzl", "include_path", "module_map")
 load("@rules_cc//cc/toolchains:tool.bzl", "cc_tool")
 load("@rules_cc//cc/toolchains:tool_map.bzl", "cc_tool_map")
 load("//:directory.bzl", "headers_directory")
-load("//toolchain/args:compiler_resource_headers.bzl", "declare_clang_cl_compile_resource_headers", "declare_clang_compile_resource_headers")
 
 _VALIDATE_STATIC_LIBRARY_TOOL = {
     "@rules_cc//cc/toolchains/actions:validate_static_library": ":static_library_validator",
@@ -71,22 +70,6 @@ def declare_llvm_targets(*, suffix = ""):
             "clangxx": ":clangxx_file",
         },
         allowlist_include_directories = [":builtin_resource_dir"],
-    )
-
-    declare_clang_compile_resource_headers(
-        name = "compile_resource_dir",
-        resource_include_directory = "builtin_resource_include_dir",
-        # The clang tool already declares this parent tree. Reuse that exact
-        # artifact instead of adding its nested include tree as a second action
-        # input, which local Bazel sandboxes cannot materialize concurrently.
-        resource_headers_data = "builtin_resource_dir",
-        visibility = ["//visibility:public"],
-    )
-
-    declare_clang_cl_compile_resource_headers(
-        name = "clang_cl_compile_resource_dir",
-        resource_include_directory = "builtin_resource_include_dir",
-        visibility = ["//visibility:public"],
     )
 
     cc_tool(
@@ -282,7 +265,7 @@ def declare_llvm_targets(*, suffix = ""):
         name = "clang-cl",
         src = "bin/clang-cl" + suffix,
         data = [
-            ":builtin_resource_include_dir",
+            ":builtin_resource_dir",
             "bin/lld-link" + suffix,
         ],
         capabilities = [
@@ -295,7 +278,7 @@ def declare_llvm_targets(*, suffix = ""):
             # /lldignoreenv prevents the child linker from consuming it.
             "LIB": "__hermetic_llvm_empty_lib__",
         },
-        allowlist_include_directories = [":builtin_resource_include_dir"],
+        allowlist_include_directories = [":builtin_resource_dir"],
     )
 
     cc_tool(

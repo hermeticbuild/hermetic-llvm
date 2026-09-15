@@ -1,0 +1,45 @@
+load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@llvm//toolchain:resource_directory.bzl", "resource_directory")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+
+filegroup(
+    name = "compiler",
+    srcs = ["compiler_files"],
+)
+
+filegroup(
+    name = "runtimes",
+    srcs = ["runtime_files"],
+)
+
+copy_to_directory(
+    name = "generated_compiler",
+    srcs = ["compiler"],
+    root_paths = ["resource_directory_layout/compiler_files"],
+)
+
+[
+    resource_directory(
+        name = compiler + "_resource_directory",
+        compiler_resources = compiler,
+        runtimes = "runtimes",
+    )
+    for compiler in [
+        "compiler",
+        "generated_compiler",
+    ]
+]
+
+sh_test(
+    name = "layout_test",
+    size = "small",
+    srcs = ["layout_test.sh"],
+    args = [
+        "$(rootpath compiler_resource_directory)",
+        "$(rootpath generated_compiler_resource_directory)",
+    ],
+    data = [
+        "compiler_resource_directory",
+        "generated_compiler_resource_directory",
+    ],
+)

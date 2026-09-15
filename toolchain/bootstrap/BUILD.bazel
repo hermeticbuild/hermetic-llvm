@@ -9,6 +9,7 @@ bzl_library(
         "//tools:defs",
         "@bazel_lib//lib:copy_file",
         "@bazel_lib//lib:copy_to_directory",
+        "@bazel_skylib//rules/directory:providers",
     ],
 )
 
@@ -40,7 +41,6 @@ bzl_library(
         ":bootstrap_binary",
         "//platforms:common",
         "//toolchain:cc_toolchain",
-        "//toolchain/args:compiler_resource_headers",
         "@llvm-project//:version",
         "@rules_cc//cc/toolchains:toolchain_rules",
     ],

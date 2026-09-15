@@ -1,14 +1,44 @@
+load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 load("@rules_cc//cc/toolchains:feature_set.bzl", "cc_feature_set")
 load("@rules_cc//cc/toolchains:toolchain.bzl", _cc_toolchain = "cc_toolchain")
+load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
+load(":resource_directory.bzl", "resource_directory")
 
 _WINDOWS_MSVC_SUPPORTS_HEADER_PARSING = False
 
 def cc_toolchain(
         name,
         tool_map,
+        compiler_resources,
         module_map = None,
         extra_args = None):
     extra_args = extra_args or []
+    resource_directory(
+        name = name + "_resource_directory",
+        compiler_resources = compiler_resources,
+    )
+    cc_args(
+        name = name + "_link_resource_dir",
+        actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+        # The joined form works with both Clang and clang-cl response files.
+        args = ["-resource-dir={resource_dir}"],
+        data = [name + "_resource_directory"],
+        format = {"resource_dir": name + "_resource_directory"},
+    )
+    cc_args_list(
+        name = name + "_generic_resource_dir",
+        args = select({
+            "@llvm//toolchain:runtimes_none": [],
+            "//conditions:default": [name + "_link_resource_dir"],
+        }),
+    )
+    cc_args_list(
+        name = name + "_msvc_resource_dir",
+        args = select({
+            "@llvm//toolchain:runtimes_all": [name + "_link_resource_dir"],
+            "//conditions:default": [],
+        }),
+    )
     cc_feature_set(
         name = name + "_msvc_known_features",
         all_of = [
@@ -265,14 +295,14 @@ def cc_toolchain(
 
     _cc_toolchain(
         name = name,
-        # libc++ headers are part of semantic platform args. Keep Clang's
-        # declared resource headers between them and VC/UCRT so libc++
-        # include_next wrappers resolve Clang definitions first.
         args = select({
             "@llvm//toolchain:runtimes_none": ["@llvm//toolchain/runtimes:toolchain_args"],
             "@llvm//toolchain:runtimes_stage1": ["@llvm//toolchain/runtimes:toolchain_args"],
             "@llvm//toolchain:runtimes_stage1_hosted": ["@llvm//toolchain/runtimes:toolchain_args"],
             "//conditions:default": ["@llvm//toolchain:toolchain_args"],
+        }) + select({
+            "@llvm//constraints/windows/abi:msvc": [name + "_msvc_resource_dir"],
+            "//conditions:default": [name + "_generic_resource_dir"],
         }) + extra_args,
         # clang-cl header parsing remains a named unsupported boundary. It can
         # become true only with a dialect-correct parse-only action and proved

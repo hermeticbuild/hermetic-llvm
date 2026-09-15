@@ -4,7 +4,6 @@ load("@rules_cc//cc/toolchains:tool.bzl", "cc_tool")
 load("@rules_cc//cc/toolchains:tool_map.bzl", "cc_tool_map")
 load("//platforms:common.bzl", "MSVC_TARGET_BOOTSTRAP_SUPPORTED_EXECS", "SUPPORTED_TARGETS")
 load("//toolchain:cc_toolchain.bzl", "cc_toolchain")
-load("//toolchain/args:compiler_resource_headers.bzl", "declare_clang_cl_compile_resource_headers", "declare_clang_compile_resource_headers")
 load(":bootstrap_binary.bzl", "bootstrap_binary", "bootstrap_directory")
 
 def _validate_static_library_tool(prefix):
@@ -30,7 +29,7 @@ def _declare_exec_platform(exec_os, exec_cpu):
         ],
     )
 
-def _bootstrap_cc_tool(prefix, tool, bootstrap_binary_kwargs, *, capabilities = [], data = [], env = {}, symlink = True):
+def _bootstrap_cc_tool(prefix, tool, bootstrap_binary_kwargs, *, capabilities = [], data = [], env = {}, symlink = True, allowlist_include_directories = []):
     binary = prefix + "/bin/" + tool
     bootstrap_binary(
         name = binary,
@@ -44,6 +43,7 @@ def _bootstrap_cc_tool(prefix, tool, bootstrap_binary_kwargs, *, capabilities = 
         capabilities = capabilities,
         data = data,
         env = env,
+        allowlist_include_directories = allowlist_include_directories,
     )
 
 def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_instrumented = False):
@@ -189,31 +189,21 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
         }),
     )
 
-    # Materialize each source-built compiler's matching Clang resource headers
-    # in the conventional location under the same stage prefix as its binaries.
-    # Shared compiler-personality arguments disable implicit driver insertion
-    # and re-add this declared directory with the intended search ordering.
+    # Keep compiler resources at the driver's default path, independent of
+    # target runtimes. The same tree also supplies link-directory composition.
     bootstrap_directory(
-        name = prefix + "/clang_builtin_headers_include_directory",
-        srcs = "@llvm-project//clang:builtin_headers_files",
+        name = prefix + "/clang_resource_directory",
+        srcs = [
+            "@llvm-project//clang:builtin_headers_files",
+            "@llvm-project//compiler-rt:resource_share_files",
+        ],
         # TODO(zbarsky): Probably shouldn't force platform here.
         platform = platform_name,
-        destination = prefix + "/lib/clang/{}/include".format(LLVM_VERSION_MAJOR),
-        strip_prefix = "clang/lib/Headers",
-    )
-
-    declare_clang_compile_resource_headers(
-        name = prefix + "/compile_resource_dir",
-        resource_include_directory = prefix + "/clang_builtin_headers_include_directory",
-        # bootstrap_directory exposes a declared tree artifact rather than the
-        # DirectoryInfo provider accepted by allowlist_include_directories.
-        allowlist_include_directories = [],
-    )
-
-    declare_clang_cl_compile_resource_headers(
-        name = prefix + "/clang_cl_compile_resource_dir",
-        resource_include_directory = prefix + "/clang_builtin_headers_include_directory",
-        allowlist_include_directories = [],
+        destination = prefix + "/lib/clang/{}".format(LLVM_VERSION_MAJOR),
+        replace_prefixes = {
+            "clang/lib/Headers": "include",
+            "compiler-rt/lib/*/": "share/",
+        },
     )
 
     _bootstrap_cc_tool(
@@ -221,9 +211,10 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
         "clang",
         bootstrap_binary_kwargs,
         data = [
-            prefix + "/clang_builtin_headers_include_directory",
+            prefix + "/clang_resource_directory",
         ],
         capabilities = ["@rules_cc//cc/toolchains/capabilities:supports_pic"],
+        allowlist_include_directories = [prefix + "/clang_resource_directory"],
     )
 
     _bootstrap_cc_tool(
@@ -234,21 +225,21 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
         # This is crucial for properly locating the various linkers, since we don't use `-ld-path`.
         symlink = False,
         data = [
-            prefix + "/clang_builtin_headers_include_directory",
+            prefix + "/clang_resource_directory",
         ],
         capabilities = ["@rules_cc//cc/toolchains/capabilities:supports_pic"],
+        allowlist_include_directories = [prefix + "/clang_resource_directory"],
     )
 
     _bootstrap_cc_tool(
         prefix,
         "clang-cl",
         bootstrap_binary_kwargs,
-        # Copy instead of symlink so clang-cl's InstalledDir contains the
-        # declared sibling lld-link. Its /clang:-no-canonical-prefixes flag is
-        # not visible during the driver's early executable-path resolution.
+        # Link actions don't carry the compile-only -no-canonical-prefixes.
+        # Copy so their InstalledDir still contains the declared lld-link.
         symlink = False,
         data = [
-            prefix + "/clang_builtin_headers_include_directory",
+            prefix + "/clang_resource_directory",
             prefix + "/bin/lld-link",
         ],
         capabilities = [
@@ -261,6 +252,7 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
             # /lldignoreenv prevents the child linker from consuming it.
             "LIB": "__hermetic_llvm_empty_lib__",
         },
+        allowlist_include_directories = [prefix + "/clang_resource_directory"],
     )
 
     # clang-cl discovers this raw sibling by InstalledDir. It is action data,
@@ -289,7 +281,7 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
         name = prefix + "/header-parser",
         src = prefix + "/bin/header-parser",
         data = [
-            prefix + "/clang_builtin_headers_include_directory",
+            prefix + "/clang_resource_directory",
             prefix + "/bin/clang++",
         ],
         env = {
@@ -298,6 +290,7 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
         format = {
             "clangxx": prefix + "/bin/clang++",
         },
+        allowlist_include_directories = [prefix + "/clang_resource_directory"],
     )
 
     for tool in [
@@ -519,18 +512,17 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
             # See https://github.com/bazelbuild/rules_cc/issues/299#issuecomment-2660340534
             cc_toolchain(
                 name = cc_toolchain_name,
+                compiler_resources = tool_prefix + "/clang_resource_directory",
                 extra_args = select({
                     "@llvm//platforms/config:windows_x86_64_msvc": [
                         "@llvm//toolchain/args/windows/msvc:normalized_default_libs_for_runtime",
-                        "%s/clang_cl_compile_resource_dir" % tool_prefix,
                         "@llvm//toolchain/args/windows/msvc:normalized_sdk_compile_args",
                     ],
                     "@llvm//platforms/config:windows_aarch64_msvc": [
                         "@llvm//toolchain/args/windows/msvc:normalized_default_libs_for_runtime",
-                        "%s/clang_cl_compile_resource_dir" % tool_prefix,
                         "@llvm//toolchain/args/windows/msvc:normalized_sdk_compile_args",
                     ],
-                    "//conditions:default": ["%s/compile_resource_dir" % tool_prefix],
+                    "//conditions:default": [],
                 }),
                 tool_map = select({
                     "@llvm//platforms/config:windows_x86_64_msvc": ":%s/tools_for_msvc_for_runtime" % tool_prefix,

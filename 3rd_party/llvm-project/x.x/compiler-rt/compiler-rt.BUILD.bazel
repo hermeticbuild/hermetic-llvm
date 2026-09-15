@@ -48,6 +48,12 @@ config_setting(
 weak_symbols_in_sync_tests()
 
 filegroup(
+    name = "resource_share_files",
+    srcs = glob(["lib/*/*ignorelist.txt"]),
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
     name = "asan_ignorelist",
     srcs = ["lib/asan/asan_ignorelist.txt"],
     visibility = ["//visibility:public"],

@@ -1,5 +1,6 @@
 load("@bazel_lib//lib:copy_file.bzl", "COPY_FILE_TOOLCHAINS", "copy_file_action")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory_bin_action")
+load("@bazel_skylib//rules/directory:providers.bzl", "create_directory_info")
 load("//tools:defs.bzl", "TOOLCHAIN_BINARIES")
 load(":transition_settings.bzl", "LLVM_TOOLS", "SANITIZER_FLAGS", "disable_sanitizers")
 
@@ -154,16 +155,24 @@ def _bootstrap_directory_impl(ctx):
         copy_to_directory_bin = copy_to_directory_bin,
         dst = dst,
         files = ctx.files.srcs,
-        replace_prefixes = {ctx.attr.strip_prefix: ""},
+        replace_prefixes = ctx.attr.replace_prefixes,
         include_external_repositories = ["**"],
     )
 
-    return DefaultInfo(files = depset([dst]))
+    return [
+        DefaultInfo(files = depset([dst])),
+        create_directory_info(
+            entries = {},
+            human_readable = str(ctx.label),
+            path = dst.path,
+            transitive_files = depset([dst]),
+        ),
+    ]
 
 bootstrap_directory = rule(
     implementation = _bootstrap_directory_impl,
     attrs = {
-        "srcs": attr.label(
+        "srcs": attr.label_list(
             cfg = bootstrap_transition,
             mandatory = True,
         ),
@@ -171,7 +180,7 @@ bootstrap_directory = rule(
             default = None,
             doc = "If set, collect sources under this platform instead of the incoming target platform.",
         ),
-        "strip_prefix": attr.string(mandatory = True),
+        "replace_prefixes": attr.string_dict(mandatory = True),
         "destination": attr.string(mandatory = True),
     },
     toolchains = ["@bazel_lib//lib:copy_to_directory_toolchain_type"],

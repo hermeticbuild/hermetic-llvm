@@ -24,17 +24,6 @@ cc_args_list(
 )
 
 cc_args_list(
-    name = "resource_dir",
-    # The fixed native MSVC-ABI route uses the clang-cl personality. Keep the
-    # personality implementation outside this package and compose it here at
-    # the supported Windows route boundary.
-    args = select({
-        "//constraints/windows/abi:msvc": ["//toolchain/args:clang_cl_resource_dir"],
-        "//conditions:default": ["//toolchain/args:resource_dir"],
-    }),
-)
-
-cc_args_list(
     name = "default_libs",
     args = select({
         # MSVC SDK representation follows the execution filesystem, so each
