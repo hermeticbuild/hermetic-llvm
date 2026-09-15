@@ -4,7 +4,8 @@ load("@rules_cc//cc/toolchains:tool.bzl", "cc_tool")
 load("@rules_cc//cc/toolchains:tool_map.bzl", "cc_tool_map")
 load("//platforms:common.bzl", "MSVC_TARGET_BOOTSTRAP_SUPPORTED_EXECS", "SUPPORTED_TARGETS")
 load("//toolchain:cc_toolchain.bzl", "cc_toolchain")
-load("//toolchain/args:resource_dir.bzl", "declare_resource_dir")
+load("//toolchain:merged_resource_directory.bzl", "merged_resource_directory")
+load("//toolchain/args:resource_directory_args.bzl", "resource_directory_args")
 load(":bootstrap_binary.bzl", "bootstrap_binary", "bootstrap_directory")
 
 def _validate_static_library_tool(prefix):
@@ -507,9 +508,14 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
             ("stage1", stage1_prefix, "@llvm//toolchain:bootstrap_stage1_from_source"),
         ]:
             cc_toolchain_name = "%s_%s_%s_cc_toolchain" % (stage_name, exec_os, exec_cpu)
-            resource_dir_args = declare_resource_dir(
-                name = cc_toolchain_name,
-                resource_dir = tool_prefix + "/clang_resource_directory",
+            merged_resource_directory(
+                name = cc_toolchain_name + "_resource_directory",
+                parent = tool_prefix + "/clang_resource_directory",
+                srcs = ["@llvm//runtimes:resource_directory"],
+            )
+            resource_directory_args(
+                name = cc_toolchain_name + "_resource_directory_args",
+                directory = cc_toolchain_name + "_resource_directory",
             )
 
             # Even though `tool_map` has an exec transition, Bazel doesn't properly handle
@@ -517,7 +523,7 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
             # See https://github.com/bazelbuild/rules_cc/issues/299#issuecomment-2660340534
             cc_toolchain(
                 name = cc_toolchain_name,
-                extra_args = [resource_dir_args] + select({
+                extra_args = [cc_toolchain_name + "_resource_directory_args"] + select({
                     "@llvm//platforms/config:windows_x86_64_msvc": [
                         "@llvm//toolchain/args/windows/msvc:normalized_default_libs_for_runtime",
                         "@llvm//toolchain/args/windows/msvc:normalized_sdk_compile_args",

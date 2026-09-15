@@ -6,7 +6,7 @@ load("@llvm-project//:vars.bzl", "LLVM_VERSION_MAJOR")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//toolchain/args:llvm_target_triple.bzl", "LLVM_TARGET_TRIPLE")
 load("//toolchain/runtimes:cc_stage0_object.bzl", "cc_stage0_object")
-load(":copy_to_resource_directory.bzl", "copy_to_resource_directory")
+load(":resource_directory.bzl", "resource_directory")
 
 exports_files(["module_map.BUILD.bazel"])
 
@@ -215,7 +215,7 @@ alias(
     visibility = ["//visibility:public"],
 )
 
-copy_to_resource_directory(
+resource_directory(
     name = "resource_directory_default",
     srcs = select({
         "//platforms/config:none_bpfeb": {},
@@ -329,7 +329,7 @@ copy_to_resource_directory(
 # static archives, libclang_rt.<name>_osx_dynamic.dylib for shared runtimes).
 # Runtimes that upstream does not build on Darwin (msan, dfsan, hwasan,
 # safestack, scudo, gwp_asan, cfi, nsan, rtsan, tysan) are intentionally absent.
-copy_to_resource_directory(
+resource_directory(
     name = "resource_directory_macos",
     srcs = select({
         "//config:asan_enabled": {
@@ -386,8 +386,8 @@ alias(
 )
 
 bzl_library(
-    name = "copy_to_resource_directory",
-    srcs = ["copy_to_resource_directory.bzl"],
+    name = "resource_directory_bzl",
+    srcs = ["resource_directory.bzl"],
     visibility = ["//visibility:public"],
     deps = [
         "//constraints/windows/abi:abis",

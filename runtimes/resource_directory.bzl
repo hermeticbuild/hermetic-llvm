@@ -1,3 +1,5 @@
+"""Arrange files in Clang's lib/<target_triple>/ resource layout."""
+
 load("@bazel_lib//lib:copy_file.bzl", "COPY_FILE_TOOLCHAINS", "copy_file_action")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory_bin_action")
 load("//constraints/windows/abi:abis.bzl", "WINDOWS_TARGET_TRIPLES_BY_CONFIG")
@@ -27,7 +29,7 @@ TRIPLE_SELECT_DICT = {
     "@llvm//platforms/config:none_wasm64": "wasm64-unknown-unknown",
 } | WINDOWS_TARGET_TRIPLES_BY_CONFIG
 
-def _copy_to_resource_directory_rule_impl(ctx):
+def _resource_directory_impl(ctx):
     # Private staging folder inside the output-dir layout before we rewrite prefixes.
     staging_prefix = "_%s_staging" % ctx.label.name
 
@@ -61,9 +63,9 @@ def _copy_to_resource_directory_rule_impl(ctx):
 
     return [DefaultInfo(files = depset([out_dir]))]
 
-copy_to_resource_directory_rule = rule(
+_resource_directory = rule(
     doc = "Copies the given srcs into a resource directory layout under lib/<triple>/.",
-    implementation = _copy_to_resource_directory_rule_impl,
+    implementation = _resource_directory_impl,
     attrs = {
         "srcs": attr.label_keyed_string_dict(
             doc = "Dict of label -> basename. Each value is the filename to appear under lib/<triple>/",
@@ -79,15 +81,15 @@ copy_to_resource_directory_rule = rule(
     ],
 )
 
-def _copy_to_resource_directory_macro_impl(name, srcs, target_triple, **kwargs):
-    return copy_to_resource_directory_rule(
+def _resource_directory_macro_impl(name, srcs, target_triple, **kwargs):
+    _resource_directory(
         name = name,
         srcs = srcs,
         target_triple = target_triple if target_triple else select(TRIPLE_SELECT_DICT),
         **kwargs
     )
 
-copy_to_resource_directory = macro(
-    implementation = _copy_to_resource_directory_macro_impl,
-    inherit_attrs = copy_to_resource_directory_rule,
+resource_directory = macro(
+    implementation = _resource_directory_macro_impl,
+    inherit_attrs = _resource_directory,
 )

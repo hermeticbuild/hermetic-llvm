@@ -546,8 +546,8 @@ bzl_library(
 )
 
 bzl_library(
-    name = "resource_directory",
-    srcs = ["resource_directory.bzl"],
+    name = "merged_resource_directory",
+    srcs = ["merged_resource_directory.bzl"],
     deps = ["@bazel_lib//lib:copy_to_directory"],
 )
 
@@ -556,9 +556,10 @@ bzl_library(
     srcs = ["declare_toolchains.bzl"],
     deps = [
         ":cc_toolchain",
+        ":merged_resource_directory",
         ":selects",
         "//platforms:common",
-        "//toolchain/args:resource_dir",
+        "//toolchain/args:resource_directory_args",
     ],
 )
 

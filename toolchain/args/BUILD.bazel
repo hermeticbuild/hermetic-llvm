@@ -1106,12 +1106,9 @@ cc_args(
 )
 
 bzl_library(
-    name = "resource_dir",
-    srcs = ["resource_dir.bzl"],
-    deps = [
-        "//toolchain:resource_directory",
-        "@rules_cc//cc/toolchains:toolchain_rules",
-    ],
+    name = "resource_directory_args",
+    srcs = ["resource_directory_args.bzl"],
+    deps = ["@rules_cc//cc/toolchains:toolchain_rules"],
 )
 
 bzl_library(
