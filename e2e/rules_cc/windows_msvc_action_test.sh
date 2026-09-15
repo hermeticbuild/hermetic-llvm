@@ -46,6 +46,11 @@ assert_before() {
     fail "${file} does not order ${first} before ${second}"
 }
 
+assert_empty_file() {
+  local file="$1"
+  [[ -f "${file}" && ! -s "${file}" ]] || fail "${file} is not an empty output marker"
+}
+
 action_dir="$(mktemp -d "${RUNNER_TEMP:-/tmp}/windows-msvc-actions.XXXXXX")"
 common_flags=(
   "$@"
@@ -57,6 +62,61 @@ mingw_flags=(
   "$@"
   --platforms=@llvm//platforms:windows_x86_64
 )
+
+for parse_cpu in x86_64 aarch64; do
+  parse_flags=(
+    "$@"
+    --platforms="@llvm//platforms:windows_${parse_cpu}_msvc"
+    --repo_env=BAZEL_MSVC_RUNTIME_VISUAL_STUDIO_EULA=1
+    --repo_env=BAZEL_WINDOWS_SDK_EULA=1
+  )
+  for parse_language in cpp c; do
+    bazel --bazelrc=.bazelrc aquery "${parse_flags[@]}" \
+      --features=-compiler_param_file \
+      --include_param_files \
+      --output=text \
+      "inputs(\"windows_msvc_parse_headers_${parse_language}[.]h\", //:windows_msvc_parse_headers_${parse_language})" \
+      >"${action_dir}/parse-headers-${parse_cpu}-${parse_language}.txt"
+  done
+  bazel --bazelrc=.bazelrc build "${parse_flags[@]}" \
+    --output_groups=compilation_outputs \
+    //:windows_msvc_parse_headers_c \
+    //:windows_msvc_parse_headers_cpp
+
+  cpp_parse_action="${action_dir}/parse-headers-${parse_cpu}-cpp.txt"
+  c_parse_action="${action_dir}/parse-headers-${parse_cpu}-c.txt"
+  assert_contains "${cpp_parse_action}" "header-parser"
+  assert_contains "${cpp_parse_action}" "bin/clang-cl"
+  assert_contains "${cpp_parse_action}" "/TP"
+  assert_contains "${cpp_parse_action}" "/clang:-fsyntax-only"
+  assert_contains "${cpp_parse_action}" "windows_msvc_parse_headers_cpp.h.processed"
+  assert_contains "${cpp_parse_action}" "windows_msvc_parse_headers_cpp.cppmap"
+  assert_contains "${cpp_parse_action}" "windows_msvc_libcxx_behavior_support.cppmap"
+  assert_contains "${cpp_parse_action}" "module_map.modulemap"
+  assert_contains "${cpp_parse_action}" "msvc_sdk_header_case_overlay.yaml"
+  assert_contains "${cpp_parse_action}" "msvc_com_support_headers_source"
+  assert_contains "${cpp_parse_action}" "msvc_vcruntime_headers_source"
+  assert_contains "${cpp_parse_action}" "windows_sdk/sysroot/base/c/Include"
+  assert_contains "${cpp_parse_action}" "libcxx_headers_include_search_directory"
+  assert_absent "${cpp_parse_action}" "mingw-w64"
+  assert_absent "${cpp_parse_action}" "msvc_include"
+  assert_command_absent "${cpp_parse_action}" "-xc++-header"
+  assert_command_absent "${cpp_parse_action}" "/std:c++20"
+
+  assert_contains "${c_parse_action}" "header-parser"
+  assert_contains "${c_parse_action}" "bin/clang-cl"
+  assert_contains "${c_parse_action}" "/TC"
+  assert_contains "${c_parse_action}" "/std:c17"
+  assert_contains "${c_parse_action}" "/clang:-fsyntax-only"
+  assert_contains "${c_parse_action}" "windows_msvc_parse_headers_c.h.processed"
+  assert_contains "${c_parse_action}" "windows_msvc_parse_headers_c.cppmap"
+  assert_contains "${c_parse_action}" "module_map.modulemap"
+  assert_command_absent "${c_parse_action}" "-xc-header"
+  assert_command_absent "${c_parse_action}" "/TP"
+
+  assert_empty_file "bazel-bin/_objs/windows_msvc_parse_headers_cpp/windows_msvc_parse_headers_cpp.h.processed"
+  assert_empty_file "bazel-bin/_objs/windows_msvc_parse_headers_c/windows_msvc_parse_headers_c.h.processed"
+done
 
 bazel --bazelrc=.bazelrc aquery "${mingw_flags[@]}" \
   --features=-compiler_param_file \
@@ -303,6 +363,7 @@ assert_contains "${action_dir}/compile.txt" ".params"
 assert_contains "${action_dir}/compile.txt" "libcxx_headers_include_search_directory"
 assert_contains "${action_dir}/compile.txt" "msvc_com_support_headers_source"
 assert_contains "${action_dir}/compile.txt" "msvc_sdk_header_case_overlay.yaml"
+assert_command_absent "${action_dir}/compile.txt" "header-parser"
 assert_absent "${action_dir}/compile.txt" "clang++"
 assert_absent "${action_dir}/compile.txt" "-fPIC"
 assert_absent "${action_dir}/compile.txt" "/std:c++20"

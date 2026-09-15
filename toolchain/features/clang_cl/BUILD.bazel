@@ -620,6 +620,67 @@ cc_feature(
 )
 
 cc_feature(
+    name = "parse_headers_as_c",
+    feature_name = "parse_headers_as_c",
+)
+
+cc_feature_constraint(
+    name = "parse_headers_as_cpp",
+    none_of = [":parse_headers_as_c"],
+)
+
+cc_args(
+    name = "parse_headers_output_args",
+    actions = ["@rules_cc//cc/toolchains/actions:cpp_header_parsing"],
+    env = {
+        "PARSE_HEADER": "{output_file}",
+    },
+    format = {
+        "output_file": "@rules_cc//cc/toolchains/variables:output_file",
+    },
+    requires_not_none = "@rules_cc//cc/toolchains/variables:output_file",
+)
+
+cc_args(
+    name = "parse_headers_as_cpp_args",
+    actions = ["@rules_cc//cc/toolchains/actions:cpp_header_parsing"],
+    args = [
+        "/TP",
+        "/clang:-fsyntax-only",
+        "/clang:-Qunused-arguments",
+    ],
+    requires_any_of = [":parse_headers_as_cpp"],
+)
+
+cc_args(
+    name = "parse_headers_as_c_args",
+    actions = ["@rules_cc//cc/toolchains/actions:cpp_header_parsing"],
+    args = [
+        "/TC",
+        "/std:c17",
+        "/clang:-fsyntax-only",
+        "/clang:-Qunused-arguments",
+    ],
+    requires_any_of = [":parse_headers_as_c"],
+)
+
+cc_feature(
+    name = "parse_headers",
+    feature_name = "parse_headers",
+)
+
+cc_feature(
+    name = "parse_headers_wrapper",
+    args = [
+        ":parse_headers_output_args",
+        ":parse_headers_as_cpp_args",
+        ":parse_headers_as_c_args",
+    ],
+    feature_name = "__clang_cl_parse_headers_wrapper",
+    requires_any_of = [":parse_headers"],
+)
+
+cc_feature(
     name = "module_maps",
     feature_name = "module_maps",
 )
@@ -717,6 +778,8 @@ cc_feature_set(
         ":compiler_param_file",
         ":def_file",
         ":layering_check",
+        ":parse_headers",
+        ":parse_headers_as_c",
         ":supports_start_end_lib",
         ":thin_lto",
         ":use_module_maps",
@@ -731,6 +794,7 @@ cc_feature_set(
         ":def_file",
         ":module_map_home_cwd",
         ":module_maps",
+        ":parse_headers_wrapper",
         ":windows_quoting_for_param_files",
     ],
 )

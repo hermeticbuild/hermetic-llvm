@@ -88,14 +88,22 @@ bazel --bazelrc=.bazelrc build \
   --platforms=@llvm//platforms:windows_x86_64_msvc \
   //:windows_msvc_generated_def_thinlto_binary
 
+for platform in windows_x86_64_msvc windows_aarch64_msvc; do
+  bazel --bazelrc=.bazelrc build \
+    "${common_flags[@]}" \
+    --nobuild \
+    --platforms="@llvm//platforms:${platform}" \
+    //:windows_msvc_parse_headers_c \
+    //:windows_msvc_parse_headers_cpp
+done
+
 expect_failure \
-  windows-msvc-header-parsing \
-  "MSVC ABI Layer 1 does not support feature(s): parse_headers" \
+  windows-msvc-c-header-defaults-to-cxx \
+  "error: expected ')'" \
   "${common_flags[@]}" \
-  --features=-layering_check \
-  --features=parse_headers \
+  --features=-parse_headers_as_c \
   --platforms=@llvm//platforms:windows_x86_64_msvc \
-  //:windows_msvc_crt_default_probe
+  //:windows_msvc_parse_headers_c
 
 expect_failure \
   windows-msvc-dynamic-libcxx \

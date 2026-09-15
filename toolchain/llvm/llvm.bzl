@@ -48,6 +48,11 @@ def declare_llvm_targets(*, suffix = ""):
     )
 
     native.filegroup(
+        name = "clangcl_file",
+        srcs = ["bin/clang-cl" + suffix],
+    )
+
+    native.filegroup(
         name = "dsymutil_file",
         srcs = ["bin/dsymutil" + suffix],
     )
@@ -69,6 +74,23 @@ def declare_llvm_targets(*, suffix = ""):
         },
         format = {
             "clangxx": ":clangxx_file",
+        },
+        allowlist_include_directories = [":builtin_resource_dir"],
+    )
+
+    cc_tool(
+        name = "header_parser_clang_cl",
+        src = "@llvm//tools/internal:header-parser",
+        data = [
+            ":builtin_resource_dir",
+            ":clangcl_file",
+        ],
+        env = {
+            "LIB": "__hermetic_llvm_empty_lib__",
+            "LLVM_CLANGXX": "{clangcl}",
+        },
+        format = {
+            "clangcl": ":clangcl_file",
         },
         allowlist_include_directories = [":builtin_resource_dir"],
     )
@@ -151,7 +173,7 @@ def declare_llvm_targets(*, suffix = ""):
         "@rules_cc//cc/toolchains/actions:linkstamp_compile": ":clang-cl",
         "@rules_cc//cc/toolchains/actions:lto_backend": ":clang-cl",
         "@rules_cc//cc/toolchains/actions:preprocess_assemble": ":clang-cl",
-        "@rules_cc//cc/toolchains/actions:cpp_header_parsing": ":clang-cl",
+        "@rules_cc//cc/toolchains/actions:cpp_header_parsing": ":header_parser_clang_cl",
         "@rules_cc//cc/toolchains/actions:ar_actions": ":llvm-ar",
         "@rules_cc//cc/toolchains/actions:cpp_link_executable": ":clang-cl",
         "@rules_cc//cc/toolchains/actions:cpp_link_dynamic_library": ":clang-cl",

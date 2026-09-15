@@ -1418,6 +1418,33 @@ cc_library(
 )
 
 cc_library(
+    name = "windows_msvc_parse_headers_cpp",
+    testonly = True,
+    hdrs = ["windows_msvc_parse_headers_cpp.h"],
+    features = ["parse_headers"],
+    target_compatible_with = [
+        "@llvm//constraints/windows/abi:msvc",
+        "@llvm//constraints/cxxstdlib:libcxx",
+        "@platforms//os:windows",
+    ],
+    deps = [":windows_msvc_libcxx_behavior_support"],
+)
+
+cc_library(
+    name = "windows_msvc_parse_headers_c",
+    testonly = True,
+    hdrs = ["windows_msvc_parse_headers_c.h"],
+    features = [
+        "parse_headers",
+        "parse_headers_as_c",
+    ],
+    target_compatible_with = [
+        "@llvm//constraints/windows/abi:msvc",
+        "@platforms//os:windows",
+    ],
+)
+
+cc_library(
     name = "windows_msvc_unsupported_feature_probe",
     testonly = True,
     srcs = ["windows_msvc_crt_default_probe.c"],

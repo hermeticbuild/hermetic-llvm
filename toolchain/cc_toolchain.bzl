@@ -1,7 +1,7 @@
 load("@rules_cc//cc/toolchains:feature_set.bzl", "cc_feature_set")
 load("@rules_cc//cc/toolchains:toolchain.bzl", _cc_toolchain = "cc_toolchain")
 
-_WINDOWS_MSVC_SUPPORTS_HEADER_PARSING = False
+_WINDOWS_MSVC_SUPPORTS_HEADER_PARSING = True
 
 def cc_toolchain(
         name,
@@ -274,9 +274,10 @@ def cc_toolchain(
             "@llvm//toolchain:runtimes_stage1_hosted": ["@llvm//toolchain/runtimes:toolchain_args"],
             "//conditions:default": ["@llvm//toolchain:toolchain_args"],
         }) + extra_args,
-        # clang-cl header parsing remains a named unsupported boundary. It can
-        # become true only with a dialect-correct parse-only action and proved
-        # module-map/layering behavior.
+        # Header parsing support is implemented by the selected compiler
+        # personality. The MSVC route uses clang-cl's parse-only dialect and an
+        # exec-platform wrapper that materializes Bazel's processed-header
+        # marker before invoking the compiler.
         supports_header_parsing = select({
             "@llvm//constraints/windows/abi:msvc": _WINDOWS_MSVC_SUPPORTS_HEADER_PARSING,
             "//conditions:default": True,

@@ -36,7 +36,6 @@ _UNSUPPORTED_FEATURES = [
     "nsan",
     "objc_arc",
     "openmp",
-    "parse_headers",
     "per_object_debug_info",
     "profile",
     "rtsan",
