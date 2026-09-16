@@ -1,4 +1,5 @@
 load("@bazel_features//:features.bzl", "bazel_features")
+load("@bazel_skylib//rules/directory:subdirectory.bzl", "subdirectory")
 load("@llvm-project//:vars.bzl", "LLVM_VERSION_MAJOR")
 load("@rules_cc//cc/toolchains:tool.bzl", "cc_tool")
 load("@rules_cc//cc/toolchains:tool_map.bzl", "cc_tool_map")
@@ -206,6 +207,13 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
             "clang/lib/Headers": "include",
             "compiler-rt/lib/*/": "share/",
         },
+        subdirectories = ["include"],
+    )
+
+    subdirectory(
+        name = prefix + "/clang_resource_include_directory",
+        parent = prefix + "/clang_resource_directory",
+        path = "include",
     )
 
     _bootstrap_cc_tool(
@@ -216,7 +224,7 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
             prefix + "/clang_resource_directory",
         ],
         capabilities = ["@rules_cc//cc/toolchains/capabilities:supports_pic"],
-        allowlist_include_directories = [prefix + "/clang_resource_directory"],
+        allowlist_include_directories = [prefix + "/clang_resource_include_directory"],
     )
 
     _bootstrap_cc_tool(
@@ -230,7 +238,7 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
             prefix + "/clang_resource_directory",
         ],
         capabilities = ["@rules_cc//cc/toolchains/capabilities:supports_pic"],
-        allowlist_include_directories = [prefix + "/clang_resource_directory"],
+        allowlist_include_directories = [prefix + "/clang_resource_include_directory"],
     )
 
     _bootstrap_cc_tool(
@@ -254,7 +262,7 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
             # /lldignoreenv prevents the child linker from consuming it.
             "LIB": "__hermetic_llvm_empty_lib__",
         },
-        allowlist_include_directories = [prefix + "/clang_resource_directory"],
+        allowlist_include_directories = [prefix + "/clang_resource_include_directory"],
     )
 
     # clang-cl discovers this raw sibling by InstalledDir. It is action data,
@@ -292,7 +300,7 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
         format = {
             "clangxx": prefix + "/bin/clang++",
         },
-        allowlist_include_directories = [prefix + "/clang_resource_directory"],
+        allowlist_include_directories = [prefix + "/clang_resource_include_directory"],
     )
 
     for tool in [

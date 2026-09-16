@@ -69,7 +69,7 @@ def declare_llvm_targets(*, suffix = ""):
         format = {
             "clangxx": ":clangxx_file",
         },
-        allowlist_include_directories = [":builtin_resource_dir"],
+        allowlist_include_directories = [":builtin_resource_include_dir"],
     )
 
     cc_tool(
@@ -248,7 +248,7 @@ def declare_llvm_targets(*, suffix = ""):
             ":builtin_resource_dir",
         ],
         capabilities = ["@rules_cc//cc/toolchains/capabilities:supports_pic"],
-        allowlist_include_directories = [":builtin_resource_dir"],
+        allowlist_include_directories = [":builtin_resource_include_dir"],
     )
 
     cc_tool(
@@ -258,7 +258,7 @@ def declare_llvm_targets(*, suffix = ""):
             ":builtin_resource_dir",
         ],
         capabilities = ["@rules_cc//cc/toolchains/capabilities:supports_pic"],
-        allowlist_include_directories = [":builtin_resource_dir"],
+        allowlist_include_directories = [":builtin_resource_include_dir"],
     )
 
     cc_tool(
@@ -278,7 +278,7 @@ def declare_llvm_targets(*, suffix = ""):
             # /lldignoreenv prevents the child linker from consuming it.
             "LIB": "__hermetic_llvm_empty_lib__",
         },
-        allowlist_include_directories = [":builtin_resource_dir"],
+        allowlist_include_directories = [":builtin_resource_include_dir"],
     )
 
     cc_tool(

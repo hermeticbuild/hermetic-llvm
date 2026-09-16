@@ -1,5 +1,6 @@
 load("@bazel_lib//lib:copy_file.bzl", "COPY_FILE_TOOLCHAINS", "copy_file_action")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory_bin_action")
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//rules/directory:providers.bzl", "create_directory_info")
 load("//tools:defs.bzl", "TOOLCHAIN_BINARIES")
 load(":transition_settings.bzl", "LLVM_TOOLS", "SANITIZER_FLAGS", "disable_sanitizers")
@@ -159,13 +160,28 @@ def _bootstrap_directory_impl(ctx):
         include_external_repositories = ["**"],
     )
 
+    transitive_files = depset([dst])
+
+    # Generated tree artifacts are opaque during analysis. Describe their
+    # known children so skylib's subdirectory rule can expose precise paths
+    # while retaining the parent tree as the single action input.
+    subdirectories = {
+        subdirectory: create_directory_info(
+            entries = {},
+            human_readable = "{}/{}".format(ctx.label, subdirectory),
+            path = paths.join(dst.path, subdirectory),
+            transitive_files = transitive_files,
+        )
+        for subdirectory in ctx.attr.subdirectories
+    }
+
     return [
         DefaultInfo(files = depset([dst])),
         create_directory_info(
-            entries = {},
+            entries = subdirectories,
             human_readable = str(ctx.label),
             path = dst.path,
-            transitive_files = depset([dst]),
+            transitive_files = transitive_files,
         ),
     ]
 
@@ -175,6 +191,9 @@ bootstrap_directory = rule(
         "srcs": attr.label_list(
             cfg = bootstrap_transition,
             mandatory = True,
+        ),
+        "subdirectories": attr.string_list(
+            doc = "Top-level child directories exposed through DirectoryInfo metadata.",
         ),
         "platform": attr.label(
             default = None,

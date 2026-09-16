@@ -9,6 +9,7 @@ bzl_library(
         "//tools:defs",
         "@bazel_lib//lib:copy_file",
         "@bazel_lib//lib:copy_to_directory",
+        "@bazel_skylib//lib:paths",
         "@bazel_skylib//rules/directory:providers",
     ],
 )
@@ -43,6 +44,7 @@ bzl_library(
         "//toolchain:cc_toolchain",
         "//toolchain:merged_resource_directory",
         "//toolchain/args:resource_directory_args",
+        "@bazel_skylib//rules/directory:subdirectory",
         "@llvm-project//:version",
         "@rules_cc//cc/toolchains:toolchain_rules",
     ],
