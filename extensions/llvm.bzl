@@ -6,6 +6,7 @@ load("//private:llvm_project_from_path.bzl", "llvm_project_from_path")
 _DEFAULT_LLVM_VERSIONS_INDEX_FILE = "//:llvm_versions.json"
 
 _DEFAULT_SOURCE_PATCHES = [
+    "//3rd_party/llvm-project/x.x/patches:llvm-musl-stack-size.patch",
     "//3rd_party/llvm-project/x.x/patches:clang-prepend-arg-reexec.patch",
     "//3rd_party/llvm-project/x.x/patches:no_frontend_builtin_headers.patch",
     "//3rd_party/llvm-project/x.x/patches:llvm-driver-best-tool-match.patch",

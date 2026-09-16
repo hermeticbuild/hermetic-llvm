@@ -1,0 +1,15 @@
+diff --git a/llvm/BUILD.bazel b/llvm/BUILD.bazel
+--- a/llvm/BUILD.bazel
++++ b/llvm/BUILD.bazel
+@@ -499,6 +499,11 @@
+             "-ldl",
+             "-lm",
+         ],
++    }) + select({
++        # musl's 128 KiB default worker stack is insufficient for recursive
++        # LLVM passes such as DSE's dominator-tree traversal.
++        "@llvm//platforms/config:musl": ["-Wl,-z,stack-size=8388608"],
++        "//conditions:default": [],
+     }),
+     textual_hdrs = glob([
+         "include/llvm/Support/*.def",
