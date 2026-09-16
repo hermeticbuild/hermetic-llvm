@@ -1,4 +1,7 @@
+load("@bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
 load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_rs//rs:rules_rust_bindgen.bzl", "rust_bindgen")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//:rust_binary_cross_build_test_suite.bzl", "rust_binary_cross_build_test_suite")
 
 package(default_visibility = ["//visibility:public"])
@@ -23,6 +26,43 @@ filegroup(
     name = "proc_macros",
     srcs = ["@crates//:serde_derive"],
 )
+
+cc_library(
+    name = "bindgen_stddef_headers",
+    hdrs = ["bindgen_stddef.h"],
+)
+
+rust_bindgen(
+    name = "bindgen_stddef",
+    bindgen_flags = ["--allowlist-type=bindgen_stddef_probe"],
+    cc_lib = "bindgen_stddef_headers",
+    header = "bindgen_stddef.h",
+)
+
+[
+    platform_transition_filegroup(
+        name = "bindgen_stddef_" + arch,
+        srcs = ["bindgen_stddef"],
+        target_platform = platform,
+    )
+    for arch, platform in {
+        "linux_aarch64": "@rules_rs//rs/platforms:aarch64-unknown-linux-gnu",
+        "linux_x86_64": "@rules_rs//rs/platforms:x86_64-unknown-linux-gnu",
+    }.items()
+]
+
+[
+    sh_test(
+        name = "test_bindgen_stddef_" + arch,
+        srcs = ["test_bindgen.sh"],
+        args = ["$(rootpath :bindgen_stddef_" + arch + ")"],
+        data = ["bindgen_stddef_" + arch],
+    )
+    for arch in [
+        "linux_aarch64",
+        "linux_x86_64",
+    ]
+]
 
 rust_binary_cross_build_test_suite(
     name = "hello_world",

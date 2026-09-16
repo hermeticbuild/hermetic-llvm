@@ -38,7 +38,7 @@ register_toolchains(
     dev_dependency = True,
 )
 
-bazel_dep(name = "rules_rs", version = "0.0.94")
+bazel_dep(name = "rules_rs", version = "0.0.102")
 
 rules_rust = use_extension("@rules_rs//rs:rules_rust.bzl", "rules_rust")
 use_repo(rules_rust, "rules_rust")
@@ -51,6 +51,18 @@ toolchains.toolchain(
 use_repo(toolchains, "default_rust_toolchains")
 
 register_toolchains("@default_rust_toolchains//:all")
+
+rules_rust_bindgen = use_extension(
+    "@rules_rs//rs:rules_rust_bindgen.bzl",
+    "rules_rust_bindgen",
+    dev_dependency = True,
+)
+use_repo(rules_rust_bindgen, "rules_rust_bindgen")
+
+register_toolchains(
+    "@rules_rust_bindgen//:all",
+    dev_dependency = True,
+)
 
 crate = use_extension("@rules_rs//rs:extensions.bzl", "crate")
 crate.from_cargo(
