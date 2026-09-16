@@ -6,6 +6,15 @@ load("//:rust_binary_cross_build_test_suite.bzl", "rust_binary_cross_build_test_
 
 package(default_visibility = ["//visibility:public"])
 
+_CROSS_COMPILE_PLATFORMS = {
+    "@rules_rs//rs/platforms:aarch64-unknown-linux-gnu": "aarch64",
+    "@rules_rs//rs/platforms:aarch64-apple-darwin": "arm64",
+    "@rules_rs//rs/platforms:aarch64-pc-windows-gnullvm": "aarch64",
+    "@rules_rs//rs/platforms:x86_64-unknown-linux-gnu": "x86-64",
+    "@rules_rs//rs/platforms:x86_64-apple-darwin": "x86_64",
+    "@rules_rs//rs/platforms:x86_64-pc-windows-gnullvm": "x86-64",
+}
+
 platform(
     name = "host_linux_gnu",
     constraint_values = [
@@ -41,40 +50,27 @@ rust_bindgen(
 
 [
     platform_transition_filegroup(
-        name = "bindgen_stddef_" + arch,
+        name = "bindgen_stddef_" + platform.split(":")[-1],
         srcs = ["bindgen_stddef"],
         target_platform = platform,
     )
-    for arch, platform in {
-        "linux_aarch64": "@rules_rs//rs/platforms:aarch64-unknown-linux-gnu",
-        "linux_x86_64": "@rules_rs//rs/platforms:x86_64-unknown-linux-gnu",
-    }.items()
+    for platform in _CROSS_COMPILE_PLATFORMS
 ]
 
 [
     sh_test(
-        name = "test_bindgen_stddef_" + arch,
+        name = "test_bindgen_stddef_" + platform.split(":")[-1],
         srcs = ["test_bindgen.sh"],
-        args = ["$(rootpath :bindgen_stddef_" + arch + ")"],
-        data = ["bindgen_stddef_" + arch],
+        args = ["$(rootpath :bindgen_stddef_" + platform.split(":")[-1] + ")"],
+        data = ["bindgen_stddef_" + platform.split(":")[-1]],
     )
-    for arch in [
-        "linux_aarch64",
-        "linux_x86_64",
-    ]
+    for platform in _CROSS_COMPILE_PLATFORMS
 ]
 
 rust_binary_cross_build_test_suite(
     name = "hello_world",
     srcs = ["src/main.rs"],
-    platforms = {
-        "@rules_rs//rs/platforms:aarch64-unknown-linux-gnu": "aarch64",
-        "@rules_rs//rs/platforms:aarch64-apple-darwin": "arm64",
-        "@rules_rs//rs/platforms:aarch64-pc-windows-gnullvm": "aarch64",
-        "@rules_rs//rs/platforms:x86_64-unknown-linux-gnu": "x86-64",
-        "@rules_rs//rs/platforms:x86_64-apple-darwin": "x86_64",
-        "@rules_rs//rs/platforms:x86_64-pc-windows-gnullvm": "x86-64",
-    },
+    platforms = _CROSS_COMPILE_PLATFORMS,
     deps = [
         ":linkstamp_dep",
         "@crates//:lz4-sys",
