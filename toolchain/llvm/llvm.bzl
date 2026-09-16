@@ -33,6 +33,14 @@ def declare_llvm_targets(*, suffix = ""):
         visibility = ["//visibility:public"],
     )
 
+    # The root covers non-header compiler resources recorded in dependency
+    # files, such as sanitizer ignorelists under share/. The include child is
+    # the actual builtin header search path exposed to toolchain consumers.
+    builtin_resource_allowlist_directories = [
+        ":builtin_resource_dir",
+        ":builtin_resource_include_dir",
+    ]
+
     # Convenient exports
     native.exports_files(native.glob(["bin/*"]))
 
@@ -69,7 +77,7 @@ def declare_llvm_targets(*, suffix = ""):
         format = {
             "clangxx": ":clangxx_file",
         },
-        allowlist_include_directories = [":builtin_resource_include_dir"],
+        allowlist_include_directories = builtin_resource_allowlist_directories,
     )
 
     cc_tool(
@@ -248,7 +256,7 @@ def declare_llvm_targets(*, suffix = ""):
             ":builtin_resource_dir",
         ],
         capabilities = ["@rules_cc//cc/toolchains/capabilities:supports_pic"],
-        allowlist_include_directories = [":builtin_resource_include_dir"],
+        allowlist_include_directories = builtin_resource_allowlist_directories,
     )
 
     cc_tool(
@@ -258,7 +266,7 @@ def declare_llvm_targets(*, suffix = ""):
             ":builtin_resource_dir",
         ],
         capabilities = ["@rules_cc//cc/toolchains/capabilities:supports_pic"],
-        allowlist_include_directories = [":builtin_resource_include_dir"],
+        allowlist_include_directories = builtin_resource_allowlist_directories,
     )
 
     cc_tool(
@@ -278,7 +286,7 @@ def declare_llvm_targets(*, suffix = ""):
             # /lldignoreenv prevents the child linker from consuming it.
             "LIB": "__hermetic_llvm_empty_lib__",
         },
-        allowlist_include_directories = [":builtin_resource_include_dir"],
+        allowlist_include_directories = builtin_resource_allowlist_directories,
     )
 
     cc_tool(

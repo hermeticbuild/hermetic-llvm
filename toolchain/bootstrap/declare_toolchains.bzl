@@ -216,6 +216,14 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
         path = "include",
     )
 
+    # Keep the complete tree allowlisted for implicit compiler resources in
+    # dependency files, and expose the include child as the precise builtin
+    # header search path.
+    resource_allowlist_directories = [
+        prefix + "/clang_resource_directory",
+        prefix + "/clang_resource_include_directory",
+    ]
+
     _bootstrap_cc_tool(
         prefix,
         "clang",
@@ -224,7 +232,7 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
             prefix + "/clang_resource_directory",
         ],
         capabilities = ["@rules_cc//cc/toolchains/capabilities:supports_pic"],
-        allowlist_include_directories = [prefix + "/clang_resource_include_directory"],
+        allowlist_include_directories = resource_allowlist_directories,
     )
 
     _bootstrap_cc_tool(
@@ -238,7 +246,7 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
             prefix + "/clang_resource_directory",
         ],
         capabilities = ["@rules_cc//cc/toolchains/capabilities:supports_pic"],
-        allowlist_include_directories = [prefix + "/clang_resource_include_directory"],
+        allowlist_include_directories = resource_allowlist_directories,
     )
 
     _bootstrap_cc_tool(
@@ -262,7 +270,7 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
             # /lldignoreenv prevents the child linker from consuming it.
             "LIB": "__hermetic_llvm_empty_lib__",
         },
-        allowlist_include_directories = [prefix + "/clang_resource_include_directory"],
+        allowlist_include_directories = resource_allowlist_directories,
     )
 
     # clang-cl discovers this raw sibling by InstalledDir. It is action data,
@@ -300,7 +308,7 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
         format = {
             "clangxx": prefix + "/bin/clang++",
         },
-        allowlist_include_directories = [prefix + "/clang_resource_include_directory"],
+        allowlist_include_directories = resource_allowlist_directories,
     )
 
     for tool in [
