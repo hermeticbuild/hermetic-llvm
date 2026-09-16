@@ -23,7 +23,8 @@ def declare_toolchains(*, execs = SUPPORTED_EXECS, targets = SUPPORTED_TARGETS):
         )
         resource_directory_args(
             name = cc_toolchain_name + "_resource_directory_args",
-            directory = cc_toolchain_name + "_resource_directory",
+            compile_directory = platform_resource_dir(exec_os, exec_cpu),
+            link_directory = cc_toolchain_name + "_resource_directory",
         )
 
         # Even though `tool_map` has an exec transition, Bazel doesn't properly handle

@@ -515,7 +515,8 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
             )
             resource_directory_args(
                 name = cc_toolchain_name + "_resource_directory_args",
-                directory = cc_toolchain_name + "_resource_directory",
+                compile_directory = tool_prefix + "/clang_resource_directory",
+                link_directory = cc_toolchain_name + "_resource_directory",
             )
 
             # Even though `tool_map` has an exec transition, Bazel doesn't properly handle
