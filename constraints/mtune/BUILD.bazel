@@ -1,0 +1,30 @@
+load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load(":mtune_values.bzl", "MTUNES")
+
+package(default_visibility = ["//visibility:public"])
+
+# The CPU to schedule for, passed verbatim to `-mtune=`. Independent of
+# `//constraints/march`: it does not raise the instruction set baseline, so
+# binaries stay runnable on any CPU implementing the selected `-march=`.
+constraint_setting(
+    name = "mtune",
+    default_constraint_value = "unconstrained",
+)
+
+constraint_value(
+    name = "unconstrained",
+    constraint_setting = "mtune",
+)
+
+[
+    constraint_value(
+        name = mtune,
+        constraint_setting = "mtune",
+    )
+    for mtune in MTUNES
+]
+
+bzl_library(
+    name = "mtune_values",
+    srcs = ["mtune_values.bzl"],
+)
