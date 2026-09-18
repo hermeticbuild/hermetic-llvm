@@ -1,0 +1,30 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+
+# All targets in this package compile their headers into Clang header modules
+# (.pcm files), and import their dependencies' modules instead of parsing
+# their headers textually. Requires Bazel 9+ (the Starlark implementation of
+# the C++ rules).
+package(features = [
+    "header_modules",
+    "use_header_modules",
+    "layering_check",
+])
+
+# The C++ standard library headers are compiled once into a Clang module that
+# the toolchain adds as a dependency of every C++ target, and imported: each
+# translation unit no longer re-parses them, and there is only a single set
+# of standard library declarations across all modules. Other system headers
+# are declared as textual headers in the toolchain's module map and are parsed
+# textually.
+cc_library(
+    name = "greeting",
+    srcs = ["greeting.cc"],
+    hdrs = ["greeting.h"],
+)
+
+cc_test(
+    name = "greeting_test",
+    srcs = ["main.cc"],
+    deps = [":greeting"],
+)

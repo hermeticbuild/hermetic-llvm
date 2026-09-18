@@ -1,0 +1,59 @@
+load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load(":cc_runtimes.bzl", "cc_runtimes_library", "cc_runtimes_toolchain")
+
+package(default_visibility = ["//visibility:public"])
+
+# The C++ standard library as a library whose public headers are compiled into
+# a Clang module, matching Google's setup for their standard library. The
+# cc_runtimes toolchain below adds it to the dependencies of every C++ target:
+#
+# - Its generated module map declares the public standard library headers as
+#   modular, taking precedence over the textual declarations in the
+#   toolchain's module map, so that in builds with the use_header_modules
+#   feature enabled, they are compiled once into a module and imported instead
+#   of being textually absorbed into every module (which is known to trip up
+#   Clang's declaration merging once several such modules are imported
+#   together).
+# - The dependency makes the generated module maps of all targets declare the
+#   module as used, which layering_check requires.
+#
+# The implementation detail headers stay textual: they include mutually
+# exclusive variants that can't all be compiled into a module, and the C
+# standard library wrappers include the C standard library headers via
+# include_next. They are declared as textual headers in the toolchain's module
+# map (with their sizes), which is why they aren't repeated as textual_hdrs
+# here: rules_cc doesn't write sizes, and Clang would stat every textual
+# header of this module map in every compile that loads it.
+#
+# The headers are the same files that the toolchain provides via its include
+# search paths, so builds without header modules simply keep parsing them
+# textually.
+cc_runtimes_library(
+    name = "libcxx",
+    hdrs = ["//runtimes/cxxstdlib:public_headers_directory"],
+    features = [
+        # Compile the public headers into a module regardless of the features
+        # of the depending targets' packages.
+        "header_modules",
+        "use_header_modules",
+        "layering_check",
+    ],
+    tags = [
+        # Only built on demand, by targets that import its module.
+        "manual",
+    ],
+)
+
+cc_runtimes_toolchain(
+    name = "runtimes",
+    runtimes = [":libcxx"],
+)
+
+bzl_library(
+    name = "cc_runtimes",
+    srcs = ["cc_runtimes.bzl"],
+    deps = [
+        "@rules_cc//cc:find_cc_toolchain_bzl",
+        "@rules_cc//cc/common",
+    ],
+)

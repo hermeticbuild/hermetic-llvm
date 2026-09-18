@@ -5,9 +5,7 @@ package(default_visibility = ["//toolchain/args/windows:__pkg__"])
 
 cc_args(
     name = "mingw_headers_include_search_paths",
-    actions = [
-        "@rules_cc//cc/toolchains/actions:compile_actions",
-    ],
+    actions = ["//toolchain:source_compile_actions"],
     allowlist_include_directories = [
         "@mingw//:mingw_generated_headers_crt_directory",
         "@mingw//:mingw_w64_headers_include_directory",

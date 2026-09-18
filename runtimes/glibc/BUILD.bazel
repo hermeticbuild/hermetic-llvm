@@ -127,6 +127,12 @@ alias(
 )
 
 alias(
+    name = "glibc_headers_files",
+    actual = "@glibc//:glibc_headers_files",
+    visibility = ["//visibility:public"],
+)
+
+alias(
     name = "glibc_Scrt1.object",
     actual = "@glibc//:glibc_Scrt1.object",
     visibility = ["//visibility:public"],
