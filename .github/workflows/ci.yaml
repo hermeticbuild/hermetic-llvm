@@ -353,11 +353,20 @@ jobs:
             --output=package \
             'deps(set(@kernel_headers//:3.6_kernel_headers @kernel_headers//:3.6_kernel_headers_directory @kernel_headers//:4.14_kernel_headers @kernel_headers//:4.14_kernel_headers_directory))'
 
+          # Header modules require the Starlark implementation of the C++
+          # rules (Bazel 9+).
+          excluded_tests=()
+          if [[ "${{ matrix.bazel_version }}" == "8.x" ]]; then
+            excluded_tests+=(-//tests/header_modules/...)
+          fi
+
           bazel \
             --bazelrc=$GITHUB_WORKSPACE/.github/workflows/ci.bazelrc \
             --bazelrc=.bazelrc \
             test \
+            -- \
             //tests/... \
+            "${excluded_tests[@]}" \
             //tools/case_insensitive_vfs:cli_test \
             //tools/case_insensitive_vfs:test \
             //tools/def_file_generator:test

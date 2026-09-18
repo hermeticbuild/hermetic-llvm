@@ -161,3 +161,12 @@ cc_args_list(
         "//conditions:default": ["//toolchain/args/windows/mingw:mingw_headers_include_search_paths"],
     }),
 )
+
+# Header modules are only supported with the Clang driver.
+cc_args_list(
+    name = "header_module_compile",
+    args = select({
+        "//constraints/windows/abi:msvc": [],
+        "//conditions:default": ["//toolchain/args:header_module_compile"],
+    }),
+)

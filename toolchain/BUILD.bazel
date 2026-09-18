@@ -338,6 +338,7 @@ cc_args_list(
         "//toolchain/args:no_absolute_paths_for_builtins",
         "//toolchain/args:deterministic_compile_flags",
         "//toolchain/args:module_map",
+        "//toolchain/args:header_module_compile",
         ":sysroot_flags",
         ":hermetic_compile_flags",
 
@@ -397,6 +398,7 @@ cc_args_list(
         "//toolchain/args:no_absolute_paths_for_builtins",
         "//toolchain/args/windows:deterministic_compile_flags",
         "//toolchain/args:module_map",
+        "//toolchain/args/windows:header_module_compile",
         ":sysroot_flags",
         ":hermetic_compile_flags",
 
@@ -515,6 +517,20 @@ cc_artifact_name_pattern(
     category = "@rules_cc//cc/toolchains/artifacts:interface_library",
     extension = ".tbd",
     prefix = "lib",
+    visibility = ["//visibility:public"],
+)
+
+# rules_cc's source_compile_actions without cpp_module_codegen: module codegen
+# actions compile a precompiled module and never preprocess, so include paths
+# and other preprocessing flags would only make Clang warn about them as
+# unused arguments. Bazel's legacy include_paths, includes and
+# preprocessor_defines features don't cover the action either.
+# TODO: Use @rules_cc//cc/toolchains/actions:source_compile_actions after
+# https://github.com/bazelbuild/rules_cc/pull/897.
+cc_action_type_set(
+    name = "source_compile_actions",
+    actions = ["@rules_cc//cc/toolchains/actions:source_compile_actions"],
+    excludes = ["@rules_cc//cc/toolchains/actions:cpp_module_codegen"],
     visibility = ["//visibility:public"],
 )
 
