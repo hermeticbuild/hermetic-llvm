@@ -406,6 +406,14 @@ cc_library(
         ],
         "//conditions:default": [],
     }) + select({
+        # LIBCXX_ENABLE_EXCEPTIONS. libc++ derives _LIBCPP_HAS_EXCEPTIONS from
+        # __cpp_exceptions per translation unit, so the flag alone is the
+        # whole option. clang-cl already compiles without exceptions
+        # with /EH absent, so the MSVC entry adds nothing.
+        "@llvm//runtimes:exceptions_disabled_msvc": [],
+        "@llvm//runtimes:exceptions_disabled": ["-fno-exceptions"],
+        "//conditions:default": [],
+    }) + select({
         # clang-cl's /MD and /MT defaults do not name the Microsoft C++
         # exception_ptr provider. Make libc++'s archive own that narrow ABI
         # dependency through a COFF .drectve instead of a Bazel link argument.
