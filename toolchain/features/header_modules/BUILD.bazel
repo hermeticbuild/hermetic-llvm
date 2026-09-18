@@ -72,7 +72,6 @@ cc_args(
     actions = _MODULE_CONSUMING_ACTIONS,
     args = [
         "-fmodules",
-        "-fmodule-file-deps",
         "-fno-implicit-modules",
         "-fno-implicit-module-maps",
         "-Wno-modules-ambiguous-internal-linkage",

@@ -253,7 +253,9 @@ cc_feature_set(
         # Intentionally omitted since we link runtime libraries ourselves and
         # including this flag just raises a warning.
         # "@rules_cc//cc/toolchains/args/static_libgcc:feature",
-        "@rules_cc//cc/toolchains/args/include_flags:feature",
+        # Inlined below without the cpp_module_codegen action.
+        # TODO: Use upstream version after https://github.com/bazelbuild/rules_cc/pull/897
+        ":include_flags",
         "@rules_cc//cc/toolchains/args/fission_flags:feature",
         "@rules_cc//cc/toolchains/args/link_flags:feature",
         "@rules_cc//cc/toolchains/args/linkstamp_flags:feature",
@@ -342,4 +344,83 @@ cc_args(
     }),
     format = {"runtime_solib_name": "@rules_cc//cc/toolchains/variables:runtime_solib_name"},
     requires_not_none = "@rules_cc//cc/toolchains/variables:runtime_solib_name",
+)
+
+# Taken from
+# https://github.com/bazelbuild/rules_cc/blob/541eda5d72e9b5f18e6a24e8d14975afcd865717/cc/toolchains/args/include_flags/BUILD
+# with cpp_module_codegen excluded from the actions (see
+# //toolchain:source_compile_actions).
+cc_feature_set(
+    name = "include_flags",
+    all_of = [
+        ":includes",
+        ":include_paths",
+    ],
+)
+
+cc_feature(
+    name = "includes",
+    args = [":includes_flags"],
+    overrides = "@rules_cc//cc/toolchains/features/legacy:includes",
+)
+
+cc_args(
+    name = "includes_flags",
+    actions = ["//toolchain:source_compile_actions"],
+    args = [
+        "-include",
+        "{includes}",
+    ],
+    format = {"includes": "@rules_cc//cc/toolchains/variables:includes"},
+    iterate_over = "@rules_cc//cc/toolchains/variables:includes",
+    requires_not_none = "@rules_cc//cc/toolchains/variables:includes",
+)
+
+cc_feature(
+    name = "include_paths",
+    args = [
+        ":quote_include_paths_flags",
+        ":include_paths_flags",
+        ":system_include_paths_flags",
+        ":framework_include_paths_flags",
+    ],
+    overrides = "@rules_cc//cc/toolchains/features/legacy:include_paths",
+)
+
+cc_args(
+    name = "quote_include_paths_flags",
+    actions = ["//toolchain:source_compile_actions"],
+    args = [
+        "-iquote",
+        "{quote_include_paths}",
+    ],
+    format = {"quote_include_paths": "@rules_cc//cc/toolchains/variables:quote_include_paths"},
+    iterate_over = "@rules_cc//cc/toolchains/variables:quote_include_paths",
+)
+
+cc_args(
+    name = "include_paths_flags",
+    actions = ["//toolchain:source_compile_actions"],
+    args = ["-I{include_paths}"],
+    format = {"include_paths": "@rules_cc//cc/toolchains/variables:include_paths"},
+    iterate_over = "@rules_cc//cc/toolchains/variables:include_paths",
+)
+
+cc_args(
+    name = "system_include_paths_flags",
+    actions = ["//toolchain:source_compile_actions"],
+    args = [
+        "-isystem",
+        "{system_include_paths}",
+    ],
+    format = {"system_include_paths": "@rules_cc//cc/toolchains/variables:system_include_paths"},
+    iterate_over = "@rules_cc//cc/toolchains/variables:system_include_paths",
+)
+
+cc_args(
+    name = "framework_include_paths_flags",
+    actions = ["//toolchain:source_compile_actions"],
+    args = ["-F{framework_include_paths}"],
+    format = {"framework_include_paths": "@rules_cc//cc/toolchains/variables:framework_include_paths"},
+    iterate_over = "@rules_cc//cc/toolchains/variables:framework_include_paths",
 )

@@ -156,13 +156,12 @@ cc_args(
 cc_args(
     name = "cxxstdlib_headers_include_search_paths",
     actions = [
-        # cpp_compile_actions - lto_backend
+        # cpp_compile_actions - lto_backend - cpp_module_codegen
         # Omitted to avoid unused arg warning for -I paths.
         "@rules_cc//cc/toolchains/actions:linkstamp_compile",
         "@rules_cc//cc/toolchains/actions:cpp_compile",
         "@rules_cc//cc/toolchains/actions:cpp_header_parsing",
         "@rules_cc//cc/toolchains/actions:cpp_module_compile",
-        "@rules_cc//cc/toolchains/actions:cpp_module_codegen",
         "@rules_cc//cc/toolchains/actions:clif_match",
         "@rules_cc//cc/toolchains/actions:objcpp_compile",
     ],

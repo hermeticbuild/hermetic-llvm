@@ -7,20 +7,27 @@ package(features = [
     "layering_check",
 ])
 
+# Warnings in the test targets' compiles, including their module compiles, are
+# most likely misconfigurations of the header module support.
+_COPTS = ["-Werror"]
+
 cc_library(
     name = "counter",
     srcs = ["counter.cc"],
     hdrs = ["counter.h"],
+    copts = _COPTS,
 )
 
 cc_library(
     name = "double_counter",
     hdrs = ["double_counter.h"],
+    copts = _COPTS,
     deps = [":counter"],
 )
 
 cc_test(
     name = "main_test",
     srcs = ["main_test.cc"],
+    copts = _COPTS,
     deps = [":double_counter"],
 )

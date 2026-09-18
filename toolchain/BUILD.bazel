@@ -520,6 +520,20 @@ cc_artifact_name_pattern(
     visibility = ["//visibility:public"],
 )
 
+# rules_cc's source_compile_actions without cpp_module_codegen: module codegen
+# actions compile a precompiled module and never preprocess, so include paths
+# and other preprocessing flags would only make Clang warn about them as
+# unused arguments. Bazel's legacy include_paths, includes and
+# preprocessor_defines features don't cover the action either.
+# TODO: Use @rules_cc//cc/toolchains/actions:source_compile_actions after
+# https://github.com/bazelbuild/rules_cc/pull/897.
+cc_action_type_set(
+    name = "source_compile_actions",
+    actions = ["@rules_cc//cc/toolchains/actions:source_compile_actions"],
+    excludes = ["@rules_cc//cc/toolchains/actions:cpp_module_codegen"],
+    visibility = ["//visibility:public"],
+)
+
 cc_action_type_set(
     name = "cpp_compile_actions_without_header_parsing",
     # See https://github.com/bazelbuild/rules_cc/blob/6dd2ef1fefbca004da449578c00d8ffb91a459ca/cc/toolchains/actions/BUILD#L224
