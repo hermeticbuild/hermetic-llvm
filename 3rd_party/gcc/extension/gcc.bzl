@@ -8,12 +8,14 @@ load(
     "gcc_has_config_toolexeclibdir_m4",
     "gcc_patches",
     "gcc_repo_name",
+    "libgcc_has_aarch64_softfp_ver",
 )
 
 # Sparse archive roots required by 3rd_party/gcc/gcc.BUILD.bazel. Before
 # trimming or extending this list, check the BUILD file against GCC's
 # libstdc++-v3/include/Makefile.am, libsupc++/Makefile.am, and
-# src/*/Makefile.am inputs.
+# src/*/Makefile.am inputs, and against the libgcc.map inputs of
+# libgcc/Makefile.in.
 _GCC_ARCHIVE_INCLUDES = [
     "gcc/BASE-VER",
     "gcc/DATESTAMP",
@@ -39,6 +41,10 @@ _GCC_ARCHIVE_INCLUDES = [
     "libgcc/gthr-single.h",
     "libgcc/gthr.h",
     "libgcc/config/arm/unwind-arm.h",
+    "libgcc/config/i386/libgcc-glibc.ver",
+    "libgcc/config/libgcc-glibc.ver",
+    "libgcc/libgcc-std.ver.in",
+    "libgcc/mkmap-symver.awk",
     "libgcc/unwind-generic.h",
     "libgcc/unwind-pe.h",
     "libiberty/cp-demangle.c",
@@ -54,8 +60,17 @@ _GCC_ARCHIVE_INCLUDES = [
     "libstdc++-v3/src/**",
 ]
 
+# bsdtar fails when an include pattern matches nothing in the archive, so the
+# list above can only name files present in every declared GCC release. Files
+# that appeared later are added per the version that introduced them.
 _GCC_10_ARCHIVE_INCLUDES = [
     "config/toolexeclibdir.m4",
+]
+
+# Introduced in GCC 11 for the aarch64 _Float16 helpers (GCC_11.0 node) and
+# present in every release since.
+_GCC_11_ARCHIVE_INCLUDES = [
+    "libgcc/config/aarch64/libgcc-softfp.ver",
 ]
 
 _from_path = tag_class(
@@ -102,7 +117,9 @@ def _gcc_impl(module_ctx):
                 generated_files = {
                     "version.bzl": "GCC_VERSION = \"{}\"\n".format(version),
                 },
-                includes = _GCC_ARCHIVE_INCLUDES + (_GCC_10_ARCHIVE_INCLUDES if gcc_has_config_toolexeclibdir_m4(version) else []),
+                includes = _GCC_ARCHIVE_INCLUDES +
+                           (_GCC_10_ARCHIVE_INCLUDES if gcc_has_config_toolexeclibdir_m4(version) else []) +
+                           (_GCC_11_ARCHIVE_INCLUDES if libgcc_has_aarch64_softfp_ver(version) else []),
                 patch_args = ["-p1"],
                 patches = [Label(patch) for patch in gcc_patches(version)],
                 sha256 = release["sha256"],
