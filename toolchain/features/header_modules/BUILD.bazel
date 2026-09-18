@@ -124,11 +124,13 @@ cc_args(
 cc_feature(
     name = "use_header_modules",
     args = [
+        "@rules_cc//cc/toolchains/args/layering_check:module_name_args",
+        "@rules_cc//cc/toolchains/args/layering_check:module_map_file_args",
         ":use_header_modules_args",
         ":use_header_modules_module_files_args",
     ],
     feature_name = "use_header_modules",
-    requires_any_of = ["@rules_cc//cc/toolchains/args/layering_check:layering_check"],
+    implies = ["@rules_cc//cc/toolchains/args/layering_check:use_module_maps"],
 )
 
 cc_feature_set(
