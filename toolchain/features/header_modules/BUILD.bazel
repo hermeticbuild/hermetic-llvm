@@ -13,18 +13,41 @@ _MODULE_CONSUMING_ACTIONS = [
     "@rules_cc//cc/toolchains/actions:cpp_module_codegen",
 ]
 
-# The args for the cpp_module_compile action itself live in
-# //toolchain/args:header_module_compile since they include the positional
-# `-x` flag, which has to be attached to the action config to end up before
-# the source file on the command line.
 cc_feature(
     name = "header_modules",
     feature_name = "header_modules",
     implies = [
+        ":header_module_compile",
         ":header_module_codegen",
         ":header_modules_codegen_functions",
     ],
     requires_any_of = [":use_header_modules"],
+)
+
+cc_args(
+    name = "header_module_compile_args",
+    actions = ["@rules_cc//cc/toolchains/actions:cpp_module_compile"],
+    args = [
+        "-xc++",
+        "-Xclang",
+        "-emit-module",
+        "-Xclang",
+        "-fmodules-embed-all-files",
+        "-Xclang",
+        "-fmodules-local-submodule-visibility",
+    ],
+)
+
+# Enabled by default and declared before the legacy features in the toolchain
+# (see //toolchain:cc_toolchain.bzl): flags render in the toolchain's feature
+# declaration order, rules_cc declares features that are only enabled per
+# target after all default-enabled ones, and the positional `-x` flag only
+# applies to inputs that come after it, i.e. it has to precede the
+# `-c <source>` emitted by the legacy features.
+cc_feature(
+    name = "header_module_compile",
+    args = [":header_module_compile_args"],
+    feature_name = "header_module_compile",
 )
 
 cc_feature(
@@ -112,6 +135,7 @@ cc_feature_set(
     name = "all_header_module_features",
     all_of = [
         ":header_modules",
+        ":header_module_compile",
         ":generate_submodules",
         ":header_module_codegen",
         ":header_modules_codegen_functions",

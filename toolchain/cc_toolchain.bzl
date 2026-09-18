@@ -158,6 +158,10 @@ def cc_toolchain(
             "@llvm//toolchain/features:sanitize_pwd",
             "@rules_cc//cc/toolchains/args/layering_check:module_maps",
             "@llvm//toolchain/features:module_map_home_cwd",
+            # Has to be declared before the legacy features so that its `-x`
+            # flag precedes the source file (see
+            # //toolchain/features/header_modules).
+            "@llvm//toolchain/features/header_modules:header_module_compile",
             # These are "enabled" but they only _actually_ get enabled when the underlying compilation mode is set.
             # This lets us properly order them before user_compile_flags and user_link_flags below.
             "@llvm//toolchain/features:opt",

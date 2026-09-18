@@ -134,30 +134,6 @@ cc_args(
     }),
 )
 
-# These args need to be bound to the action type rather than carried by a
-# feature (like `use_header_modules` in
-# //toolchain/features/header_modules) because `-x` only applies to inputs
-# that come after it on the command line: args attached to the action config
-# render before the `-c <source>` emitted by the legacy features, while args
-# from non-enabled toolchain features render after it. Module compile actions
-# are only created for targets with the `header_modules` feature enabled, so
-# these args never affect other builds.
-cc_args(
-    name = "header_module_compile",
-    actions = [
-        "@rules_cc//cc/toolchains/actions:cpp_module_compile",
-    ],
-    args = [
-        "-xc++",
-        "-Xclang",
-        "-emit-module",
-        "-Xclang",
-        "-fmodules-embed-all-files",
-        "-Xclang",
-        "-fmodules-local-submodule-visibility",
-    ],
-)
-
 cc_args(
     name = "cxxstdlib_headers_include_search_paths",
     actions = [

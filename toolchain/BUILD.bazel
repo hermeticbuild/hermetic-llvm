@@ -338,7 +338,6 @@ cc_args_list(
         "//toolchain/args:no_absolute_paths_for_builtins",
         "//toolchain/args:deterministic_compile_flags",
         "//toolchain/args:module_map",
-        "//toolchain/args:header_module_compile",
         ":sysroot_flags",
         ":hermetic_compile_flags",
 
@@ -398,7 +397,6 @@ cc_args_list(
         "//toolchain/args:no_absolute_paths_for_builtins",
         "//toolchain/args/windows:deterministic_compile_flags",
         "//toolchain/args:module_map",
-        "//toolchain/args/windows:header_module_compile",
         ":sysroot_flags",
         ":hermetic_compile_flags",
 
