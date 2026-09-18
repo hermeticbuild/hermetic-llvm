@@ -153,6 +153,75 @@ cc_args(
     requires_any_of = ["//toolchain/features/header_modules:header_module_compile"],
 )
 
+# The C++ standard library headers, split into the public headers (which can
+# be compiled into a Clang module) and the implementation details (see
+# //runtimes/cxxstdlib). On macOS, -nostdinc++ prevents the compiler from
+# also finding the copies in the SDK sysroot: mixing them breaks the
+# include_next chains of the C standard library wrapper headers since the
+# include guards of the copies short-circuit the originals.
+cc_args(
+    name = "macos_cxxstdlib_headers_include_search_paths",
+    actions = [
+        # cpp_compile_actions - lto_backend - cpp_module_codegen
+        # Omitted to avoid unused arg warning for -I paths.
+        "@rules_cc//cc/toolchains/actions:linkstamp_compile",
+        "@rules_cc//cc/toolchains/actions:cpp_compile",
+        "@rules_cc//cc/toolchains/actions:cpp_header_parsing",
+        "@rules_cc//cc/toolchains/actions:cpp_module_compile",
+        "@rules_cc//cc/toolchains/actions:clif_match",
+        "@rules_cc//cc/toolchains/actions:objcpp_compile",
+    ],
+    args = [
+        "-nostdinc++",
+        "-isystem",
+        "{cxx_public_headers_include_search_path}",
+        "-isystem",
+        "{cxx_detail_headers_include_search_path}",
+    ],
+    # Do not sort: keep the data order aligned with the argument order above.
+    data = [
+        "//runtimes/cxxstdlib:public_headers_directory",
+        "//runtimes/cxxstdlib:detail_headers_directory",
+    ],
+    format = {
+        "cxx_public_headers_include_search_path": "//runtimes/cxxstdlib:public_headers_directory",
+        "cxx_detail_headers_include_search_path": "//runtimes/cxxstdlib:detail_headers_directory",
+    },
+)
+
+cc_args(
+    name = "split_cxxstdlib_headers_include_search_paths",
+    actions = [
+        # cpp_compile_actions - lto_backend - cpp_module_codegen
+        # Omitted to avoid unused arg warning for -I paths.
+        "@rules_cc//cc/toolchains/actions:linkstamp_compile",
+        "@rules_cc//cc/toolchains/actions:cpp_compile",
+        "@rules_cc//cc/toolchains/actions:cpp_header_parsing",
+        "@rules_cc//cc/toolchains/actions:cpp_module_compile",
+        "@rules_cc//cc/toolchains/actions:clif_match",
+        "@rules_cc//cc/toolchains/actions:objcpp_compile",
+    ],
+    args = [
+        "-isystem",
+        "{cxx_public_headers_include_search_path}",
+        "-isystem",
+        "{cxx_detail_headers_include_search_path}",
+        "-isystem",
+        "{cxxstdlib_abi_headers_include_search_path}",
+    ],
+    # Do not sort: keep the data order aligned with the argument order above.
+    data = [
+        "//runtimes/cxxstdlib:public_headers_directory",
+        "//runtimes/cxxstdlib:detail_headers_directory",
+        "//runtimes/cxxstdlib:abi_headers_include_search_directory",
+    ],
+    format = {
+        "cxx_public_headers_include_search_path": "//runtimes/cxxstdlib:public_headers_directory",
+        "cxx_detail_headers_include_search_path": "//runtimes/cxxstdlib:detail_headers_directory",
+        "cxxstdlib_abi_headers_include_search_path": "//runtimes/cxxstdlib:abi_headers_include_search_directory",
+    },
+)
+
 cc_args(
     name = "cxxstdlib_headers_include_search_paths",
     actions = [
