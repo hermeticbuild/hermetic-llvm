@@ -35,11 +35,12 @@ def _module_map_impl(ctx):
         expand_directories = False,
     )
 
+    # Tree artifacts among the textual headers are expanded to their
+    # constituent files at execution time.
     module_map_args.add_joined(
         include_path_info.textual_headers,
         join_with = "\n",
         format_each = "  textual header \"%s\"",
-        expand_directories = False,
     )
 
     module_map_args.add("}")
@@ -58,8 +59,9 @@ def _module_map_impl(ctx):
 module_map = rule(
     doc = """Generates a Clang module map for the toolchain and system headers.
 
-    Source and output directories are included as umbrella submodules.
-    Individual header files (typically `run_binary` outputs like in mingw) are included as textual headers.""",
+    Source directories are included as umbrella submodules.
+    Individual header files and the contents of output directories (Tree
+    Artifacts) are included as textual headers.""",
     implementation = _module_map_impl,
     attrs = {
         "include_path": attr.label(
@@ -74,11 +76,19 @@ def _include_path_impl(ctx):
     textual_headers_depsets = []
 
     for src in ctx.attr.srcs:
-        if SourceDirectoryInfo in src or DirectoryInfo not in src:
-            # We're either a source directory or an output directory (Tree Artifact).
+        if SourceDirectoryInfo in src:
+            # Source directories are opaque even at execution time, so they
+            # can only be covered by umbrella submodules.
             submodule_directories.append(src[DefaultInfo].files)
-        else:
+        elif DirectoryInfo in src:
             textual_headers_depsets.append(src[DirectoryInfo].transitive_files)
+        else:
+            # Output directories (tree artifacts) are expanded to their
+            # constituent files when the module map is written. Declaring
+            # headers as textual rather than covering them with umbrella
+            # submodules preserves `layering_check` semantics, but doesn't
+            # require a compiled module for them in `-fmodules` builds.
+            textual_headers_depsets.append(src[DefaultInfo].files)
 
     return [
         IncludePathInfo(

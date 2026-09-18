@@ -17,3 +17,8 @@ declare_kernel_headers_repository_target(
     name = "kernel_headers_directory",
     target_compatible_with = ["@platforms//os:linux"],
 )
+
+declare_kernel_headers_repository_target(
+    name = "kernel_headers_files",
+    target_compatible_with = ["@platforms//os:linux"],
+)
