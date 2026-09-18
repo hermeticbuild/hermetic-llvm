@@ -11,18 +11,48 @@ IncludePathInfo = provider(
     },
 )
 
-def _umbrella_submodule(directory):
-    path = paths.normalize(directory.path).replace("//", "/")
+def _normalized_path(directory):
+    return paths.normalize(directory.path).replace("//", "/")
 
+def _umbrella_submodule(directory):
     return """
   module "{path}" {{
     umbrella "{path}"
-  }}""".format(path = path)
+  }}""".format(path = _normalized_path(directory))
+
+def _umbrella_entry(directory):
+    return "umbrella " + _normalized_path(directory)
 
 def _module_map_impl(ctx):
     module_map = ctx.actions.declare_file(ctx.attr.name + ".modulemap")
 
     include_path_info = ctx.attr.include_path[IncludePathInfo]
+
+    if ctx.executable.generator:
+        # The generator declares textual headers with their size, which lets
+        # Clang resolve them lazily instead of stat'ing every one of them
+        # whenever the module map is parsed. It thus needs the headers as
+        # inputs.
+        output_args = ctx.actions.args()
+        output_args.add(module_map)
+        entry_args = ctx.actions.args()
+        entry_args.use_param_file("@%s", use_always = True)
+        entry_args.set_param_file_format("multiline")
+        entry_args.add_all(
+            include_path_info.submodule_directories,
+            map_each = _umbrella_entry,
+            expand_directories = False,
+        )
+        entry_args.add_all(include_path_info.textual_headers, format_each = "textual %s")
+        ctx.actions.run(
+            executable = ctx.executable.generator,
+            arguments = [output_args, entry_args],
+            inputs = include_path_info.textual_headers,
+            outputs = [module_map],
+            mnemonic = "CppModuleMap",
+            progress_message = "Writing module map %{output}",
+        )
+        return DefaultInfo(files = depset([module_map]))
 
     module_map_args = ctx.actions.args()
     module_map_args.set_param_file_format("multiline")
@@ -67,6 +97,12 @@ module_map = rule(
         "include_path": attr.label(
             providers = [IncludePathInfo],
             mandatory = True,
+        ),
+        "generator": attr.label(
+            doc = """A tool that writes the module map with sizes for textual
+            headers. Without it, the module map is written directly.""",
+            cfg = "exec",
+            executable = True,
         ),
     },
 )
