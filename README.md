@@ -276,9 +276,14 @@ bazel build \
 MSVC targets default to the retail dynamic CRT (`/MD`). Select the retail static
 CRT (`/MT`) with
 `--features=-dynamic_link_msvcrt,static_link_msvcrt`. Debug CRT modes (`/MDd`
-and `/MTd`) are not supported. Sanitizers, coverage/FDO, header parsing, module
-maps, and layering checks are also not yet supported for MSVC targets; requests
-for unsupported features fail during analysis rather than being ignored.
+and `/MTd`) are not supported. Sanitizers, coverage/FDO, and header parsing are
+also not yet supported for MSVC targets; requests for unsupported features fail
+during analysis rather than being ignored.
+
+The clang-cl toolchains support Bazel C++ header module maps and
+`layering_check`, including direct-dependency header enforcement. This is
+Bazel header layering implemented with Clang module maps; it does not enable
+`parse_headers` or C++20 named modules, which remain unsupported.
 
 ### macOS notes
 

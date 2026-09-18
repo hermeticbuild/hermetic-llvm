@@ -34,7 +34,8 @@ dependency cycle. The lld-link/COFF ThinLTO and library bridge must remain
 visibly constrained to that linker/toolchain capability rather than being
 assumed for every clang-cl toolchain.
 
-Module maps, layering checks, and header parsing are not implemented for this
-protocol yet. Their names are temporarily tolerated because the repository's
-shared e2e configuration requests `layering_check`; the empty registration is
-not a support claim and must be replaced by dialect-correct actions.
+This protocol implements Bazel C++ header module maps and `layering_check` by
+transporting the required Clang frontend arguments through clang-cl's
+`/clang:` spelling. That support enforces direct-dependency header layering; it
+does not implement `parse_headers` or C++20 named modules, which remain
+unsupported.
