@@ -562,6 +562,29 @@ cc_feature(
     visibility = ["//visibility:public"],
 )
 
+# Places each header of a target into its own submodule of the target's
+# module, so that a compiled module parses each header in its own scope under
+# local submodule visibility.
+cc_feature(
+    name = "generate_submodules",
+    feature_name = "generate_submodules",
+    requires_any_of = ["@rules_cc//cc/toolchains/args/layering_check:module_maps"],
+    visibility = ["//visibility:public"],
+)
+
+# Omits `extern module` declarations for dependencies from generated module
+# maps; the module maps of direct dependencies are passed explicitly instead
+# (use_module_maps). This keeps compiles consistent across execution
+# strategies: transitive module maps aren't inputs of compile actions, so
+# `extern module` declarations referencing them dangle in sandboxed and remote
+# builds, but are followed in unsandboxed ones.
+cc_feature(
+    name = "module_map_without_extern_module",
+    feature_name = "module_map_without_extern_module",
+    requires_any_of = ["@rules_cc//cc/toolchains/args/layering_check:module_maps"],
+    visibility = ["//visibility:public"],
+)
+
 ###
 
 cc_feature_set(

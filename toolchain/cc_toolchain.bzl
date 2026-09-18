@@ -157,6 +157,8 @@ def cc_toolchain(
             "@llvm//toolchain/features:sanitize_pwd",
             "@rules_cc//cc/toolchains/args/layering_check:module_maps",
             "@llvm//toolchain/features:module_map_home_cwd",
+            "@llvm//toolchain/features:generate_submodules",
+            "@llvm//toolchain/features:module_map_without_extern_module",
             # These are "enabled" but they only _actually_ get enabled when the underlying compilation mode is set.
             # This lets us properly order them before user_compile_flags and user_link_flags below.
             "@llvm//toolchain/features:opt",
@@ -176,6 +178,8 @@ def cc_toolchain(
             "@llvm//toolchain/features:sanitize_pwd",
             "@rules_cc//cc/toolchains/args/layering_check:module_maps",
             "@llvm//toolchain/features:module_map_home_cwd",
+            "@llvm//toolchain/features:generate_submodules",
+            "@llvm//toolchain/features:module_map_without_extern_module",
             "@llvm//toolchain/features:archive_param_file",
             # Always last (contains user_compile_flags and user_link_flags who should apply last).
             "@llvm//toolchain/features/legacy:experimental_replace_legacy_action_config_features",
