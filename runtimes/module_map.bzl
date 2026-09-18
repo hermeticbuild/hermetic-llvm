@@ -13,6 +13,28 @@ def _module_map_impl(ctx):
 
     include_path_info = ctx.attr.include_path[IncludePathInfo]
 
+    if ctx.executable.generator:
+        # The generator declares textual headers with their size, which lets
+        # Clang resolve them lazily instead of stat'ing every one of them
+        # whenever the module map is parsed. It thus needs the headers as
+        # inputs.
+        output_args = ctx.actions.args()
+        output_args.add(module_map)
+        header_args = ctx.actions.args()
+        header_args.use_param_file("@%s", use_always = True)
+        header_args.set_param_file_format("multiline")
+        header_args.add_all(include_path_info.textual_headers)
+        ctx.actions.run(
+            executable = ctx.executable.generator,
+            arguments = [output_args, header_args],
+            inputs = include_path_info.textual_headers,
+            outputs = [module_map],
+            mnemonic = "CppModuleMap",
+            progress_message = "Writing module map %{output}",
+            execution_requirements = {"supports-path-mapping": "1"},
+        )
+        return DefaultInfo(files = depset([module_map]))
+
     module_map_args = ctx.actions.args()
     module_map_args.set_param_file_format("multiline")
     module_map_args.add('module "crosstool" [system] {')
@@ -50,6 +72,12 @@ module_map = rule(
         "include_path": attr.label(
             providers = [IncludePathInfo],
             mandatory = True,
+        ),
+        "generator": attr.label(
+            doc = """A tool that writes the module map with sizes for textual
+            headers. Without it, the module map is written directly.""",
+            cfg = "exec",
+            executable = True,
         ),
     },
 )

@@ -7,6 +7,12 @@ cc_runtime_stage1_hosted_binary(
 )
 
 cc_runtime_stage1_hosted_binary(
+    name = "module-map-generator",
+    srcs = ["module_map_generator.c"],
+    visibility = ["//visibility:public"],
+)
+
+cc_runtime_stage1_hosted_binary(
     name = "static-library-validator",
     srcs = ["static_library_validator.c"],
     visibility = ["//visibility:public"],
