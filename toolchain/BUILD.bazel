@@ -313,6 +313,13 @@ cc_args_list(
             "//toolchain/args:static_link_executable",
         ],
         "//conditions:default": [],
+    }) + select({
+        # glibc linked statically: the same static-pie link as musl, against
+        # the libc.a of //3rd_party/libc/glibc/static.
+        "//constraints/glibc_linkage:static": [
+            "//toolchain/args:static_link_executable",
+        ],
+        "//conditions:default": [],
     }) + [
         "//toolchain/args/linux:sanitizer_headers_include_search_paths",
     ],

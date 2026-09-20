@@ -147,6 +147,25 @@ cc_stage0_object(
     visibility = ["//visibility:public"],
 )
 
+# A static glibc link brings its own startup files: glibc's crt1.o with
+# static-reloc.o in it, rcrt1.o for -static-pie, and the real crti.o/crtn.o
+# (libc.a's __libc_start_main calls the _init/_fini they define; the empty ones
+# below are all a dynamic link needs).
+[
+    alias(
+        name = name,
+        actual = select({
+            "//constraints/glibc_linkage:static": static,
+            "//conditions:default": default,
+        }),
+    )
+    for (name, static, default) in [
+        ("glibc_crt1_for_linkage", "//3rd_party/libc/glibc/static:crt1", "//runtimes/glibc:glibc_crt1.object"),
+        ("crti_for_linkage", "//3rd_party/libc/glibc/static:crti", ":crti_object"),
+        ("crtn_for_linkage", "//3rd_party/libc/glibc/static:crtn", ":crtn_object"),
+    ]
+]
+
 copy_to_directory(
     name = "crt_objects_directory_linux",
     srcs = select({
@@ -156,14 +175,19 @@ copy_to_directory(
             # static-pie
             "//runtimes/musl:musl_rcrt1.object",
             "//runtimes/musl:musl_Scrt1.object",
+            ":crti_object",
+            ":crtn_object",
         ],
         "//platforms/config:gnu": [
+            ":crti_for_linkage",
+            ":crtn_for_linkage",
+            ":glibc_crt1_for_linkage",
             "//runtimes/glibc:glibc_Scrt1.object",
-            "//runtimes/glibc:glibc_crt1.object",
         ],
+    }) + select({
+        "//constraints/glibc_linkage:static": ["//3rd_party/libc/glibc/static:rcrt1"],
+        "//conditions:default": [],
     }) + [
-        ":crti_object",
-        ":crtn_object",
         "@llvm-project//compiler-rt:crtbeginS_object",
         "@llvm-project//compiler-rt:crtbeginT_object",
         "@llvm-project//compiler-rt:crtbegin_object",
@@ -175,6 +199,8 @@ copy_to_directory(
         ".",
         "compiler-rt",
         "runtimes/musl",
+        "3rd_party/libc/glibc/static/glibc_static_x86_64/crt",
+        "3rd_party/libc/glibc/static/glibc_static_aarch64/crt",
     ],
     target_compatible_with = [
         "@platforms//os:linux",

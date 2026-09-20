@@ -178,6 +178,33 @@ Behind the scenes, code is compiled with headers for the selected glibc and link
 
 This ensures your program runs on systems with that glibc version or newer without using newer symbols.
 
+### Linking glibc statically
+
+By default a glibc target is linked against version-exact *stubs*, and the
+machine the binary runs on supplies the implementation.  A fully static
+executable needs glibc itself, so `libc.a`, `libm.a` and the static startup
+files are built from source (glibc 2.44, x86_64 and aarch64) when the target
+platform asks for it:
+
+`--platforms @llvm//platforms:linux_x86_64_glibc_static`
+
+The link is then `-static` / `-static-pie`, exactly as for musl, and the result
+has no dynamic loader: it runs on any Linux 4.19+ kernel whatever libc the
+machine has, or none.  Unlike the dynamic stubs, the glibc version is not a
+compatibility floor here -- the binary carries its libc.  A platform of your
+own needs the `@llvm//constraints/glibc_linkage:static` constraint and
+`@llvm//platforms:linux_<cpu>_gnu.2.44` as its parent.
+
+What static glibc cannot do is what it cannot do anywhere: NSS (`getpwnam`,
+`getaddrinfo` beyond files/dns), `iconv` and `dlopen` load shared objects at
+run time.  Sanitizer runtimes cannot be linked statically either.
+
+glibc has no build description but its makefiles, so the build is
+*transcribed*: a reference `configure && make` with this toolchain's Clang is
+reduced to a manifest of compile commands and the generated files they read,
+which a rule replays.  See `3rd_party/libc/glibc/static/` -- `reference_build.sh`
+and `gen_manifest.py` regenerate the data for a new release or architecture.
+
 ### C++ standard library selection
 
 Both libc++ and libstdc++ are supported. libc++ is selected by default.

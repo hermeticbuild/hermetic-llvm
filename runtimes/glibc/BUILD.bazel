@@ -116,6 +116,17 @@ copy_to_directory(
     name = "glibc_library_search_directory",
     srcs = LIBS + LINKER_SCRIPTS + [
         "libc_nonshared.a",
+    ] + select({
+        # libc.a, libm.a and the archives glibc has emptied into libc.a, next
+        # to the stubs: a -static link looks for lib*.a only, so the two sets
+        # never compete.
+        "//constraints/glibc_linkage:static": ["//3rd_party/libc/glibc/static:archives"],
+        "//conditions:default": [],
+    }),
+    root_paths = [
+        ".",
+        "3rd_party/libc/glibc/static/glibc_static_x86_64/lib",
+        "3rd_party/libc/glibc/static/glibc_static_aarch64/lib",
     ],
     visibility = ["//visibility:public"],
 )

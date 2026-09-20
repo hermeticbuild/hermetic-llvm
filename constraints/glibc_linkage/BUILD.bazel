@@ -1,0 +1,38 @@
+package(default_visibility = ["//visibility:public"])
+
+# How a glibc target links its libc.
+#
+# `dynamic` is what this toolchain has always done: link against version-exact
+# *stubs* and let the machine the binary runs on supply the implementation.
+#
+# `static` links glibc itself -- libc.a and libm.a built from source by
+# //3rd_party/libc/glibc/static -- and produces a static-pie with no dynamic
+# linker, exactly as the musl platforms do.  //platforms defines
+# linux_{x86_64,aarch64}_glibc_static; a platform of your own also has to name
+# the glibc release those archives are built from (GLIBC_STATIC_VERSION there),
+# because a program is compiled against the headers of the libc.a it links:
+#
+#     platform(
+#         name = "my_static_platform",
+#         parents = ["@llvm//platforms:linux_x86_64_gnu.2.44"],
+#         constraint_values = ["@llvm//constraints/glibc_linkage:static"],
+#     )
+#
+# What static glibc cannot do is unchanged from any other distribution of it:
+# NSS (getpwnam, getaddrinfo with anything but files/dns), iconv and dlopen
+# load shared objects at run time and need a matching dynamic glibc to be
+# present.  A program that uses none of them is self-contained.
+constraint_setting(
+    name = "glibc_linkage",
+    default_constraint_value = "dynamic",
+)
+
+constraint_value(
+    name = "dynamic",
+    constraint_setting = "glibc_linkage",
+)
+
+constraint_value(
+    name = "static",
+    constraint_setting = "glibc_linkage",
+)
