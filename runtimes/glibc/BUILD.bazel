@@ -120,6 +120,16 @@ copy_to_directory(
     visibility = ["//visibility:public"],
 )
 
+# The kernel's UAPI headers, which glibc's own include (<linux/limits.h>,
+# <asm/errno.h>, ...).  Public next to glibc's for anything outside the
+# toolchain that parses C or C++ against this sysroot and has to name the
+# directories itself -- a Clang-based tool under test, say.
+alias(
+    name = "kernel_headers_include_search_directory",
+    actual = "@kernel_headers//:kernel_headers_directory",
+    visibility = ["//visibility:public"],
+)
+
 alias(
     name = "glibc_headers_include_search_directory",
     actual = "@glibc//:glibc_headers_directory",
