@@ -233,23 +233,10 @@ Then build with that platform:
 bazel build --platforms=//:linux_x86_64_gnu_2_28_libstdcxx_17_0_0 //:app
 ```
 
-libstdc++ is currently supported as a dynamic C++ runtime, so C++ binaries
-using it must set `linkstatic = False`:
-
-```starlark
-cc_binary(
-    name = "app",
-    srcs = ["main.cc"],
-    linkstatic = False,
-)
-```
-
-With Bazel's default dynamic mode, `cc_binary` defaults `linkstatic` to `True`,
-which selects the toolchain's static C++ runtime path. For libstdc++ that would
-make static libstdc++ the default, which is not what most Linux users expect,
-and this toolchain intentionally supports libstdc++ through the dynamic runtime
-path. `--dynamic_mode=off` also forces the static runtime path, even when
-`linkstatic = False`, so it cannot be combined with libstdc++ support.
+libstdc++ is built both as `libstdc++.so.6` and as `libstdc++.a`. As with
+libc++, a `linkstatic` binary (Bazel's default for `cc_binary`) links the
+archive, and a `linkstatic = False` one (the default for `cc_test`) links the
+shared library and carries it in its runfiles.
 
 At the moment, libstdc++ support is limited to Linux glibc targets. Additional
 targets can be added based on demand; musl + libstdc++ is feasible too, even if
