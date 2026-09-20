@@ -1,0 +1,55 @@
+Build LLVMWindowsManifest against libxml2 so that llvm-mt and lld-link's
+manifest merging work instead of failing with "no libxml2".
+
+diff --git a/third-party/BUILD.bazel b/third-party/BUILD.bazel
+--- a/third-party/BUILD.bazel
++++ b/third-party/BUILD.bazel
+@@ -6,6 +6,34 @@
+ 
+ package(default_visibility = ["//visibility:public"])
+ 
++bool_flag(
++    name = "llvm_enable_libxml2",
++    build_setting_default = True,
++)
++
++config_setting(
++    name = "llvm_libxml2_enabled",
++    flag_values = {":llvm_enable_libxml2": "true"},
++)
++
++cc_library_wrapper(
++    name = "libxml2",
++    defines = select({
++        ":llvm_libxml2_enabled": [
++            "LLVM_ENABLE_LIBXML2=1",
++        ],
++        "//conditions:default": [
++            "LLVM_ENABLE_LIBXML2=0",
++        ],
++    }),
++    deps = select({
++        ":llvm_libxml2_enabled": [
++            "@llvm_libxml2//:libxml2",
++        ],
++        "//conditions:default": [],
++    }),
++)
++
+ bool_flag(
+     name = "llvm_enable_zstd",
+     build_setting_default = True,
+diff --git a/llvm/BUILD.bazel b/llvm/BUILD.bazel
+--- a/llvm/BUILD.bazel
++++ b/llvm/BUILD.bazel
+@@ -4655,6 +4655,10 @@
+     deps = [
+         ":Support",
+         ":config",
++        # We unconditionally depend on the custom LLVM libxml2 wrapper. This
++        # will be an empty library unless libxml2 is enabled, in which case it
++        # will both provide the necessary dependencies and configuration defines.
++        "//third-party:libxml2",
+     ],
+ )
+ 

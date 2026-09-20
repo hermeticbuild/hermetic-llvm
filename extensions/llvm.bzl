@@ -65,6 +65,7 @@ _LLVM_22_SOURCE_PATCHES = [
     "//3rd_party/llvm-project/x.x/patches:libcxx-vcruntime-nothrow.patch",
     "//3rd_party/llvm-project/22.x/patches:llvm-bazel-blake3-windows-gnu.patch",
     "//3rd_party/llvm-project/22.x/patches:llvm-bazel-windows-arm64-config.patch",
+    "//3rd_party/llvm-project/x.x/patches:llvm-bazel-libxml2.patch",
 ] + _BEFORE_23_SOURCE_PATCHES + _DEFAULT_SOURCE_PATCHES
 
 _LLVM_23_SOURCE_PATCHES = [
@@ -85,6 +86,7 @@ _LLVM_23_SOURCE_PATCHES = [
     "//3rd_party/llvm-project/x.x/patches:llvm-extra.patch",
     "//3rd_party/llvm-project/x.x/patches:llvm-cov-multicall.patch",
     "//3rd_party/llvm-project/x.x/patches:thinlto-roundtrip-before-codegen.patch",
+    "//3rd_party/llvm-project/x.x/patches:llvm-bazel-libxml2.patch",
 ] + _DEFAULT_SOURCE_PATCHES
 
 _LLVM_PATCHES_BY_MAJOR = {
