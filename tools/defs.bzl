@@ -27,6 +27,7 @@ TOOLCHAIN_BINARIES = [
     "llvm-gsymutil",
     "llvm-ifs",
     "llvm-install-name-tool",
+    "llvm-lib",
     "llvm-libtool-darwin",
     "llvm-link",
     "llvm-lipo",
