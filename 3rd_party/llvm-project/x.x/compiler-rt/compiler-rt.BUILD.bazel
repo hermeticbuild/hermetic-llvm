@@ -3540,3 +3540,92 @@ cc_runtime_stage0_shared_library(
         ":asan_dynamic",
     ],
 )
+
+# Standalone Scudo is selected on final executables through their malloc attribute.
+# Keep the runtime static and retained: its allocation entry points are weak.
+SCUDO_STANDALONE_COPTS = [
+    "-O3",
+    "-fno-lto",
+    "-fvisibility=hidden",
+    "-fno-exceptions",
+    "-nostdinc++",
+]
+
+SCUDO_STANDALONE_HEADERS = glob([
+    "lib/scudo/standalone/*.def",
+    "lib/scudo/standalone/*.h",
+    "lib/scudo/standalone/*.inc",
+    "lib/scudo/standalone/include/scudo/*.h",
+])
+
+SCUDO_STANDALONE_TARGET_COMPATIBLE_WITH = select({
+    "@llvm//platforms/config:linux_aarch64_gnu": [],
+    "@llvm//platforms/config:linux_x86_64_gnu": [],
+    "//conditions:default": ["@platforms//:incompatible"],
+}) + selects.with_or({
+    # These modes require LTO or install competing allocation interceptors.
+    (
+        "@llvm//config:asan_enabled",
+        "@llvm//config:cfi_enabled",
+        "@llvm//config:dfsan_enabled",
+        "@llvm//config:lsan_enabled",
+        "@llvm//config:msan_enabled",
+        "@llvm//config:nsan_enabled",
+        "@llvm//config:rtsan_enabled",
+        "@llvm//config:tsan_enabled",
+        "@llvm//config:tysan_enabled",
+    ): ["@platforms//:incompatible"],
+    "//conditions:default": [],
+})
+
+# Only this translation unit may use CRC instructions. Scudo checks CPU support
+# at runtime before calling its weakly referenced hardware implementation.
+cc_library(
+    name = "scudo_standalone_crc32",
+    srcs = ["lib/scudo/standalone/crc32_hw.cpp"],
+    hdrs = SCUDO_STANDALONE_HEADERS,
+    copts = SCUDO_STANDALONE_COPTS + select({
+        "@platforms//cpu:aarch64": ["-mcrc"],
+        "@platforms//cpu:x86_64": ["-mcrc32"],
+        "//conditions:default": [],
+    }),
+    includes = ["lib/scudo/standalone/include"],
+    linkstatic = True,
+    target_compatible_with = SCUDO_STANDALONE_TARGET_COMPATIBLE_WITH,
+    alwayslink = True,
+)
+
+cc_library(
+    name = "scudo_standalone",
+    srcs = [
+        "lib/scudo/standalone/checksum.cpp",
+        "lib/scudo/standalone/common.cpp",
+        "lib/scudo/standalone/condition_variable_linux.cpp",
+        "lib/scudo/standalone/flags.cpp",
+        "lib/scudo/standalone/flags_parser.cpp",
+        "lib/scudo/standalone/linux.cpp",
+        "lib/scudo/standalone/mem_map.cpp",
+        "lib/scudo/standalone/mem_map_linux.cpp",
+        "lib/scudo/standalone/release.cpp",
+        "lib/scudo/standalone/report.cpp",
+        "lib/scudo/standalone/report_linux.cpp",
+        "lib/scudo/standalone/string_utils.cpp",
+        "lib/scudo/standalone/timing.cpp",
+        "lib/scudo/standalone/wrappers_c.cpp",
+        "lib/scudo/standalone/wrappers_cpp.cpp",
+    ],
+    hdrs = SCUDO_STANDALONE_HEADERS,
+    copts = SCUDO_STANDALONE_COPTS,
+    includes = ["lib/scudo/standalone/include"],
+    # Match the compiler-rt driver's fallback when no dynamic symbol list is
+    # available, so ordinary base-namespace dlopen uses this process allocator.
+    linkopts = [
+        "-pthread",
+        "-Wl,--export-dynamic",
+    ],
+    linkstatic = True,
+    target_compatible_with = SCUDO_STANDALONE_TARGET_COMPATIBLE_WITH,
+    visibility = ["//visibility:public"],
+    deps = [":scudo_standalone_crc32"],
+    alwayslink = True,
+)

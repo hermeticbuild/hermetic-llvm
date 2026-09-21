@@ -1114,6 +1114,18 @@ lsan_cc_test(
     }),
 )
 
+cc_test(
+    name = "scudo_runtime_cc_test",
+    srcs = ["scudo_runtime_cc_test.cc"],
+    linkopts = ["-ldl"],
+    malloc = "@llvm-project//compiler-rt:scudo_standalone",
+    target_compatible_with = select({
+        "@llvm//platforms/config:linux_aarch64_gnu": [],
+        "@llvm//platforms/config:linux_x86_64_gnu": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)
+
 # Test that this toolchain properly supports the supports_pic capability.
 cc_binary(
     name = "supports_pic_",
