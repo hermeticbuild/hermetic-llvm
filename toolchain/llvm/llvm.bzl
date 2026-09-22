@@ -466,5 +466,11 @@ def declare_llvm_targets(*, suffix = ""):
             "@platforms//os:windows": ":windows_target_headers",
             "@platforms//os:none": ":wasm_target_headers",
         }),
+        # The generator is built with the stage1_hosted toolchain, whose own
+        # module map thus can't depend on it.
+        generator = select({
+            "@llvm//toolchain:runtimes_all": "@llvm//tools/internal:module-map-generator",
+            "//conditions:default": None,
+        }),
         visibility = ["//visibility:public"],
     )
