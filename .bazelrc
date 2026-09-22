@@ -54,6 +54,7 @@ common:rust    --@rules_rust//rust/settings:experimental_use_sh_toolchain_for_bo
 common --bes_results_url=https://app.buildbuddy.io/invocation/
 common --bes_backend=grpcs://remote.buildbuddy.io
 common --remote_header=x-buildbuddy-api-key=4jtaxdhxtyu4ylxdEwI7
+common --bes_header=x-buildbuddy-api-key=4jtaxdhxtyu4ylxdEwI7
 common --experimental_remote_downloader=grpcs://remote.buildbuddy.io
 common --grpc_keepalive_time=30s
 common --remote_cache=grpcs://remote.buildbuddy.io
