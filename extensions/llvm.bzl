@@ -49,6 +49,7 @@ _LLVM_21_SOURCE_PATCHES = [
 ] + _BEFORE_23_SOURCE_PATCHES + _DEFAULT_SOURCE_PATCHES
 
 _LLVM_22_SOURCE_PATCHES = [
+    "//3rd_party/llvm-project/x.x/patches:llvm-macho-arm64e-x1.patch",
     "//3rd_party/llvm-project/22.x/patches:lld-coff-thinlto-lazy-index.patch",
     "//3rd_party/llvm-project/22.x/patches:lld-coff-lto-weak-alias-prevailing.patch",
     "//3rd_party/llvm-project/22.x/patches:llvm-link-multicall.patch",
@@ -69,6 +70,7 @@ _LLVM_22_SOURCE_PATCHES = [
 ] + _BEFORE_23_SOURCE_PATCHES + _DEFAULT_SOURCE_PATCHES
 
 _LLVM_23_SOURCE_PATCHES = [
+    "//3rd_party/llvm-project/x.x/patches:llvm-macho-arm64e-x1.patch",
     "//3rd_party/llvm-project/x.x/patches:clang-bazel-static-windows.patch",
     "//3rd_party/llvm-project/x.x/patches:libcxx-vcruntime-nothrow.patch",
     "//3rd_party/llvm-project/22.x/patches:lld-coff-thinlto-lazy-index.patch",
@@ -94,7 +96,12 @@ _LLVM_PATCHES_BY_MAJOR = {
     22: _LLVM_22_SOURCE_PATCHES,
     23: _LLVM_23_SOURCE_PATCHES,
     # So that anyone can test with the next LLVM major easily.
-    24: _LLVM_23_SOURCE_PATCHES,
+    # LLVM 24 already includes upstream arm64e.x1 support.
+    24: [
+        patch
+        for patch in _LLVM_23_SOURCE_PATCHES
+        if patch != "//3rd_party/llvm-project/x.x/patches:llvm-macho-arm64e-x1.patch"
+    ],
 }
 
 def _create_llvm_project_repository(mctx, llvm_version, llvm_version_index, targets):
