@@ -20,7 +20,7 @@ int VectorGenerateAndSum(int size) {
   cudaMallocManaged(&b, sizeof(int) * size);
   cudaMallocManaged(&c, sizeof(int) * size);
 
-  for(int i = 1; i <= size; ++i) {
+  for(int i = 0; i < size; ++i) {
     a[i] = i;
     b[i] = i;
     c[i] = 0;
