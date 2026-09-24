@@ -66,6 +66,8 @@
     "https://bcr.bazel.build/modules/buildozer/8.5.1/source.json": "e3386e6ff4529f2442800dee47ad28d3e6487f36a1f75ae39ae56c70f0cd2fbd",
     "https://bcr.bazel.build/modules/cuda_toolchain_types/0.0.1/MODULE.bazel": "9f2159902e57aa5ec59b57be6847ca50425cdb434dcb03e6653accc65ba0b96e",
     "https://bcr.bazel.build/modules/cuda_toolchain_types/0.0.1/source.json": "8b0494638900f28ed24709f48cc151f421df9f75fa2c7625e8693d7cfdcff860",
+    "https://bcr.bazel.build/modules/cuda_toolkit/0.0.5/MODULE.bazel": "a49508f1cad08ff5566ec4e30f6ab44148b740af12aab345f8b500210d7c9801",
+    "https://bcr.bazel.build/modules/cuda_toolkit/0.0.5/source.json": "0321807c9c90557b27b3e7459ecbf18a0cab67f9ee1fce4f70190ea36c09c1f7",
     "https://bcr.bazel.build/modules/gawk/5.3.2.bcr.3/MODULE.bazel": "f1b7bb2dd53e8f2ef984b39485ec8a44e9076dda5c4b8efd2fb4c6a6e856a31d",
     "https://bcr.bazel.build/modules/gawk/5.3.2.bcr.3/source.json": "ebe931bfe362e4b41e59ee00a528db6074157ff2ced92eb9e970acab2e1089c9",
     "https://bcr.bazel.build/modules/jsoncpp/1.9.5/MODULE.bazel": "31271aedc59e815656f5736f282bb7509a97c7ecb43e927ac1a37966e0578075",

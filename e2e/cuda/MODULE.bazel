@@ -10,11 +10,7 @@ local_path_override(
     path = "../../",
 )
 
-bazel_dep(name = "cuda_toolkit", version = "")
-local_path_override(
-    module_name = "cuda_toolkit",
-    path = "../../../../hermeticbuild/cuda-toolkit",
-)
+bazel_dep(name = "cuda_toolkit", version = "0.0.5")
 
 cuda_toolkit = use_extension("@cuda_toolkit//extensions:cuda.bzl", "cuda")
 cuda_toolkit.redist(
