@@ -1,8 +1,11 @@
 load("//platforms:common.bzl", "SUPPORTED_EXECS", "SUPPORTED_TARGETS")
 
 _BUILD_TEMPLATE = """\
+load("@llvm//platforms:common.bzl", "CUDA_SUPPORTED_EXECS", "CUDA_SUPPORTED_TARGETS")
 load("@llvm//toolchain:declare_toolchains.bzl", "declare_toolchains")
+load("@llvm//toolchain/cuda:declare_toolchains.bzl", declare_cuda_toolchains = "declare_toolchains")
 load("@llvm//toolchain/bootstrap:declare_toolchains.bzl", declare_bootstrap_toolchains = "declare_toolchains")
+load("@llvm//toolchain/cuda/bootstrap:declare_toolchains.bzl", declare_cuda_bootstrap_toolchains = "declare_toolchains")
 
 _EXECS = [
     {execs}
@@ -14,6 +17,9 @@ _TARGETS = [
 
 declare_toolchains(execs = _EXECS, targets = _TARGETS)
 declare_bootstrap_toolchains(execs = _EXECS, targets = _TARGETS)
+
+declare_cuda_toolchains(execs = CUDA_SUPPORTED_EXECS, targets = CUDA_SUPPORTED_TARGETS)
+declare_cuda_bootstrap_toolchains(execs = CUDA_SUPPORTED_EXECS, targets = CUDA_SUPPORTED_TARGETS)
 """
 
 def _toolchains_repository_impl(rctx):

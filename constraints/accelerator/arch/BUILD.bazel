@@ -1,0 +1,15 @@
+package(default_visibility = ["//visibility:public"])
+
+constraint_setting(
+    name = "arch",
+)
+
+constraint_value(
+    name = "none",
+    constraint_setting = ":arch",
+)
+
+constraint_value(
+    name = "nvptx64",
+    constraint_setting = ":arch",
+)

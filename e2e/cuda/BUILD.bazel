@@ -1,0 +1,83 @@
+load("@llvm//:cuda.bzl", "cuda_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+
+cc_binary(
+    name = "hello_world",
+    srcs = [
+        "hello_world.cc",
+    ],
+)
+
+cuda_library(
+    name = "saxpy_cuda",
+    srcs = ["saxpy_cuda.cu"],
+    archs = [
+        "sm_80",
+        "sm_90",
+        "sm_120",
+    ],
+    deps = [
+        "@cuda//cuda:cuda_headers",
+        # Clang force-includes curand_mtgp32_kernel.h in its CUDA wrapper.
+        "@cuda//curand:headers",
+        "@cuda//cccl:nv_headers",
+    ],
+)
+
+cc_binary(
+    name = "saxpy_cuda_binary",
+    deps = [
+        ":saxpy_cuda",
+        "@cuda//cuda:cuda_headers",
+        "@cuda//cudart",
+    ],
+)
+
+# device code + host wrapper function
+cuda_library(
+    name = "vector_cuda",
+    srcs = ["vector_cuda.cu"],
+    hdrs = ["vector_cuda.cu.h"],
+    archs = [
+        "sm_80",
+        "sm_90",
+        "sm_120",
+    ],
+    deps = [
+        "@cuda//cuda:cuda_headers",
+        # Clang force-includes curand_mtgp32_kernel.h in its CUDA wrapper.
+        "@cuda//curand:headers",
+        "@cuda//cccl:nv_headers",
+    ],
+)
+
+# host only, calls host wrapper function
+cc_binary(
+    name = "vector_cuda_binary",
+    srcs = [
+        "vector_cuda_binary.cc",
+    ],
+    deps = [
+        ":vector_cuda",
+        "@cuda//cuda:cuda_headers",
+        "@cuda//cudart",
+    ],
+)
+
+cc_test(
+    name = "vector_cuda_test",
+    srcs = [
+        "vector_cuda_test.cc",
+    ],
+    tags = [
+        "local",
+        "no-remote",
+    ],
+    deps = [
+        ":vector_cuda",
+        "@cuda//cuda:cuda_headers",
+        "@cuda//cudart",
+        "@googletest//:gtest_main",
+    ],
+)
