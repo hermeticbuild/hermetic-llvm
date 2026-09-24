@@ -6,6 +6,10 @@ load(":cuda_current_toolchain.bzl", "cuda_current_toolchain_component")
 
 package(default_visibility = ["//visibility:public"])
 
+# The host compilation embeds this zero-byte placeholder; the real image is
+# supplied by a separate payload object at CPU link.
+exports_files(["empty.fatbin"])
+
 cuda_current_toolchain_component(
     name = "current_fatbinary",
     component = "fatbinary",

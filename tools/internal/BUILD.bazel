@@ -1,4 +1,27 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//toolchain/runtimes:cc_runtime_binary.bzl", "cc_runtime_stage1_hosted_binary")
+
+cc_runtime_stage1_hosted_binary(
+    name = "cuda-redirect",
+    srcs = ["cuda_redirect.c"],
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "cuda-redirect-test-source",
+    testonly = True,
+    hdrs = ["cuda_redirect.c"],
+)
+
+cc_runtime_stage1_hosted_binary(
+    name = "cuda-redirect-test-driver",
+    testonly = True,
+    srcs = ["cuda_redirect_test.c"],
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = ["//visibility:public"],
+    deps = [":cuda-redirect-test-source"],
+)
 
 cc_runtime_stage1_hosted_binary(
     name = "header-parser",

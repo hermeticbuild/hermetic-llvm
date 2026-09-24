@@ -1,6 +1,95 @@
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:defs.bzl", "CcInfo")
 
+_CudaHostObjectsInfo = provider(fields = ["symbol"])
+
+# An injective encoding, rather than a short hash or punctuation replacement.
+# Include the configuration so independently configured copies cannot alias.
+_SYMBOL_CHARS = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+_HEX = "0123456789abcdef"
+
+def _payload_symbol(ctx):
+    identity = str(ctx.label) + ":" + ctx.bin_dir.path
+    encoded = []
+    for char in identity.elems():
+        index = _SYMBOL_CHARS.find(char)
+        if index < 0:
+            fail("CUDA payload identifiers require ASCII labels: %s" % ctx.label)
+        encoded.append(_HEX[index // 16] + _HEX[index % 16])
+    return "__cuda_payload_" + "".join(encoded)
+
+def _cuda_host_objects_impl(ctx):
+    raw = ctx.attr.raw
+    symbol = _payload_symbol(ctx)
+    outputs = []
+    raw_pic_objects = []
+    for linker_input in raw[CcInfo].linking_context.linker_inputs.to_list():
+        if linker_input.owner != raw.label:
+            continue
+        for library in linker_input.libraries:
+            raw_pic_objects.extend(library.pic_objects or [])
+            for objects, suffix in [(library.objects, ".nopic.o"), (library.pic_objects, ".pic.o")]:
+                for obj in objects or []:
+                    out = ctx.actions.declare_file("%s/%d%s" % (ctx.label.name, len(outputs), suffix))
+                    args = ctx.actions.args()
+                    args.add_all([obj, out, symbol])
+                    ctx.actions.run(
+                        mnemonic = "CudaHostRedirect",
+                        executable = ctx.executable._redirect,
+                        inputs = [obj],
+                        outputs = [out],
+                        arguments = [args],
+                    )
+                    outputs.append(out)
+    if not outputs:
+        fail("CUDA host redirection requires direct native objects from %s (LTO is unsupported)" % raw.label)
+    return [
+        DefaultInfo(files = depset(outputs)),
+        # Forward headers/defines, never the unmodified objects or archives.
+        CcInfo(compilation_context = raw[CcInfo].compilation_context),
+        _CudaHostObjectsInfo(symbol = symbol),
+        OutputGroupInfo(raw_pic_objects = depset(raw_pic_objects)),
+    ]
+
+_cuda_host_objects = rule(
+    implementation = _cuda_host_objects_impl,
+    attrs = {
+        "raw": attr.label(mandatory = True, providers = [CcInfo]),
+        "_redirect": attr.label(
+            default = Label("//tools/internal:cuda-redirect"),
+            executable = True,
+            cfg = "exec",
+        ),
+    },
+)
+
+def _cuda_payload_impl(ctx):
+    symbol = ctx.attr.host[_CudaHostObjectsInfo].symbol
+    assembly = ctx.actions.declare_file(ctx.label.name + ".s")
+
+    # Keep execroot-relative paths. The compiling rule declares the image as an
+    # input; .incbin does not participate in C/C++ header input discovery.
+    image = ctx.file.image.path.replace("\\", "\\\\").replace("\"", "\\\"")
+    ctx.actions.write(assembly, """.section .nv_fatbin,"a",%progbits
+.balign 8
+.globl {symbol}
+.hidden {symbol}
+.type {symbol},%object
+{symbol}:
+.incbin "{image}"
+.size {symbol}, .-{symbol}
+.section .note.GNU-stack,"",%progbits
+""".format(symbol = symbol, image = image))
+    return [DefaultInfo(files = depset([assembly]))]
+
+_cuda_payload = rule(
+    implementation = _cuda_payload_impl,
+    attrs = {
+        "host": attr.label(mandatory = True, providers = [_CudaHostObjectsInfo]),
+        "image": attr.label(mandatory = True, allow_single_file = True),
+    },
+)
+
 def _cuda_arch_transition_impl(_settings, attr):
     if not attr.archs:
         fail("cuda_library requires a non-empty archs list")
@@ -102,12 +191,14 @@ def cuda_library(
         archs = [],
         copts = [],
         **kwargs):
-    """Compiles each source separately for every SM, then embeds its fatbinary.
+    """Compiles host and device code independently, joining them at CPU link.
 
     `deps` supplies headers to device compilation and libraries to host linking.
     `host_deps` is only available to host compilation/linking. Device code must
     be self-contained in each translation unit (no relocatable device code).
-    Native cc_library attributes below retain their compilation/link semantics.
+    Each source must emit CUDA device registration; use cc_library for CPU-only
+    sources. Native cc_library attributes below retain their compilation/link
+    semantics.
     """
     common_attrs = [
         "compatible_with",
@@ -157,6 +248,9 @@ def cuda_library(
         dev_src_target = _dev_src(name, idx)
         fatbin_src_target = _fatbin_src(name, idx)
         host_src_target = _host_src(name, idx)
+        raw_host_target = host_src_target + "_raw"
+        host_objects_target = host_src_target + "_objects"
+        payload_target = host_src_target + "_payload"
 
         cc_library(
             name = dev_src_target,
@@ -185,26 +279,53 @@ def cuda_library(
         )
 
         cc_library(
-            name = host_src_target,
+            name = raw_host_target,
             srcs = [src],
             hdrs = hdrs,
             defines = defines,
             deps = deps + host_deps,
-            features = features,
+            # Native ELF is required by the relocation tool. Other CPU targets
+            # can still use ThinLTO when linking these ordinary native objects.
+            features = features + ["-thin_lto"],
             copts = copts + [
                 "--cuda-path=$(location {})".format(Label("//toolchain/cuda:current_cuda_path")),
                 "--offload-host-only",
                 "-Xclang",
                 "-fcuda-include-gpubinary",
                 "-Xclang",
-                "$(execpath :%s)" % fatbin_src_target,
+                "$(execpath {})".format(Label("//toolchain/cuda:empty.fatbin")),
             ] + [
                 "-Wno-error=invalid-specialization",
             ],
             additional_compiler_inputs = compiler_inputs + [
                 Label("//toolchain/cuda:current_cuda_path"),
-                fatbin_src_target,
+                Label("//toolchain/cuda:empty.fatbin"),
             ],
+            visibility = ["//visibility:private"],
+            **host_kwargs
+        )
+
+        _cuda_host_objects(
+            name = host_objects_target,
+            raw = raw_host_target,
+            visibility = ["//visibility:private"],
+            **common_kwargs
+        )
+        _cuda_payload(
+            name = payload_target,
+            host = host_objects_target,
+            image = fatbin_src_target,
+            visibility = ["//visibility:private"],
+            **common_kwargs
+        )
+        cc_library(
+            name = host_src_target,
+            srcs = [host_objects_target, payload_target],
+            hdrs = hdrs,
+            defines = defines,
+            deps = [host_objects_target] + deps + host_deps,
+            features = features,
+            additional_compiler_inputs = [fatbin_src_target],
             visibility = ["//visibility:private"],
             **host_kwargs
         )

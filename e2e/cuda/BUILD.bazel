@@ -1,7 +1,9 @@
 load("@llvm//:cuda.bzl", "cuda_library")
+load("@rules_cc//cc:cc_shared_library.bzl", "cc_shared_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
-load(":attributes_test.bzl", "device_features_test", "device_policy_test", "fatbinary_inputs_test", "host_features_test")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load(":attributes_test.bzl", "device_features_test", "device_policy_test", "fatbinary_inputs_test", "host_decoupling_test", "host_features_test", "host_linking_test", "redirect_inputs_test")
 
 cc_binary(
     name = "hello_world",
@@ -111,7 +113,122 @@ cc_test(
 
 host_features_test(
     name = "host_features_test",
+    target_under_test = ":attribute_cuda__cuda_host_0_raw",
+)
+
+host_decoupling_test(
+    name = "host_decoupling_test",
+    target_under_test = ":attribute_cuda__cuda_host_0_raw",
+)
+
+redirect_inputs_test(
+    name = "redirect_inputs_test",
+    target_under_test = ":attribute_cuda__cuda_host_0_objects",
+)
+
+host_linking_test(
+    name = "host_linking_test",
     target_under_test = ":attribute_cuda__cuda_host_0",
+)
+
+cuda_library(
+    name = "decoupled",
+    testonly = True,
+    srcs = [
+        "decoupled_a.cu",
+        "decoupled_b.cu",
+    ],
+    archs = [
+        "sm_80",
+        "sm_120",
+    ],
+    host_deps = ["@cuda//cudart"],
+    deps = [
+        "@cuda//cccl:nv_headers",
+        "@cuda//cuda:cuda_headers",
+        "@cuda//curand:headers",
+    ],
+)
+
+cc_test(
+    name = "decoupled_test",
+    srcs = ["decoupled_test.cc"],
+    tags = [
+        "local",
+        "no-remote",
+    ],
+    deps = [
+        ":cpu_only",
+        ":decoupled",
+    ],
+)
+
+cc_shared_library(
+    name = "decoupled_shared",
+    testonly = True,
+    deps = [":decoupled"],
+)
+
+cc_test(
+    name = "decoupled_shared_test",
+    srcs = ["decoupled_test.cc"],
+    dynamic_deps = [":decoupled_shared"],
+    tags = [
+        "local",
+        "no-remote",
+    ],
+    deps = [
+        ":cpu_only",
+        ":decoupled",
+    ],
+)
+
+cc_library(
+    name = "cpu_only",
+    testonly = True,
+    srcs = ["cpu_only.cu"],
+    additional_compiler_inputs = ["@llvm//toolchain/cuda:current_cuda_path"],
+    copts = [
+        "--offload-host-only",
+        "--cuda-path=$(location @llvm//toolchain/cuda:current_cuda_path)",
+    ],
+    features = ["-thin_lto"],
+    deps = [
+        "@cuda//cccl:nv_headers",
+        "@cuda//cuda:cuda_headers",
+        "@cuda//curand:headers",
+    ],
+)
+
+filegroup(
+    name = "redirect_test_raw",
+    testonly = True,
+    srcs = [":decoupled__cuda_host_0_objects"],
+    output_group = "raw_pic_objects",
+)
+
+filegroup(
+    name = "redirect_test_cpu_only",
+    testonly = True,
+    srcs = [":cpu_only"],
+    output_group = "compilation_outputs",
+)
+
+sh_test(
+    name = "redirect_test",
+    srcs = ["redirect_test.sh"],
+    args = [
+        "$(rootpath @llvm//tools/internal:cuda-redirect-test-driver)",
+        "$(rootpath @llvm//tools/internal:cuda-redirect)",
+        "$(rootpath :redirect_test_raw)",
+        "$(rootpath :redirect_test_cpu_only)",
+    ],
+    data = [
+        ":redirect_test_cpu_only",
+        ":redirect_test_raw",
+        "@llvm//tools/internal:cuda-redirect",
+        "@llvm//tools/internal:cuda-redirect-test-driver",
+    ],
 )
 
 device_features_test(
