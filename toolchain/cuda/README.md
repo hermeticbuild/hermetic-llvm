@@ -1,32 +1,55 @@
-# CUDA aware CC toolchain
+# CUDA compilation policy
 
-This package defines the Bazel cc_toolchain used when CUDA compilation is enabled.
+This package supplies CUDA device arguments and features to the ordinary LLVM
+C++ toolchains. [cc_toolchain.bzl](../cc_toolchain.bzl) selects this policy when
+`//config:cuda_device_mode` is enabled. Compiler selection, tool maps and resource
+directories are shared with CPU compilation, including all LLVM bootstrap stages.
+There are no separate CUDA C++ toolchain registrations or bootstrap compilers.
 
-It is intentionally separate from the regular CPU toolchains defined in this repository.
-CUDA compilation has a different structure than normal C/C++ compilation and therefore requires a different set of compiler flags and configuration.
+## Split compilation
 
-Why a separate toolchain
+[`cuda_library`](../../cuda.bzl) uses a split transition to set device mode and
+`//config:nvidia_compute_capability` separately for each requested SM. For each
+source, it creates:
 
-CUDA compilation is fundamentally a heterogeneous compilation model. A single .cu translation unit can contain either or both:
-- host code, compiled for the CPU
-- device code, compiled for the GPU (PTX / SASS)
+1. One device compilation per SM, producing a cubin.
+2. A fatbinary action packing that source's cubins across SMs.
+3. A host compilation embedding the fatbinary.
 
-During the device compilation pass, the compiler must still interpret the program in the context of a host C++ ABI.
+The public C++ library aggregates the resulting host libraries. Only the source's
+own device objects enter its fatbinary; transitive dependency objects do not.
+This keeps device compilation independently schedulable and cacheable for each
+source/SM pair. `srcs` must be non-empty; use `cc_library` for header-only libraries.
 
-Because of that, CUDA compilation still depends on a complete host C++ environment:
-1. a host target triple
-2. matching libc headers
-3. matching C++ standard library headers (libc++ in this repository)
+## Host ABI and device policy
 
-The CUDA toolkit itself does not provide a C or C++ standard library implementation; it relies on the host toolchain for these components.
+Although device code targets NVIDIA GPUs, Clang still parses CUDA using the host
+target's C++ ABI. The host triple, type layouts, libc headers and C++ standard
+library headers must agree with the host compilation. The CUDA toolkit does not
+provide that complete host environment.
 
-For this reason this package still defines toolchains with CPU target compatibility for compatible CUDA target platforms (linux/windows x86/arm64).
+[BUILD.bazel](BUILD.bazel) therefore reuses the common LLVM compile arguments and
+host header configuration, while selecting CUDA device flags and features.
+Device compilation supports Linux GNU targets on x86_64 and aarch64; other target
+ABIs are explicitly incompatible. CPU ThinLTO and linking policy do not apply to
+device cubins. Compiler bootstrap, runtime and CPU FDO workload transitions clear
+the CUDA device settings so those dependencies continue to build for the CPU.
 
-Even though the final device code is compiled for nvptx, the compiler must parse the program using the host platform ABI. This means that:
-- type sizes
-- ABI layout rules
-- libc and C++ headers
+Device code must be self-contained in each translation unit: relocatable device
+code and device linking are not supported. Fatbinaries contain SASS images for
+the requested SMs, with no PTX fallback. The selected Clang and toolkit must
+support those architectures.
 
-must match the host target.
+## CUDA toolkit components
 
-Providing host-specific toolchains ensures that CUDA compilation uses the correct header sets and ABI configuration for the target platform.
+The CUDA toolkit has its own toolchain type,
+`@cuda_toolchain_types//cuda:toolchain_type`. Register it alongside the ordinary
+LLVM C++ toolchains. This package exposes two components from the selected toolkit:
+
+- `current_cuda_path`: the toolkit tree passed to Clang through `--cuda-path`,
+  including headers, libdevice and `bin/ptxas`. Clang invokes `ptxas` as part of
+  device compilation.
+- `current_fatbinary`: the executable used by the separate fatbinary action.
+
+See the [CUDA example](../../e2e/cuda/README.md) for module registration, usage,
+dependency semantics and tests, including source-built LLVM bootstrap validation.
