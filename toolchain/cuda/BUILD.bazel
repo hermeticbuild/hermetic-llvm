@@ -99,23 +99,21 @@ cc_args_list(
     args = [
         "//toolchain/cuda:cuda_gpu_arch_flag",
         "//toolchain/cuda:cuda_device_only_flag",
-        # "//toolchain/cuda:cuda_host_only_flag",
         "//toolchain/cuda:default_compile_flags",
-
-        # Common default compile flags.
-        "//toolchain/args:clang_target_flags",
-        "//toolchain/args:no_absolute_paths_for_builtins",
-        "//toolchain/args:deterministic_compile_flags",
-        "//toolchain/args:module_map",
-        "//toolchain:sysroot_flags",
-        "//toolchain:hermetic_compile_flags",
-        "//toolchain/args:libcxx_headers_include_search_paths",
-        "//toolchain/args/linux:kernel_headers_include_search_paths",
-        "//toolchain/args/linux:glibc_headers_include_search_paths",
+        "//toolchain:common_compile_args",
+        "//toolchain:cxxstdlib_headers_include_search_paths",
+        "//toolchain:linux_headers",
 
         # no link
         ":fail_on_link_actions",
     ],
+    # CUDA currently supports Linux GNU hosts on these two CPU architectures.
+    # Do not silently combine CUDA's glibc ABI with musl or another host OS.
+    target_compatible_with = select({
+        "//platforms/config:linux_x86_64_gnu": [],
+        "//platforms/config:linux_aarch64_gnu": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
 )
 
 cc_feature_set(
