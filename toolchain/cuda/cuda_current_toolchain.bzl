@@ -2,7 +2,6 @@
 
 _CUDA_TOOLCHAIN_TYPE = "@cuda_toolchain_types//cuda:toolchain_type"
 _CUDA_TOOLCHAIN_COMPONENTS = [
-    "ptxas",
     "fatbinary",
     "cuda_path",
 ]

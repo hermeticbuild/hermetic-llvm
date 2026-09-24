@@ -7,12 +7,6 @@ load(":cuda_current_toolchain.bzl", "cuda_current_toolchain_component")
 package(default_visibility = ["//visibility:public"])
 
 cuda_current_toolchain_component(
-    name = "current_ptxas",
-    component = "ptxas",
-    executable = True,
-)
-
-cuda_current_toolchain_component(
     name = "current_fatbinary",
     component = "fatbinary",
     executable = True,
@@ -39,11 +33,7 @@ cc_args(
     actions = [
         "@rules_cc//cc/toolchains/actions:link_actions",
     ],
-    args = select({
-        "//conditions:default": [
-            "--linking-is-not-supported-for-device-code",
-        ],
-    }),
+    args = ["--linking-is-not-supported-for-device-code"],
 )
 
 cc_args(
