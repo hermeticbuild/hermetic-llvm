@@ -1,6 +1,7 @@
 load("@llvm//:cuda.bzl", "cuda_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_cc//cc:defs.bzl", "cc_binary")
+load(":attributes_test.bzl", "device_features_test", "host_features_test")
 
 cc_binary(
     name = "hello_world",
@@ -80,4 +81,59 @@ cc_test(
         "@cuda//cudart",
         "@googletest//:gtest_main",
     ],
+)
+
+cuda_library(
+    name = "attribute_header_only",
+    testonly = True,
+    hdrs = ["attribute_headers/included.h"],
+    defines = ["CUDA_LIBRARY_HEADER_ONLY=19"],
+    includes = ["attribute_headers"],
+)
+
+cuda_library(
+    name = "attribute_cuda",
+    testonly = True,
+    srcs = ["attribute_test.cu"],
+    hdrs = ["attribute_headers/included.h"],
+    additional_compiler_inputs = ["force_include.h"],
+    archs = [
+        "sm_80",
+        "sm_120",
+    ],
+    copts = [
+        "-include",
+        "$(location :force_include.h)",
+    ],
+    defines = ["CUDA_LIBRARY_DEFINE=13"],
+    features = ["-dbg"],
+    includes = ["attribute_headers"],
+    local_defines = ["CUDA_LIBRARY_LOCAL=17"],
+    deps = [
+        "@cuda//cccl:nv_headers",
+        "@cuda//cuda:cuda_headers",
+        "@cuda//curand:headers",
+    ],
+    alwayslink = True,
+)
+
+cc_test(
+    name = "attributes_test",
+    size = "small",
+    srcs = ["attribute_test.cc"],
+    deps = [
+        ":attribute_cuda",
+        ":attribute_header_only",
+        "@cuda//cudart",
+    ],
+)
+
+host_features_test(
+    name = "host_features_test",
+    target_under_test = ":attribute_cuda__cuda_host_0",
+)
+
+device_features_test(
+    name = "device_features_test",
+    target_under_test = ":attribute_cuda__cuda_dev_0",
 )

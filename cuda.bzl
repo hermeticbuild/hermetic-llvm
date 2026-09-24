@@ -104,13 +104,60 @@ def cuda_library(
         hdrs = [],
         deps = [],
         defines = [],
-        # Reserved for compatibility with the existing CUDA macro API.
-        # buildifier: disable=unused-variable
         features = [],
         host_deps = [],
         archs = [],
         copts = [],
         **kwargs):
+    """Compiles each source separately for every SM, then embeds its fatbinary.
+
+    `deps` supplies headers to device compilation and libraries to host linking.
+    `host_deps` is only available to host compilation/linking. Device code must
+    be self-contained in each translation unit (no relocatable device code).
+    Native cc_library attributes below retain their compilation/link semantics.
+    """
+    common_attrs = [
+        "compatible_with",
+        "exec_compatible_with",
+        "exec_properties",
+        "package_metadata",
+        "restricted_to",
+        "tags",
+        "target_compatible_with",
+        "testonly",
+    ]
+    compile_attrs = [
+        "conlyopts",
+        "cxxopts",
+        "implementation_deps",
+        "include_prefix",
+        "includes",
+        "local_defines",
+        "nocopts",
+        "strip_include_prefix",
+        "textual_hdrs",
+    ]
+    host_attrs = ["alwayslink", "linkstatic"]
+    public_attrs = [
+        "additional_linker_inputs",
+        "data",
+        "deprecation",
+        "linkopts",
+        "visibility",
+    ]
+    for key in kwargs:
+        if key not in common_attrs + compile_attrs + host_attrs + public_attrs + ["additional_compiler_inputs"]:
+            fail("cuda_library does not support attribute %r" % key)
+
+    common_kwargs = {key: kwargs[key] for key in common_attrs if key in kwargs}
+    compile_kwargs = dict(common_kwargs)
+    compile_kwargs.update({key: kwargs[key] for key in compile_attrs if key in kwargs})
+    device_kwargs = dict(compile_kwargs)
+    device_kwargs["tags"] = kwargs.get("tags", []) + ["manual"]
+    host_kwargs = dict(compile_kwargs)
+    host_kwargs.update({key: kwargs[key] for key in host_attrs if key in kwargs})
+    compiler_inputs = kwargs.get("additional_compiler_inputs", [])
+
     host_unit_deps = []
     for idx in range(len(srcs)):
         src = srcs[idx]
@@ -127,10 +174,12 @@ def cuda_library(
                 "-Wno-error=invalid-specialization",
             ],
             defines = defines,
+            features = features,
+            additional_compiler_inputs = compiler_inputs,
             deps = deps,
             # This target only makes sense to be used within the transition
-            tags = ["manual"],
             visibility = ["//visibility:private"],
+            **device_kwargs
         )
 
         # Fatbin per source unit (across all requested architectures).
@@ -138,6 +187,8 @@ def cuda_library(
             name = fatbin_src_target,
             deps = [dev_src_target],
             archs = archs,
+            visibility = ["//visibility:private"],
+            **common_kwargs
         )
 
         cc_library(
@@ -146,6 +197,7 @@ def cuda_library(
             hdrs = hdrs,
             defines = defines,
             deps = deps + host_deps,
+            features = features,
             copts = copts + [
                 "--cuda-path=$(location {})".format(Label("//toolchain/cuda:current_cuda_path")),
                 "--offload-host-only",
@@ -156,11 +208,12 @@ def cuda_library(
             ] + [
                 "-Wno-error=invalid-specialization",
             ],
-            additional_compiler_inputs = [
+            additional_compiler_inputs = compiler_inputs + [
                 Label("//toolchain/cuda:current_cuda_path"),
                 fatbin_src_target,
             ],
             visibility = ["//visibility:private"],
+            **host_kwargs
         )
 
         host_unit_deps.append(host_src_target)
@@ -169,6 +222,8 @@ def cuda_library(
     cc_library(
         name = name,
         hdrs = hdrs,
-        deps = host_unit_deps + host_deps,
+        defines = defines,
+        features = features,
+        deps = host_unit_deps + deps + host_deps,
         **kwargs
     )
