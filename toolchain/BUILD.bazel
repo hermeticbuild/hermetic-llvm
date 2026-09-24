@@ -286,7 +286,7 @@ cc_args_list(
         # Only expose the sanitizer interface headers when compiling user
         # programs (runtime_stage=complete), not when building the compiler-rt
         # runtimes themselves (stage0). Those already include compiler-rt/include
-        # directly, and adding it again collides in the macOS sandbox.
+        # directly.
         ":runtimes_all": ["//toolchain/args/macos:sanitizer_headers_include_search_paths"],
         "//conditions:default": [],
     }),

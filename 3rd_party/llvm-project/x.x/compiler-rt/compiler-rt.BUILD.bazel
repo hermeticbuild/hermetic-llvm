@@ -1,7 +1,8 @@
 load("@bazel_features//:features.bzl", "bazel_features")
 load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
-load("@llvm//:directory.bzl", "headers_directory")
+load("@bazel_skylib//rules/directory:directory.bzl", "directory")
+load("@bazel_skylib//rules/directory:subdirectory.bzl", "subdirectory")
 load("@llvm//:sh_script.bzl", "sh_script")
 load("@llvm//3rd_party/llvm-project/x.x/compiler-rt:filter_builtin_sources.bzl", "filter_builtin_sources")
 load("@llvm//3rd_party/llvm-project/x.x/compiler-rt:targets.bzl", "atomic_helper_cc_library")
@@ -884,8 +885,19 @@ cc_library(
     visibility = ["//visibility:public"],
 )
 
-headers_directory(
+# Use individual files: runtime dependencies also supply headers below include/,
+# and Bazel's sandbox cannot stage a source directory together with its children.
+directory(
+    name = "sanitizers_headers_files",
+    srcs = glob([
+        "include/**/*.h",
+        "include/**/*.inc",
+    ]),
+)
+
+subdirectory(
     name = "sanitizers_headers_include_search_directory",
+    parent = ":sanitizers_headers_files",
     path = "include",
     visibility = ["//visibility:public"],
 )

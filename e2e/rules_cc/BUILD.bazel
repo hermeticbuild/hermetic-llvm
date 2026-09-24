@@ -96,6 +96,14 @@ _EXTERNAL_INCLUDE_PATHS_TEST_COMPATIBLE = (
 
 musl_header_generation_tests(name = "musl_header_generation_tests")
 
+# The toolchain and this dependency both provide sanitizer headers. Sandboxed
+# compilation must not receive both compiler-rt/include and files beneath it.
+cc_library(
+    name = "sanitizer_interface_headers",
+    srcs = ["sanitizer_interface_headers.cc"],
+    deps = ["@llvm-project//compiler-rt:sanitizers_interface_headers"],
+)
+
 # Windows CI checks these features with bazel build because the Windows test
 # wrapper cannot execute the analysis test's generated shell script.
 thin_lto_features_test(
