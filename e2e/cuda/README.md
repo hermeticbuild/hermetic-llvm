@@ -79,3 +79,13 @@ bazel build --nobuild //:vector_cuda_test --@llvm//toolchain:bootstrap_stage=sta
 ```
 
 These analysis checks do not execute full compiler bootstrap builds.
+
+To build the complete ThinLTO/FDO bootstrap and execute the runtime tests:
+
+```sh
+bazel --bazelrc=../../.bazelrc test --config=remote //:vector_cuda_test //:attributes_test --@llvm//toolchain:bootstrap_stage=stage3_lto_and_fdo_applied
+```
+
+Compilation runs remotely. Both runtime tests execute locally because their
+binaries require the NVIDIA driver library, including the attributes test that
+does not launch a kernel. The vector test additionally requires a compatible GPU.

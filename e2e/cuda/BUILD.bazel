@@ -97,6 +97,11 @@ cc_test(
     name = "attributes_test",
     size = "small",
     srcs = ["attribute_test.cc"],
+    # Loading CUDA runtime code needs the NVIDIA driver, even without a launch.
+    tags = [
+        "local",
+        "no-remote",
+    ],
     deps = [
         ":attribute_cuda",
         ":attribute_header_only",
