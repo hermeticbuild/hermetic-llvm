@@ -59,14 +59,6 @@ cc_test(
 )
 
 cuda_library(
-    name = "attribute_header_only",
-    testonly = True,
-    hdrs = ["attribute_headers/included.h"],
-    defines = ["CUDA_LIBRARY_HEADER_ONLY=19"],
-    includes = ["attribute_headers"],
-)
-
-cuda_library(
     name = "attribute_cuda",
     testonly = True,
     srcs = ["attribute_test.cu"],
@@ -104,7 +96,6 @@ cc_test(
     ],
     deps = [
         ":attribute_cuda",
-        ":attribute_header_only",
         "@cuda//cudart",
     ],
 )

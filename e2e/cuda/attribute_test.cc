@@ -1,7 +1,7 @@
 #include "included.h"
 
-#if CUDA_LIBRARY_DEFINE != 13 || CUDA_LIBRARY_HEADER_ONLY != 19
-#error "cuda_library must export defines, including from header-only libraries"
+#if CUDA_LIBRARY_DEFINE != 13
+#error "cuda_library must export defines from its host libraries"
 #endif
 #ifdef CUDA_LIBRARY_LOCAL
 #error "local_defines must not propagate to consumers"

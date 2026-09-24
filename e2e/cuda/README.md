@@ -40,8 +40,9 @@ Use `host_deps` for dependencies needed only by the host pass.
 Compile attributes such as `features`, `includes`, `local_defines`, and
 `additional_compiler_inputs` reach both passes. `alwayslink` applies to the
 libraries owning the host objects. Public defines, headers and dependencies
-also propagate from header-only `cuda_library` targets. Unsupported keyword
-attributes are rejected instead of being silently ignored.
+propagate through those host libraries. `srcs` must be non-empty; use ordinary
+`cc_library` targets for header-only dependencies. Unsupported keyword attributes
+are rejected instead of being silently ignored.
 
 ## Supported scope
 

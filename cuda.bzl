@@ -107,8 +107,12 @@ def cuda_library(
     `deps` supplies headers to device compilation and libraries to host linking.
     `host_deps` is only available to host compilation/linking. Device code must
     be self-contained in each translation unit (no relocatable device code).
+    `srcs` must be non-empty; use cc_library for header-only libraries.
     Native cc_library attributes below retain their compilation/link semantics.
     """
+    if not srcs:
+        fail("cuda_library(%r): srcs must not be empty; use cc_library for header-only libraries" % name)
+
     common_attrs = [
         "compatible_with",
         "exec_compatible_with",
@@ -215,8 +219,7 @@ def cuda_library(
     cc_library(
         name = name,
         hdrs = hdrs,
-        defines = defines,
         features = features,
-        deps = host_unit_deps + deps + host_deps,
+        deps = host_unit_deps + host_deps,
         **kwargs
     )
