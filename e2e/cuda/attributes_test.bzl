@@ -41,3 +41,21 @@ def _fatbinary_inputs_test_impl(ctx):
     return analysistest.end(env)
 
 fatbinary_inputs_test = analysistest.make(_fatbinary_inputs_test_impl)
+
+def _device_policy_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    compiles = [a for a in analysistest.target_actions(env) if a.mnemonic == "CppCompile"]
+    asserts.true(env, len(compiles) > 0)
+    for action in compiles:
+        asserts.true(env, "--offload-device-only" in action.argv)
+        asserts.false(env, any([arg.startswith("-flto") for arg in action.argv]), "CPU ThinLTO must not replace cubins with LLVM bitcode")
+    return analysistest.end(env)
+
+device_policy_test = analysistest.make(
+    _device_policy_test_impl,
+    config_settings = {
+        "//command_line_option:features": ["thin_lto"],
+        str(Label("@llvm//config:cuda_device_mode")): True,
+        str(Label("@llvm//config:nvidia_compute_capability")): "sm_120",
+    },
+)
