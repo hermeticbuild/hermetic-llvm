@@ -4,8 +4,6 @@ load("@rules_cc//cc/toolchains:actions.bzl", "cc_action_type_set")
 load("@rules_cc//cc/toolchains:artifacts.bzl", "cc_artifact_name_pattern")
 load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
 load("//toolchain/bootstrap:declare_toolchains.bzl", declare_bootstrap_toolchains = "declare_toolchains")
-load("//toolchain/cuda:declare_toolchains.bzl", declare_cuda_toolchains = "declare_toolchains")
-load("//toolchain/cuda/bootstrap:declare_toolchains.bzl", declare_cuda_bootstrap_toolchains = "declare_toolchains")
 load(":bootstrap_stages.bzl", "BOOTSTRAP_STAGES")
 load(":declare_toolchains.bzl", "declare_toolchains")
 
@@ -553,11 +551,7 @@ cc_action_type_set(
 
 declare_toolchains()
 
-declare_cuda_toolchains()
-
 declare_bootstrap_toolchains()
-
-declare_cuda_bootstrap_toolchains()
 
 bzl_library(
     name = "cc_toolchain",

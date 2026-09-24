@@ -8,7 +8,7 @@ bootstrap_transition = transition(
         # we are compiling runtimes without any kind of other dependencies
         "//toolchain:runtime_stage": "stage0",
         # Targets past this transition will never target CUDA
-        # Otherwise, if cuda_device_mode is enabled, the CUDA toolchain gets matched
+        # Do not inherit device compilation policy into CPU runtime builds.
         # And config hashes are duplicated for each nvidia_compute_capability for nothing.
         "//config:cuda_device_mode": False,
         "//config:nvidia_compute_capability": "unset",

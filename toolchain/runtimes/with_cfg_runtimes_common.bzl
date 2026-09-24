@@ -34,7 +34,7 @@ def configure_builder_for_runtimes(builder, runtime_stage, linkmode = "static", 
     )
 
     # Targets past this transition will never target CUDA
-    # Otherwise, if cuda_device_mode is enabled, the CUDA toolchain gets matched
+    # Do not inherit device compilation policy into CPU runtime builds.
     # And config hashes are duplicated for each nvidia_compute_capability for nothing.
     builder.set(Label("//config:cuda_device_mode"), False)
     builder.set(Label("//config:nvidia_compute_capability"), "unset")

@@ -41,16 +41,6 @@ MSVC_TARGET_STAGE0_SUPPORTED_EXECS = SUPPORTED_EXECS
 MSVC_TARGET_BOOTSTRAP_SUPPORTED_EXECS = SUPPORTED_EXECS
 
 WINDOWS_TARGETS = [target for target in SUPPORTED_TARGETS if target[0] == "windows"]
-CUDA_SUPPORTED_TARGETS = [
-    ("linux", "x86_64"),
-    ("linux", "aarch64"),
-    # ("windows", "x86_64"),
-]
-
-CUDA_SUPPORTED_EXECS = [
-    ("linux", "x86_64"),
-    ("linux", "aarch64"),
-]
 
 LIBC_SUPPORTED_TARGETS = [
     ("linux", "x86_64"),
