@@ -23,3 +23,21 @@ device_features_test = analysistest.make(
         str(Label("@llvm//config:nvidia_compute_capability")): "sm_120",
     },
 )
+
+def _fatbinary_inputs_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    actions = [a for a in analysistest.target_actions(env) if a.mnemonic == "CudaFatbin"]
+    asserts.equals(env, 1, len(actions))
+    for action in actions:
+        images = [arg for arg in action.argv if arg.startswith("--image3=")]
+        asserts.equals(env, 2, len(images), "One independently compiled cubin per SM")
+        for sm in ["80", "120"]:
+            matches = [arg for arg in images if arg.startswith("--image3=kind=elf,sm=%s," % sm)]
+            asserts.equals(env, 1, len(matches))
+        objects = [f for f in action.inputs.to_list() if f.extension == "o"]
+        asserts.equals(env, 2, len(objects), "Transitive objects must not enter the fatbinary")
+        for obj in objects:
+            asserts.equals(env, "attribute_test.pic.o", obj.basename)
+    return analysistest.end(env)
+
+fatbinary_inputs_test = analysistest.make(_fatbinary_inputs_test_impl)

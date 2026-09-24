@@ -3,7 +3,10 @@ load("@rules_cc//cc:defs.bzl", "CcInfo")
 
 def _cuda_arch_transition_impl(_settings, attr):
     if not attr.archs:
-        fail("cuda_binary requires a non-empty archs list")
+        fail("cuda_library requires a non-empty archs list")
+
+    if len({arch: True for arch in attr.archs}) != len(attr.archs):
+        fail("cuda_library requires distinct GPU architectures")
 
     return {
         arch: {
@@ -31,36 +34,25 @@ def _cuda_fatbinary_impl(ctx):
     args.add("--compress-mode=size")
 
     fatbin_inputs = []
-    sm_pic_objects = {}
-
-    for arch in sorted(ctx.split_attr.deps.keys()):
-        sm = arch.removeprefix("sm_")
-        if sm not in sm_pic_objects:
-            sm_pic_objects[sm] = []
-
+    for arch in sorted(ctx.split_attr.deps):
         for dep in ctx.split_attr.deps[arch]:
-            #TODO(cerisier): Avoid .to_list() in a loop here.
+            # The linking context also contains transitive host libraries.
+            # Only this translation unit's own device objects belong here.
+            cubins = []
             for linker_input in dep[CcInfo].linking_context.linker_inputs.to_list():
-                for library_to_link in linker_input.libraries:
-                    pic_objects = library_to_link.pic_objects
-                    sm_pic_objects[sm].append(depset(pic_objects))
-
-    for sm in sorted(sm_pic_objects.keys()):
-        if not sm_pic_objects[sm]:
-            continue
-
-        pic_objects = depset(transitive = sm_pic_objects[sm])
-        fatbin_inputs.append(pic_objects)
-        args.add_all(
-            pic_objects,
-            format_each = "--image3=kind=elf,sm=%s,file=%%s" % sm,
-            # format_each = "--image=profile=sm_%s,file=%%s" % sm,
-        )
-
-    fatbin_inputs = depset(transitive = fatbin_inputs)
+                if linker_input.owner == dep.label:
+                    for library in linker_input.libraries:
+                        cubins.extend(library.pic_objects or [])
+            if not cubins:
+                fail("cuda_fatbinary requires direct PIC device objects from %s for %s" % (dep.label, arch))
+            fatbin_inputs.extend(cubins)
+            args.add_all(
+                cubins,
+                format_each = "--image3=kind=elf,sm=%s,file=%%s" % arch.removeprefix("sm_"),
+            )
 
     if not fatbin_inputs:
-        fail("cuda_binary requires deps that produce at least one cubin file")
+        fail("cuda_fatbinary requires deps that produce at least one cubin file")
 
     ctx.actions.run(
         mnemonic = "CudaFatbin",
@@ -78,6 +70,7 @@ cuda_fatbinary = rule(
     attrs = {
         "deps": attr.label_list(
             cfg = _cuda_arch_transition,
+            providers = [CcInfo],
         ),
         "archs": attr.string_list(),
         "_fatbinary": attr.label(

@@ -10,7 +10,8 @@ __global__ void AttributeKernel(int *value) { *value = CUDA_LIBRARY_LOCAL; }
 // No symbol from this file is referenced by main. Its constructor runs only
 // if alwayslink reaches the library that actually owns the host object.
 extern int cuda_library_registrations;
+int cuda_library_increment();
 struct Register {
-  Register() { ++cuda_library_registrations; }
+  Register() { cuda_library_registrations += cuda_library_increment(); }
 };
 static Register registration;

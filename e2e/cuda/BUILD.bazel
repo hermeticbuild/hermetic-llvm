@@ -1,7 +1,7 @@
 load("@llvm//:cuda.bzl", "cuda_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("@rules_cc//cc:defs.bzl", "cc_binary")
-load(":attributes_test.bzl", "device_features_test", "host_features_test")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+load(":attributes_test.bzl", "device_features_test", "fatbinary_inputs_test", "host_features_test")
 
 cc_binary(
     name = "hello_world",
@@ -110,6 +110,7 @@ cuda_library(
     includes = ["attribute_headers"],
     local_defines = ["CUDA_LIBRARY_LOCAL=17"],
     deps = [
+        ":attribute_dependency",
         "@cuda//cccl:nv_headers",
         "@cuda//cuda:cuda_headers",
         "@cuda//curand:headers",
@@ -136,4 +137,16 @@ host_features_test(
 device_features_test(
     name = "device_features_test",
     target_under_test = ":attribute_cuda__cuda_dev_0",
+)
+
+# This compiled dependency belongs to host linking, never to the fatbinary.
+cc_library(
+    name = "attribute_dependency",
+    testonly = True,
+    srcs = ["attribute_dependency.cc"],
+)
+
+fatbinary_inputs_test(
+    name = "fatbinary_inputs_test",
+    target_under_test = ":attribute_cuda__fatbin_0",
 )
