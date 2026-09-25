@@ -1627,7 +1627,7 @@ cc_library(
 
 cc_library(
     name = "libstdcxx_cxx23",
-    srcs = [":libstdcxx_cxx23_sources"],
+    srcs = [":libstdcxx_cxx23_sources"] if gcc_version_at_least_for(GCC_VERSION, "16.0.0") else [],
     hdrs = LIBSTDCXX_LIBRARY_HDRS,
     copts = LIBSTDCXX_LIBRARY_COPTS + [
         "-std=gnu++23",
