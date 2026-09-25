@@ -102,19 +102,16 @@ host_linking_test = analysistest.make(_host_linking_test_impl)
 def _payload_inputs_test_impl(ctx):
     env = analysistest.begin(ctx)
     actions = [a for a in analysistest.target_actions(env) if a.mnemonic == "CppCompile"]
-    asserts.equals(env, ctx.attr.expected_count, len(actions))
+    asserts.equals(env, 2, len(actions))
     images_seen = []
     for action in actions:
         images = [f for f in action.inputs.to_list() if f.extension == "fatbin"]
         asserts.equals(env, 1, len(images), "Each payload compile consumes only its own image")
         images_seen.extend(images)
-    asserts.equals(env, ctx.attr.expected_count, len({image: True for image in images_seen}))
+    asserts.equals(env, 2, len({image: True for image in images_seen}))
     return analysistest.end(env)
 
-payload_inputs_test = analysistest.make(
-    _payload_inputs_test_impl,
-    attrs = {"expected_count": attr.int(default = 2)},
-)
+payload_inputs_test = analysistest.make(_payload_inputs_test_impl)
 
 def _pic_mapping_test_impl(ctx):
     env = analysistest.begin(ctx)

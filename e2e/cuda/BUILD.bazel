@@ -1,4 +1,4 @@
-load("@llvm//:cuda.bzl", "cuda_fatbinary", "cuda_library")
+load("@llvm//:cuda.bzl", "cuda_library")
 load("@rules_cc//cc:cc_shared_library.bzl", "cc_shared_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
@@ -256,22 +256,6 @@ device_policy_test(
 payload_inputs_test(
     name = "payload_inputs_test",
     target_under_test = ":decoupled__cuda_host_payload",
-)
-
-# Exercise the public standalone fatbinary rule as well as the batched rule.
-cuda_fatbinary(
-    name = "standalone_fatbin",
-    testonly = True,
-    archs = [
-        "sm_80",
-        "sm_120",
-    ],
-    deps = [":attribute_cuda__cuda_dev"],
-)
-
-fatbinary_inputs_test(
-    name = "standalone_fatbinary_inputs_test",
-    target_under_test = ":standalone_fatbin",
 )
 
 # Reverse declaration order, duplicate basenames, generated source and filegroup.

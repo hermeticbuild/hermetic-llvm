@@ -194,62 +194,6 @@ _cuda_arch_transition = transition(
     ],
 )
 
-def _run_fatbinary(ctx, fatbin, cubins_by_arch):
-    args = ctx.actions.args()
-    args.add("--64")
-    args.add(fatbin, format = "--create=%s")
-    args.add("--compress-mode=size")
-    inputs = []
-    for arch in sorted(cubins_by_arch):
-        cubins = cubins_by_arch[arch]
-        inputs.extend(cubins)
-        args.add_all(cubins, format_each = "--image3=kind=elf,sm=%s,file=%%s" % arch.removeprefix("sm_"))
-    if not inputs:
-        fail("cuda_fatbinary requires deps that produce at least one cubin file")
-    ctx.actions.run(
-        mnemonic = "CudaFatbin",
-        progress_message = "Creating fatbin %s" % fatbin.short_path,
-        executable = ctx.executable._fatbinary,
-        inputs = inputs,
-        outputs = [fatbin],
-        arguments = [args],
-    )
-
-def _cuda_fatbinary_impl(ctx):
-    fatbin = ctx.actions.declare_file(ctx.label.name + ".fatbin")
-    cubins_by_arch = {}
-    for arch, deps in ctx.split_attr.deps.items():
-        cubins_by_arch[arch] = []
-        for dep in deps:
-            # Exclude transitive host libraries from the device image.
-            cubins = []
-            for linker_input in dep[CcInfo].linking_context.linker_inputs.to_list():
-                if linker_input.owner == dep.label:
-                    for library in linker_input.libraries:
-                        cubins.extend(library.pic_objects or [])
-            if not cubins:
-                fail("cuda_fatbinary requires direct PIC device objects from %s for %s" % (dep.label, arch))
-            cubins_by_arch[arch].extend(cubins)
-    _run_fatbinary(ctx, fatbin, cubins_by_arch)
-    return [DefaultInfo(files = depset([fatbin]))]
-
-cuda_fatbinary = rule(
-    implementation = _cuda_fatbinary_impl,
-    attrs = {
-        "deps": attr.label_list(
-            cfg = _cuda_arch_transition,
-            providers = [CcInfo],
-        ),
-        "archs": attr.string_list(),
-        "_fatbinary": attr.label(
-            default = Label("//toolchain/cuda:current_fatbinary"),
-            allow_files = True,
-            executable = True,
-            cfg = "exec",
-        ),
-    },
-)
-
 def _cuda_images_impl(ctx):
     by_arch = {arch: dep[_CudaCompilationInfo].units for arch, dep in ctx.split_attr.dep.items()}
     archs = sorted(by_arch)
@@ -260,13 +204,25 @@ def _cuda_images_impl(ctx):
     images = {}
     for source in sources:
         fatbin = ctx.actions.declare_file("%s/%d.fatbin" % (ctx.label.name, len(images)))
-        cubins_by_arch = {}
+        args = ctx.actions.args()
+        args.add("--64")
+        args.add(fatbin, format = "--create=%s")
+        args.add("--compress-mode=size")
+        inputs = []
         for arch in archs:
             cubins = by_arch[arch][source].pic_objects
             if len(cubins) != 1:
                 fail("Expected one PIC cubin for %s on %s" % (source, arch))
-            cubins_by_arch[arch] = cubins
-        _run_fatbinary(ctx, fatbin, cubins_by_arch)
+            inputs.append(cubins[0])
+            args.add(cubins[0], format = "--image3=kind=elf,sm=%s,file=%%s" % arch.removeprefix("sm_"))
+        ctx.actions.run(
+            mnemonic = "CudaFatbin",
+            progress_message = "Creating fatbin %s" % fatbin.short_path,
+            executable = ctx.executable._fatbinary,
+            inputs = inputs,
+            outputs = [fatbin],
+            arguments = [args],
+        )
         images[source] = fatbin
     return [DefaultInfo(files = depset(images.values())), _CudaImagesInfo(images = images)]
 
@@ -325,16 +281,17 @@ def cuda_library(
         "strip_include_prefix",
         "textual_hdrs",
     ]
-    host_attrs = ["alwayslink", "linkstatic"]
     public_attrs = [
         "additional_linker_inputs",
+        "alwayslink",
         "data",
         "deprecation",
         "linkopts",
+        "linkstatic",
         "visibility",
     ]
     for key in kwargs:
-        if key not in common_attrs + compile_attrs + host_attrs + public_attrs + ["additional_compiler_inputs"]:
+        if key not in common_attrs + compile_attrs + public_attrs + ["additional_compiler_inputs"]:
             fail("cuda_library does not support attribute %r" % key)
 
     common_kwargs = {key: kwargs[key] for key in common_attrs if key in kwargs}
