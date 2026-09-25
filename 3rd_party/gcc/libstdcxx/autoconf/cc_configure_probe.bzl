@@ -150,8 +150,7 @@ while [ "$#" -gt 0 ]; do
     shift
 done
 
-tmp="${TMPDIR:-/tmp}/cc-configure-probe-$$"
-mkdir -p "$tmp"
+tmp="$(mktemp -d "${TMPDIR:-/tmp}/cc-configure-probe.XXXXXXXXXX")"
 trap 'rm -rf "$tmp"' EXIT
 object="$tmp/probe.o"
 
@@ -251,8 +250,7 @@ while [ "$#" -gt 0 ]; do
     shift
 done
 
-tmp="${TMPDIR:-/tmp}/cc-configure-link-probe-$$"
-mkdir -p "$tmp"
+tmp="$(mktemp -d "${TMPDIR:-/tmp}/cc-configure-link-probe.XXXXXXXXXX")"
 trap 'rm -rf "$tmp"' EXIT
 object="$tmp/probe.o"
 binary="$tmp/probe.exe"
