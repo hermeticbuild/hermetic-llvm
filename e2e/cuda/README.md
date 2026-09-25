@@ -7,8 +7,9 @@ There are no separate CUDA C++ toolchain registrations or bootstrap compilers.
 
 ## Compilation model
 
-For every source in `cuda_library`, a **split transition** creates one device
-compilation configuration per entry in `archs`. Each configuration uses the
+Each `cuda_library` creates one grouped host compilation target and one grouped
+device target. A **split transition** creates one device compilation configuration
+per entry in `archs`. Each configuration uses the
 selected LLVM compiler with CUDA device compilation policy. The resulting
 cubins are packed into a per-source fatbinary. Host compilation runs independently
 against a checked-in empty fatbin. A native C tool validates Clang's ELF wrapper
@@ -24,6 +25,20 @@ unmodified host objects and archives are excluded from downstream linking.
 This preserves independent compilation actions, remote scheduling and caching
 for every source/SM pair. Prebuilt and source-built LLVM stages use the same
 compiler selection and resource-directory machinery as ordinary C++.
+
+The macro creates six private targets regardless of source count. An aspect
+associates each direct object with its actual `CppCompile` source input, validating
+that the mapping is complete and unambiguous. It does not infer object filenames
+or pair lists by position. Source owner labels and root-relative paths identify
+TUs across split configurations, including generated files and filegroups.
+Each TU has its own symbol, fatbinary and payload compile action; PIC/non-PIC
+variants share that TU's symbol. The final library exports one host object per TU,
+using PIC when available (valid for both static and shared links), and a PIC
+payload object. This avoids duplicate definitions when precompiled objects meet
+`alwayslink`. Each payload compile consumes only its own image.
+The aspect requires Bazel to expose native compile actions; unfamiliar action
+layouts and sources that include other entries in `srcs` are rejected if the
+mapping is ambiguous.
 
 ```starlark
 load("@llvm//:cuda.bzl", "cuda_library")
@@ -92,6 +107,16 @@ of raw host archives in the exported link context. `redirect_test` checks malfor
 ELF inputs, section-symbol/named-symbol relocations and rejection of CPU-only
 sources. `decoupled_test` and `decoupled_shared_test` execute four kernels from two
 translation units with distinct images through static and shared library links.
+`source_mapping_test` repeats that execution with duplicate basenames, a generated
+source and a filegroup in reversed source/SM order. Payload analysis tests assert
+that each embedding action consumes exactly one distinct image. `pic_mapping_test`
+checks that PIC/non-PIC variants share their TU's symbol. Exercise linking with
+both variants generated using:
+
+```sh
+bazel test --config=remote -c opt --features=-prefer_pic_for_opt_binaries \
+  //:source_mapping_test //:decoupled_shared_test //:attributes_test //:pic_mapping_test
+```
 
 AArch64 can be compiled and linked from an x86-64 host with:
 
@@ -101,6 +126,16 @@ bazel build --config=remote --platforms=@llvm//platforms:linux_aarch64 //:decoup
 
 This is a cross-compilation check; executing those tests requires an AArch64
 machine with a compatible NVIDIA GPU and driver.
+
+FlashAttention FA2 was also validated with 56 translation units and both `sm_80`
+and `sm_120`: 56 host compilations, 112 device compilations, 56 fatbins and 56
+payload objects, followed by a successful shared-library CPU link. All CUDA
+pipeline actions executed remotely with cache reads disabled. Inspection found
+56 cubins for each SM, 56 payload symbols and 56 Clang module constructors; loading
+the library with `RTLD_NOW` succeeded. All 112 host/redirect action digests matched
+the earlier one-SM build. This checks compilation, linking and loading, not
+FlashAttention numerical execution. See the
+[BuildBuddy invocation](https://app.buildbuddy.io/invocation/a853a14e-0616-48ac-adfd-3012972ba9db).
 
 Bootstrap configuration can be checked without rebuilding LLVM:
 

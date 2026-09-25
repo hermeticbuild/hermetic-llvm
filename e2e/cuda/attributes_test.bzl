@@ -95,11 +95,45 @@ def _host_linking_test_impl(ctx):
     target = analysistest.target_under_test(env)
     for linker_input in target[CcInfo].linking_context.linker_inputs.to_list():
         asserts.false(env, linker_input.owner.name.endswith("_raw"), "Raw host archives must not reach the link")
-    actions = [a for a in analysistest.target_actions(env) if a.mnemonic == "CppCompile"]
-    asserts.true(env, len(actions) > 0)
-    for action in actions:
-        images = [f.basename for f in action.inputs.to_list() if f.extension == "fatbin"]
-        asserts.equals(env, ["attribute_cuda__fatbin_0.fatbin"], images)
     return analysistest.end(env)
 
 host_linking_test = analysistest.make(_host_linking_test_impl)
+
+def _payload_inputs_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    actions = [a for a in analysistest.target_actions(env) if a.mnemonic == "CppCompile"]
+    asserts.equals(env, ctx.attr.expected_count * ctx.attr.variants, len(actions))
+    images_seen = []
+    for action in actions:
+        images = [f for f in action.inputs.to_list() if f.extension == "fatbin"]
+        asserts.equals(env, 1, len(images), "Each payload compile consumes only its own image")
+        images_seen.extend(images)
+    asserts.equals(env, ctx.attr.expected_count, len({image: True for image in images_seen}))
+    return analysistest.end(env)
+
+payload_inputs_test = analysistest.make(
+    _payload_inputs_test_impl,
+    attrs = {"expected_count": attr.int(default = 2), "variants": attr.int(default = 1)},
+)
+
+def _pic_mapping_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    actions = [a for a in analysistest.target_actions(env) if a.mnemonic == "CudaHostRedirect"]
+    asserts.equals(env, 4, len(actions), "Two TUs, each with PIC and non-PIC objects")
+    by_symbol = {}
+    for action in actions:
+        symbol = action.argv[-1]
+        by_symbol.setdefault(symbol, []).extend([f.basename for f in action.outputs.to_list()])
+    asserts.equals(env, 2, len(by_symbol), "Each TU needs a distinct symbol")
+    for outputs in by_symbol.values():
+        asserts.equals(env, 1, len([f for f in outputs if f.endswith(".pic.o")]))
+        asserts.equals(env, 1, len([f for f in outputs if f.endswith(".nopic.o")]))
+    return analysistest.end(env)
+
+pic_mapping_test = analysistest.make(
+    _pic_mapping_test_impl,
+    config_settings = {
+        "//command_line_option:compilation_mode": "opt",
+        "//command_line_option:features": ["-prefer_pic_for_opt_binaries"],
+    },
+)

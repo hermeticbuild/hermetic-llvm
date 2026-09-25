@@ -3,7 +3,7 @@ load("@rules_cc//cc:cc_shared_library.bzl", "cc_shared_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
-load(":attributes_test.bzl", "device_features_test", "device_policy_test", "fatbinary_inputs_test", "host_decoupling_test", "host_features_test", "host_linking_test", "redirect_inputs_test")
+load(":attributes_test.bzl", "device_features_test", "device_policy_test", "fatbinary_inputs_test", "host_decoupling_test", "host_features_test", "host_linking_test", "payload_inputs_test", "pic_mapping_test", "redirect_inputs_test")
 
 cc_binary(
     name = "hello_world",
@@ -113,22 +113,22 @@ cc_test(
 
 host_features_test(
     name = "host_features_test",
-    target_under_test = ":attribute_cuda__cuda_host_0_raw",
+    target_under_test = ":attribute_cuda__cuda_host_raw",
 )
 
 host_decoupling_test(
     name = "host_decoupling_test",
-    target_under_test = ":attribute_cuda__cuda_host_0_raw",
+    target_under_test = ":attribute_cuda__cuda_host_raw",
 )
 
 redirect_inputs_test(
     name = "redirect_inputs_test",
-    target_under_test = ":attribute_cuda__cuda_host_0_objects",
+    target_under_test = ":attribute_cuda__cuda_host_objects",
 )
 
 host_linking_test(
     name = "host_linking_test",
-    target_under_test = ":attribute_cuda__cuda_host_0",
+    target_under_test = ":attribute_cuda__cuda_host",
 )
 
 cuda_library(
@@ -203,7 +203,7 @@ cc_library(
 filegroup(
     name = "redirect_test_raw",
     testonly = True,
-    srcs = [":decoupled__cuda_host_0_objects"],
+    srcs = [":attribute_cuda__cuda_host_objects"],
     output_group = "raw_pic_objects",
 )
 
@@ -233,7 +233,7 @@ sh_test(
 
 device_features_test(
     name = "device_features_test",
-    target_under_test = ":attribute_cuda__cuda_dev_0",
+    target_under_test = ":attribute_cuda__cuda_dev",
 )
 
 # This compiled dependency belongs to host linking, never to the fatbinary.
@@ -245,10 +245,71 @@ cc_library(
 
 fatbinary_inputs_test(
     name = "fatbinary_inputs_test",
-    target_under_test = ":attribute_cuda__fatbin_0",
+    target_under_test = ":attribute_cuda__fatbins",
 )
 
 device_policy_test(
     name = "device_policy_test",
-    target_under_test = ":attribute_cuda__cuda_dev_0",
+    target_under_test = ":attribute_cuda__cuda_dev",
+)
+
+payload_inputs_test(
+    name = "payload_inputs_test",
+    target_under_test = ":decoupled__cuda_host_payload",
+)
+
+# Reverse declaration order, duplicate basenames, generated source and filegroup.
+# Reuse the four-kernel runtime assertions to detect swapped per-TU images.
+genrule(
+    name = "generated_cuda_source",
+    srcs = ["decoupled_b.cu"],
+    outs = ["generated/same.cu"],
+    cmd = "cat $(SRCS) > $@",
+)
+
+filegroup(
+    name = "grouped_cuda_sources",
+    srcs = [
+        "generated/same.cu",
+        "mapping/same.cu",
+    ],
+)
+
+cuda_library(
+    name = "mapped",
+    testonly = True,
+    srcs = [":grouped_cuda_sources"],
+    archs = [
+        "sm_120",
+        "sm_80",
+    ],
+    host_deps = ["@cuda//cudart"],
+    deps = [
+        "@cuda//cccl:nv_headers",
+        "@cuda//cuda:cuda_headers",
+        "@cuda//curand:headers",
+    ],
+)
+
+cc_test(
+    name = "source_mapping_test",
+    srcs = ["decoupled_test.cc"],
+    tags = [
+        "local",
+        "no-remote",
+    ],
+    deps = [
+        ":cpu_only",
+        ":mapped",
+    ],
+)
+
+payload_inputs_test(
+    name = "mapped_payload_inputs_test",
+    target_under_test = ":mapped__cuda_host_payload",
+)
+
+pic_mapping_test(
+    name = "pic_mapping_test",
+    target_under_test = ":mapped__cuda_host_objects",
 )

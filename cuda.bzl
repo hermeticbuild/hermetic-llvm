@@ -1,15 +1,65 @@
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:defs.bzl", "CcInfo")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
+load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 
-_CudaHostObjectsInfo = provider(fields = ["symbol"])
+_CudaCompilationInfo = provider(fields = ["units"])
+_CudaHostObjectsInfo = provider(fields = ["symbols"])
+_CudaImagesInfo = provider(fields = ["images"])
+
+def _cuda_compilation_impl(target, ctx):
+    # Use actual compile inputs/outputs, never object basenames or list order.
+    # File.short_path excludes the split configuration's output directory.
+    sources = {}
+    for dep in ctx.rule.attr.srcs:
+        for source in dep[DefaultInfo].files.to_list():
+            if source.extension != "cu" or source.is_directory:
+                fail("CUDA compilation requires individual .cu files: %s" % source.path)
+            key = str(source.owner) + ":" + source.short_path
+            if source in sources:
+                fail("Duplicate CUDA source: %s" % source.path)
+            sources[source] = key
+    units = {key: struct(objects = [], pic_objects = []) for key in sources.values()}
+    objects = {}
+    for linker_input in target[CcInfo].linking_context.linker_inputs.to_list():
+        if linker_input.owner == target.label:
+            for library in linker_input.libraries:
+                for obj in library.objects or []:
+                    objects[obj] = False
+                for obj in library.pic_objects or []:
+                    objects[obj] = True
+    seen = {}
+    for action in target.actions:
+        outputs = [obj for obj in action.outputs.to_list() if obj in objects]
+        if not outputs:
+            continue
+        if action.mnemonic != "CppCompile":
+            fail("CUDA requires native CppCompile objects from %s" % target.label)
+        matches = [source for source in action.inputs.to_list() if source in sources]
+        if len(matches) != 1:
+            fail("Ambiguous CUDA source mapping for %s: %s" % (outputs, matches))
+        unit = units[sources[matches[0]]]
+        for obj in outputs:
+            if obj in seen:
+                fail("Duplicate CUDA compile output: %s" % obj.path)
+            seen[obj] = True
+            (unit.pic_objects if objects[obj] else unit.objects).append(obj)
+    if len(seen) != len(objects):
+        fail("Incomplete CUDA compile mapping for %s" % target.label)
+    for key, unit in units.items():
+        if not unit.objects and not unit.pic_objects:
+            fail("CUDA source has no native compile output: %s" % key)
+    return [_CudaCompilationInfo(units = units)]
+
+_cuda_compilation = aspect(implementation = _cuda_compilation_impl)
 
 # An injective encoding, rather than a short hash or punctuation replacement.
 # Include the configuration so independently configured copies cannot alias.
 _SYMBOL_CHARS = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
 _HEX = "0123456789abcdef"
 
-def _payload_symbol(ctx):
-    identity = str(ctx.label) + ":" + ctx.bin_dir.path
+def _payload_symbol(ctx, source):
+    identity = str(ctx.label) + ":" + ctx.bin_dir.path + ":" + source
     encoded = []
     for char in identity.elems():
         index = _SYMBOL_CHARS.find(char)
@@ -20,26 +70,32 @@ def _payload_symbol(ctx):
 
 def _cuda_host_objects_impl(ctx):
     raw = ctx.attr.raw
-    symbol = _payload_symbol(ctx)
+    symbols = {}
     outputs = []
+    all_outputs = []
     raw_pic_objects = []
-    for linker_input in raw[CcInfo].linking_context.linker_inputs.to_list():
-        if linker_input.owner != raw.label:
-            continue
-        for library in linker_input.libraries:
-            raw_pic_objects.extend(library.pic_objects or [])
-            for objects, suffix in [(library.objects, ".nopic.o"), (library.pic_objects, ".pic.o")]:
-                for obj in objects or []:
-                    out = ctx.actions.declare_file("%s/%d%s" % (ctx.label.name, len(outputs), suffix))
-                    args = ctx.actions.args()
-                    args.add_all([obj, out, symbol])
-                    ctx.actions.run(
-                        mnemonic = "CudaHostRedirect",
-                        executable = ctx.executable._redirect,
-                        inputs = [obj],
-                        outputs = [out],
-                        arguments = [args],
-                    )
+    for source, unit in raw[_CudaCompilationInfo].units.items():
+        symbol = _payload_symbol(ctx, source)
+        symbols[source] = symbol
+        raw_pic_objects.extend(unit.pic_objects)
+        for objects, suffix in [(unit.objects, ".nopic.o"), (unit.pic_objects, ".pic.o")]:
+            for obj in objects:
+                out = ctx.actions.declare_file("%s/%d%s" % (ctx.label.name, len(all_outputs), suffix))
+                args = ctx.actions.args()
+                args.add_all([obj, out, symbol])
+                ctx.actions.run(
+                    mnemonic = "CudaHostRedirect",
+                    executable = ctx.executable._redirect,
+                    inputs = [obj],
+                    outputs = [out],
+                    arguments = [args],
+                )
+                all_outputs.append(out)
+
+                # cc_library treats precompiled .pic.o as usable in both kinds
+                # of link. Export one variant per TU to avoid duplicate symbols
+                # under alwayslink; PIC is valid for static and shared links.
+                if suffix == ".pic.o" or not unit.pic_objects:
                     outputs.append(out)
     if not outputs:
         fail("CUDA host redirection requires direct native objects from %s (LTO is unsupported)" % raw.label)
@@ -47,14 +103,17 @@ def _cuda_host_objects_impl(ctx):
         DefaultInfo(files = depset(outputs)),
         # Forward headers/defines, never the unmodified objects or archives.
         CcInfo(compilation_context = raw[CcInfo].compilation_context),
-        _CudaHostObjectsInfo(symbol = symbol),
-        OutputGroupInfo(raw_pic_objects = depset(raw_pic_objects)),
+        _CudaHostObjectsInfo(symbols = symbols),
+        OutputGroupInfo(
+            raw_pic_objects = depset(raw_pic_objects),
+            all_redirected_objects = depset(all_outputs),
+        ),
     ]
 
 _cuda_host_objects = rule(
     implementation = _cuda_host_objects_impl,
     attrs = {
-        "raw": attr.label(mandatory = True, providers = [CcInfo]),
+        "raw": attr.label(mandatory = True, providers = [CcInfo], aspects = [_cuda_compilation]),
         "_redirect": attr.label(
             default = Label("//tools/internal:cuda-redirect"),
             executable = True,
@@ -64,13 +123,26 @@ _cuda_host_objects = rule(
 )
 
 def _cuda_payload_impl(ctx):
-    symbol = ctx.attr.host[_CudaHostObjectsInfo].symbol
-    assembly = ctx.actions.declare_file(ctx.label.name + ".s")
+    symbols = ctx.attr.host[_CudaHostObjectsInfo].symbols
+    images = ctx.attr.images[_CudaImagesInfo].images
+    if sorted(symbols) != sorted(images):
+        fail("Host/device CUDA sources differ: %s vs %s" % (sorted(symbols), sorted(images)))
+    toolchain = find_cc_toolchain(ctx)
+    feature_configuration = cc_common.configure_features(
+        ctx = ctx,
+        cc_toolchain = toolchain,
+        requested_features = ctx.features,
+        unsupported_features = ctx.disabled_features,
+    )
+    objects = []
+    for index, source in enumerate(sorted(symbols)):
+        symbol = symbols[source]
+        assembly = ctx.actions.declare_file("%s/%d.s" % (ctx.label.name, index))
 
-    # Keep execroot-relative paths. The compiling rule declares the image as an
-    # input; .incbin does not participate in C/C++ header input discovery.
-    image = ctx.file.image.path.replace("\\", "\\\\").replace("\"", "\\\"")
-    ctx.actions.write(assembly, """.section .nv_fatbin,"a",%progbits
+        # .incbin does not participate in header input discovery. Declare only
+        # this TU's image so embedding remains independently cacheable.
+        image = images[source].path.replace("\\", "\\\\").replace("\"", "\\\"")
+        ctx.actions.write(assembly, """.section .nv_fatbin,"a",%progbits
 .balign 8
 .globl {symbol}
 .hidden {symbol}
@@ -80,13 +152,25 @@ def _cuda_payload_impl(ctx):
 .size {symbol}, .-{symbol}
 .section .note.GNU-stack,"",%progbits
 """.format(symbol = symbol, image = image))
-    return [DefaultInfo(files = depset([assembly]))]
+        _, compiled = cc_common.compile(
+            actions = ctx.actions,
+            cc_toolchain = toolchain,
+            feature_configuration = feature_configuration,
+            name = "%s/%d" % (ctx.label.name, index),
+            srcs = [assembly],
+            additional_inputs = [images[source]],
+            disallow_nopic_outputs = True,
+        )
+        objects.extend(compiled.pic_objects)
+    return [DefaultInfo(files = depset(objects))]
 
 _cuda_payload = rule(
     implementation = _cuda_payload_impl,
+    fragments = ["cpp"],
+    toolchains = use_cc_toolchain(),
     attrs = {
         "host": attr.label(mandatory = True, providers = [_CudaHostObjectsInfo]),
-        "image": attr.label(mandatory = True, allow_single_file = True),
+        "images": attr.label(mandatory = True, providers = [_CudaImagesInfo]),
     },
 )
 
@@ -171,14 +255,54 @@ cuda_fatbinary = rule(
     },
 )
 
-def _dev_src(label, idx):
-    return "%s__cuda_dev_%d" % (label, idx)
+def _cuda_images_impl(ctx):
+    by_arch = {}
+    for arch, deps in ctx.split_attr.deps.items():
+        if len(deps) != 1:
+            fail("Batched CUDA images require one device compilation target")
+        by_arch[arch] = deps[0][_CudaCompilationInfo].units
+    archs = sorted(by_arch)
+    sources = sorted(by_arch[archs[0]])
+    for arch in archs:
+        if sorted(by_arch[arch]) != sources:
+            fail("CUDA sources differ between GPU architectures")
+    images = {}
+    for source in sources:
+        fatbin = ctx.actions.declare_file("%s/%d.fatbin" % (ctx.label.name, len(images)))
+        args = ctx.actions.args()
+        args.add("--64")
+        args.add(fatbin, format = "--create=%s")
+        args.add("--compress-mode=size")
+        inputs = []
+        for arch in archs:
+            cubins = by_arch[arch][source].pic_objects
+            if len(cubins) != 1:
+                fail("Expected one PIC cubin for %s on %s" % (source, arch))
+            inputs.extend(cubins)
+            args.add_all(cubins, format_each = "--image3=kind=elf,sm=%s,file=%%s" % arch.removeprefix("sm_"))
+        ctx.actions.run(
+            mnemonic = "CudaFatbin",
+            executable = ctx.executable._fatbinary,
+            inputs = inputs,
+            outputs = [fatbin],
+            arguments = [args],
+        )
+        images[source] = fatbin
+    return [DefaultInfo(files = depset(images.values())), _CudaImagesInfo(images = images)]
 
-def _fatbin_src(label, idx):
-    return "%s__fatbin_%d" % (label, idx)
-
-def _host_src(label, idx):
-    return "%s__cuda_host_%d" % (label, idx)
+_cuda_images = rule(
+    implementation = _cuda_images_impl,
+    attrs = {
+        "deps": attr.label_list(cfg = _cuda_arch_transition, providers = [CcInfo], aspects = [_cuda_compilation]),
+        "archs": attr.string_list(),
+        "_fatbinary": attr.label(
+            default = Label("//toolchain/cuda:current_fatbinary"),
+            allow_files = True,
+            executable = True,
+            cfg = "exec",
+        ),
+    },
+)
 
 def cuda_library(
         name,
@@ -243,18 +367,17 @@ def cuda_library(
     compiler_inputs = kwargs.get("additional_compiler_inputs", [])
 
     host_unit_deps = []
-    for idx in range(len(srcs)):
-        src = srcs[idx]
-        dev_src_target = _dev_src(name, idx)
-        fatbin_src_target = _fatbin_src(name, idx)
-        host_src_target = _host_src(name, idx)
+    if srcs:
+        dev_src_target = name + "__cuda_dev"
+        fatbin_src_target = name + "__fatbins"
+        host_src_target = name + "__cuda_host"
         raw_host_target = host_src_target + "_raw"
         host_objects_target = host_src_target + "_objects"
         payload_target = host_src_target + "_payload"
 
         cc_library(
             name = dev_src_target,
-            srcs = [src],
+            srcs = srcs,
             hdrs = hdrs,
             copts = copts + [
                 # cute and other specialize is_reference<>
@@ -270,7 +393,7 @@ def cuda_library(
         )
 
         # Fatbin per source unit (across all requested architectures).
-        cuda_fatbinary(
+        _cuda_images(
             name = fatbin_src_target,
             deps = [dev_src_target],
             archs = archs,
@@ -280,7 +403,7 @@ def cuda_library(
 
         cc_library(
             name = raw_host_target,
-            srcs = [src],
+            srcs = srcs,
             hdrs = hdrs,
             defines = defines,
             deps = deps + host_deps,
@@ -314,7 +437,8 @@ def cuda_library(
         _cuda_payload(
             name = payload_target,
             host = host_objects_target,
-            image = fatbin_src_target,
+            images = fatbin_src_target,
+            features = features,
             visibility = ["//visibility:private"],
             **common_kwargs
         )
@@ -325,14 +449,13 @@ def cuda_library(
             defines = defines,
             deps = [host_objects_target] + deps + host_deps,
             features = features,
-            additional_compiler_inputs = [fatbin_src_target],
             visibility = ["//visibility:private"],
             **host_kwargs
         )
 
         host_unit_deps.append(host_src_target)
 
-    # Public library aggregates all per-source host objects.
+    # Public library exports the grouped host library and its dependencies.
     cc_library(
         name = name,
         hdrs = hdrs,
