@@ -72,31 +72,30 @@ def _cuda_host_objects_impl(ctx):
     raw = ctx.attr.raw
     symbols = {}
     outputs = []
-    all_outputs = []
     raw_pic_objects = []
     for source, unit in raw[_CudaCompilationInfo].units.items():
         symbol = _payload_symbol(ctx, source)
         symbols[source] = symbol
         raw_pic_objects.extend(unit.pic_objects)
-        for objects, suffix in [(unit.objects, ".nopic.o"), (unit.pic_objects, ".pic.o")]:
-            for obj in objects:
-                out = ctx.actions.declare_file("%s/%d%s" % (ctx.label.name, len(all_outputs), suffix))
-                args = ctx.actions.args()
-                args.add_all([obj, out, symbol])
-                ctx.actions.run(
-                    mnemonic = "CudaHostRedirect",
-                    executable = ctx.executable._redirect,
-                    inputs = [obj],
-                    outputs = [out],
-                    arguments = [args],
-                )
-                all_outputs.append(out)
 
-                # cc_library treats precompiled .pic.o as usable in both kinds
-                # of link. Export one variant per TU to avoid duplicate symbols
-                # under alwayslink; PIC is valid for static and shared links.
-                if suffix == ".pic.o" or not unit.pic_objects:
-                    outputs.append(out)
+        # Precompiled PIC objects work in static and shared links. Export only
+        # one variant per TU to avoid duplicate definitions under alwayslink.
+        objects = unit.pic_objects or unit.objects
+        if len(objects) != 1:
+            fail("Expected one native host object for %s" % source)
+        obj = objects[0]
+        suffix = ".pic.o" if unit.pic_objects else ".nopic.o"
+        out = ctx.actions.declare_file("%s/%d%s" % (ctx.label.name, len(outputs), suffix))
+        args = ctx.actions.args()
+        args.add_all([obj, out, symbol])
+        ctx.actions.run(
+            mnemonic = "CudaHostRedirect",
+            executable = ctx.executable._redirect,
+            inputs = [obj],
+            outputs = [out],
+            arguments = [args],
+        )
+        outputs.append(out)
     if not outputs:
         fail("CUDA host redirection requires direct native objects from %s (LTO is unsupported)" % raw.label)
     return [
@@ -104,10 +103,7 @@ def _cuda_host_objects_impl(ctx):
         # Forward headers/defines, never the unmodified objects or archives.
         CcInfo(compilation_context = raw[CcInfo].compilation_context),
         _CudaHostObjectsInfo(symbols = symbols),
-        OutputGroupInfo(
-            raw_pic_objects = depset(raw_pic_objects),
-            all_redirected_objects = depset(all_outputs),
-        ),
+        OutputGroupInfo(raw_pic_objects = depset(raw_pic_objects)),
     ]
 
 _cuda_host_objects = rule(
@@ -198,19 +194,34 @@ _cuda_arch_transition = transition(
     ],
 )
 
-# NO RDC ONLY
-def _cuda_fatbinary_impl(ctx):
-    fatbin = ctx.actions.declare_file(ctx.label.name + ".fatbin")
+def _run_fatbinary(ctx, fatbin, cubins_by_arch):
     args = ctx.actions.args()
     args.add("--64")
     args.add(fatbin, format = "--create=%s")
     args.add("--compress-mode=size")
+    inputs = []
+    for arch in sorted(cubins_by_arch):
+        cubins = cubins_by_arch[arch]
+        inputs.extend(cubins)
+        args.add_all(cubins, format_each = "--image3=kind=elf,sm=%s,file=%%s" % arch.removeprefix("sm_"))
+    if not inputs:
+        fail("cuda_fatbinary requires deps that produce at least one cubin file")
+    ctx.actions.run(
+        mnemonic = "CudaFatbin",
+        progress_message = "Creating fatbin %s" % fatbin.short_path,
+        executable = ctx.executable._fatbinary,
+        inputs = inputs,
+        outputs = [fatbin],
+        arguments = [args],
+    )
 
-    fatbin_inputs = []
-    for arch in sorted(ctx.split_attr.deps):
-        for dep in ctx.split_attr.deps[arch]:
-            # The linking context also contains transitive host libraries.
-            # Only this translation unit's own device objects belong here.
+def _cuda_fatbinary_impl(ctx):
+    fatbin = ctx.actions.declare_file(ctx.label.name + ".fatbin")
+    cubins_by_arch = {}
+    for arch, deps in ctx.split_attr.deps.items():
+        cubins_by_arch[arch] = []
+        for dep in deps:
+            # Exclude transitive host libraries from the device image.
             cubins = []
             for linker_input in dep[CcInfo].linking_context.linker_inputs.to_list():
                 if linker_input.owner == dep.label:
@@ -218,24 +229,8 @@ def _cuda_fatbinary_impl(ctx):
                         cubins.extend(library.pic_objects or [])
             if not cubins:
                 fail("cuda_fatbinary requires direct PIC device objects from %s for %s" % (dep.label, arch))
-            fatbin_inputs.extend(cubins)
-            args.add_all(
-                cubins,
-                format_each = "--image3=kind=elf,sm=%s,file=%%s" % arch.removeprefix("sm_"),
-            )
-
-    if not fatbin_inputs:
-        fail("cuda_fatbinary requires deps that produce at least one cubin file")
-
-    ctx.actions.run(
-        mnemonic = "CudaFatbin",
-        progress_message = "Creating fatbin %s" % fatbin.short_path,
-        executable = ctx.executable._fatbinary,
-        inputs = fatbin_inputs,
-        outputs = [fatbin],
-        arguments = [args],
-    )
-
+            cubins_by_arch[arch].extend(cubins)
+    _run_fatbinary(ctx, fatbin, cubins_by_arch)
     return [DefaultInfo(files = depset([fatbin]))]
 
 cuda_fatbinary = rule(
@@ -256,11 +251,7 @@ cuda_fatbinary = rule(
 )
 
 def _cuda_images_impl(ctx):
-    by_arch = {}
-    for arch, deps in ctx.split_attr.deps.items():
-        if len(deps) != 1:
-            fail("Batched CUDA images require one device compilation target")
-        by_arch[arch] = deps[0][_CudaCompilationInfo].units
+    by_arch = {arch: dep[_CudaCompilationInfo].units for arch, dep in ctx.split_attr.dep.items()}
     archs = sorted(by_arch)
     sources = sorted(by_arch[archs[0]])
     for arch in archs:
@@ -269,31 +260,20 @@ def _cuda_images_impl(ctx):
     images = {}
     for source in sources:
         fatbin = ctx.actions.declare_file("%s/%d.fatbin" % (ctx.label.name, len(images)))
-        args = ctx.actions.args()
-        args.add("--64")
-        args.add(fatbin, format = "--create=%s")
-        args.add("--compress-mode=size")
-        inputs = []
+        cubins_by_arch = {}
         for arch in archs:
             cubins = by_arch[arch][source].pic_objects
             if len(cubins) != 1:
                 fail("Expected one PIC cubin for %s on %s" % (source, arch))
-            inputs.extend(cubins)
-            args.add_all(cubins, format_each = "--image3=kind=elf,sm=%s,file=%%s" % arch.removeprefix("sm_"))
-        ctx.actions.run(
-            mnemonic = "CudaFatbin",
-            executable = ctx.executable._fatbinary,
-            inputs = inputs,
-            outputs = [fatbin],
-            arguments = [args],
-        )
+            cubins_by_arch[arch] = cubins
+        _run_fatbinary(ctx, fatbin, cubins_by_arch)
         images[source] = fatbin
     return [DefaultInfo(files = depset(images.values())), _CudaImagesInfo(images = images)]
 
 _cuda_images = rule(
     implementation = _cuda_images_impl,
     attrs = {
-        "deps": attr.label_list(cfg = _cuda_arch_transition, providers = [CcInfo], aspects = [_cuda_compilation]),
+        "dep": attr.label(mandatory = True, cfg = _cuda_arch_transition, providers = [CcInfo], aspects = [_cuda_compilation]),
         "archs": attr.string_list(),
         "_fatbinary": attr.label(
             default = Label("//toolchain/cuda:current_fatbinary"),
@@ -362,18 +342,16 @@ def cuda_library(
     compile_kwargs.update({key: kwargs[key] for key in compile_attrs if key in kwargs})
     device_kwargs = dict(compile_kwargs)
     device_kwargs["tags"] = kwargs.get("tags", []) + ["manual"]
-    host_kwargs = dict(compile_kwargs)
-    host_kwargs.update({key: kwargs[key] for key in host_attrs if key in kwargs})
     compiler_inputs = kwargs.get("additional_compiler_inputs", [])
 
-    host_unit_deps = []
+    host_objects = []
+    host_context = []
     if srcs:
         dev_src_target = name + "__cuda_dev"
         fatbin_src_target = name + "__fatbins"
-        host_src_target = name + "__cuda_host"
-        raw_host_target = host_src_target + "_raw"
-        host_objects_target = host_src_target + "_objects"
-        payload_target = host_src_target + "_payload"
+        raw_host_target = name + "__cuda_host_raw"
+        host_objects_target = name + "__cuda_host_objects"
+        payload_target = name + "__cuda_host_payload"
 
         cc_library(
             name = dev_src_target,
@@ -395,7 +373,7 @@ def cuda_library(
         # Fatbin per source unit (across all requested architectures).
         _cuda_images(
             name = fatbin_src_target,
-            deps = [dev_src_target],
+            dep = dev_src_target,
             archs = archs,
             visibility = ["//visibility:private"],
             **common_kwargs
@@ -425,7 +403,7 @@ def cuda_library(
                 Label("//toolchain/cuda:empty.fatbin"),
             ],
             visibility = ["//visibility:private"],
-            **host_kwargs
+            **compile_kwargs
         )
 
         _cuda_host_objects(
@@ -442,25 +420,15 @@ def cuda_library(
             visibility = ["//visibility:private"],
             **common_kwargs
         )
-        cc_library(
-            name = host_src_target,
-            srcs = [host_objects_target, payload_target],
-            hdrs = hdrs,
-            defines = defines,
-            deps = [host_objects_target] + deps + host_deps,
-            features = features,
-            visibility = ["//visibility:private"],
-            **host_kwargs
-        )
+        host_objects = [host_objects_target, payload_target]
+        host_context = [host_objects_target]
 
-        host_unit_deps.append(host_src_target)
-
-    # Public library exports the grouped host library and its dependencies.
     cc_library(
         name = name,
+        srcs = host_objects,
         hdrs = hdrs,
         defines = defines,
         features = features,
-        deps = host_unit_deps + deps + host_deps,
+        deps = host_context + deps + host_deps,
         **kwargs
     )

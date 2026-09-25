@@ -102,7 +102,7 @@ host_linking_test = analysistest.make(_host_linking_test_impl)
 def _payload_inputs_test_impl(ctx):
     env = analysistest.begin(ctx)
     actions = [a for a in analysistest.target_actions(env) if a.mnemonic == "CppCompile"]
-    asserts.equals(env, ctx.attr.expected_count * ctx.attr.variants, len(actions))
+    asserts.equals(env, ctx.attr.expected_count, len(actions))
     images_seen = []
     for action in actions:
         images = [f for f in action.inputs.to_list() if f.extension == "fatbin"]
@@ -113,21 +113,25 @@ def _payload_inputs_test_impl(ctx):
 
 payload_inputs_test = analysistest.make(
     _payload_inputs_test_impl,
-    attrs = {"expected_count": attr.int(default = 2), "variants": attr.int(default = 1)},
+    attrs = {"expected_count": attr.int(default = 2)},
 )
 
 def _pic_mapping_test_impl(ctx):
     env = analysistest.begin(ctx)
     actions = [a for a in analysistest.target_actions(env) if a.mnemonic == "CudaHostRedirect"]
-    asserts.equals(env, 4, len(actions), "Two TUs, each with PIC and non-PIC objects")
-    by_symbol = {}
+    asserts.equals(env, 2, len(actions), "Select one object for each of the two TUs")
+    symbols = []
+    selected = []
     for action in actions:
-        symbol = action.argv[-1]
-        by_symbol.setdefault(symbol, []).extend([f.basename for f in action.outputs.to_list()])
-    asserts.equals(env, 2, len(by_symbol), "Each TU needs a distinct symbol")
-    for outputs in by_symbol.values():
-        asserts.equals(env, 1, len([f for f in outputs if f.endswith(".pic.o")]))
-        asserts.equals(env, 1, len([f for f in outputs if f.endswith(".nopic.o")]))
+        symbols.append(action.argv[-1])
+        inputs = [f for f in action.inputs.to_list() if f.extension == "o"]
+        asserts.equals(env, 1, len(inputs))
+        for obj in inputs:
+            asserts.true(env, obj.basename.endswith(".pic.o"), "Prefer PIC when both variants exist")
+        selected.extend(action.outputs.to_list())
+    asserts.equals(env, 2, len({symbol: True for symbol in symbols}), "Each TU needs a distinct symbol")
+    exported = analysistest.target_under_test(env)[DefaultInfo].files.to_list()
+    asserts.equals(env, sorted([f.path for f in selected]), sorted([f.path for f in exported]))
     return analysistest.end(env)
 
 pic_mapping_test = analysistest.make(
