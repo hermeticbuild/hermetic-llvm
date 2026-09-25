@@ -61,7 +61,10 @@ filegroup(
 
 filegroup(
     name = "static_runtime_lib",
-    srcs = ["//runtimes/cxxstdlib:static_runtime_lib"],
+    srcs = [
+        "//runtimes/cxxstdlib:static_runtime_lib",
+        "//runtimes/unwindlib:static_runtime_lib",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -101,7 +104,10 @@ config_setting(
 # targets are Darwin-only, hence the macOS gate.
 filegroup(
     name = "dynamic_runtime_lib",
-    srcs = ["//runtimes/cxxstdlib:dynamic_runtime_lib"] + select({
+    srcs = [
+        "//runtimes/cxxstdlib:dynamic_runtime_lib",
+        "//runtimes/unwindlib:dynamic_runtime_lib",
+    ] + select({
         ":_asan_dynamic_runtime_macos": ["//runtimes/compiler-rt:clang_rt.asan.shared"],
         "//conditions:default": [],
     }) + select({

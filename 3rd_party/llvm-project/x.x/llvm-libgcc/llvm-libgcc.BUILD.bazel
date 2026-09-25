@@ -1,0 +1,57 @@
+load("@llvm//3rd_party/llvm-project/x.x/llvm-libgcc:libgcc_map.bzl", "libgcc_map")
+load("@llvm//toolchain/runtimes:cc_runtime_shared_library.bzl", "cc_runtime_stage1_libgcc_shared_library")
+
+package(default_visibility = ["//visibility:public"])
+
+# The version script: GCC's libgcc version files for the GCC release
+# //constraints/cxxstdlib selects (the same release as libstdc++), reduced by
+# GCC's own mkmap-symver.awk to the symbols libunwind and the compiler-rt
+# builtins define. See libgcc_map.bzl.
+libgcc_map(
+    name = "libgcc.map",
+    map_in = "@gcc//:libgcc.map.in",
+    mkmap = "@gcc//:libgcc_mkmap_symver",
+    deps = [
+        "//compiler-rt:builtins",
+        "//libunwind",
+    ],
+)
+
+# libgcc_s.so.1: libunwind and the compiler-rt builtins linked into one
+# shared library, with :libgcc.map as its version script, so that it exports
+# the symbols of GCC's libgcc_s.so.1 under GCC's symbol versions.
+#
+# The soname is libgcc_s.so.1, so that a binary linked against it records
+# NEEDED libgcc_s.so.1 and is satisfied by the target system's libgcc.
+#
+# The builtins are compiled for this library with default visibility (the
+# stage1 libgcc builder turns //config:compiler_rt_builtins_hide_symbols off),
+# since hidden symbols cannot be exported whatever the version script says.
+# The few that compiler-rt declares hidden in source, __cpu_indicator_init and
+# __cpu_model (lib/builtins/cpu_model/x86.c), stay local even so; GCC's
+# libgcc_s exports them only under a non-default version, for binaries linked
+# against GCC 4.8.
+cc_runtime_stage1_libgcc_shared_library(
+    name = "libgcc_s.shared",
+    additional_linker_inputs = [":libgcc.map"],
+    shared_lib_name = "libgcc_s.so.1",
+    # @gcc//:libgcc.map.in declares the version script inputs for these
+    # targets.
+    target_compatible_with = select({
+        "@llvm//platforms/config:linux_x86_64_gnu": [],
+        "@llvm//platforms/config:linux_aarch64_gnu": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+    # -lm: the complex-arithmetic builtins (__divdc3, ...) call libm. lld's
+    # default --no-undefined-version stays on, so a map naming a symbol the
+    # objects do not define is a build error rather than a silent gap.
+    user_link_flags = [
+        "-Wl,-soname,libgcc_s.so.1",
+        "-Wl,--version-script=$(location :libgcc.map)",
+        "-lm",
+    ],
+    deps = [
+        "//compiler-rt:builtins",
+        "//libunwind",
+    ],
+)

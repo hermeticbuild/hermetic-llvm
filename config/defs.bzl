@@ -122,26 +122,84 @@ def config_settings():
         build_setting_default = True,
     )
 
-    # This flag makes a dummy gcc_s library to link against.
+    # This flag makes dummy gcc, gcc_eh and gcc_s libraries available to link
+    # against.
     #
-    # libgcc_s is a shared library (only libgcc_s.so exists) that is required
-    # when creating or linking against a shared library that uses c++ exceptions
-    # that may cross the library boundary.
+    # This toolchain provides compiler-rt.builtins and libunwind through its
+    # runtime libraries and never links against libgcc itself (see
+    # experimental_use_llvm_libgcc below for a libgcc_s compatible unwinder).
+    # Yet, it is possible for dependencies that you do not control to pass
+    # -lgcc, -lgcc_eh or -lgcc_s linker flags.
     #
-    # This toolchain currently doesn't support linking dynamically against an
-    # unwinder, which means that this toolchain doesn't support cross boundary
-    # c++ exceptions for the moment (and the only unwinder supported is libunwind).
-    # Yet, it is possible for dependencies that you do not control to pass -lgcc_s
-    # linker flags.
-    #
-    # Since rustc passes this flag, we default to enabling this flag to make this toolchain
-    # more broadly compatible out-of-the-box. If you know what you are doing and do not want
-    # to no-op these flags, you can disable this behavior.
-    #
-    # In theory, we should implement llvm-libgcc and provide these libs into the resource directory.
+    # Since rustc passes -lgcc_s, we default to enabling this flag to make this
+    # toolchain more broadly compatible out-of-the-box. If you know what you are
+    # doing and do not want to no-op these flags, you can disable this behavior.
+    # It is always on when experimental_use_llvm_libgcc is enabled.
     bool_flag(
-        name = "experimental_stub_libgcc_s",
+        name = "experimental_stub_libgcc",
         build_setting_default = True,
+    )
+
+    # Compat: the former name of experimental_stub_libgcc.
+    native.alias(
+        name = "experimental_stub_libgcc_s",
+        actual = ":experimental_stub_libgcc",
+    )
+
+    native.config_setting(
+        name = "experimental_stub_libgcc_enabled",
+        flag_values = {
+            ":experimental_stub_libgcc": "True",
+        },
+    )
+
+    # This flag replaces libunwind.so.1 with libgcc_s.so.1 as the dynamic
+    # unwinder of Linux glibc targets, for artifacts that run on a distribution
+    # using that system's libgcc.
+    #
+    # libgcc_s.so.1 is libunwind and the compiler-rt builtins linked into one
+    # shared library whose exported symbols carry the GCC_* symbol versions of
+    # GCC's libgcc_s.so.1, generated from the libgcc version scripts of the
+    # GCC release that //constraints/cxxstdlib selects. Binaries then record
+    # NEEDED libgcc_s.so.1 and import the versioned symbols the target
+    # system's libgcc defines. See 3rd_party/llvm-project/x.x/llvm-libgcc/README.md.
+    #
+    # Only the dynamic runtime library changes: static links keep the static
+    # libunwind, and -lgcc_s keeps resolving to the stub above.
+    bool_flag(
+        name = "experimental_use_llvm_libgcc",
+        build_setting_default = False,
+    )
+
+    native.config_setting(
+        name = "experimental_use_llvm_libgcc_enabled",
+        flag_values = {
+            ":experimental_use_llvm_libgcc": "True",
+        },
+    )
+
+    selects.config_setting_group(
+        name = "stub_libgcc_enabled",
+        match_any = [
+            ":experimental_use_llvm_libgcc_enabled",
+            ":experimental_stub_libgcc_enabled",
+        ],
+    )
+
+    # Whether the compiler-rt builtins are compiled with hidden visibility.
+    # They normally are, so that every binary and shared object carries its
+    # own private copy of the routines it uses. libgcc_s.so.1 must export them
+    # instead, so its builder sets this to False for the builtins it links.
+    bool_flag(
+        name = "compiler_rt_builtins_hide_symbols",
+        build_setting_default = True,
+    )
+
+    native.config_setting(
+        name = "compiler_rt_builtins_hide_symbols_disabled",
+        flag_values = {
+            ":compiler_rt_builtins_hide_symbols": "False",
+        },
     )
 
     for sanitizer in SANITIZERS:
