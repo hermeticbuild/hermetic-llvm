@@ -1,29 +1,16 @@
 """Configuration-wide CRT selection for MSVC artifact tests."""
 
-def _crt_transition_impl(settings, attr):
-    features = [
-        feature
-        for feature in settings["//command_line_option:features"]
-        if feature not in [
-            "-dynamic_link_msvcrt",
-            "-static_link_msvcrt",
-            "dynamic_link_msvcrt",
-            "static_link_msvcrt",
-        ]
-    ]
-    features.extend(
-        ["-dynamic_link_msvcrt", "static_link_msvcrt"] if attr.static_crt else ["-static_link_msvcrt", "dynamic_link_msvcrt"],
-    )
+def _crt_transition_impl(_settings, attr):
     return {
-        "//command_line_option:features": features,
+        "@llvm//toolchain/features/msvc:crt_mode": "static" if attr.static_crt else "dynamic",
         "//command_line_option:platforms": str(attr.target_platform),
     }
 
 _crt_transition = transition(
     implementation = _crt_transition_impl,
-    inputs = ["//command_line_option:features"],
+    inputs = [],
     outputs = [
-        "//command_line_option:features",
+        "@llvm//toolchain/features/msvc:crt_mode",
         "//command_line_option:platforms",
     ],
 )
