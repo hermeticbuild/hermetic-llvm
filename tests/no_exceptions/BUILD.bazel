@@ -1,0 +1,63 @@
+load("@bazel_lib//lib:transitions.bzl", "platform_transition_binary")
+load("@llvm//:defs.bzl", "exec_test")
+load("@llvm//toolchain:selects.bzl", "platform_llvm_binary")
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load(":no_exceptions_runtimes_cc_binary.bzl", "no_exceptions_runtimes_cc_binary")
+
+alias(
+    name = "llvm-nm",
+    actual = platform_llvm_binary("llvm-nm"),
+)
+
+cc_binary(
+    name = "probe",
+    srcs = ["probe.cc"],
+    features = ["no_exceptions"],
+)
+
+platform_transition_binary(
+    name = "probe_default_runtimes",
+    binary = ":probe",
+    target_platform = "@llvm//platforms:linux_x86_64_musl",
+)
+
+no_exceptions_runtimes_cc_binary(
+    name = "probe_no_exceptions_runtimes",
+    srcs = ["probe.cc"],
+    features = ["no_exceptions"],
+)
+
+exec_test(
+    sh_test,
+    name = "default_runtimes_define_cxa_throw_test",
+    srcs = ["verify_symbols.sh"],
+    args = [
+        "$(rootpath :llvm-nm)",
+        "$(rootpath :probe_default_runtimes)",
+        "present",
+    ],
+    data = [
+        ":probe_default_runtimes",
+    ],
+    tools = [
+        ":llvm-nm",
+    ],
+)
+
+exec_test(
+    sh_test,
+    name = "no_exceptions_runtimes_define_no_eh_symbols_test",
+    srcs = ["verify_symbols.sh"],
+    args = [
+        "$(rootpath :llvm-nm)",
+        "$(rootpath :probe_no_exceptions_runtimes)",
+        "absent",
+    ],
+    data = [
+        ":probe_no_exceptions_runtimes",
+    ],
+    tools = [
+        ":llvm-nm",
+    ],
+)

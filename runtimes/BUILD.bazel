@@ -1,7 +1,7 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@bazel_skylib//lib:selects.bzl", "selects")
-load("@bazel_skylib//rules:common_settings.bzl", "string_setting")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "string_setting")
 load("@llvm-project//:vars.bzl", "LLVM_VERSION_MAJOR")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//toolchain/args:llvm_target_triple.bzl", "LLVM_TARGET_TRIPLE")
@@ -33,6 +33,34 @@ config_setting(
     name = "linkmode_dynamic",
     flag_values = {
         ":linkmode": "dynamic",
+    },
+    visibility = ["//visibility:public"],
+)
+
+# LIBCXX_ENABLE_EXCEPTIONS / LIBCXXABI_ENABLE_EXCEPTIONS.
+bool_flag(
+    name = "exceptions",
+    build_setting_default = True,
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "exceptions_disabled",
+    flag_values = {
+        ":exceptions": "False",
+    },
+    visibility = ["//visibility:public"],
+)
+
+# clang-cl compiles without exceptions unless /EH is passed, so on MSVC targets the setting has nothing to add.
+config_setting(
+    name = "exceptions_disabled_msvc",
+    constraint_values = [
+        "@platforms//os:windows",
+        "//constraints/windows/abi:msvc",
+    ],
+    flag_values = {
+        ":exceptions": "False",
     },
     visibility = ["//visibility:public"],
 )
