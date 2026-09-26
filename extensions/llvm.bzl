@@ -63,6 +63,7 @@ _LLVM_22_SOURCE_PATCHES = [
     "//3rd_party/llvm-project/22.x/patches:llvm-windows-stack-size.patch",
     "//3rd_party/llvm-project/22.x/patches:clang-bazel-static-windows.patch",
     "//3rd_party/llvm-project/22.x/patches:libcxx-lgamma_r.patch",
+    "//3rd_party/llvm-project/22.x/patches:cuda_wrapper_nv_rsqrt_specifier.patch",
     "//3rd_party/llvm-project/x.x/patches:libcxx-vcruntime-nothrow.patch",
     "//3rd_party/llvm-project/22.x/patches:llvm-bazel-blake3-windows-gnu.patch",
     "//3rd_party/llvm-project/22.x/patches:llvm-bazel-windows-arm64-config.patch",

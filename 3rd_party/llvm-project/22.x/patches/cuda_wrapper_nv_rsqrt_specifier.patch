@@ -1,0 +1,36 @@
+From ab048ac6c0339c631ea4a1064b675318867a3853 Mon Sep 17 00:00:00 2001
+From: Artem Belevich <tra@google.com>
+Date: Tue, 10 Mar 2026 12:52:46 -0700
+Subject: [PATCH] [clang][CUDA] Define _NV_RSQRT_SPECIFIER for
+ glibc-2.42/cuda-13.2 compatibility (#185701)
+
+CUDA-13.2 defines _NV_RSQRT_SPECIFIER to make its headers compileable
+with glibc 2.42+. However, clang does not include the header that
+defines the macro, and has to define it by itself.
+---
+ clang/lib/Headers/__clang_cuda_runtime_wrapper.h | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/clang/lib/Headers/__clang_cuda_runtime_wrapper.h b/clang/lib/Headers/__clang_cuda_runtime_wrapper.h
+index fcf1ea89ad6a3..295f4191f9927 100644
+--- a/clang/lib/Headers/__clang_cuda_runtime_wrapper.h
++++ b/clang/lib/Headers/__clang_cuda_runtime_wrapper.h
+@@ -45,6 +45,18 @@
+ #include <string.h>
+ #undef __CUDACC__
+ 
++// math_functions.h from CUDA 13.2+ defines _NV_RSQRT_SPECIFIER.
++// Clang does not include it, so we need to define it ourselves.
++#if defined(__GNUC__) && defined(__GLIBC_PREREQ)
++#if __GLIBC_PREREQ(2, 42)
++#define _NV_RSQRT_SPECIFIER noexcept(true)
++#endif
++#endif
++
++#ifndef _NV_RSQRT_SPECIFIER
++#define _NV_RSQRT_SPECIFIER
++#endif
++
+ // Preserve common macros that will be changed below by us or by CUDA
+ // headers.
+ #pragma push_macro("__THROW")
