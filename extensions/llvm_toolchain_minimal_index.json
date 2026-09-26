@@ -1,12 +1,13 @@
 {
-  "default_prebuilt_llvm_version": "23.1.0",
+  "default_prebuilt_llvm_version": "23.1.2",
   "latest_by_llvm_version": {
     "21.1.8": "llvm-21.1.8-10",
     "22.1.6": "llvm-22.1.6-1",
     "22.1.7": "llvm-22.1.7-2",
     "22.1.8": "llvm-22.1.8-2",
     "23.1.0-rc1": "llvm-23.1.0-rc1-1",
-    "23.1.0": "llvm-23.1.0-4"
+    "23.1.0": "llvm-23.1.0-4",
+    "23.1.2": "llvm-23.1.2-1"
   },
   "releases": {
     "llvm-21.1.8-10": {
@@ -325,6 +326,40 @@
       "windows-arm64-msvc": {
         "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-23.1.0-4/llvm-toolchain-minimal-23.1.0-windows-arm64-msvc.tar.zst",
         "sha256": "a363e50915014a4164654e0a6fdb2f078054771571d17250e4b7878330cd4815"
+      }
+    },
+    "llvm-23.1.2-1": {
+      "darwin-amd64": {
+        "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-23.1.2-1/llvm-toolchain-minimal-23.1.2-darwin-amd64.tar.zst",
+        "sha256": "bd24fdbcf9978edf4d00d61331bfe31da012580eb5d86a165d4e6b8d86680e02"
+      },
+      "darwin-arm64": {
+        "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-23.1.2-1/llvm-toolchain-minimal-23.1.2-darwin-arm64.tar.zst",
+        "sha256": "77b6100c6c715458e8af38ab36557a9d70e1876d203b220254aac86ad36cfcda"
+      },
+      "linux-amd64-musl": {
+        "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-23.1.2-1/llvm-toolchain-minimal-23.1.2-linux-amd64-musl.tar.zst",
+        "sha256": "9b8c7a406b4aa4f674ddae7c95c78a45803a73540afe98f34d34e7d150632502"
+      },
+      "linux-arm64-musl": {
+        "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-23.1.2-1/llvm-toolchain-minimal-23.1.2-linux-arm64-musl.tar.zst",
+        "sha256": "fddb1f0fa724bbfc15b5f748b77b5925380509e63cf4c8c3f2557f018485bd97"
+      },
+      "windows-amd64": {
+        "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-23.1.2-1/llvm-toolchain-minimal-23.1.2-windows-amd64.tar.zst",
+        "sha256": "4d9c3a20c5da5f2c750d49acfc4943f19e7af9ed5704a962cc5e110d1ecbca05"
+      },
+      "windows-arm64": {
+        "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-23.1.2-1/llvm-toolchain-minimal-23.1.2-windows-arm64.tar.zst",
+        "sha256": "c4fe44635c545c4dd605f17a62246248888105889047ea72d7063485c73be846"
+      },
+      "windows-amd64-msvc": {
+        "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-23.1.2-1/llvm-toolchain-minimal-23.1.2-windows-amd64-msvc.tar.zst",
+        "sha256": "17e8bc606d9f31a9b1043cd8dffda3113267e1212ea4ecc6c8e07277e3a597d4"
+      },
+      "windows-arm64-msvc": {
+        "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-23.1.2-1/llvm-toolchain-minimal-23.1.2-windows-arm64-msvc.tar.zst",
+        "sha256": "4b639dd15f1ba6dfa83b0fc68f851f7afcffc87eb842df5ea56440d9add3ce6b"
       }
     }
   }
