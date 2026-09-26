@@ -35,7 +35,7 @@ http_archive(
     urls = ["https://github.com/facebook/zstd/releases/download/v1.5.2/zstd-1.5.2.tar.gz"],
 )
 
-LLVM_VERSION = "23.1.0"
+LLVM_VERSION = "23.1.2"
 
 llvm = use_extension("//extensions:llvm.bzl", "llvm")
 llvm.version(llvm_version = LLVM_VERSION)
