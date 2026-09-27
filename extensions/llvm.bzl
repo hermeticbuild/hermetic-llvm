@@ -6,6 +6,7 @@ load("//private:llvm_project_from_path.bzl", "llvm_project_from_path")
 _DEFAULT_LLVM_VERSIONS_INDEX_FILE = "//:llvm_versions.json"
 
 _DEFAULT_SOURCE_PATCHES = [
+    "//3rd_party/llvm-project/x.x/patches:llvm-mimalloc.patch",
     "//3rd_party/llvm-project/x.x/patches:llvm-musl-stack-size.patch",
     "//3rd_party/llvm-project/x.x/patches:clang-prepend-arg-reexec.patch",
     "//3rd_party/llvm-project/x.x/patches:no_frontend_builtin_headers.patch",
@@ -70,6 +71,7 @@ _LLVM_22_SOURCE_PATCHES = [
 ] + _BEFORE_23_SOURCE_PATCHES + _DEFAULT_SOURCE_PATCHES
 
 _LLVM_23_SOURCE_PATCHES = [
+    "//3rd_party/llvm-project/23.x/patches:llvm-macho-thinlto-guid.patch",
     "//3rd_party/llvm-project/x.x/patches:llvm-macho-arm64e-x1.patch",
     "//3rd_party/llvm-project/x.x/patches:clang-bazel-static-windows.patch",
     "//3rd_party/llvm-project/x.x/patches:libcxx-vcruntime-nothrow.patch",

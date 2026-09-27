@@ -1,0 +1,15 @@
+diff --git a/llvm/BUILD.bazel b/llvm/BUILD.bazel
+--- a/llvm/BUILD.bazel
++++ b/llvm/BUILD.bazel
+@@ -888,6 +888,11 @@
+ cc_binary(
+     name = "llvm",
+     srcs = glob(["tools/llvm-driver/*.cpp"]),
++    malloc = select({
++        "@platforms//os:linux": "@mimalloc",
++        "@platforms//os:macos": "@mimalloc",
++        "//conditions:default": "@bazel_tools//tools/cpp:malloc",
++    }),
+     deps = [
+         ":Support",
+         ":llvm_driver_tools_def_lib",

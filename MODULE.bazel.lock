@@ -110,6 +110,8 @@
     "https://bcr.bazel.build/modules/lz4/1.9.4/source.json": "233f0bdfc21f254e3dda14683ddc487ca68c6a3a83b7d5db904c503f85bd089b",
     "https://bcr.bazel.build/modules/mbedtls/3.6.0.bcr.1/MODULE.bazel": "0dbc321445565bec5e297756954baac07238ffad4a061ca47a3bfe9ce9c38b4f",
     "https://bcr.bazel.build/modules/mbedtls/3.6.0.bcr.1/source.json": "8975cd008ad87519248c9282fbb45ce25bbfd0dbaa4421dc844bc9e7823aef51",
+    "https://bcr.bazel.build/modules/mimalloc/3.5.3/MODULE.bazel": "d4555726ceff5240bef25b0ec38b1c80c68337eec2b4b5df20cf611df1383e6a",
+    "https://bcr.bazel.build/modules/mimalloc/3.5.3/source.json": "e94e4baf53f881236b86b16c436c6ab4a338b37135e370154802a7111c0dda28",
     "https://bcr.bazel.build/modules/nlohmann_json/3.12.0.bcr.1/MODULE.bazel": "a1c8bb07b5b91d971727c635f449d05623ac9608f6fe4f5f04254ea12f08e349",
     "https://bcr.bazel.build/modules/nlohmann_json/3.12.0.bcr.1/source.json": "93f82a5ae985eb935c539bfee95e04767187818189241ac956f3ccadbdb8fb02",
     "https://bcr.bazel.build/modules/package_metadata/0.0.2/MODULE.bazel": "fb8d25550742674d63d7b250063d4580ca530499f045d70748b1b142081ebb92",
