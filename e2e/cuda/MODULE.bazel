@@ -1,0 +1,43 @@
+bazel_dep(name = "bazel_lib", version = "3.0.0")
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "rules_cc", version = "0.2.16")
+bazel_dep(name = "rules_shell", version = "0.6.1")
+bazel_dep(name = "with_cfg.bzl", version = "0.12.0")
+bazel_dep(name = "googletest", version = "1.17.0")
+bazel_dep(name = "llvm", version = "")
+local_path_override(
+    module_name = "llvm",
+    path = "../../",
+)
+
+bazel_dep(name = "cuda_toolkit", version = "0.0.5")
+
+cuda_toolkit = use_extension("@cuda_toolkit//extensions:cuda.bzl", "cuda")
+cuda_toolkit.redist(
+    name = "cuda_13_1_1",
+    version = "13.1.1",
+)
+use_repo(
+    cuda_toolkit,
+    "cuda",
+    "cuda_13_1_1",
+)
+
+register_toolchains("@cuda//cuda:all")
+
+# Register toolchains through the scoped repo to ensure this codepath works.
+llvm_toolchains = use_extension("@llvm//extensions:toolchain.bzl", "toolchain")
+use_repo(llvm_toolchains, "llvm_toolchains")
+
+register_toolchains("@llvm_toolchains//:all")
+
+# Bump transitive zlib version to avoid genrules.
+bazel_dep(name = "zlib", version = "1.3.1.bcr.8")
+
+archive_override(
+    module_name = "googletest",
+    integrity = "sha256-lrzu+GdQ9mVsuDDO+ZgH0G5YaVEzSdEFrCyQMjqMUrE=",
+    strip_prefix = "googletest-73a63ea05dc8ca29ec1d2c1d66481dd0de1950f1",
+    urls = ["https://github.com/google/googletest/archive/73a63ea05dc8ca29ec1d2c1d66481dd0de1950f1.tar.gz"],
+)

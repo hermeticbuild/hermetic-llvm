@@ -1,0 +1,139 @@
+load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
+load("@rules_cc//cc/toolchains:feature_set.bzl", "cc_feature_set")
+load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
+load("//config:defs.bzl", "NVIDIA_COMPUTE_CAPABILITIES")
+load(":cuda_current_toolchain.bzl", "cuda_current_toolchain_component")
+
+package(default_visibility = ["//visibility:public"])
+
+cuda_current_toolchain_component(
+    name = "current_fatbinary",
+    component = "fatbinary",
+    executable = True,
+)
+
+cuda_current_toolchain_component(
+    name = "current_cuda_path",
+    component = "cuda_path",
+)
+
+[
+    config_setting(
+        name = "nvidia_compute_capability_{}".format(compute_capability),
+        flag_values = {
+            "//config:nvidia_compute_capability": compute_capability,
+        },
+        visibility = ["//visibility:private"],
+    )
+    for compute_capability in NVIDIA_COMPUTE_CAPABILITIES
+]
+
+cc_args(
+    name = "fail_on_link_actions",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    args = ["--linking-is-not-supported-for-device-code"],
+)
+
+cc_args(
+    name = "cuda_gpu_arch_flag",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:compile_actions",
+    ],
+    args = select(
+        {
+            ":nvidia_compute_capability_" + arch: ["--offload-arch=" + arch]
+            for arch in NVIDIA_COMPUTE_CAPABILITIES
+        } | {
+            # letting clang decide
+            "//conditions:default": [],
+        },
+    ),
+)
+
+cc_args(
+    name = "cuda_device_only_flag",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:compile_actions",
+    ],
+    args = [
+        "--cuda-path={cuda_path}",
+        "--offload-device-only",
+        # TODO(cerisier): Should this be configurable?
+        "-fvisibility=hidden",
+        "-fvisibility-inlines-hidden",
+        "-fno-ident",
+    ],
+    data = [
+        "//toolchain/cuda:current_cuda_path",
+    ],
+    format = {
+        "cuda_path": "//toolchain/cuda:current_cuda_path",
+    },
+)
+
+cc_args(
+    name = "default_compile_flags",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:compile_actions",
+    ],
+    args = [
+        "-x",
+        "cuda",
+    ],
+)
+
+cc_args_list(
+    name = "toolchain_args",
+    args = [
+        "//toolchain/cuda:cuda_gpu_arch_flag",
+        "//toolchain/cuda:cuda_device_only_flag",
+        "//toolchain/cuda:default_compile_flags",
+        "//toolchain:common_compile_args",
+        "//toolchain:cxxstdlib_headers_include_search_paths",
+        "//toolchain:linux_headers",
+
+        # no link
+        ":fail_on_link_actions",
+    ],
+    # CUDA currently supports Linux GNU hosts on these two CPU architectures.
+    # Do not silently combine CUDA's glibc ABI with musl or another host OS.
+    target_compatible_with = select({
+        "//platforms/config:linux_x86_64_gnu": [],
+        "//platforms/config:linux_aarch64_gnu": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)
+
+cc_feature_set(
+    name = "known_features",
+    all_of = [
+        "@rules_cc//cc/toolchains/args/layering_check:layering_check",
+        "@rules_cc//cc/toolchains/args/layering_check:use_module_maps",
+        "@llvm//toolchain/features:archive_param_file",
+        "@llvm//toolchain/features:prefer_pic_for_opt_binaries",
+        # CPU ThinLTO produces LLVM bitcode instead of the cubins consumed by
+        # fatbinary. It must not be advertised by device compilation policy.
+        # Those features are enabled internally by --compilation_mode flags family.
+        # We add them to the list of known_features but not in the list of enabled_features.
+        "@llvm//toolchain/features:all_non_legacy_builtin_features",
+        # Always last (contains user_compile_flags and user_link_flags who should apply last).
+        "@rules_cc//cc/toolchains/args:experimental_replace_legacy_action_config_features",
+    ],
+)
+
+cc_feature_set(
+    name = "enabled_features",
+    all_of = [
+        "@llvm//toolchain/features:prefer_pic_for_opt_binaries",
+        "@rules_cc//cc/toolchains/args/layering_check:module_maps",
+        # These are "enabled" but they only _actually_ get enabled when the underlying compilation mode is set.
+        # This lets us properly order them before user_compile_flags and user_link_flags below.
+        "@llvm//toolchain/features:opt",
+        "@llvm//toolchain/features:dbg",
+        "@llvm//toolchain/features:archive_param_file",
+        # Always last (contains user_compile_flags and user_link_flags who should apply last).
+        "@rules_cc//cc/toolchains/args:experimental_replace_legacy_action_config_features",
+    ],
+)

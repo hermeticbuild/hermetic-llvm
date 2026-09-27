@@ -23,6 +23,45 @@ SANITIZERS = [
     "profile",
 ]
 
+NVIDIA_COMPUTE_CAPABILITIES = [
+    "sm_20",
+    "sm_21",
+    "sm_30",
+    "sm_32",
+    "sm_35",
+    "sm_37",
+    "sm_50",
+    "sm_52",
+    "sm_53",
+    "sm_60",
+    "sm_61",
+    "sm_62",
+    "sm_70",
+    "sm_72",
+    "sm_75",
+    "sm_80",
+    "sm_86",
+    "sm_87",
+    "sm_89",
+    "sm_90",
+    "sm_90a",
+    "sm_100",
+    "sm_100a",
+    "sm_100f",
+    "sm_101",
+    "sm_101a",
+    "sm_101f",
+    "sm_103",
+    "sm_103a",
+    "sm_103f",
+    "sm_120",
+    "sm_120a",
+    "sm_120f",
+    "sm_121",
+    "sm_121a",
+    "sm_121f",
+]
+
 def _is_exec_configuration(ctx):
     # TODO(cerisier): Is there a better way to detect cfg=exec?
     return ctx.genfiles_dir.path.find("-exec") != -1

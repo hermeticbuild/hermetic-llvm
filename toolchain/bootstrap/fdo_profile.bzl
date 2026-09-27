@@ -53,6 +53,8 @@ def _profile_generation_transition_impl(_settings, attr):
         "//command_line_option:platforms": str(attr.target_platform),
         "//toolchain:runtime_stage": "complete",
         "//toolchain:bootstrap_stage": "stage2_lto_and_fdo_instrumented",
+        "//config:cuda_device_mode": False,
+        "//config:nvidia_compute_capability": "unset",
         "@llvm-project//llvm:driver-tools": LLVM_TOOLS,
     }
 
@@ -68,6 +70,8 @@ _profile_generation_transition = transition(
         "//command_line_option:platforms",
         "//toolchain:runtime_stage",
         "//toolchain:bootstrap_stage",
+        "//config:cuda_device_mode",
+        "//config:nvidia_compute_capability",
         "@llvm-project//llvm:driver-tools",
     ] + SANITIZER_FLAGS,
 )
@@ -76,6 +80,8 @@ def _profile_merge_transition_impl(_settings, _attr):
     return {
         "//command_line_option:fdo_profile": None,
         "//toolchain:bootstrap_stage": "stage1_from_source",
+        "//config:cuda_device_mode": False,
+        "//config:nvidia_compute_capability": "unset",
     }
 
 _profile_merge_transition = transition(
@@ -84,6 +90,8 @@ _profile_merge_transition = transition(
     outputs = [
         "//command_line_option:fdo_profile",
         "//toolchain:bootstrap_stage",
+        "//config:cuda_device_mode",
+        "//config:nvidia_compute_capability",
     ],
 )
 

@@ -295,7 +295,7 @@ cc_args_list(
 # TODO(cerisier): extract those into proper semantic args list.
 # TODO(zbarsky): This must match llvm/toolchains/llvm.bzl
 cc_args_list(
-    name = "linux_toolchain_args",
+    name = "linux_headers",
     args = select({
         "//platforms/config:musl": [
             "//toolchain/args/linux:kernel_headers_include_search_paths",
@@ -306,7 +306,12 @@ cc_args_list(
             "//toolchain/args/linux:glibc_headers_include_search_paths",
         ],
         "//conditions:default": [],
-    }) + select({
+    }),
+)
+
+cc_args_list(
+    name = "linux_toolchain_args",
+    args = [":linux_headers"] + select({
         "//platforms/config:musl": [
             #TODO: Handle musl dynamic linking
             # musl implies static linking for now
@@ -330,17 +335,25 @@ cc_args_list(
     }),
 )
 
+# Host target ABI and hermetic headers are also needed while parsing CUDA.
+# CPU-only features, sanitizer flags and link policy stay outside this list.
 cc_args_list(
-    name = "generic_toolchain_args",
+    name = "common_compile_args",
     args = [
-        # Common default compile flags.
         "//toolchain/args:target_flags",
         "//toolchain/args:no_absolute_paths_for_builtins",
         "//toolchain/args:deterministic_compile_flags",
         "//toolchain/args:module_map",
-        "//toolchain/args:header_module_compile",
         ":sysroot_flags",
         ":hermetic_compile_flags",
+    ],
+)
+
+cc_args_list(
+    name = "generic_toolchain_args",
+    args = [
+        ":common_compile_args",
+        "//toolchain/args:header_module_compile",
 
         # Keep external -isystem directories before the toolchain C and C++
         # -isystem directories below.

@@ -272,18 +272,28 @@ def cc_toolchain(
         }),
     )
 
+    # Select device policy without introducing another C++ toolchain family.
+    # The compiler, bootstrap stage and resource directory stay shared.
+    native.alias(
+        name = name + "_non_cuda_args",
+        actual = select({
+            "@llvm//toolchain:runtimes_none": "@llvm//toolchain/runtimes:toolchain_args",
+            "@llvm//toolchain:runtimes_stage1": "@llvm//toolchain/runtimes:toolchain_args",
+            "@llvm//toolchain:runtimes_stage1_hosted": "@llvm//toolchain/runtimes:toolchain_args",
+            "//conditions:default": "@llvm//toolchain:toolchain_args",
+        }),
+    )
     _cc_toolchain(
         name = name,
         args = select({
-            "@llvm//toolchain:runtimes_none": ["@llvm//toolchain/runtimes:toolchain_args"],
-            "@llvm//toolchain:runtimes_stage1": ["@llvm//toolchain/runtimes:toolchain_args"],
-            "@llvm//toolchain:runtimes_stage1_hosted": ["@llvm//toolchain/runtimes:toolchain_args"],
-            "//conditions:default": ["@llvm//toolchain:toolchain_args"],
+            "@llvm//config:cuda_device_mode_enabled": ["@llvm//toolchain/cuda:toolchain_args"],
+            "//conditions:default": [name + "_non_cuda_args"],
         }) + extra_args,
         # clang-cl header parsing remains a named unsupported boundary. It can
         # become true only with a dialect-correct parse-only action and proved
         # module-map/layering behavior.
         supports_header_parsing = select({
+            "@llvm//config:cuda_device_mode_enabled": False,
             "@llvm//constraints/windows/abi:msvc": _WINDOWS_MSVC_SUPPORTS_HEADER_PARSING,
             "//conditions:default": True,
         }),
@@ -314,12 +324,24 @@ def cc_toolchain(
             ],
             "//conditions:default": [],
         }),
-        known_features = [name + "_selected_known_features"],
-        enabled_features = [name + "_selected_enabled_features"],
+        known_features = select({
+            "@llvm//config:cuda_device_mode_enabled": ["@llvm//toolchain/cuda:known_features"],
+            "//conditions:default": [name + "_selected_known_features"],
+        }),
+        enabled_features = select({
+            "@llvm//config:cuda_device_mode_enabled": ["@llvm//toolchain/cuda:enabled_features"],
+            "//conditions:default": [name + "_selected_enabled_features"],
+        }),
         tool_map = tool_map,
         module_map = module_map,
-        static_runtime_lib = name + "_static_runtime_lib",
-        dynamic_runtime_lib = name + "_dynamic_runtime_lib",
+        static_runtime_lib = select({
+            "@llvm//config:cuda_device_mode_enabled": "@llvm//runtimes:none",
+            "//conditions:default": name + "_static_runtime_lib",
+        }),
+        dynamic_runtime_lib = select({
+            "@llvm//config:cuda_device_mode_enabled": "@llvm//runtimes:none",
+            "//conditions:default": name + "_dynamic_runtime_lib",
+        }),
         compiler = select({
             "@llvm//constraints/windows/abi:msvc": "clang-cl",
             "//conditions:default": "clang",

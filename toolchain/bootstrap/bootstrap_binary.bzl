@@ -40,6 +40,9 @@ def _bootstrap_transition_impl(settings, attr):
         "//command_line_option:features": _append_unique(features, _LLVM_TOOL_FEATURES + ["thin_lto"]) if source_backed else features,
         "//command_line_option:fdo_profile": fdo_profile,
         "@llvm-project//llvm:driver-tools": LLVM_TOOLS,
+        # Bootstrap compilers target the CPU, independent of the CUDA architecture.
+        "//config:cuda_device_mode": False,
+        "//config:nvidia_compute_capability": "unset",
     }
 
     disable_sanitizers(transition_settings)
@@ -68,6 +71,8 @@ bootstrap_transition = transition(
         "//toolchain:runtime_stage",
         "//toolchain:bootstrap_stage",
         "@llvm-project//llvm:driver-tools",
+        "//config:cuda_device_mode",
+        "//config:nvidia_compute_capability",
     ] + SANITIZER_FLAGS,
 )
 
