@@ -1,7 +1,9 @@
 // Writes the toolchain's Clang module map. Textual headers are declared with
 // their size so that Clang resolves them lazily (only when a file of that size
-// is included) instead of stat'ing every declared header whenever the module
-// map is parsed.
+// is included). Each header has its own submodule: when a textual header
+// includes another header, Clang's ModuleMap::diagnoseHeaderInclusion resolves
+// every header in the requesting module, regardless of size. A flat module
+// would therefore still stat every declared header during compilation.
 //
 // Usage: module_map_generator <output> @<params>
 //
@@ -79,7 +81,11 @@ int main(int argc, char **argv) {
         status = 1;
         continue;
       }
-      fprintf(output, "  textual header \"%s\" { size %llu }\n", line, size);
+      fprintf(output,
+              "  module \"%s\" {\n"
+              "    textual header \"%s\" { size %llu }\n"
+              "  }\n",
+              line, line, size);
     }
     if (c == EOF) {
       break;

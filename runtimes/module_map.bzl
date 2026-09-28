@@ -16,8 +16,9 @@ def _module_map_impl(ctx):
     if ctx.executable.generator:
         # The generator declares textual headers with their size, which lets
         # Clang resolve them lazily instead of stat'ing every one of them
-        # whenever the module map is parsed. It thus needs the headers as
-        # inputs.
+        # whenever the module map is parsed. Separate submodules preserve
+        # lazy resolution when Clang validates nested textual includes.
+        # Computing sizes requires the headers as inputs.
         output_args = ctx.actions.args()
         output_args.add(module_map)
         header_args = ctx.actions.args()

@@ -1,0 +1,16 @@
+load("@llvm//:defs.bzl", "exec_test")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+
+exec_test(
+    sh_test,
+    name = "textual_headers_test",
+    srcs = ["textual_headers_test.sh"],
+    args = [
+        "$(rootpath //tools/internal:module-map-generator)",
+        "$(rootpath //tools:clang)",
+    ],
+    tools = [
+        "//tools:clang",
+        "//tools/internal:module-map-generator",
+    ],
+)
