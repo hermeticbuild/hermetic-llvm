@@ -5,10 +5,9 @@ load("@rules_cc//cc/toolchains:feature_set.bzl", "cc_feature_set")
 package(default_visibility = ["//visibility:public"])
 
 # Based on https://github.com/bazelbuild/bazel/issues/4005#issuecomment-1212952697.
-# Keep production and consumption separate, as in rules_android_ndk:
+# Targets can import modules without compiling their own headers as modules.
+# Keep the two opt-ins independent, as in the Android NDK toolchain.
 # https://github.com/bazelbuild/rules_android_ndk/blob/8ba0720dcf044fc1cdd82ca8160df0dd394f8711/ndk_cc_toolchain_config.bzl#L538-L573
-# A target may import dependency modules even when its own headers cannot be
-# compiled standalone. Neither feature should imply the other.
 
 _MODULE_CONSUMING_ACTIONS = [
     "@rules_cc//cc/toolchains/actions:cpp_compile",
@@ -24,10 +23,8 @@ cc_feature(
     requires_any_of = [":use_header_modules"],
 )
 
-# The args for the cpp_module_compile action itself live in
-# //toolchain/args:header_module_compile, gated on this feature, since they
-# include the positional `-x` flag, which has to be a toolchain arg to end up
-# before the source file on the command line.
+# Keep -x before the source by defining these flags in
+# //toolchain/args:header_module_compile.
 cc_feature(
     name = "header_module_compile",
     feature_name = "header_module_compile",

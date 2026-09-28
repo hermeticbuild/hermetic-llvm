@@ -5,17 +5,12 @@ load("//runtimes:module_map.bzl", "include_path")
 
 package(default_visibility = ["//visibility:public"])
 
-# The C++ standard library headers, split into the public (includable)
-# headers and the implementation details. The split allows compiling the
-# public headers into a Clang module (see
-# @llvm//toolchain/cc_runtimes:libcxx): implementation details
-# include mutually exclusive variants that can't all be compiled into a
-# module, and the C standard library wrappers include the C standard library
-# headers via include_next and thus have to be textual.
+# Public headers form the libc++ module. Implementation headers and C wrappers
+# remain textual.
 #
-# On macOS, the libc++ headers are copied out of the SDK since files inside
-# the sysroot directory can't be used as headers of a target: the sysroot is
-# staged as a single directory and would collide with them in the sandbox.
+# Copy SDK headers until Bazel can stage them alongside the SDK directory.
+# TODO(fmeum) Remove these copies once our minimum Bazel includes
+# https://github.com/bazelbuild/bazel/pull/31206
 copy_to_directory(
     name = "macos_cxx_public_headers",
     srcs = ["@macos_sdk//sysroot:libcxx_public_headers"],
@@ -48,8 +43,7 @@ alias(
     name = "detail_headers_directory",
     actual = select({
         "@platforms//os:macos": ":macos_cxx_detail_headers",
-        # libstdc++ is not split; all of its headers are in
-        # :public_headers_directory.
+        # libstdc++ keeps all headers in public_headers_directory.
         ":libstdcxx_linux": ":no_headers",
         ":libstdcxx_windows": ":libstdcxx_windows_unsupported",
         "//conditions:default": "@llvm-project//libcxx:libcxx_detail_headers_directory",

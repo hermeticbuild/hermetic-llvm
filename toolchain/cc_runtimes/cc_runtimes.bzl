@@ -1,10 +1,4 @@
-"""Libraries that every C++ target implicitly depends on.
-
-rules_cc adds the libraries provided by the `cc_runtimes` toolchain to the
-dependencies of every `cc_library`, `cc_binary`, `cc_test`, `cc_import`,
-`cc_shared_library` and `objc_library`. This is how the C++ standard library
-is attached to all targets at Google (their `_stl` dependency).
-"""
+"""Implicit C++ runtime dependencies for rules_cc targets."""
 
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
@@ -26,8 +20,7 @@ def _cc_runtimes_library_impl(ctx):
         public_hdrs = ctx.files.hdrs,
     )
 
-    # With header module codegen, the module is also compiled into an object
-    # file that depending targets link.
+    # Link any object files produced by module code generation.
     if compilation_outputs.objects or compilation_outputs.pic_objects:
         linking_context, _ = cc_common.create_linking_context_from_compilation_outputs(
             actions = ctx.actions,
@@ -41,9 +34,8 @@ def _cc_runtimes_library_impl(ctx):
 
     return [
         DefaultInfo(),
-        # cc_shared_library follows CcInfo and uses ctx.label as the default
-        # linker owner, matching name = ctx.label.name above. No
-        # CcSharedLibraryHintInfo is needed.
+        # cc_shared_library follows CcInfo with ctx.label as the owner.
+        # CcSharedLibraryHintInfo isn't needed.
         CcInfo(
             compilation_context = compilation_context,
             linking_context = linking_context,
@@ -52,13 +44,12 @@ def _cc_runtimes_library_impl(ctx):
 
 cc_runtimes_library = rule(
     implementation = _cc_runtimes_library_impl,
-    doc = """A header-only library that the `cc_runtimes` toolchain can add to every C++ target.
+    doc = """A header-only runtime library.
 
-Unlike `cc_library`, this rule doesn't depend on the `cc_runtimes` toolchain
-itself, which would be a dependency cycle for the runtimes it provides.""",
+It skips the `cc_runtimes` toolchain to avoid a dependency cycle.""",
     attrs = {
         "hdrs": attr.label_list(
-            doc = "Headers of the library, which are compiled into a header module if the `header_modules` feature is enabled.",
+            doc = "Public headers to compile when `header_modules` is enabled.",
             allow_files = True,
         ),
     },

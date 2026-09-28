@@ -8,7 +8,7 @@ def split_libcxx_headers(headers, prefix):
         prefix: Include directory prefix to strip when classifying paths.
 
     Returns:
-        A pair of lists: extensionless public headers and textual headers.
+        Two lists of public and textual header paths.
     """
     public = []
     textual = []
@@ -17,7 +17,7 @@ def split_libcxx_headers(headers, prefix):
         if "/" not in relative and "." not in relative and not relative.startswith("__"):
             public.append(header)
         else:
-            # Implementation headers include mutually exclusive variants;
-            # C wrappers use include_next. Both must remain textual.
+            # Implementation variants cannot all be compiled together.
+            # C wrappers need textual inclusion for include_next.
             textual.append(header)
     return public, textual

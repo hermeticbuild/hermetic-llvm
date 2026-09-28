@@ -8,8 +8,7 @@ package(features = [
     "layering_check",
 ])
 
-# Warnings in the test targets' compiles, including their module compiles, are
-# most likely misconfigurations of the header module support.
+# Treat module warnings as toolchain configuration errors.
 _COPTS = ["-Werror"]
 
 cc_library(
@@ -33,12 +32,7 @@ cc_test(
     deps = [":double_counter"],
 )
 
-# C system headers are declared as textual headers in the toolchain's module
-# map and are parsed textually even in `-fmodules` builds. The C++ standard
-# library headers are compiled into a Clang module by the libc++ target that
-# the cc_runtimes toolchain adds to the dependencies of every C++ target, and
-# are imported instead.
-
+# Exercise textual C headers alongside the compiled libc++ module.
 cc_library(
     name = "greeter",
     srcs = ["greeter.cc"],
@@ -53,8 +47,7 @@ cc_test(
     deps = [":greeter"],
 )
 
-# A library can consume the libc++ module while keeping its own headers
-# textual. use_header_modules must not imply header_modules.
+# Consume dependency modules without compiling this library's headers.
 cc_library(
     name = "textual_greeter",
     srcs = ["greeter.cc"],
@@ -71,14 +64,9 @@ cc_test(
     deps = [":textual_greeter"],
 )
 
-# With module codegen, modules are additionally compiled into object files
-# that provide the template instantiations triggered inside the module, which
-# importing translation units then no longer emit. The codegen action of
-# item_store loads the libc++ module that its module imports, which exercises
-# the input tracking that https://github.com/bazelbuild/bazel/pull/30396 added
-# to Bazel. The test also imports greeter, so that it covers merging
-# declarations from two modules that both import libc++.
-
+# Module codegen must track its dependency on the libc++ module.
+# https://github.com/bazelbuild/bazel/pull/30396
+# Import greeter as well to test merging modules that share libc++.
 _CODEGEN_FEATURES = [
     "header_module_codegen",
     "header_modules_codegen_functions",
@@ -103,8 +91,7 @@ cc_test(
     ],
 )
 
-# Exercise the implicit runtime dependency through cc_shared_library's graph
-# aspect, including module object files when codegen is enabled globally.
+# Check shared-library linkage, including module objects when codegen is enabled.
 cc_shared_library(
     name = "greeter_shared",
     deps = [":greeter"],

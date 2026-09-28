@@ -219,10 +219,8 @@ copy_to_directory(
     visibility = ["//visibility:public"],
 )
 
-# The libc++ headers, split into the public (includable) headers and the
-# implementation details so that the public headers can be compiled into a
-# Clang module (see @llvm//toolchain/cc_runtimes:libcxx). The public headers
-# are the extensionless top-level headers such as <vector>.
+# Compile public headers such as <vector> into the libc++ module.
+# Keep implementation headers and C wrappers textual.
 _LIBCXX_PUBLIC_HEADERS_FILES, _LIBCXX_TEXTUAL_HEADERS_FILES = split_libcxx_headers(_LIBCXX_HEADERS_FILES, "include/")
 
 filegroup(

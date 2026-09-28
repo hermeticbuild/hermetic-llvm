@@ -14,9 +14,8 @@ struct Item {
 
 std::string Describe(const Item &item);
 
-// Instantiates std::vector<Item> member functions inside this module: with
-// module codegen, importing translation units rely on the object file
-// compiled from this module to provide them.
+// Instantiate vector members in the module so codegen must provide their
+// definitions to importers.
 inline std::vector<Item> MakeItems(int n) {
   std::vector<Item> items;
   items.reserve(static_cast<std::size_t>(n));
