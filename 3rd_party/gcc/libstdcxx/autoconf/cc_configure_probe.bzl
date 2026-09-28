@@ -158,7 +158,7 @@ cmd=("$tool")
 for arg in "$@"; do
     case "$arg" in
         "$source_placeholder")
-            cmd+=("${extra_flags[@]}")
+            cmd+=(${extra_flags[@]+"${extra_flags[@]}"})
             cmd+=("$source")
             ;;
         "$output_placeholder")
@@ -252,10 +252,10 @@ object="$tmp/probe.o"
 binary="$tmp/probe.exe"
 
 compile_cmd=("$compile_tool")
-for arg in "${compile_args[@]}"; do
+for arg in ${compile_args[@]+"${compile_args[@]}"}; do
     case "$arg" in
         "$source_placeholder")
-            compile_cmd+=("${compile_extra_flags[@]}")
+            compile_cmd+=(${compile_extra_flags[@]+"${compile_extra_flags[@]}"})
             compile_cmd+=("$source")
             ;;
         "$object_placeholder")
@@ -279,7 +279,7 @@ for arg in "$@"; do
     esac
 done
 link_cmd+=("$object")
-link_cmd+=("${link_extra_flags[@]}")
+link_cmd+=(${link_extra_flags[@]+"${link_extra_flags[@]}"})
 
 if "${compile_cmd[@]}" >"$log" 2>&1 && "${link_cmd[@]}" >>"$log" 2>&1; then
     echo true > "$result"
