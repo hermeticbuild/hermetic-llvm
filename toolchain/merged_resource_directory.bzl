@@ -20,10 +20,13 @@ def _merged_resource_directory_impl(ctx):
         root_paths = [],
         include_external_repositories = ["**"],
         # Never import a prebuilt compiler's host runtime libraries.
+        # Sandboxed directory inputs can be symlinks. The copy tool filters
+        # their roots before following them, so admit the roots as well.
         include_srcs_patterns = [
+            parent_path,
             parent_path + "/include/**",
             parent_path + "/share/**",
-        ] + [path + "/**" for path in src_paths],
+        ] + src_paths + [path + "/**" for path in src_paths],
         replace_prefixes = {parent_path: ""} | {path: "" for path in src_paths},
     )
     return DefaultInfo(files = depset([out]))
