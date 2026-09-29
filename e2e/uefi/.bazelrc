@@ -1,0 +1,5 @@
+import %workspace%/../../.bazelrc
+
+# The UEFI test needs no project-specific flags: the QEMU toolchain and the
+# UEFI target toolchains come from the registered @llvm//toolchain:all, and
+# the qemu-system prebuilt ships in the test's runfiles.

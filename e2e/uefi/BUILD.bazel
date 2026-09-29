@@ -32,5 +32,9 @@ uefi_qemu_test(
     name = "uefi_x86_64_test",
     size = "medium",
     application = ":uefi_x86_64_app",
+    # Match the cross-compilation QEMU tests: execute on the Linux runner
+    # itself, where the qemu-system prebuilt and edk2 firmware run proven,
+    # instead of scheduling the test on the remote executor.
+    exec_compatible_with = ["@platforms//os:linux"],
     target_compatible_with = ["@platforms//os:linux"],
 )
