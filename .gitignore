@@ -5,3 +5,6 @@ bazel-*
 e2e/*/MODULE.bazel.lock
 examples/*/MODULE.bazel.lock
 *.swp
+
+# External FDO profiles placed by the multi-host training workflow.
+/toolchain/bootstrap/external_fdo_profile/*.profdata

@@ -53,6 +53,20 @@ selects.config_setting_group(
     ],
 )
 
+# clang-cl links the profile runtime as clang_rt.profile, without the lib
+# prefix. These specialize :profile_runtime_enabled for MSVC-ABI targets.
+[
+    config_setting(
+        name = "windows_msvc_%s_profile_enabled" % kind,
+        constraint_values = ["//constraints/windows/abi:msvc"],
+        flag_values = {"//config:profile_%s_config" % kind: "true"},
+    )
+    for kind in [
+        "host",
+        "target",
+    ]
+]
+
 filegroup(
     name = "none",
     srcs = [],
@@ -237,6 +251,12 @@ resource_directory(
         },
         "//conditions:default": {},
     }) | select({
+        ":windows_msvc_host_profile_enabled": {
+            "//runtimes/compiler-rt:clang_rt.profile.static": "clang_rt.profile",
+        },
+        ":windows_msvc_target_profile_enabled": {
+            "//runtimes/compiler-rt:clang_rt.profile.static": "clang_rt.profile",
+        },
         ":profile_runtime_enabled": {
             "//runtimes/compiler-rt:clang_rt.profile.static": "libclang_rt.profile",
         },

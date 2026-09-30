@@ -151,6 +151,7 @@ def declare_llvm_targets(*, suffix = ""):
         "@rules_cc//cc/toolchains/actions:lto_index_for_executable": ":clang-cl",
         "@rules_cc//cc/toolchains/actions:lto_index_for_dynamic_library": ":clang-cl",
         "@rules_cc//cc/toolchains/actions:lto_index_for_nodeps_dynamic_library": ":clang-cl",
+        "@rules_cc//cc/toolchains/actions:llvm_profdata": ":llvm-profdata",
         "@rules_cc//cc/toolchains/actions:strip": ":llvm-strip",
     }
 

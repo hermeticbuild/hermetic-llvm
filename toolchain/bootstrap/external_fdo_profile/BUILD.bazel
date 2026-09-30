@@ -1,0 +1,12 @@
+load("//toolchain/bootstrap:fdo_profile.bzl", "llvm_fdo_profile_import")
+
+# Default value of //toolchain/bootstrap:external_fdo_profile. A training run on
+# another host places its profile here, see .github/workflows/llvm-prebuilt-pgo.yml.
+llvm_fdo_profile_import(
+    name = "external_fdo_profile",
+    srcs = glob(
+        ["*.profdata"],
+        allow_empty = True,
+    ),
+    visibility = ["//visibility:public"],
+)

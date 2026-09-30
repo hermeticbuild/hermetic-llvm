@@ -1,4 +1,42 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "string_flag")
+
+# Compiler that runs the FDO training workloads. "stage2" builds the
+# instrumented Stage 2 from source for the executor. "prebuilt" uses the
+# executor's Stage 0 prebuilt instead, which a multi-host training run replaces
+# with an instrumented Stage 2 archive through --override_repository.
+string_flag(
+    name = "fdo_training_compiler",
+    build_setting_default = "stage2",
+    values = [
+        "prebuilt",
+        "stage2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# Splits a training run: llvm_fdo_profile_data targets merge only the training
+# units of shard <index>/<count>, so a build runs only those. Unset, they merge
+# every unit.
+string_flag(
+    name = "fdo_training_shard",
+    build_setting_default = "",
+    visibility = ["//visibility:public"],
+)
+
+# Builds the Stage 3 binaries, including MSVC-ABI ones, with the profile of
+# :external_fdo_profile instead of training one in this build.
+bool_flag(
+    name = "use_external_fdo_profile",
+    build_setting_default = False,
+    visibility = ["//visibility:public"],
+)
+
+label_flag(
+    name = "external_fdo_profile",
+    build_setting_default = "//toolchain/bootstrap/external_fdo_profile",
+    visibility = ["//visibility:public"],
+)
 
 bzl_library(
     name = "bootstrap_binary",
@@ -20,6 +58,7 @@ bzl_library(
     visibility = ["//visibility:public"],
     deps = [
         ":transition_settings",
+        "@bazel_skylib//rules:common_settings",
         "@rules_cc//cc:action_names_bzl",
         "@rules_cc//cc:find_cc_toolchain_bzl",
         "@rules_cc//cc/common",

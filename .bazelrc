@@ -44,6 +44,10 @@ common:release  --features=no_rtti
 common:release  --features=omit_frame_pointer
 common:release  --features=-dynamic_link_msvcrt
 common:release  --features=static_link_msvcrt
+# Also for LLVM binaries built as tools, like the instrumented Stage 2 of FDO
+# training on Windows, so every stage links the same C runtime and allocator.
+common:release  --host_features=-dynamic_link_msvcrt
+common:release  --host_features=static_link_msvcrt
 common:release  --dynamic_mode=off
 common:release  --extra_toolchains=//toolchain:all
 

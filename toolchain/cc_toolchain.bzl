@@ -21,6 +21,8 @@ def cc_toolchain(
             # The semantic feature is valid: clang-cl renders external include
             # directories through its /imsvc include-path replacement.
             "@llvm//toolchain/features:external_include_paths",
+            # clang-cl accepts the -fprofile-use and -W flags of this feature.
+            "@llvm//toolchain/features:fdo_optimize",
             "@llvm//toolchain/features:generate_pdb_file",
             "@llvm//toolchain/features:no_windows_export_all_symbols",
             "@llvm//toolchain/features:static_link_cpp_runtimes",

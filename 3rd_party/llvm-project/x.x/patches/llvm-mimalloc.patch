@@ -1,13 +1,16 @@
 diff --git a/llvm/BUILD.bazel b/llvm/BUILD.bazel
 --- a/llvm/BUILD.bazel
 +++ b/llvm/BUILD.bazel
-@@ -888,6 +888,11 @@
+@@ -888,6 +888,14 @@
  cc_binary(
      name = "llvm",
      srcs = glob(["tools/llvm-driver/*.cpp"]),
 +    malloc = select({
 +        "@platforms//os:linux": "@mimalloc",
 +        "@platforms//os:macos": "@mimalloc",
++        # mimalloc overrides malloc statically with the static C runtime.
++        # MinGW links the C runtime DLL, which needs mimalloc's redirect DLL.
++        "@llvm//toolchain/features/msvc:windows_msvc_static_crt": "@mimalloc",
 +        "//conditions:default": "@bazel_tools//tools/cpp:malloc",
 +    }),
      deps = [
