@@ -70,6 +70,21 @@ expect_failure \
   //:windows_msvc_crt_default_probe
 
 expect_failure \
+  windows-msvc-target-local-static-crt \
+  "is provided by all of the following features: msvc_configured_dynamic_crt static_link_msvcrt" \
+  "${common_flags[@]}" \
+  --platforms=@llvm//platforms:windows_x86_64_msvc \
+  //:windows_msvc_target_local_static_crt_probe
+
+expect_failure \
+  windows-msvc-target-local-dynamic-crt \
+  "is provided by all of the following features: dynamic_link_msvcrt msvc_configured_static_crt" \
+  "${common_flags[@]}" \
+  --@llvm//toolchain/features/msvc:crt_mode=static \
+  --platforms=@llvm//platforms:windows_x86_64_msvc \
+  //:windows_msvc_target_local_dynamic_crt_probe
+
+expect_failure \
   windows-msvc-unsupported-feature \
   "is provided by all of the following features: msvc_supported_configuration asan" \
   "${common_flags[@]}" \

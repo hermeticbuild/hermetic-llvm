@@ -1,4 +1,5 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 load("@rules_cc//cc/toolchains:feature.bzl", "cc_feature")
 load("@rules_cc//cc/toolchains:feature_set.bzl", "cc_feature_set")
@@ -193,11 +194,40 @@ cc_feature(
 
 config_setting(
     name = "static_crt_config",
-    values = {"features": "static_link_msvcrt"},
+    flag_values = {":crt_mode": "static"},
 )
 
 cc_mutually_exclusive_category(
+    name = "crt_feature_mode",
+)
+
+cc_mutually_exclusive_category(
+    name = "dynamic_crt_configuration",
+)
+
+cc_mutually_exclusive_category(
+    name = "static_crt_configuration",
+)
+
+cc_feature(
+    name = "configured_dynamic_crt",
+    feature_name = "msvc_configured_dynamic_crt",
+    mutually_exclusive = [":dynamic_crt_configuration"],
+)
+
+cc_feature(
+    name = "configured_static_crt",
+    feature_name = "msvc_configured_static_crt",
+    mutually_exclusive = [":static_crt_configuration"],
+)
+
+string_flag(
     name = "crt_mode",
+    build_setting_default = "dynamic",
+    values = [
+        "dynamic",
+        "static",
+    ],
 )
 
 cc_args(
@@ -209,7 +239,10 @@ cc_args(
 cc_feature(
     name = "static_link_msvcrt",
     feature_name = "static_link_msvcrt",
-    mutually_exclusive = [":crt_mode"],
+    mutually_exclusive = [
+        ":crt_feature_mode",
+        ":dynamic_crt_configuration",
+    ],
 )
 
 cc_args(
@@ -221,7 +254,24 @@ cc_args(
 cc_feature(
     name = "dynamic_link_msvcrt",
     feature_name = "dynamic_link_msvcrt",
-    mutually_exclusive = [":crt_mode"],
+    mutually_exclusive = [
+        ":crt_feature_mode",
+        ":static_crt_configuration",
+    ],
+)
+
+cc_feature_set(
+    name = "configured_crt_mode",
+    all_of = select({
+        ":static_crt_config": [
+            ":configured_static_crt",
+            ":static_link_msvcrt",
+        ],
+        "//conditions:default": [
+            ":configured_dynamic_crt",
+            ":dynamic_link_msvcrt",
+        ],
+    }),
 )
 
 cc_args_list(
@@ -261,6 +311,8 @@ cc_args(
 cc_feature_set(
     name = "abi_known_features",
     all_of = [
+        ":configured_dynamic_crt",
+        ":configured_static_crt",
         ":dynamic_link_msvcrt",
         ":dynamic_linking_mode",
         ":interface_library",
@@ -276,7 +328,7 @@ cc_feature_set(
 cc_feature_set(
     name = "abi_enabled_features",
     all_of = [
-        ":dynamic_link_msvcrt",
+        ":configured_crt_mode",
         ":interface_library",
         ":supported_configuration",
     ],
