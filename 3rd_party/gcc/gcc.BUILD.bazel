@@ -2,7 +2,8 @@ load("@bazel_lib//lib:copy_file.bzl", "copy_file")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
-load("@llvm//3rd_party/gcc:version.bzl", "gcc_config_toolexeclibdir_target", "gcc_version_at_least_for", "gcc_version_less_than_for")
+load("@llvm//3rd_party/gcc:version.bzl", "gcc_config_toolexeclibdir_target", "gcc_version_at_least_for", "gcc_version_less_than_for", "libgcc_has_aarch64_softfp_ver")
+load("@llvm//3rd_party/gcc/libgcc:libgcc_map_in.bzl", "libgcc_map_in")
 load("@llvm//3rd_party/gcc/libstdcxx:libstdcxx_config_h.bzl", "libstdcxx_config_h")
 load("@llvm//3rd_party/gcc/libstdcxx:libstdcxx_cxxconfig_header.bzl", "libstdcxx_cxxconfig_header")
 load("@llvm//3rd_party/gcc/libstdcxx:libstdcxx_gthr_headers.bzl", "libstdcxx_gthr_headers")
@@ -1864,4 +1865,33 @@ copy_to_directory(
     replace_prefixes = {
         "gcc_config_generated": "config",
     },
+)
+
+# libgcc_s.so symbol versions. libgcc.map.in is the preprocessed
+# concatenation of SHLIB_MAPFILES from libgcc/Makefile.in; the files come from
+# the tmake_file fragments libgcc/config.host selects for the target:
+#   t-slibgcc-elf-ver   SHLIB_MAPFILES = libgcc-std.ver
+#   t-linux             SHLIB_MAPFILES += config/libgcc-glibc.ver
+#   i386/t-linux        SHLIB_MAPFILES = libgcc-std.ver config/i386/libgcc-glibc.ver
+#   aarch64/t-softfp    SHLIB_MAPFILES += config/aarch64/libgcc-softfp.ver (GCC 11+)
+# The mkmap-symver.awk step that turns it into libgcc.map needs the objects of
+# the library, so it runs where libgcc_s.so.1 is linked
+# (@llvm-project//llvm-libgcc).
+libgcc_map_in(
+    name = "libgcc.map.in",
+    mapfiles = select(
+        {
+            "@platforms//cpu:x86_64": ["libgcc/config/i386/libgcc-glibc.ver"],
+            "@platforms//cpu:aarch64": ["libgcc/config/libgcc-glibc.ver"] + (
+                ["libgcc/config/aarch64/libgcc-softfp.ver"] if libgcc_has_aarch64_softfp_ver(GCC_VERSION) else []
+            ),
+        },
+        no_match_error = "libgcc_s version script inputs are only declared for x86_64 and aarch64 Linux.",
+    ),
+    std_ver_in = "libgcc/libgcc-std.ver.in",
+)
+
+filegroup(
+    name = "libgcc_mkmap_symver",
+    srcs = ["libgcc/mkmap-symver.awk"],
 )

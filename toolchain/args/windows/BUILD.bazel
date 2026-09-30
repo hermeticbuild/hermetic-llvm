@@ -43,10 +43,10 @@ cc_args_list(
 )
 
 cc_args_list(
-    name = "libunwind_library_search_paths",
+    name = "unwindlib_library_search_paths",
     args = select({
         "//constraints/windows/abi:msvc": [],
-        "//conditions:default": ["//toolchain/args:libunwind_library_search_paths"],
+        "//conditions:default": ["//toolchain/args:unwindlib_library_search_paths"],
     }),
 )
 

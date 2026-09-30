@@ -20,6 +20,7 @@ _DEFAULT_OVERLAY_FILES = {
     "libcxx/BUILD.bazel": Label("//3rd_party/llvm-project/x.x/libcxx:libcxx.BUILD.bazel"),
     "libcxxabi/BUILD.bazel": Label("//3rd_party/llvm-project/x.x/libcxxabi:libcxxabi.BUILD.bazel"),
     "libunwind/BUILD.bazel": Label("//3rd_party/llvm-project/x.x/libunwind:libunwind.BUILD.bazel"),
+    "llvm-libgcc/BUILD.bazel": Label("//3rd_party/llvm-project/x.x/llvm-libgcc:llvm-libgcc.BUILD.bazel"),
     "openmp/BUILD.bazel": Label("//3rd_party/llvm-project/x.x/openmp:openmp.BUILD.bazel"),
 }
 

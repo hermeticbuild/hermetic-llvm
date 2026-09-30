@@ -118,7 +118,7 @@ Identical `constraint_values` still do not guarantee identical paths. The name c
 We highly recommend using [rules_rs](https://github.com/hermeticbuild/rules_rs) to seamlessly interop the Rust and CC toolchains. It is best to use the toolchains and platforms defined by that ruleset to configure everything properly.
 
 If you wish to setup things manually, you will likely require a few flags:
-- Rust passes `-lgcc_s` when linking, so make sure you have not set `--@llvm//config:experimental_stub_libgcc_s=False`.
+- Rust passes `-lgcc_s` when linking, so make sure you have not set `--@llvm//config:experimental_stub_libgcc=False`.
 - Rust `cc-rs` crate does not properly account for `$AR` and `$ARFLAGS` env vars, so it does not work when `llvm-libtool-darwin` is used as the archiver. You will want to set `--@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_macos=False` to avoid failure in build scripts using `cc-rs`.
 - Rust forces `-no-pie` when linking musl targets, while we default to `-static-pie`, which are incompatible. You can configure your platform with the `@llvm//constraints/pie:off` constraint_value to harmonize the link flags.
 
@@ -227,6 +227,25 @@ path. `--dynamic_mode=off` also forces the static runtime path, even when
 At the moment, libstdc++ support is limited to Linux glibc targets. Additional
 targets can be added based on demand; musl + libstdc++ is feasible too, even if
 it is an uncommon configuration.
+
+### libgcc_s (llvm-libgcc)
+
+Targeting the `libgcc_s.so.1` of a Linux distribution is supported, for
+artifacts that run on such a system using its GNU core libraries.
+
+To enable it, use:
+`--@llvm//config:experimental_use_llvm_libgcc=True`
+
+Behind the scenes, a `libgcc_s.so.1` is built from libunwind and the
+compiler-rt builtins, and dynamically linked binaries depend on it instead of
+`libunwind.so.1`. Its symbol versions are generated from the GCC release that
+`@llvm//constraints/cxxstdlib:libstdcxx.<version>` selects, so they match the
+libstdc++ the same platform targets (the latest declared GCC version without
+that constraint, for example with libc++).
+
+This ensures your program records `NEEDED libgcc_s.so.1` and imports only the
+`GCC_*` symbol versions that release's libgcc provides. See more in the
+[README](3rd_party/llvm-project/x.x/llvm-libgcc/README.md).
 
 ### ARM (armv7)
 
