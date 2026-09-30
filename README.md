@@ -416,6 +416,8 @@ See https://github.com/hermeticbuild/hermetic-llvm/milestone/1
 - [Google XLS](https://github.com/google/xls)
 - [Drake](https://github.com/RobotLocomotion/drake)
 - [Internet Computer](https://github.com/dfinity/ic)
+- [rules_dotnet](https://github.com/bazel-contrib/rules_dotnet)
+- [Google HEIR](https://github.com/google/heir)
 
 ## Prior art
 
