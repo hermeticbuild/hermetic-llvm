@@ -228,6 +228,42 @@ At the moment, libstdc++ support is limited to Linux glibc targets. Additional
 targets can be added based on demand; musl + libstdc++ is feasible too, even if
 it is an uncommon configuration.
 
+### CPU baseline and tuning
+
+Targets default to LLVM's conservative baseline for their architecture. A
+platform whose deployment environment guarantees something newer can raise it
+with `@llvm//constraints/march:<value>`, and point instruction scheduling at a
+specific CPU with `@llvm//constraints/mtune:<value>`.
+
+Each constraint value is named after the string passed to the corresponding
+compiler flag. Supported values are the entries declared by `MARCHES` in
+`@llvm//constraints/march:march_values.bzl` and `MTUNES` in
+`@llvm//constraints/mtune:mtune_values.bzl`.
+
+```starlark
+platform(
+    name = "linux_x86_64_v2_sapphirerapids",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+        "@llvm//constraints/march:x86-64-v2",
+        "@llvm//constraints/mtune:sapphirerapids",
+    ],
+)
+```
+
+The two settings are independent: `-mtune` does not raise the baseline, so
+binaries stay runnable on any CPU implementing the selected `-march`. Both
+default to `unconstrained`.
+
+The flags apply to the LLVM runtimes built for the platform as well as to your
+own code, so opting in produces runtime artifacts specific to that baseline.
+
+> Like the FPU constraint below, these live here for now and are candidates for
+> migration to
+> [bazel-contrib/platforms_contrib](https://github.com/bazel-contrib/platforms_contrib)
+> once the shape of such constraints is defined upstream.
+
 ### ARM (armv7)
 
 armv7 targets default to NEON. Cores without NEON (e.g. Cortex-A7 with
