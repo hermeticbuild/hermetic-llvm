@@ -1470,6 +1470,7 @@ cc_unsanitized_library(
     copts = _INTERNAL_SYMBOLIZER_COPTS,
     cxxopts = _INTERNAL_SYMBOLIZER_CXXOPTS,
     dep = ":sanitizer_common_symbolizer_internal_impl",
+    disable_fission = True,
     disable_zstd = True,
     platform = select(_INTERNAL_SYMBOLIZER_PLATFORMS),
 )
