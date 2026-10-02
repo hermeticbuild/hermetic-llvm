@@ -532,6 +532,7 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
             resource_directory_args(
                 name = cc_toolchain_name + "_resource_directory_args",
                 compile_directory = tool_prefix + "/clang_resource_directory",
+                compile_include_directory = tool_prefix + "/clang_resource_include_directory",
                 link_directory = cc_toolchain_name + "_resource_directory",
             )
 
