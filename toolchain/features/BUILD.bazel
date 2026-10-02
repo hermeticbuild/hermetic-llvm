@@ -38,7 +38,7 @@ _FINAL_LINK_ACTIONS = [
 
 # [x] opt
 # [x] dbg
-# [] fastbuild
+# [x] fastbuild
 # [] static_linking_mode - does this do anything? Seems obsolete
 # [] dynamic_linking_mode
 # [x] per_object_debug_info
@@ -391,6 +391,68 @@ cc_feature(
     overrides = "@rules_cc//cc/toolchains/features:dbg",
 )
 
+cc_args(
+    name = "fastbuild_optimization_level_o1",
+    actions = _CONFIGURATION_COMPILE_ACTIONS,
+    args = select({
+        "//constraints/windows/abi:msvc": ["/clang:-O1"],
+        "//conditions:default": ["-O1"],
+    }),
+)
+
+cc_args(
+    name = "fastbuild_optimization_level_o2",
+    actions = _CONFIGURATION_COMPILE_ACTIONS,
+    args = select({
+        "//constraints/windows/abi:msvc": ["/O2"],
+        "//conditions:default": ["-O2"],
+    }),
+)
+
+cc_args(
+    name = "fastbuild_optimization_level_os",
+    actions = _CONFIGURATION_COMPILE_ACTIONS,
+    args = select({
+        "//constraints/windows/abi:msvc": ["/O1"],
+        "//conditions:default": ["-Os"],
+    }),
+)
+
+cc_args(
+    name = "fastbuild_optimization_level_oz",
+    actions = _CONFIGURATION_COMPILE_ACTIONS,
+    args = select({
+        "//constraints/windows/abi:msvc": ["/clang:-Oz"],
+        "//conditions:default": ["-Oz"],
+    }),
+)
+
+cc_args_list(
+    name = "fastbuild_compile_flags",
+    args = select({
+        "//config:fastbuild_optimization_mode_O1": [":fastbuild_optimization_level_o1"],
+        "//config:fastbuild_optimization_mode_O2": [":fastbuild_optimization_level_o2"],
+        "//config:fastbuild_optimization_mode_Os": [":fastbuild_optimization_level_os"],
+        "//config:fastbuild_optimization_mode_Oz": [":fastbuild_optimization_level_oz"],
+        "//conditions:default": [],
+    }),
+)
+
+# Use a stub feature so we can properly control flag ordering.
+cc_feature(
+    name = "fastbuild",
+    args = [
+        ":fastbuild_compile_flags",
+    ],
+    feature_name = "_underlying_fastbuild",
+    requires_any_of = [":fastbuild_stub"],
+)
+
+cc_feature(
+    name = "fastbuild_stub",
+    overrides = "@rules_cc//cc/toolchains/features:fastbuild",
+)
+
 cc_feature(
     name = "archive_param_file",
     feature_name = "archive_param_file",
@@ -610,6 +672,8 @@ cc_feature_set(
         ":opt_stub",
         ":dbg",
         ":dbg_stub",
+        ":fastbuild",
+        ":fastbuild_stub",
         ":static_link_cpp_runtimes",
         ":parse_headers",
         ":coverage_stub",

@@ -16,6 +16,8 @@ def cc_toolchain(
             "@llvm//toolchain/features:opt_stub",
             "@llvm//toolchain/features:dbg",
             "@llvm//toolchain/features:dbg_stub",
+            "@llvm//toolchain/features:fastbuild",
+            "@llvm//toolchain/features:fastbuild_stub",
             "@llvm//toolchain/features:archive_param_file",
             "@llvm//toolchain/features:copy_dynamic_libraries_to_binary",
             # The semantic feature is valid: clang-cl renders external include
@@ -52,6 +54,7 @@ def cc_toolchain(
         all_of = [
             "@llvm//toolchain/features:opt",
             "@llvm//toolchain/features:dbg",
+            "@llvm//toolchain/features:fastbuild",
             "@llvm//toolchain/features:archive_param_file",
             "@llvm//toolchain/features:static_link_cpp_runtimes",
             "@llvm//toolchain/features:targets_windows",
@@ -170,6 +173,7 @@ def cc_toolchain(
             # This lets us properly order them before user_compile_flags and user_link_flags below.
             "@llvm//toolchain/features:opt",
             "@llvm//toolchain/features:dbg",
+            "@llvm//toolchain/features:fastbuild",
             "@llvm//toolchain/features:archive_param_file",
             "@llvm//toolchain/features:parse_headers_wrapper",
             "@llvm//toolchain/features/legacy:all_legacy_builtin_features",

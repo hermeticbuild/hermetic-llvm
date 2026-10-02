@@ -6,6 +6,14 @@ OPTIMIZATION_MODES = [
     "optimized",
 ]
 
+FASTBUILD_OPTIMIZATION_MODES = [
+    "O0",
+    "O1",
+    "O2",
+    "Os",
+    "Oz",
+]
+
 SANITIZERS = [
     "ubsan",
     "cfi",
@@ -109,6 +117,22 @@ def config_settings():
             name = "runtimes_optimization_mode_{}".format(optimization_mode),
             flag_values = {
                 ":runtimes_optimization_mode": optimization_mode,
+            },
+        )
+
+    # This flag controls the optimization level used when compiling in fastbuild
+    # mode (-c fastbuild).
+    string_flag(
+        name = "fastbuild_optimization_mode",
+        values = FASTBUILD_OPTIMIZATION_MODES,
+        build_setting_default = "O0",
+    )
+
+    for optimization_mode in FASTBUILD_OPTIMIZATION_MODES:
+        native.config_setting(
+            name = "fastbuild_optimization_mode_{}".format(optimization_mode),
+            flag_values = {
+                ":fastbuild_optimization_mode": optimization_mode,
             },
         )
 
