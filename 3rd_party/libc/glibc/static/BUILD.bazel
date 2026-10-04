@@ -1,0 +1,91 @@
+load("//toolchain/args:llvm_target_triple.bzl", "LLVM_TARGET_TRIPLE")
+load(
+    ":aarch64/manifest.bzl",
+    AARCH64_ARCHIVES = "ARCHIVES",
+    AARCH64_CRT = "CRT",
+    AARCH64_FLAGS = "FLAGS",
+    AARCH64_FLAG_SETS = "FLAG_SETS",
+    AARCH64_INCLUDES = "INCLUDES",
+    AARCH64_OBJECTS = "OBJECTS",
+)
+load(":glibc_static.bzl", "glibc_static_for_arch")
+load(
+    ":x86_64/manifest.bzl",
+    X86_64_ARCHIVES = "ARCHIVES",
+    X86_64_CRT = "CRT",
+    X86_64_FLAGS = "FLAGS",
+    X86_64_FLAG_SETS = "FLAG_SETS",
+    X86_64_INCLUDES = "INCLUDES",
+    X86_64_OBJECTS = "OBJECTS",
+)
+
+# The glibc release the manifests were transcribed from.  A static link embeds
+# its libc, so unlike the dynamic stubs this is not a compatibility floor -- it
+# is simply the version the binary carries.  The platform has to name it
+# (`@llvm//platforms:linux_x86_64_gnu.2.44`): the public headers the program is
+# compiled against must be the ones of the libc.a it is linked with.
+GLIBC_STATIC_VERSION = "2.44"
+
+_COMPATIBLE = [
+    "@platforms//os:linux",
+    "//constraints/libc:gnu." + GLIBC_STATIC_VERSION,
+]
+
+_MANIFESTS = {
+    "aarch64": (AARCH64_INCLUDES, AARCH64_FLAGS, AARCH64_FLAG_SETS, AARCH64_OBJECTS, AARCH64_ARCHIVES, AARCH64_CRT),
+    "x86_64": (X86_64_INCLUDES, X86_64_FLAGS, X86_64_FLAG_SETS, X86_64_OBJECTS, X86_64_ARCHIVES, X86_64_CRT),
+}
+
+[
+    glibc_static_for_arch(
+        name = "glibc_static_" + arch,
+        srcs = ["@glibc//:glibc_static_srcs"],
+        archives = archives,
+        crt = crt,
+        flag_sets = flag_sets,
+        flags = flags,
+        gen = glob([arch + "/gen/**"]),
+        gen_marker = arch + "/gen/config.h",
+        includes = includes,
+        objects = objects,
+        src_marker = "@glibc//:glibc_static_src_marker",
+        target_compatible_with = _COMPATIBLE + ["@platforms//cpu:" + arch],
+        target_triple = LLVM_TARGET_TRIPLE,
+        deps = [
+            "@glibc//:glibc_static_kernel_headers",
+            "@glibc//:gnu_libc_headers",
+        ],
+    )
+    for arch, (includes, flags, flag_sets, objects, archives, crt) in _MANIFESTS.items()
+]
+
+alias(
+    name = "glibc_static",
+    actual = select(
+        {"@platforms//cpu:" + arch: ":glibc_static_" + arch for arch in _MANIFESTS},
+        no_match_error = "glibc is built statically for " + ", ".join(_MANIFESTS.keys()) + " only; see gen_manifest.py for adding an architecture",
+    ),
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "archives",
+    srcs = [":glibc_static"],
+    output_group = "archives",
+    visibility = ["//visibility:public"],
+)
+
+[
+    filegroup(
+        name = crt,
+        srcs = [":glibc_static"],
+        output_group = crt,
+        visibility = ["//visibility:public"],
+    )
+    for crt in [
+        "crt1",
+        "rcrt1",
+        "crti",
+        "crtn",
+    ]
+]

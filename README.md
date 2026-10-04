@@ -178,6 +178,33 @@ Behind the scenes, code is compiled with headers for the selected glibc and link
 
 This ensures your program runs on systems with that glibc version or newer without using newer symbols.
 
+### Linking glibc statically
+
+By default a glibc target is linked against version-exact *stubs*, and the
+machine the binary runs on supplies the implementation.  A fully static
+executable needs glibc itself, so `libc.a`, `libm.a` and the static startup
+files are built from source (glibc 2.44, x86_64 and aarch64) when the target
+platform asks for it:
+
+`--platforms @llvm//platforms:linux_x86_64_glibc_static`
+
+The link is then `-static` / `-static-pie`, exactly as for musl, and the result
+has no dynamic loader: it runs on any Linux 4.19+ kernel whatever libc the
+machine has, or none.  Unlike the dynamic stubs, the glibc version is not a
+compatibility floor here -- the binary carries its libc.  A platform of your
+own needs the `@llvm//constraints/glibc_linkage:static` constraint and
+`@llvm//platforms:linux_<cpu>_gnu.2.44` as its parent.
+
+What static glibc cannot do is what it cannot do anywhere: NSS (`getpwnam`,
+`getaddrinfo` beyond files/dns), `iconv` and `dlopen` load shared objects at
+run time.  Sanitizer runtimes cannot be linked statically either.
+
+glibc has no build description but its makefiles, so the build is
+*transcribed*: a reference `configure && make` with this toolchain's Clang is
+reduced to a manifest of compile commands and the generated files they read,
+which a rule replays.  See `3rd_party/libc/glibc/static/` -- `reference_build.sh`
+and `gen_manifest.py` regenerate the data for a new release or architecture.
+
 ### C++ standard library selection
 
 Both libc++ and libstdc++ are supported. libc++ is selected by default.
@@ -206,23 +233,10 @@ Then build with that platform:
 bazel build --platforms=//:linux_x86_64_gnu_2_28_libstdcxx_17_0_0 //:app
 ```
 
-libstdc++ is currently supported as a dynamic C++ runtime, so C++ binaries
-using it must set `linkstatic = False`:
-
-```starlark
-cc_binary(
-    name = "app",
-    srcs = ["main.cc"],
-    linkstatic = False,
-)
-```
-
-With Bazel's default dynamic mode, `cc_binary` defaults `linkstatic` to `True`,
-which selects the toolchain's static C++ runtime path. For libstdc++ that would
-make static libstdc++ the default, which is not what most Linux users expect,
-and this toolchain intentionally supports libstdc++ through the dynamic runtime
-path. `--dynamic_mode=off` also forces the static runtime path, even when
-`linkstatic = False`, so it cannot be combined with libstdc++ support.
+libstdc++ is built both as `libstdc++.so.6` and as `libstdc++.a`. As with
+libc++, a `linkstatic` binary (Bazel's default for `cc_binary`) links the
+archive, and a `linkstatic = False` one (the default for `cc_test`) links the
+shared library and carries it in its runfiles.
 
 At the moment, libstdc++ support is limited to Linux glibc targets. Additional
 targets can be added based on demand; musl + libstdc++ is feasible too, even if

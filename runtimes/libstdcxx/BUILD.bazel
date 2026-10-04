@@ -23,6 +23,12 @@ alias(
 )
 
 alias(
+    name = "libstdcxx.static",
+    actual = "@gcc//:libstdcxx.static",
+    visibility = ["//visibility:public"],
+)
+
+alias(
     name = "libstdcxx_shared_soname",
     actual = ":libstdcxx.shared",
 )

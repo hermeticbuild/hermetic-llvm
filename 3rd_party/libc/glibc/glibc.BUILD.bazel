@@ -324,3 +324,39 @@ cc_runtime_stage0_static_library(
         ":glibc_c_nonshared",
     ],
 )
+
+# The whole tree, for //3rd_party/libc/glibc/static: glibc's sources include
+# each other across every directory (a sysdeps .c wraps the generic .c it
+# overrides), so there is no smaller honest input set.  Tests, translations,
+# locale sources and the manual are never read by a libc.a compile.
+filegroup(
+    name = "static_srcs",
+    srcs = glob(
+        ["**"],
+        exclude = [
+            "BUILD.bazel",
+            "REPO.bazel",
+            "ChangeLog*",
+            "benchtests/**",
+            "localedata/**",
+            "manual/**",
+            "po/**",
+            "**/tst-*",
+            "**/test-*",
+            "**/bug-*",
+        ],
+    ),
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "static_src_marker",
+    srcs = ["version.h"],
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "static_kernel_headers",
+    actual = ":kernel_headers",
+    visibility = ["//visibility:public"],
+)
