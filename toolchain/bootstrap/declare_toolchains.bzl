@@ -140,7 +140,7 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
         name = prefix + "/uefi_tools",
         tools = UEFI_TOOLS_WITHOUT_LINKER | COMPLETE_ONLY_TOOLS | {
             "@rules_cc//cc/toolchains/actions:ar_actions": prefix + "/llvm-ar",
-            "@rules_cc//cc/toolchains/actions:link_actions": prefix + "/lld-link",
+            "@rules_cc//cc/toolchains/actions:link_actions": prefix + "/uefi-clang++",
         },
     )
 
@@ -298,17 +298,18 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
     cc_tool(
         name = prefix + "/uefi-clang",
         src = prefix + "/bin/clang",
-        data = [
-            prefix + "/clang_builtin_headers_include_directory",
-        ],
+        data = [prefix + "/clang_resource_directory"],
+        allowlist_include_directories = resource_allowlist_directories,
     )
 
     cc_tool(
         name = prefix + "/uefi-clang++",
         src = prefix + "/bin/clang++",
         data = [
-            prefix + "/clang_builtin_headers_include_directory",
+            prefix + "/clang_resource_directory",
+            prefix + "/bin/lld-link",
         ],
+        allowlist_include_directories = resource_allowlist_directories,
     )
 
     bootstrap_binary(
@@ -404,9 +405,12 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
         **bootstrap_binary_kwargs
     )
 
-    # clang-cl discovers the lld-link sibling by InstalledDir, so it is plain
-    # action data for that tool; the uefi tool map selects the cc_tool wrapper.
-    _bootstrap_cc_tool(prefix, "lld-link", bootstrap_binary_kwargs)
+    # Both Clang drivers discover this linker beside the compiler.
+    bootstrap_binary(
+        name = prefix + "/bin/lld-link",
+        actual = "@llvm-project//llvm:llvm.stripped",
+        **bootstrap_binary_kwargs
+    )
 
     cc_tool(
         name = prefix + "/lld",
@@ -550,7 +554,6 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
             ("stage1", stage1_prefix, "@llvm//toolchain:bootstrap_stage1_from_source"),
         ]:
             cc_toolchain_name = "%s_%s_%s_cc_toolchain" % (stage_name, exec_os, exec_cpu)
-            uefi_cc_toolchain_name = "%s_%s_%s_uefi_cc_toolchain" % (stage_name, exec_os, exec_cpu)
             merged_resource_directory(
                 name = cc_toolchain_name + "_resource_directory",
                 parent = tool_prefix + "/clang_resource_directory",
@@ -567,7 +570,10 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
             # See https://github.com/bazelbuild/rules_cc/issues/299#issuecomment-2660340534
             cc_toolchain(
                 name = cc_toolchain_name,
-                extra_args = [cc_toolchain_name + "_resource_directory_args"] + select({
+                extra_args = select({
+                    "@platforms//os:uefi": [],
+                    "//conditions:default": [cc_toolchain_name + "_resource_directory_args"],
+                }) + select({
                     "@llvm//platforms/config:windows_x86_64_msvc": [
                         "@llvm//toolchain/args/windows/msvc:normalized_default_libs_for_runtime",
                         "@llvm//toolchain/args/windows/msvc:normalized_sdk_compile_args",
@@ -579,6 +585,7 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
                     "//conditions:default": [],
                 }),
                 tool_map = select({
+                    "@platforms//os:uefi": ":%s/uefi_tools" % tool_prefix,
                     "@llvm//platforms/config:windows_x86_64_msvc": ":%s/tools_for_msvc_for_runtime" % tool_prefix,
                     "@llvm//platforms/config:windows_aarch64_msvc": ":%s/tools_for_msvc_for_runtime" % tool_prefix,
                     "@llvm//toolchain:linux_complete": ":%s/tools_with_interface_libraries" % tool_prefix,
@@ -587,12 +594,6 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
                     "@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_apple_setting": ":%s/tools_with_libtool_for_runtime" % tool_prefix,
                     "//conditions:default": ":%s/default_tools_for_runtime" % tool_prefix,
                 }),
-            )
-
-            cc_toolchain(
-                name = uefi_cc_toolchain_name,
-                tool_map = ":%s/uefi_tools" % tool_prefix,
-                uefi_link = True,
             )
 
             for (target_os, target_cpu) in targets:
@@ -611,7 +612,7 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
                         "@platforms//os:" + target_os,
                     ],
                     target_settings = target_settings,
-                    toolchain = uefi_cc_toolchain_name if target_os == "uefi" else cc_toolchain_name,
+                    toolchain = cc_toolchain_name,
                     toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
                     visibility = ["//visibility:public"],
                 )

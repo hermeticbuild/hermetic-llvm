@@ -143,7 +143,10 @@ cc_feature(
 # nested_args so that we can do requires_not_none on strip_debug_symbols and requires_none on dsym_path.
 cc_nested_args(
     name = "strip_debug_symbols_when_no_dsym",
-    args = ["-Wl,-S"],
+    args = select({
+        "@platforms//os:uefi": ["-Wl,/debug:none"],
+        "//conditions:default": ["-Wl,-S"],
+    }),
     requires_none = "@rules_cc//cc/toolchains/variables:dsym_path",
 )
 
@@ -423,4 +426,27 @@ cc_args(
     args = ["-F{framework_include_paths}"],
     format = {"framework_include_paths": "@rules_cc//cc/toolchains/variables:framework_include_paths"},
     iterate_over = "@rules_cc//cc/toolchains/variables:framework_include_paths",
+)
+
+# Freestanding UEFI keeps GNU driver syntax without hosted defaults or PIC.
+cc_feature_set(
+    name = "uefi_legacy_replacements",
+    all_of = [
+        "@rules_cc//cc/toolchains/args/archiver_flags:feature",
+        "@rules_cc//cc/toolchains/args/libraries_to_link:feature",
+        "@rules_cc//cc/toolchains/args/preprocessor_defines:feature",
+        "@rules_cc//cc/toolchains/args/random_seed:feature",
+        ":strip_debug_symbols",
+        "@rules_cc//cc/toolchains/args/strip_flags:feature",
+        "@rules_cc//cc/toolchains/args/include_flags:feature",
+        "@rules_cc//cc/toolchains/args/compiler_input_flags:feature",
+        "@rules_cc//cc/toolchains/args/compiler_output_flags:feature",
+        "@rules_cc//cc/toolchains/args/fission_flags:feature",
+        "@rules_cc//cc/toolchains/args/link_flags:feature",
+        "@rules_cc//cc/toolchains/args/linkstamp_flags:feature",
+        "@rules_cc//cc/toolchains/args/library_search_directories:feature",
+        "@rules_cc//cc/toolchains/args/dependency_file:feature",
+        "@rules_cc//cc/toolchains/args/compile_flags:feature",
+    ],
+    visibility = ["//visibility:public"],
 )

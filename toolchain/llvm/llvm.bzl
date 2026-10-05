@@ -189,7 +189,7 @@ def declare_llvm_targets(*, suffix = ""):
         name = "uefi_tools",
         tools = UEFI_TOOLS_WITHOUT_LINKER | COMPLETE_ONLY_TOOLS | {
             "@rules_cc//cc/toolchains/actions:ar_actions": ":llvm-ar",
-            "@rules_cc//cc/toolchains/actions:link_actions": ":lld-link",
+            "@rules_cc//cc/toolchains/actions:link_actions": ":uefi-clang++",
         },
         visibility = ["//visibility:public"],
     )
@@ -320,6 +320,7 @@ def declare_llvm_targets(*, suffix = ""):
         name = "uefi-clang++",
         src = "bin/clang++" + suffix,
         data = [
+            "bin/lld-link" + suffix,
             ":builtin_resource_dir",
         ],
         allowlist_include_directories = [":builtin_resource_dir"],
@@ -335,11 +336,6 @@ def declare_llvm_targets(*, suffix = ""):
             "bin/wasm-ld" + suffix,
         ],
         capabilities = ["@rules_cc//cc/toolchains/capabilities:supports_start_end_lib"],
-    )
-
-    cc_tool(
-        name = "lld-link",
-        src = "bin/lld-link" + suffix,
     )
 
     cc_tool(

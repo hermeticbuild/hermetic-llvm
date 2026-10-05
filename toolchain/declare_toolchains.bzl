@@ -1,6 +1,6 @@
 load("//platforms:common.bzl", "MSVC_TARGET_STAGE0_SUPPORTED_EXECS", "SUPPORTED_EXECS", "SUPPORTED_TARGETS")
 load("//toolchain:merged_resource_directory.bzl", "merged_resource_directory")
-load("//toolchain:selects.bzl", "platform_cc_tool_map", "platform_cc_uefi_tool_map", "platform_module_map", "platform_resource_dir")
+load("//toolchain:selects.bzl", "platform_cc_tool_map", "platform_module_map", "platform_resource_dir")
 load("//toolchain/args:resource_directory_args.bzl", "resource_directory_args")
 load(":cc_toolchain.bzl", "cc_toolchain")
 
@@ -36,7 +36,10 @@ def declare_toolchains(*, execs = SUPPORTED_EXECS, targets = SUPPORTED_TARGETS):
             module_map = platform_module_map(exec_os, exec_cpu),
             # Paths below describe the concrete execution filesystem. Keep
             # target semantics in //toolchain's ordered argument composition.
-            extra_args = [cc_toolchain_name + "_resource_directory_args"] + select({
+            extra_args = select({
+                "@platforms//os:uefi": [],
+                "//conditions:default": [cc_toolchain_name + "_resource_directory_args"],
+            }) + select({
                 "@llvm//platforms/config:windows_x86_64_msvc": [
                     "@llvm//toolchain/args/windows/msvc:normalized_default_libs_for_runtime",
                     "@llvm//toolchain/args/windows/msvc:normalized_sdk_compile_args",
@@ -47,18 +50,6 @@ def declare_toolchains(*, execs = SUPPORTED_EXECS, targets = SUPPORTED_TARGETS):
                 ],
                 "//conditions:default": [],
             }),
-        )
-
-        uefi_cc_toolchain_name = "{}_{}_uefi_cc_toolchain".format(exec_os, exec_cpu)
-        # UEFI links /nodefaultlib and never consumes assembled target
-        # runtimes, so unlike the hosted toolchains it binds no
-        # merged_resource_directory. Compiles find the packaged builtin
-        # headers through the compiler's adjacent resource directory.
-        cc_toolchain(
-            name = uefi_cc_toolchain_name,
-            tool_map = platform_cc_uefi_tool_map(exec_os, exec_cpu),
-            module_map = platform_module_map(exec_os, exec_cpu),
-            uefi_link = True,
         )
 
         for (target_os, target_cpu) in targets:
@@ -77,7 +68,7 @@ def declare_toolchains(*, execs = SUPPORTED_EXECS, targets = SUPPORTED_TARGETS):
                     "@platforms//os:" + target_os,
                 ],
                 target_settings = target_settings,
-                toolchain = uefi_cc_toolchain_name if target_os == "uefi" else cc_toolchain_name,
+                toolchain = cc_toolchain_name,
                 toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
                 visibility = ["//visibility:public"],
             )

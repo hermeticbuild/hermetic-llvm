@@ -321,23 +321,12 @@ cc_args_list(
 )
 
 cc_args_list(
-    name = "uefi_toolchain_args",
-    args = [
-        "//toolchain/args:cxxstdlib_headers_include_search_paths",
-        "//toolchain/args/uefi:default_link_flags",
-        "//toolchain/args/uefi:hybrid_gnu_msvc",
-        "//toolchain/args/uefi:nostdlib",
-    ],
-)
-
-cc_args_list(
     name = "platform_specific_args",
     args = select({
         "@platforms//os:macos": [":macos_toolchain_args"],
         "@platforms//os:linux": [":linux_toolchain_args"],
         # Windows uses the complete :windows_toolchain_args composition below.
         "@platforms//os:windows": [],
-        "@platforms//os:uefi": [":uefi_toolchain_args"],
         "@platforms//os:none": [],
         "//conditions:default": [],
     }),
@@ -463,25 +452,30 @@ cc_args_list(
 cc_args_list(
     name = "toolchain_args",
     args = select({
+        "@platforms//os:uefi": ["//toolchain:uefi_toolchain_args"],
         "@platforms//os:windows": [":windows_toolchain_args"],
         "//conditions:default": [":generic_toolchain_args"],
     }),
     visibility = ["//visibility:public"],
 )
 
-# Toolchain arguments for direct lld-link actions. Driver-only link flags such
-# as -target, -fuse-ld, and -resource-dir are deliberately excluded.
+# UEFI uses the GNU Clang driver with a freestanding Windows ABI. Hosted
+# runtime arguments are deliberately excluded.
 cc_args_list(
-    name = "uefi_link_toolchain_args",
+    name = "uefi_toolchain_args",
     args = [
-        "//toolchain/args/uefi:target_compile_flags",
+        "//toolchain/args:cxxstdlib_headers_include_search_paths",
+        "//toolchain/args:target_flags",
         "//toolchain/args:no_absolute_paths_for_builtins",
         "//toolchain/args:deterministic_compile_flags",
         "//toolchain/args:module_map",
-        "//toolchain/args/uefi:empty_sysroot_flags",
+        ":sysroot_flags",
         ":hermetic_compile_flags",
         "@rules_cc//cc/toolchains/args/external_include_paths:external_include_paths",
-        ":platform_specific_args",
+        "//toolchain/args:fuse_ld",
+        "//toolchain/args/uefi:default_link_flags",
+        "//toolchain/args/uefi:hybrid_gnu_msvc",
+        "//toolchain/args/uefi:nostdlib",
         "//toolchain/args:validate_static_library_args",
     ],
     visibility = ["//visibility:public"],

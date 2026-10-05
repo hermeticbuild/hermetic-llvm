@@ -212,6 +212,7 @@ cc_args_list(
 cc_args_list(
     name = "toolchain_args",
     args = select({
+        "@platforms//os:uefi": ["//toolchain:uefi_toolchain_args"],
         "@platforms//os:windows": [":windows_toolchain_args"],
         "//conditions:default": [":generic_toolchain_args"],
     }),

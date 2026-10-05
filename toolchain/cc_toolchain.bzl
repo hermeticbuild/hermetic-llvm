@@ -7,8 +7,7 @@ def cc_toolchain(
         name,
         tool_map,
         module_map = None,
-        extra_args = None,
-        uefi_link = False):
+        extra_args = None):
     extra_args = extra_args or []
     cc_feature_set(
         name = name + "_msvc_known_features",
@@ -230,6 +229,7 @@ def cc_toolchain(
     cc_feature_set(
         name = name + "_selected_known_features",
         all_of = select({
+            "@platforms//os:uefi": ["@llvm//toolchain/features/legacy:uefi_legacy_replacements"],
             "@llvm//constraints/windows/abi:msvc": [name + "_msvc_known_features"],
             "//conditions:default": [name + "_generic_selected_known_features"],
         }),
@@ -238,6 +238,7 @@ def cc_toolchain(
     cc_feature_set(
         name = name + "_selected_enabled_features",
         all_of = select({
+            "@platforms//os:uefi": ["@llvm//toolchain/features/legacy:uefi_legacy_replacements"],
             "@llvm//constraints/windows/abi:msvc": [name + "_msvc_selected_enabled_features"],
             "//conditions:default": [name + "_generic_selected_enabled_features"],
         }),
@@ -256,6 +257,7 @@ def cc_toolchain(
     native.alias(
         name = name + "_static_runtime_lib",
         actual = select({
+            "@platforms//os:uefi": "@llvm//runtimes:none",
             "@llvm//constraints/windows/abi:msvc": "@llvm//runtimes:none",
             "//conditions:default": name + "_generic_static_runtime_lib",
         }),
@@ -274,6 +276,7 @@ def cc_toolchain(
     native.alias(
         name = name + "_dynamic_runtime_lib",
         actual = select({
+            "@platforms//os:uefi": "@llvm//runtimes:none",
             "@llvm//constraints/windows/abi:msvc": "@llvm//runtimes:none",
             "//conditions:default": name + "_generic_dynamic_runtime_lib",
         }),
@@ -281,12 +284,12 @@ def cc_toolchain(
 
     _cc_toolchain(
         name = name,
-        args = (["@llvm//toolchain:uefi_link_toolchain_args"] if uefi_link else select({
+        args = select({
             "@llvm//toolchain:runtimes_none": ["@llvm//toolchain/runtimes:toolchain_args"],
             "@llvm//toolchain:runtimes_stage1": ["@llvm//toolchain/runtimes:toolchain_args"],
             "@llvm//toolchain:runtimes_stage1_hosted": ["@llvm//toolchain/runtimes:toolchain_args"],
             "//conditions:default": ["@llvm//toolchain:toolchain_args"],
-        })) + extra_args,
+        }) + extra_args,
         # clang-cl header parsing remains a named unsupported boundary. It can
         # become true only with a dialect-correct parse-only action and proved
         # module-map/layering behavior.
@@ -321,12 +324,12 @@ def cc_toolchain(
             ],
             "//conditions:default": [],
         }),
-        known_features = (["@llvm//toolchain/features/uefi:features"] if uefi_link else [name + "_selected_known_features"]),
-        enabled_features = (["@llvm//toolchain/features/uefi:features"] if uefi_link else [name + "_selected_enabled_features"]),
+        known_features = [name + "_selected_known_features"],
+        enabled_features = [name + "_selected_enabled_features"],
         tool_map = tool_map,
         module_map = module_map,
-        static_runtime_lib = ("@llvm//runtimes:none" if uefi_link else name + "_static_runtime_lib"),
-        dynamic_runtime_lib = ("@llvm//runtimes:none" if uefi_link else name + "_dynamic_runtime_lib"),
+        static_runtime_lib = name + "_static_runtime_lib",
+        dynamic_runtime_lib = name + "_dynamic_runtime_lib",
         compiler = select({
             "@llvm//constraints/windows/abi:msvc": "clang-cl",
             "//conditions:default": "clang",

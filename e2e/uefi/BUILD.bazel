@@ -1,4 +1,5 @@
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_platform//platform_data:defs.bzl", "platform_data")
 load(":uefi_qemu_test.bzl", "qemu_system_target", "uefi_qemu_test")
 
@@ -6,11 +7,26 @@ cc_binary(
     name = "uefi_app",
     srcs = ["uefi.c"],
     tags = ["manual"],
+    deps = [":uefi_support"],
+)
+
+# Exercise GNU C++ compilation and static archive linkage without a hosted CRT.
+cc_library(
+    name = "uefi_support",
+    srcs = ["uefi_support.cc"],
+    tags = ["manual"],
 )
 
 platform_data(
     name = "uefi_x86_64_app",
     platform = "@llvm//platforms:uefi_x86_64",
+    target = ":uefi_app",
+)
+
+# Compile/link coverage for the second supported UEFI architecture.
+platform_data(
+    name = "uefi_aarch64_app",
+    platform = "@llvm//platforms:uefi_aarch64",
     target = ":uefi_app",
 )
 

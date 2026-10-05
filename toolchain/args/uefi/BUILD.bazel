@@ -1,4 +1,3 @@
-load("@llvm//toolchain/args:llvm_target_triple.bzl", "LLVM_TARGET_TRIPLE")
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 
 package(default_visibility = ["//visibility:public"])
@@ -18,31 +17,14 @@ cc_args(
     name = "default_link_flags",
     actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
     args = [
-        "/subsystem:efi_application",
-        "/entry:efi_main",
-        "/base:0x0",
-        "/brepro",
+        "-Wl,/subsystem:efi_application",
+        "-Wl,/entry:efi_main",
+        "-Wl,/base:0x0",
+        "-Wl,/brepro",
         "{fltused}",
     ],
     data = [":fltused"],
     format = {"fltused": ":fltused"},
-)
-
-# lld-link does not understand the Clang driver's -target option, so apply the
-# target triple only to compile actions.
-cc_args(
-    name = "target_compile_flags",
-    actions = ["@rules_cc//cc/toolchains/actions:compile_actions"],
-    args = ["-target"] + LLVM_TARGET_TRIPLE,
-)
-
-cc_args(
-    name = "empty_sysroot_flags",
-    actions = ["@rules_cc//cc/toolchains/actions:compile_actions"],
-    args = select({
-        "@llvm//toolchain/args:empty_sysroot": ["--sysroot=/dev/null"],
-        "//conditions:default": [],
-    }),
 )
 
 # Keep the Windows ABI while accepting GNU source extensions such as
@@ -61,5 +43,9 @@ cc_args(
 cc_args(
     name = "nostdlib",
     actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
-    args = ["/nodefaultlib"],
+    args = [
+        "-nostdlib",
+        "-Wl,/nodefaultlib",
+        "-Wl,/lldignoreenv",
+    ],
 )
