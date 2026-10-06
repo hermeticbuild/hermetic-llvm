@@ -1,16 +1,25 @@
+load("@bazel_lib//lib:run_binary.bzl", "run_binary")
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 
 package(default_visibility = ["//visibility:public"])
 
-genrule(
+run_binary(
     name = "fltused",
     srcs = ["fltused.c"],
     outs = ["fltused.o"],
-    cmd = select({
-        "@platforms//cpu:x86_64": "$(location @llvm//tools:clang) -target x86_64-unknown-windows -fno-ms-compatibility -fno-ms-extensions -ffreestanding -c $(location :fltused.c) -o $@",
-        "@platforms//cpu:aarch64": "$(location @llvm//tools:clang) -target aarch64-unknown-windows -fno-ms-compatibility -fno-ms-extensions -ffreestanding -c $(location :fltused.c) -o $@",
-    }),
-    tools = ["@llvm//tools:clang"],
+    args = ["-target"] + select({
+        "@platforms//cpu:x86_64": ["x86_64-unknown-windows"],
+        "@platforms//cpu:aarch64": ["aarch64-unknown-windows"],
+    }) + [
+        "-fno-ms-compatibility",
+        "-fno-ms-extensions",
+        "-ffreestanding",
+        "-c",
+        "$(location :fltused.c)",
+        "-o",
+        "$@",
+    ],
+    tool = "@llvm//tools:clang",
 )
 
 cc_args(
