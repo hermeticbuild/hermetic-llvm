@@ -39,7 +39,7 @@ load(
     "xray_cc_binary",
 )
 load(":bazel_version.bzl", "validate_static_library_compatible")
-load(":header_search.bzl", "header_search")
+load(":header_search.bzl", "HEADER_PROBE_PYTHON_SETTINGS", "header_search")
 load(":musl_header_generation_tests.bzl", "musl_header_generation_tests")
 load(":thin_lto_features_test.bzl", "thin_lto_features_test")
 load(":windows_msvc_artifacts.bzl", "windows_msvc_artifacts")
@@ -1598,6 +1598,7 @@ exec_test(
     py_test,
     name = "header_order_test",
     srcs = ["header_order_test.py"],
+    config_settings = HEADER_PROBE_PYTHON_SETTINGS,
     env = {"CLANG": "$(rootpath :header_order_clang)"},
     main = "header_order_test.py",
     tools = [":header_order_clang"],
@@ -1659,6 +1660,7 @@ filegroup(
 py_binary(
     name = "header_search_checker",
     srcs = ["header_search.py"],
+    config_settings = HEADER_PROBE_PYTHON_SETTINGS,
     main = "header_search.py",
 )
 

@@ -4,6 +4,13 @@ load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 
+# These probes also execute on Linux remote workers from Windows hosts.
+# Select the hermetic launcher on the executable itself: exec transitions
+# must not introduce a host Python dependency. .bazelrc disables host zip defaults.
+HEADER_PROBE_PYTHON_SETTINGS = {
+    Label("@rules_python//python/config_settings:bootstrap_impl"): "script",
+}
+
 def _header_search_impl(ctx):
     toolchain = find_cc_toolchain(ctx)
     features = cc_common.configure_features(

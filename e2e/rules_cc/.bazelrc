@@ -1,6 +1,11 @@
 import %workspace%/../../.bazelrc
 
 common --config=cc
+# Python probes can execute on Linux RBE from a Windows host. Zip launchers
+# otherwise inherit the host's Bash path. Cover native (Bazel 8/9) and
+# Starlark (Bazel 10) Python configuration.
+common --build_python_zip=false
+common --@rules_python//python/config_settings:build_python_zip=false
 common --process_headers_in_dependencies
 common --features=layering_check
 common --modify_execution_info=CppModuleMap=+supports-path-mapping,CppArchive=+supports-path-mapping,CppCompile=+supports-path-mapping
