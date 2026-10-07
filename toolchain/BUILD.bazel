@@ -1,4 +1,5 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@bazel_skylib//rules:common_settings.bzl", "string_flag", "string_setting")
 load("@rules_cc//cc/toolchains:actions.bzl", "cc_action_type_set")
 load("@rules_cc//cc/toolchains:artifacts.bzl", "cc_artifact_name_pattern")
@@ -86,6 +87,15 @@ config_setting(
     flag_values = {
         ":runtime_stage": "stage0",
     },
+    visibility = ["//visibility:public"],
+)
+
+selects.config_setting_group(
+    name = "hosted_headers",
+    match_any = [
+        "runtimes_all",
+        "runtimes_stage1_hosted",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -221,6 +231,7 @@ cc_args_list(
             "//toolchain/args/macos:macos_sdk_sysroot",
         ],
         "@platforms//os:windows": ["//toolchain/args/windows:sysroot_flags"],
+        "@platforms//os:linux": ["//toolchain/args/linux:sysroot_flags"],
         "//conditions:default": [
             "//toolchain/args:empty_sysroot_flags",
         ],
@@ -232,6 +243,7 @@ cc_args_list(
     args = select({
         "@platforms//os:macos": [],
         "@platforms//os:windows": ["//toolchain/args/windows:hermetic_compile_flags"],
+        "@platforms//os:linux": ["//toolchain/args/linux:hermetic_compile_flags"],
         "//conditions:default": [
             "//toolchain/args:hermetic_compile_flags",
         ],
@@ -298,16 +310,6 @@ cc_args_list(
     name = "linux_toolchain_args",
     args = select({
         "//platforms/config:musl": [
-            "//toolchain/args/linux:kernel_headers_include_search_paths",
-            "//toolchain/args/linux:musl_libc_headers_include_search_paths",
-        ],
-        "//platforms/config:gnu": [
-            "//toolchain/args/linux:kernel_headers_include_search_paths",
-            "//toolchain/args/linux:glibc_headers_include_search_paths",
-        ],
-        "//conditions:default": [],
-    }) + select({
-        "//platforms/config:musl": [
             #TODO: Handle musl dynamic linking
             # musl implies static linking for now
             "//toolchain/args:static_link_executable",
@@ -342,8 +344,8 @@ cc_args_list(
         ":sysroot_flags",
         ":hermetic_compile_flags",
 
-        # Keep external -isystem directories before the toolchain C and C++
-        # -isystem directories below.
+        # User include features supply user paths; the driver places C/C++
+        # toolchain headers according to their semantic categories.
         "@rules_cc//cc/toolchains/args/external_include_paths:external_include_paths",
         ":cxxstdlib_headers_include_search_paths",
 
@@ -402,14 +404,13 @@ cc_args_list(
         ":sysroot_flags",
         ":hermetic_compile_flags",
 
-        # Keep external -isystem directories before the toolchain C and C++
-        # -isystem directories below.
+        # User include features supply user paths; the driver places C/C++
+        # toolchain headers according to their semantic categories.
         "@rules_cc//cc/toolchains/args/external_include_paths:external_include_paths",
 
         # Windows compiler, ABI, CRT, object-format, and C++ runtime semantics.
         "//toolchain/args/windows:crt_compile_defines",
         ":cxxstdlib_headers_include_search_paths",
-        "//toolchain/args/windows:headers_before_compiler_resource",
 
         # Optional sanitizers
         "//toolchain/args:ubsan_flags",
@@ -590,4 +591,14 @@ bzl_library(
     name = "bootstrap_stages",
     srcs = ["bootstrap_stages.bzl"],
     visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "header_sysroot",
+    srcs = ["header_sysroot.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@bazel_lib//lib:copy_to_directory",
+        "@bazel_skylib//rules/directory:providers",
+    ],
 )

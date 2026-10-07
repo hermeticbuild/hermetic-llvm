@@ -1,6 +1,7 @@
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("//:case_insensitive_vfs.bzl", "case_insensitive_vfs_overlay")
 load("//:directory.bzl", "directory_info")
+load("//toolchain:header_sysroot.bzl", "header_sysroot")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -123,16 +124,23 @@ directory_info(
     src = ":msvc_com_support_headers_source",
 )
 
+# The version is an internal layout component, not an SDK selection. Header
+# contents still come from the user's configured windows_sdk repository.
+header_sysroot(
+    name = "header_sysroot",
+    directories = {
+        "msvc_com_support_headers": "vc/include",
+        "msvc_vcruntime_headers": "vc/include",
+        "winsdk_ucrt_include": "sdk/Include/10.0.0/ucrt",
+        "winsdk_shared_include": "sdk/Include/10.0.0/shared",
+        "winsdk_um_include": "sdk/Include/10.0.0/um",
+        "winsdk_winrt_include": "sdk/Include/10.0.0/winrt",
+    },
+)
+
 case_insensitive_vfs_overlay(
     name = "msvc_sdk_header_case_overlay",
-    roots = [
-        ":msvc_com_support_headers",
-        ":msvc_vcruntime_headers",
-        ":winsdk_shared_include",
-        ":winsdk_ucrt_include",
-        ":winsdk_um_include",
-        ":winsdk_winrt_include",
-    ],
+    roots = ["header_sysroot"],
 )
 
 case_insensitive_vfs_overlay(

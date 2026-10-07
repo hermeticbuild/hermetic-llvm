@@ -419,16 +419,9 @@ def declare_llvm_targets(*, suffix = ""):
             ],
             "//conditions:default": [],
         }) + [
-            "@kernel_headers//:kernel_headers_directory",
+            "@llvm//toolchain/headers:linux",
             "@llvm//sanitizers:sanitizers_headers_include_search_directory",
-        ] + select({
-            "@llvm//platforms/config:musl": [
-                "@llvm//runtimes/musl:musl_headers_include_search_directory",
-            ],
-            "@llvm//platforms/config:gnu": [
-                "@llvm//runtimes/glibc:glibc_headers_include_search_directory",
-            ],
-        }),
+        ],
     )
 
     # This must match //toolchain:windows_toolchain_args.
@@ -443,10 +436,7 @@ def declare_llvm_targets(*, suffix = ""):
             ],
             "//conditions:default": [],
         }) + [
-            "@mingw//:mingw_generated_headers_crt_directory",
-            "@mingw//:mingw_w64_headers_include_directory",
-            "@mingw//:mingw_w64_headers_crt_directory",
-            "@mingw//:mingw_w64_winpthreads_include_directory",
+            "@llvm//toolchain/headers:mingw",
         ],
     )
 
