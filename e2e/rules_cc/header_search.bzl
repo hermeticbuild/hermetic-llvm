@@ -8,6 +8,8 @@ load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 # Select the hermetic launcher on the executable itself: exec transitions
 # must not introduce a host Python dependency. .bazelrc disables host zip defaults.
 HEADER_PROBE_PYTHON_SETTINGS = {
+    # Windows' non-zip launcher needs a runfiles tree, including stage two.
+    Label("@rules_python//command_line_option:build_runfile_links"): "true",
     Label("@rules_python//python/config_settings:bootstrap_impl"): "script",
 }
 
