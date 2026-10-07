@@ -1594,14 +1594,17 @@ alias(
     actual = platform_llvm_binary("clang"),
 )
 
-exec_test(
-    py_test,
+py_test(
     name = "header_order_test",
     srcs = ["header_order_test.py"],
     config_settings = HEADER_PROBE_PYTHON_SETTINGS,
+    data = [":header_order_clang"],
     env = {"CLANG": "$(rootpath :header_order_clang)"},
+    exec_compatible_with = HOST_CONSTRAINTS,
     main = "header_order_test.py",
-    tools = [":header_order_clang"],
+    # Exercise each host's native Clang. exec_test's Linux TestRunner from a
+    # Windows host carries Windows paths in Bazel's generate-xml.sh command.
+    tags = ["no-remote"],
 )
 
 cc_library(
