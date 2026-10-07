@@ -52,9 +52,10 @@ def search(compiler, arguments, language, family):
 
 
 def normalize_resources(paths, arguments):
+    paths = [path.replace("\\", "/") for path in paths]
     resources = [arg.removeprefix("/clang:").split("=", 1)[1] for arg in arguments if arg.removeprefix("/clang:").startswith("-resource-dir=")]
     for resource in resources:
-        paths = [path.replace(resource + "/", "$RESOURCE/") for path in paths]
+        paths = [path.replace(resource.replace("\\", "/") + "/", "$RESOURCE/") for path in paths]
     return paths
 
 

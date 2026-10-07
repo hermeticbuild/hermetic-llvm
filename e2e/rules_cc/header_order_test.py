@@ -109,7 +109,8 @@ class HeaderOrderTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         search = result.stderr.split("#include <...> search starts here:\n", 1)[1].split("End of search list.", 1)[0]
         for path in search.splitlines():
-            self.assertTrue(path.strip().startswith(str(self.root)), result.stderr)
+            directory = Path(path.strip().removesuffix(" (framework directory)"))
+            self.assertTrue(directory.is_relative_to(self.root), result.stderr)
             self.assertNotIn("host-poison", path, result.stderr)
         return result.stdout.split()
 
