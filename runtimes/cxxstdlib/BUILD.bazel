@@ -83,12 +83,6 @@ alias(
 )
 
 genrule(
-    name = "libstdcxx_static_runtime_lib",
-    outs = ["unsupported/libstdc++.a"],
-    cmd = "echo 'libstdc++ is only supported as a dynamic C++ runtime; static libstdc++ is intentionally unsupported.' >&2; exit 1",
-)
-
-genrule(
     name = "libstdcxx_windows_unsupported",
     outs = ["unsupported/windows-libstdcxx"],
     # TODO(corentin): replace this with MinGW libstdc++ DLL/import-library
@@ -99,7 +93,10 @@ genrule(
 filegroup(
     name = "static_runtime_lib",
     srcs = select({
-        ":libstdcxx_linux": [":libstdcxx_static_runtime_lib"],
+        ":libstdcxx_linux": [
+            "//runtimes/libstdcxx:libstdcxx.static",
+            "//runtimes/libunwind:libunwind.static",
+        ],
         ":libstdcxx_windows": [":libstdcxx_windows_unsupported"],
         ":libcxx_windows_msvc_vcruntime": ["//runtimes/libcxx:libcxx.static"],
         ":libcxx_linux": [
