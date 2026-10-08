@@ -3,6 +3,7 @@ load("@bazel_lib//lib:transitions.bzl", "platform_transition_binary", "platform_
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@llvm//:defs.bzl", "exec_test")
 load("@llvm//3rd_party/gcc:version.bzl", "DEFAULT_GCC_VERSION", "libstdcxx_constraint_value")
+load("@llvm//toolchain:selects.bzl", "platform_llvm_binary")
 load("@platforms//host:constraints.bzl", "HOST_CONSTRAINTS")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_import.bzl", "cc_import")
@@ -10,7 +11,7 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:cc_static_library.bzl", "cc_static_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_cc//cc:objc_library.bzl", "objc_library")
-load("@rules_python//python:defs.bzl", "py_test")
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load(
     "//:defs.bzl",
@@ -38,6 +39,7 @@ load(
     "xray_cc_binary",
 )
 load(":bazel_version.bzl", "validate_static_library_compatible")
+load(":header_search.bzl", "HEADER_PROBE_PYTHON_SETTINGS", "header_search")
 load(":musl_header_generation_tests.bzl", "musl_header_generation_tests")
 load(":thin_lto_features_test.bzl", "thin_lto_features_test")
 load(":windows_msvc_artifacts.bzl", "windows_msvc_artifacts")
@@ -1586,3 +1588,110 @@ test_suite(
         for cpu, _, _ in _WINDOWS_MSVC_ARTIFACT_PLATFORMS
     ],
 )
+
+alias(
+    name = "header_order_clang",
+    actual = platform_llvm_binary("clang"),
+)
+
+py_test(
+    name = "header_order_test",
+    srcs = ["header_order_test.py"],
+    config_settings = HEADER_PROBE_PYTHON_SETTINGS,
+    data = [":header_order_clang"],
+    env = {"CLANG": "$(rootpath :header_order_clang)"},
+    exec_compatible_with = HOST_CONSTRAINTS,
+    main = "header_order_test.py",
+    # Exercise each host's native Clang. exec_test's Linux TestRunner from a
+    # Windows host carries Windows paths in Bazel's generate-xml.sh command.
+    tags = ["no-remote"],
+)
+
+cc_library(
+    name = "header_precedence",
+    srcs = [
+        "header_precedence_c.c",
+        "header_precedence_cxx.cc",
+    ],
+    hdrs = [
+        "header_precedence/error.h",
+        "header_precedence/vector",
+        "header_precedence/windows.h",
+    ],
+    features = ["system_include_paths"],
+    includes = ["header_precedence"],
+)
+
+_HEADER_PRECEDENCE_PLATFORMS = [
+    "linux_" + cpu + suffix
+    for cpu in [
+        "x86_64",
+        "aarch64",
+        "armv7",
+        "riscv64",
+        "s390x",
+    ]
+    for suffix in [
+        "",
+        "_musl",
+    ]
+] + [
+    "macos_x86_64",
+    "macos_aarch64",
+    "windows_x86_64",
+    "windows_aarch64",
+    "windows_x86_64_msvc",
+    "windows_aarch64_msvc",
+]
+
+[
+    platform_transition_filegroup(
+        name = "header_precedence_" + platform,
+        srcs = [":header_precedence"],
+        tags = ["manual"],
+        target_platform = "@llvm//platforms:" + platform,
+    )
+    for platform in _HEADER_PRECEDENCE_PLATFORMS
+]
+
+filegroup(
+    name = "header_precedence_all_platforms",
+    srcs = [":header_precedence_" + platform for platform in _HEADER_PRECEDENCE_PLATFORMS],
+    tags = ["manual"],
+)
+
+py_binary(
+    name = "header_search_checker",
+    srcs = ["header_search.py"],
+    config_settings = HEADER_PROBE_PYTHON_SETTINGS,
+    main = "header_search.py",
+)
+
+header_search(
+    name = "header_search",
+    family = select({
+        "@llvm//platforms/config:gnu": "gnu",
+        "@llvm//platforms/config:musl": "musl",
+        "@platforms//os:macos": "darwin",
+        "@llvm//platforms/config:windows_x86_64_msvc": "msvc",
+        "@llvm//platforms/config:windows_aarch64_msvc": "msvc",
+        "@platforms//os:windows": "mingw",
+        "@platforms//os:none": "none",
+    }),
+    user_header = "header_precedence/error.h",
+)
+
+[
+    platform_transition_filegroup(
+        name = "header_search_" + platform,
+        srcs = [":header_search"],
+        tags = ["manual"],
+        target_platform = "@llvm//platforms:" + platform,
+    )
+    for platform in _HEADER_PRECEDENCE_PLATFORMS + [
+        "none_bpfeb",
+        "none_bpfel",
+        "none_wasm32",
+        "none_wasm64",
+    ]
+]
