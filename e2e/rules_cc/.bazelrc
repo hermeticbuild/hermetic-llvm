@@ -9,14 +9,3 @@ common --modify_execution_info=CppModuleMap=+supports-path-mapping,CppArchive=+s
 coverage --experimental_use_llvm_covmap
 coverage --experimental_generate_llvm_lcov
 coverage --combined_report=lcov
-
-# rules_cc's collect_cc_coverage.sh leaves a dangling `gcov` symlink in the
-# per-test _coverage tree when collecting in llvm mode (init_gcov creates it but
-# only the gcov branch removes it): "child gcov is a dangling symbolic link"
-# --experimental_fetch_all_coverage_outputs validates that raw tree and fails on the dangling
-# link. We only need the merged lcov report, so opt out of fetching the raw
-# per-test outputs for coverage.
-# 
-# Fixed in https://github.com/bazelbuild/rules_cc/pull/795
-# Will need rules_cc >= 0.2.23
-coverage --noexperimental_fetch_all_coverage_outputs
