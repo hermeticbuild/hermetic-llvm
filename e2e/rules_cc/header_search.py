@@ -1,4 +1,4 @@
-"""Execute the real Bazel command and compare -E -v with native Clang."""
+"""Compare actual search paths with Clang, preserving historical musl flags."""
 
 import json
 import os
@@ -8,7 +8,7 @@ import sys
 import tempfile
 
 
-def reference(arguments, family, user, root):
+def reference(arguments, family, user, root, language):
     # Give the unmodified driver a synthetic native installation. Map its C
     # slots back to the independent component paths; no production copy action
     # or sysroot layout is involved. C++ and builtin paths are the real inputs.
@@ -16,14 +16,21 @@ def reference(arguments, family, user, root):
     components = []
     supplemental = []
     mapped = {}
+    musl_paths = []
     args = iter(arguments)
     for arg in args:
         arg = arg.removeprefix("/clang:")
         if arg in ("-target", "--target", "-isysroot", "-resource-dir"):
             result += [arg, next(args).removeprefix("/clang:")]
         elif arg.startswith(("--target=", "-resource-dir=", "-stdlib++-isystem")):
+            assert family != "musl" or not arg.startswith("-stdlib++-isystem"), arg
             result.append(arg)
+        elif arg == "-isystem" and family == "musl":
+            directory = next(args)
+            if directory != user:
+                musl_paths.append(directory)
         elif arg in ("-Xclang", "-Xpreprocessor"):
+            assert family != "musl" or arg != "-Xpreprocessor", arg
             option = next(args).removeprefix("/clang:")
             if option in ("-internal-isystem", "-internal-externc-isystem"):
                 assert next(args).removeprefix("/clang:") == arg
@@ -31,11 +38,9 @@ def reference(arguments, family, user, root):
                 assert Path(directory).is_dir(), directory
                 if directory.endswith("/compiler-rt/include"):
                     supplemental += ["-Xclang", option, "-Xclang", directory]
-                elif family == "musl" and option == "-internal-isystem":
-                    assert arg == "-Xpreprocessor"
-                    result += ["-stdlib++-isystem" + directory]
                 else:
-                    if family in ("gnu", "musl"):
+                    assert family != "musl", (option, directory)
+                    if family == "gnu":
                         assert option == "-internal-externc-isystem"
                     components.append(directory)
 
@@ -44,7 +49,16 @@ def reference(arguments, family, user, root):
         path.mkdir(parents=True, exist_ok=True)
         mapped[str(path)] = directories
 
-    if family in ("gnu", "musl"):
+    if family == "musl":
+        # Preserve the baseline -isystem categories and relative order. This
+        # explicitly does not claim native user-system-header precedence.
+        assert len(musl_paths) == (4 if language == "c++" else 2), musl_paths
+        assert (Path(musl_paths[-2]) / "linux/types.h").is_file()
+        assert (Path(musl_paths[-1]) / "stdlib.h").is_file()
+        result += ["-nostdlibinc"]
+        for directory in musl_paths:
+            result += ["-isystem", directory]
+    elif family == "gnu":
         assert len(components) == 2, components
         assert (Path(components[0]) / "linux/types.h").is_file()
         assert (Path(components[1]) / "stdlib.h").is_file()
@@ -101,12 +115,18 @@ for language, command in config["commands"].items():
     args = command["arguments"]
     actual_paths = search(command["compiler"], args, language, config["family"])
     with tempfile.TemporaryDirectory() as temporary:
-        native, mapped = reference(args, config["family"], config["user"], Path(temporary))
+        native, mapped = reference(args, config["family"], config["user"], Path(temporary), language)
         native_paths = search(command["compiler"], native, language, config["family"])
         native_paths = [component for path in native_paths for component in mapped.get(path, [path])]
     if actual_paths != native_paths:
         raise AssertionError(f"{language}:\nBazel: {actual_paths}\nDriver: {native_paths}\nArgs: {args}")
-    reports[language] = {"bazel": actual_paths, "driver": native_paths, "arguments": args, "reference": native}
+    reports[language] = {
+        "bazel": actual_paths,
+        "driver": native_paths,
+        "arguments": args,
+        "reference": native,
+        "policy": "historical-musl" if config["family"] == "musl" else "native-driver",
+    }
     # Configure/cgo consumers combine compile and link flags. Both resource
     # directories must contain headers, and neither order may lose the sysroot.
     for name, combined in (("compile_then_link", args + link_headers), ("link_then_compile", link_headers + args)):
