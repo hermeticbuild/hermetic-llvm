@@ -18,3 +18,12 @@ cc_runtime_stage1_asan_shared_library, _cc_stage1_asan_shared_library_internal =
 ).build()
 cc_runtime_stage2_shared_library, _cc_stage2_shared_library_internal = configure_builder_for_runtimes(_builder.clone(), "stage2", "dynamic").build()
 cc_runtime_stage3_shared_library, _cc_stage3_shared_library_internal = configure_builder_for_runtimes(_builder.clone(), "stage3", "dynamic").build()
+
+# The builder for libgcc_s.so.1 (llvm-libgcc), which links the compiler-rt
+# builtins into a shared library and exports them. The builtins are normally
+# compiled with hidden visibility, and hidden symbols cannot be exported
+# whatever the version script says, so this builder recompiles them with
+# default visibility for that one library.
+_libgcc_builder = configure_builder_for_runtimes(_builder.clone(), "stage1", "dynamic")
+_libgcc_builder.set(Label("//config:compiler_rt_builtins_hide_symbols"), False)
+cc_runtime_stage1_libgcc_shared_library, _cc_stage1_libgcc_shared_library_internal = _libgcc_builder.build()

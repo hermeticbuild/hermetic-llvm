@@ -1,0 +1,12 @@
+load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+
+exports_files(["llvm-libgcc.BUILD.bazel"])
+
+bzl_library(
+    name = "libgcc_map",
+    srcs = ["libgcc_map.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@rules_cc//cc/common",
+    ],
+)

@@ -43,6 +43,10 @@ For source graph or version-selection changes, run:
     bazel test --config remote //3rd_party/gcc/libstdcxx/tests:config_define_audit_test
     bazel build --config remote //runtimes/libstdcxx/tests:toolchain_dynamic_link_smoke_linux_all_versions
     bazel build --config remote //runtimes/libstdcxx/tests:libstdcxx_cxx26_compile_linux_all_versions
+    bazel test --config remote //runtimes/libunwind/tests/...
+
+The last one covers the libgcc_s.so.1 version script generated from each GCC
+major's libgcc/libgcc-std.ver.in and target fragments.
 
 For per-version upstreamability, each commit adding a GCC version should build
 the smoke targets for that version and all newer supported versions.
