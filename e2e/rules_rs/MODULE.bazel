@@ -41,6 +41,10 @@ register_toolchains(
 bazel_dep(name = "rules_rs", version = "0.0.102")
 
 rules_rust = use_extension("@rules_rs//rs:rules_rust.bzl", "rules_rust")
+rules_rust.patch(
+    patches = ["@llvm//3rd_party/rules_rust:0001-normalize-clang-component-paths.patch"],
+    strip = 1,
+)
 use_repo(rules_rust, "rules_rust")
 
 toolchains = use_extension("@rules_rs//rs/toolchains:module_extension.bzl", "toolchains")

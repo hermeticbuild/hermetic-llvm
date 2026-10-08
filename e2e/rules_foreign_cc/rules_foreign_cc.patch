@@ -138,10 +138,9 @@ index ca16cc2..5c3fc7e 100644
      })
  
 diff --git a/foreign_cc/built_tools/private/built_tools_framework.bzl b/foreign_cc/built_tools/private/built_tools_framework.bzl
-index d96af9e..b50b16a 100644
 --- a/foreign_cc/built_tools/private/built_tools_framework.bzl
 +++ b/foreign_cc/built_tools/private/built_tools_framework.bzl
-@@ -50,47 +50,32 @@ FOREIGN_CC_BUILT_TOOLS_HOST_FRAGMENTS = [
+@@ -50,47 +50,39 @@
  def absolutize(workspace_name, text, force = False):
      return absolutize_path_in_str(workspace_name, "$$EXT_BUILD_ROOT$$/", text, force)
  
@@ -151,8 +150,8 @@ index d96af9e..b50b16a 100644
 +    """Splits flags into system include flags and remaining flags.
  
 -    sysroot args are either '--sysroot=</path/to/sysroot>' or '--sysroot </path/to/sysroot>'
-+    System include flags are --sysroot and -isystem args, in both
-+    '--sysroot=<path>' / '--sysroot <path>' and '-isystem<path>' / '-isystem <path>' forms.
++    Keep sysroot and system header paths in CC for probes omitting CFLAGS.
++    Preserve complete forwarded cc1 options and joined/separate driver paths.
  
      Args:
          flags (list): list of flags
@@ -164,10 +163,11 @@ index d96af9e..b50b16a 100644
 -    ret_flags = []
 +    system = []
 +    other = []
++    skip = 0
++    path_flags = ("--sysroot", "-isystem", "-stdlib++-isystem")
      for i in range(len(flags)):
 -        if flags[i] == "--sysroot":
-+        if flags[i] in ("--sysroot", "-isystem"):
-             if i + 1 < len(flags):
+-            if i + 1 < len(flags):
 -                ret_flags.append(flags[i])
 -                ret_flags.append(flags[i + 1])
 -        elif flags[i].startswith("--sysroot="):
@@ -190,17 +190,23 @@ index d96af9e..b50b16a 100644
 -        if flags[i] == "--sysroot" or \
 -           flags[i].startswith("--sysroot=") or \
 -           (i != 0 and flags[i - 1] == "--sysroot"):
--            continue
-+                system.append(flags[i])
-+                system.append(flags[i + 1])
-+        elif flags[i].startswith(("--sysroot=", "-isystem")):
-+            system.append(flags[i])
-+        elif i != 0 and flags[i - 1] in ("--sysroot", "-isystem"):
-+            pass
++        if i < skip:
+             continue
++        flag = flags[i]
++        if (flag in ("-Xclang", "-Xpreprocessor") and i + 3 < len(flags) and
++            flags[i + 1] in ("-internal-isystem", "-internal-externc-isystem") and
++            flags[i + 2] == flag):
++            system.extend(flags[i:i + 4])
++            skip = i + 4
++        elif flag in path_flags and i + 1 < len(flags):
++            system.extend(flags[i:i + 2])
++            skip = i + 2
++        elif flag.startswith(("--sysroot=", "-isystem", "-stdlib++-isystem")):
++            system.append(flag)
          else:
 -            ret_flags.append(flags[i])
 -    return ret_flags
-+            other.append(flags[i])
++            other.append(flag)
 +    return system, other
  
  def built_tool_rule_impl(ctx, script_lines, out_dir, mnemonic, additional_tools = None):
