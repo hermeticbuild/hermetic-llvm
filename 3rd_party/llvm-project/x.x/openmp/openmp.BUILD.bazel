@@ -139,6 +139,10 @@ py_binary(
         "runtime/tools/libomputils.py",
         "runtime/tools/message-converter.py",
     ],
+    # Keep the hermetic launcher through execution-configuration transitions.
+    config_settings = {
+        "@rules_python//python/config_settings:bootstrap_impl": "script",
+    },
     imports = ["runtime/tools"],
     main = "runtime/tools/message-converter.py",
 )
