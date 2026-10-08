@@ -1614,7 +1614,6 @@ UBSAN_CFLAGS = SANITIZER_COMMON_CFLAGS + [
     "-Wno-format",
 ]
 
-# buildifier: disable=unused-variable
 UBSAN_STANDALONE_CFLAGS = SANITIZER_COMMON_CFLAGS + [
     "-fno-rtti",
 ]
@@ -1631,7 +1630,14 @@ cc_library(
         ":ubsan_headers",
         ":ubsan_sources",
     ],
-    copts = UBSAN_CFLAGS,
+    # Darwin's RTUbsan uses UBSAN_CXXFLAGS; other platforms use UBSAN_CFLAGS.
+    copts = SANITIZER_COMMON_CFLAGS + select({
+        "@platforms//os:macos": ["-frtti"],
+        "//conditions:default": [
+            "-fno-rtti",
+            "-Wno-format",
+        ],
+    }),
     implementation_deps = [
         ":interception_impl_headers",
         ":libcxx_headers",
@@ -1680,9 +1686,9 @@ cc_library(
     name = "ubsan_standalone",
     srcs = [
         ":ubsan_headers",
-        ":ubsan_sources",
         ":ubsan_standalone_sources",
     ],
+    copts = UBSAN_STANDALONE_CFLAGS,
     implementation_deps = [
         ":interception_impl_headers",
         ":libcxx_headers",
@@ -1693,6 +1699,8 @@ cc_library(
         "lib/ubsan/ubsan_checks.inc",
         "lib/ubsan/ubsan_flags.inc",
     ],
+    # CMake compiles RTUbsan and RTUbsan_standalone with distinct flag lists.
+    deps = [":ubsan_no_standalone"],
     alwayslink = True,
 )
 
