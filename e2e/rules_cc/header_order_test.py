@@ -92,21 +92,20 @@ class HeaderOrderTest(unittest.TestCase):
         if family in ("darwin", "none"):
             return native, expected
         args = [f"--target={target}", f"-resource-dir={self.root}/resource", "-nostdlibinc"]
-        if family == "musl":
-            names = (["cxx", "abi"] if language == "c++" else []) + ["kernel", "libc", "user"]
-            for name in names:
-                args += ["-isystem", str(self.root / self.directories[name])]
-            return args, names + ["builtin"]
         if language == "c++":
             for name in ("cxx", "abi"):
-                args += [f"-stdlib++-isystem{self.root / name}"]
+                if family == "musl":
+                    args += ["-Xpreprocessor", "-internal-isystem", "-Xpreprocessor", str(self.root / name)]
+                else:
+                    args += [f"-stdlib++-isystem{self.root / name}"]
         components = {
             "gnu": ["kernel", "libc"],
+            "musl": ["kernel", "libc"],
             "mingw": ["kernel"],
             "msvc": ["vc", "ucrt", "shared", "um", "winrt"],
         }[family]
-        forwarding = "-Xclang"
-        category = "-internal-externc-isystem" if family == "gnu" else "-internal-isystem"
+        forwarding = "-Xpreprocessor" if family == "musl" else "-Xclang"
+        category = "-internal-externc-isystem" if family in ("gnu", "musl") else "-internal-isystem"
         for name in components:
             args += [forwarding, category, forwarding, str(self.root / self.directories[name])]
         args += [f"/imsvc{self.root}/user"] if family == "msvc" else ["-isystem", str(self.root / "user")]
@@ -146,12 +145,8 @@ class HeaderOrderTest(unittest.TestCase):
                     with self.subTest(target=target, language=language):
                         args, expected = self.arguments(family, target, language)
                         self.assertEqual(self.preprocess(args, language, family == "msvc"), expected)
-                        native, native_expected = self.native_arguments(family, target, language)
-                        self.assertEqual(self.preprocess(native, language, family == "msvc"), native_expected)
-                        # Musl's component order already matched the driver;
-                        # its user-system-header precedence is intentionally
-                        # preserved, rather than fixed by this change.
-                        self.assertEqual([x for x in expected if x != "user"], [x for x in native_expected if x != "user"])
+                        native, _ = self.native_arguments(family, target, language)
+                        self.assertEqual(self.preprocess(native, language, family == "msvc"), expected)
 
     def test_builtin_and_cxx_opt_outs(self):
         for family, targets in TARGETS.items():
@@ -162,28 +157,20 @@ class HeaderOrderTest(unittest.TestCase):
                     args, expected = self.arguments(family, targets[0], "c++")
                     self.assertEqual(self.preprocess([*args, flag], "c++", family == "msvc"), [x for x in expected if x not in removed])
 
-    def test_musl_preserves_historical_nostdincxx_behavior(self):
+    def test_musl_manual_cxx_paths_survive_nostdincxx(self):
         args, expected = self.arguments("musl", TARGETS["musl"][0], "c++")
         self.assertEqual(self.preprocess([*args, "-nostdinc++"], "c++"), expected)
-        native, native_expected = self.native_arguments("musl", TARGETS["musl"][0], "c++")
-        self.assertEqual(self.preprocess([*native, "-nostdinc++"], "c++"), [x for x in native_expected if x not in {"cxx", "abi"}])
-
-    def test_musl_order_unchanged_by_implicit_builtin_discovery(self):
-        for language in ("c", "c++"):
-            with self.subTest(language=language):
-                args, expected = self.arguments("musl", TARGETS["musl"][0], language)
-                # Before #751, builtins were suppressed then appended explicitly
-                # with -Xclang. Ordinary C++ and musl -isystem paths still won.
-                before = [*args, "-nobuiltininc", "-Xclang", "-internal-isystem", "-Xclang", str(self.root / "resource/include")]
-                self.assertEqual(self.preprocess(before, language), expected)
-                self.assertEqual(self.preprocess(args, language), expected)
+        native, _ = self.native_arguments("musl", TARGETS["musl"][0], "c++")
+        self.assertEqual(self.preprocess([*native, "-nostdinc++"], "c++"), [x for x in expected if x not in {"cxx", "abi"}])
 
     def test_cuda_wrappers_precede_cxx(self):
         # -nocudainc avoids requiring a toolkit, but preserves Clang's builtin
         # cuda_wrappers. The real PR reproducer also compiles device code.
-        args, expected = self.arguments("gnu", TARGETS["gnu"][0], "c++")
-        args += ["-nocudainc", "-nocudalib", "--cuda-host-only"]
-        self.assertEqual(self.preprocess(args, "cuda"), ["user", "cuda", *expected[1:]])
+        for family in ("gnu", "musl"):
+            with self.subTest(family=family):
+                args, expected = self.arguments(family, TARGETS[family][0], "c++")
+                args += ["-nocudainc", "-nocudalib", "--cuda-host-only"]
+                self.assertEqual(self.preprocess(args, "cuda"), ["user", "cuda", *expected[1:]])
 
 
 if __name__ == "__main__":
