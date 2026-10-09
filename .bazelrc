@@ -68,6 +68,7 @@ common --noremote_upload_local_results
 common --experimental_remote_downloader=grpcs://remote.buildbuddy.io
 common --grpc_keepalive_time=30s
 common --remote_cache=grpcs://remote.buildbuddy.io
+common --remote_instance_name=5f6bca88-02e6-49de-8279-068ee7e27029
 common --remote_cache_compression
 common --remote_download_toplevel
 common --nobuild_runfile_links
