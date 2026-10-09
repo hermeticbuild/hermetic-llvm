@@ -31,10 +31,10 @@ runs:
       run: |
         if [[ -z "${BUILDBUDDY_API_KEY}" ]]; then
           if [[ "${BUILDBUDDY_API_KEY_REQUIRED}" == "true" ]]; then
-            echo "::error::No BuildBuddy API key is available to this job."
+            echo "::error::No BuildBuddy API key with cache write access is available to this job."
             exit 1
           fi
-          echo "No BuildBuddy API key is available; using the local key from .bazelrc."
+          echo "No BuildBuddy API key with cache write access is available; using the CAS-only key from .bazelrc."
           exit 0
         fi
 
