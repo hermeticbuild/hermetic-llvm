@@ -17,7 +17,9 @@ concurrency:
 # Jobs run in the `ci` environment only on main. BUILDBUDDY_CI_API_KEY is a
 # secret of that environment, whose deployment branch policy only allows main,
 # so only reviewed and merged code can write to the remote cache that local
-# builds read. Everything else uses the local key from .bazelrc.
+# builds read. Everything else uses the local key from .bazelrc. The api-key
+# inputs repeat the condition so that a repository or organization secret of
+# the same name is never used outside of main.
 jobs:
   test:
     strategy:
@@ -50,7 +52,7 @@ jobs:
 
       - uses: ./.github/actions/buildbuddy-api-key
         with:
-          api-key: ${{ secrets.BUILDBUDDY_CI_API_KEY }}
+          api-key: ${{ github.ref == 'refs/heads/main' && secrets.BUILDBUDDY_CI_API_KEY || '' }}
 
       # Pull requests restore dependency caches published by main. PR-scoped caches can
       # only be reused by reruns of the same PR, so they are not saved here.
@@ -148,7 +150,7 @@ jobs:
 
       - uses: ./.github/actions/buildbuddy-api-key
         with:
-          api-key: ${{ secrets.BUILDBUDDY_CI_API_KEY }}
+          api-key: ${{ github.ref == 'refs/heads/main' && secrets.BUILDBUDDY_CI_API_KEY || '' }}
 
       - name: bazel test //...
         id: bazel_test
@@ -211,7 +213,7 @@ jobs:
 
       - uses: ./.github/actions/buildbuddy-api-key
         with:
-          api-key: ${{ secrets.BUILDBUDDY_CI_API_KEY }}
+          api-key: ${{ github.ref == 'refs/heads/main' && secrets.BUILDBUDDY_CI_API_KEY || '' }}
 
       - name: bazel build //:main_default
         id: bazel_test
@@ -267,7 +269,7 @@ jobs:
 
       - uses: ./.github/actions/buildbuddy-api-key
         with:
-          api-key: ${{ secrets.BUILDBUDDY_CI_API_KEY }}
+          api-key: ${{ github.ref == 'refs/heads/main' && secrets.BUILDBUDDY_CI_API_KEY || '' }}
 
       - name: Test with host macOS SDK
         env:
@@ -299,7 +301,7 @@ jobs:
 
       - uses: ./.github/actions/buildbuddy-api-key
         with:
-          api-key: ${{ secrets.BUILDBUDDY_CI_API_KEY }}
+          api-key: ${{ github.ref == 'refs/heads/main' && secrets.BUILDBUDDY_CI_API_KEY || '' }}
 
       - name: Select LLVM ${{ matrix.llvm_version }}
         env:
@@ -362,7 +364,7 @@ jobs:
 
       - uses: ./.github/actions/buildbuddy-api-key
         with:
-          api-key: ${{ secrets.BUILDBUDDY_CI_API_KEY }}
+          api-key: ${{ github.ref == 'refs/heads/main' && secrets.BUILDBUDDY_CI_API_KEY || '' }}
 
       - name: Restore Bazel repository cache
         id: bazel-repository-cache
@@ -429,7 +431,7 @@ jobs:
 
       - uses: ./.github/actions/buildbuddy-api-key
         with:
-          api-key: ${{ secrets.BUILDBUDDY_CI_API_KEY }}
+          api-key: ${{ github.ref == 'refs/heads/main' && secrets.BUILDBUDDY_CI_API_KEY || '' }}
 
       - name: Ensure Gazelle updated
         shell: bash
@@ -453,7 +455,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/buildbuddy-api-key
         with:
-          api-key: ${{ secrets.BUILDBUDDY_CI_API_KEY }}
+          api-key: ${{ github.ref == 'refs/heads/main' && secrets.BUILDBUDDY_CI_API_KEY || '' }}
       - name: Verify buildifier formatting
         shell: bash
         run: |
