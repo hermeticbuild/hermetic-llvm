@@ -4,36 +4,15 @@ load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
 package(default_visibility = ["//toolchain/args/windows:__pkg__"])
 
 cc_args(
-    name = "mingw_headers_include_search_paths",
-    actions = ["//toolchain:source_compile_actions"],
-    allowlist_include_directories = [
-        "@mingw//:mingw_generated_headers_crt_directory",
-        "@mingw//:mingw_w64_headers_include_directory",
-        "@mingw//:mingw_w64_headers_crt_directory",
-        "@mingw//:mingw_w64_winpthreads_include_directory",
+    name = "header_sysroot",
+    actions = [
+        "//toolchain:source_compile_actions",
+        "@rules_cc//cc/toolchains/actions:link_actions",
     ],
-    args = [
-        "-isystem",
-        "{mingw_w64_winpthreads_include}",
-        "-isystem",
-        "{mingw_generated_headers_crt}",
-        "-isystem",
-        "{mingw_w64_headers_include}",
-        "-isystem",
-        "{mingw_w64_headers_crt}",
-    ],
-    data = [
-        "@mingw//:mingw_generated_headers_crt_directory",
-        "@mingw//:mingw_w64_headers_crt_directory",
-        "@mingw//:mingw_w64_headers_include_directory",
-        "@mingw//:mingw_w64_winpthreads_include_directory",
-    ],
-    format = {
-        "mingw_generated_headers_crt": "@mingw//:mingw_generated_headers_crt_directory",
-        "mingw_w64_headers_include": "@mingw//:mingw_w64_headers_include_directory",
-        "mingw_w64_headers_crt": "@mingw//:mingw_w64_headers_crt_directory",
-        "mingw_w64_winpthreads_include": "@mingw//:mingw_w64_winpthreads_include_directory",
-    },
+    allowlist_include_directories = ["//toolchain/headers:mingw"],
+    args = ["--sysroot={headers}"],
+    data = ["//toolchain/headers:mingw"],
+    format = {"headers": "//toolchain/headers:mingw"},
 )
 
 cc_args(
@@ -90,4 +69,12 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:link_actions",
     ],
     args = ["-lucrt"],
+)
+
+cc_args_list(
+    name = "sysroot_flags",
+    args = select({
+        "//toolchain:hosted_headers": ["header_sysroot"],
+        "//conditions:default": ["//toolchain/args:empty_sysroot_flags"],
+    }),
 )

@@ -1,4 +1,5 @@
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
+load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -27,49 +28,6 @@ cc_args(
         "//conditions:default": [],
     }),
     requires_none = "@rules_cc//cc/toolchains/variables:force_pic",
-)
-
-cc_args(
-    name = "kernel_headers_include_search_paths",
-    actions = [
-        "//toolchain:source_compile_actions",
-    ],
-    allowlist_include_directories = [
-        "@kernel_headers//:kernel_headers_directory",
-    ],
-    args = [
-        "-isystem",
-        "{kernel_headers_include_search_path}",
-    ],
-    data = [
-        "@kernel_headers//:kernel_headers_directory",
-    ],
-    format = {
-        "kernel_headers_include_search_path": "@kernel_headers//:kernel_headers_directory",
-    },
-    target_compatible_with = ["@platforms//os:linux"],
-)
-
-cc_args(
-    name = "glibc_headers_include_search_paths",
-    actions = [
-        "//toolchain:source_compile_actions",
-    ],
-    allowlist_include_directories = [
-        "//runtimes/glibc:glibc_headers_include_search_directory",
-    ],
-    args = [
-        # "__GLIBC_MINOR__={d}", version.minor
-        "-isystem",
-        "{libc_headers_include_search_path}",
-    ],
-    data = [
-        "//runtimes/glibc:glibc_headers_include_search_directory",
-    ],
-    format = {
-        "libc_headers_include_search_path": "//runtimes/glibc:glibc_headers_include_search_directory",
-    },
-    target_compatible_with = ["@platforms//os:linux"],
 )
 
 cc_args(
@@ -125,23 +83,6 @@ cc_args(
 
 ###
 
-cc_args(
-    name = "musl_libc_headers_include_search_paths",
-    actions = [
-        "//toolchain:source_compile_actions",
-    ],
-    args = [
-        "-isystem",
-        "{libc_headers_include_search_path}",
-    ],
-    data = [
-        "//runtimes/musl:musl_headers_include_search_directory",
-    ],
-    format = {
-        "libc_headers_include_search_path": "//runtimes/musl:musl_headers_include_search_directory",
-    },
-)
-
 #TODO: Factorize this and gnu
 cc_args(
     name = "default_libs_musl",
@@ -178,4 +119,35 @@ alias(
         "//platforms/config:gnu": ":default_libs_gnu",
     }),
     target_compatible_with = ["@platforms//os:linux"],
+)
+
+cc_args(
+    name = "header_sysroot",
+    actions = [
+        "//toolchain:source_compile_actions",
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    allowlist_include_directories = ["//toolchain/headers:linux"],
+    args = [
+        "--sysroot={headers}",
+        "--gcc-toolchain=/dev/null",
+    ],
+    data = ["//toolchain/headers:linux"],
+    format = {"headers": "//toolchain/headers:linux"},
+)
+
+cc_args_list(
+    name = "sysroot_flags",
+    args = select({
+        "//toolchain:hosted_headers": ["header_sysroot"],
+        "//conditions:default": ["//toolchain/args:empty_sysroot_flags"],
+    }),
+)
+
+cc_args_list(
+    name = "hermetic_compile_flags",
+    args = select({
+        "//toolchain:hosted_headers": [],
+        "//conditions:default": ["//toolchain/args:hermetic_compile_flags"],
+    }),
 )
