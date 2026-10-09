@@ -14,6 +14,10 @@ concurrency:
   # See https://docs.github.com/en/actions/using-jobs/using-concurrency and https://docs.github.com/en/actions/learn-github-actions/contexts for more info.
   group: concurrency-group::${{ github.workflow }}::${{ github.event.pull_request.number > 0 && format('pr-{0}', github.event.pull_request.number) || github.ref_name }}${{ github.ref_name == 'main' && format('::{0}', github.run_id) || ''}}
   cancel-in-progress: ${{ github.ref_name != 'main' }}
+# Jobs run in the `ci` environment only on main. BUILDBUDDY_CI_API_KEY is a
+# secret of that environment, whose deployment branch policy only allows main,
+# so only reviewed and merged code can write to the remote cache that local
+# builds read. Everything else uses the local key from .bazelrc.
 jobs:
   test:
     strategy:
@@ -36,12 +40,17 @@ jobs:
             folder: "e2e/rules_cc"
             extra_flags: "--experimental_output_paths=strip"
     runs-on: ${{ matrix.os }}
+    environment: ${{ github.ref == 'refs/heads/main' && 'ci' || '' }}
 
     # Configure a human readable name for each job
     name: Test ${{ matrix.folder }} with Bazel ${{ matrix.bazel_version }} on ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v6
+
+      - uses: ./.github/actions/buildbuddy-api-key
+        with:
+          api-key: ${{ secrets.BUILDBUDDY_CI_API_KEY }}
 
       # Pull requests restore dependency caches published by main. PR-scoped caches can
       # only be reused by reruns of the same PR, so they are not saved here.
@@ -129,12 +138,17 @@ jobs:
           # - "e2e/rules_rust" - Need a bazel nightly with https://github.com/bazelbuild/bazel/pull/28038
           - "e2e/cross_compilation"
     runs-on: ${{ matrix.os }}
+    environment: ${{ github.ref == 'refs/heads/main' && 'ci' || '' }}
 
     # Configure a human readable name for each job
     name: Test ${{ matrix.folder }} with Bazel ${{ matrix.bazel_version }} on ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v6
+
+      - uses: ./.github/actions/buildbuddy-api-key
+        with:
+          api-key: ${{ secrets.BUILDBUDDY_CI_API_KEY }}
 
       - name: bazel test //...
         id: bazel_test
@@ -187,12 +201,17 @@ jobs:
           # - "e2e/rules_rust" - Need a bazel nightly with https://github.com/bazelbuild/bazel/pull/28038
           # - "e2e/cross_compilation"
     runs-on: ${{ matrix.os }}
+    environment: ${{ github.ref == 'refs/heads/main' && 'ci' || '' }}
 
     # Configure a human readable name for each job
     name: Test smoke ${{ matrix.folder }} with Bazel ${{ matrix.bazel_version }} on ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v6
+
+      - uses: ./.github/actions/buildbuddy-api-key
+        with:
+          api-key: ${{ secrets.BUILDBUDDY_CI_API_KEY }}
 
       - name: bazel build //:main_default
         id: bazel_test
@@ -241,9 +260,14 @@ jobs:
 
   test_macos_host_sdk:
     runs-on: macos-15
+    environment: ${{ github.ref == 'refs/heads/main' && 'ci' || '' }}
     name: Test host macOS SDK
     steps:
       - uses: actions/checkout@v6
+
+      - uses: ./.github/actions/buildbuddy-api-key
+        with:
+          api-key: ${{ secrets.BUILDBUDDY_CI_API_KEY }}
 
       - name: Test with host macOS SDK
         env:
@@ -254,7 +278,6 @@ jobs:
           bazel \
             --bazelrc=.bazelrc \
             test \
-            --remote_header=x-buildbuddy-api-key=4jtaxdhxtyu4ylxdEwI7 \
             --repo_env=BAZEL_MACOS_USE_HOST_SDK=1 \
             //:objc_cc_test
 
@@ -268,10 +291,15 @@ jobs:
         # other supported LLVM major here.
         llvm_version: ["21.1.8", "22.1.8"]
     runs-on: ubuntu-latest
+    environment: ${{ github.ref == 'refs/heads/main' && 'ci' || '' }}
     name: Analyze LLVM ${{ matrix.llvm_version }}
 
     steps:
       - uses: actions/checkout@v6
+
+      - uses: ./.github/actions/buildbuddy-api-key
+        with:
+          api-key: ${{ secrets.BUILDBUDDY_CI_API_KEY }}
 
       - name: Select LLVM ${{ matrix.llvm_version }}
         env:
@@ -326,10 +354,15 @@ jobs:
         os: [ubuntu-latest, ubuntu-24.04-arm]
         bazel_version: [8.x, last_rc]
     runs-on: ${{ matrix.os }}
+    environment: ${{ github.ref == 'refs/heads/main' && 'ci' || '' }}
     name: Test //tests/... with Bazel ${{ matrix.bazel_version }} on ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v6
+
+      - uses: ./.github/actions/buildbuddy-api-key
+        with:
+          api-key: ${{ secrets.BUILDBUDDY_CI_API_KEY }}
 
       - name: Restore Bazel repository cache
         id: bazel-repository-cache
@@ -389,9 +422,14 @@ jobs:
 
   docs:
     runs-on: macos-15-intel
+    environment: ${{ github.ref == 'refs/heads/main' && 'ci' || '' }}
     name: Verify public docs generation
     steps:
       - uses: actions/checkout@v6
+
+      - uses: ./.github/actions/buildbuddy-api-key
+        with:
+          api-key: ${{ secrets.BUILDBUDDY_CI_API_KEY }}
 
       - name: Ensure Gazelle updated
         shell: bash
@@ -409,9 +447,13 @@ jobs:
 
   buildifier:
     runs-on: ubuntu-latest
+    environment: ${{ github.ref == 'refs/heads/main' && 'ci' || '' }}
     name: Verify buildifier formatting
     steps:
       - uses: actions/checkout@v6
+      - uses: ./.github/actions/buildbuddy-api-key
+        with:
+          api-key: ${{ secrets.BUILDBUDDY_CI_API_KEY }}
       - name: Verify buildifier formatting
         shell: bash
         run: |

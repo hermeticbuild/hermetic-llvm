@@ -19,8 +19,17 @@ concurrency:
 jobs:
   release:
     runs-on: ubuntu-latest
+    # The release BuildBuddy API key belongs to a separate BuildBuddy org, so
+    # release builds only consume cache entries written by release builds. It
+    # is an environment secret so that only release branches can use it.
+    environment: release
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - uses: ./.github/actions/buildbuddy-api-key
+        with:
+          api-key: ${{ secrets.BUILDBUDDY_RELEASE_API_KEY }}
+          required: true
 
       - name: Mount bazel caches
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
