@@ -16,7 +16,10 @@ bazel_dep(name = "rules_rust", version = "0.73.0")
 single_version_override(
     module_name = "rules_rust",
     patch_strip = 1,
-    patches = ["//:rules_rust_gnullvm_staticlib.patch"],
+    patches = [
+        "//:rules_rust_gnullvm_staticlib.patch",
+        "//:rules_rust_clang_component_paths.patch",
+    ],
     version = "0.73.0",
 )
 

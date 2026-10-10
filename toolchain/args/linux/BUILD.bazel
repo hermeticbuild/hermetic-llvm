@@ -37,10 +37,16 @@ cc_args(
     allowlist_include_directories = [
         "@kernel_headers//:kernel_headers_directory",
     ],
-    args = [
-        "-isystem",
-        "{kernel_headers_include_search_path}",
-    ],
+    # Preserve musl's existing include flags. GNU uses the driver's native
+    # extern-C category after builtins.
+    args = select({
+        "//platforms/config:musl": ["-isystem"],
+        "//conditions:default": [
+            "-Xclang",
+            "-internal-externc-isystem",
+            "-Xclang",
+        ],
+    }) + ["{kernel_headers_include_search_path}"],
     data = [
         "@kernel_headers//:kernel_headers_directory",
     ],
@@ -59,8 +65,9 @@ cc_args(
         "//runtimes/glibc:glibc_headers_include_search_directory",
     ],
     args = [
-        # "__GLIBC_MINOR__={d}", version.minor
-        "-isystem",
+        "-Xclang",
+        "-internal-externc-isystem",
+        "-Xclang",
         "{libc_headers_include_search_path}",
     ],
     data = [

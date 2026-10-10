@@ -344,8 +344,7 @@ cc_args_list(
         ":sysroot_flags",
         ":hermetic_compile_flags",
 
-        # Keep external -isystem directories before the toolchain C and C++
-        # -isystem directories below.
+        # User system paths precede the toolchain's internal include category.
         "@rules_cc//cc/toolchains/args/external_include_paths:external_include_paths",
         ":cxxstdlib_headers_include_search_paths",
 
@@ -404,8 +403,7 @@ cc_args_list(
         ":sysroot_flags",
         ":hermetic_compile_flags",
 
-        # Keep external -isystem directories before the toolchain C and C++
-        # -isystem directories below.
+        # User paths retain their driver-defined position relative to builtins.
         "@rules_cc//cc/toolchains/args/external_include_paths:external_include_paths",
 
         # Windows compiler, ABI, CRT, object-format, and C++ runtime semantics.

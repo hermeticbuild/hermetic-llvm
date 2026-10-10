@@ -1,0 +1,59 @@
+diff --git a/go/tools/builders/env.go b/go/tools/builders/env.go
+--- a/go/tools/builders/env.go
++++ b/go/tools/builders/env.go
+@@ -35,7 +35,7 @@
+ 	// cgoEnvVars is the list of all cgo environment variable
+ 	cgoEnvVars = []string{"CGO_CFLAGS", "CGO_CXXFLAGS", "CGO_CPPFLAGS", "CGO_LDFLAGS"}
+ 	// cgoAbsEnvFlags are all the flags that need absolute path in cgoEnvVars
+-	cgoAbsEnvFlags = []string{"-I", "-L", "-isysroot", "-isystem", "-internal-isystem", "-iquote", "-include", "-imacros", "-gcc-toolchain", "--sysroot", "-resource-dir", "-fsanitize-blacklist", "-fsanitize-ignorelist", "--warning-suppression-mappings", "-idirafter", "-isystem-after", "--include-directory-after "}
++	cgoAbsEnvFlags = []string{"-I", "-L", "-isysroot", "-isystem", "-internal-isystem", "-internal-externc-isystem", "-stdlib++-isystem", "-iquote", "-include", "-imacros", "-gcc-toolchain", "--sysroot", "-resource-dir", "-fsanitize-blacklist", "-fsanitize-ignorelist", "--warning-suppression-mappings", "-idirafter", "-isystem-after", "--include-directory-after "}
+ 	// cgoAbsPlaceholder is placed in front of flag values that must be absolutized
+ 	cgoAbsPlaceholder = "__GO_BAZEL_CC_PLACEHOLDER__"
+ )
+@@ -434,10 +434,10 @@
+ func transformArgs(args []string, flags []string, fn func(string) string) {
+ 	absNext := false
+ 	for i := range args {
+-		// When expecting a path argument and we see -Xclang, skip over it
++		// When expecting a path argument and we see a forwarding flag, skip over it
+ 		// and map the next argument instead.
+ 		// ex: -Xclang -isystem -Xclang path
+-		if absNext && args[i] == "-Xclang" {
++		if absNext && (args[i] == "-Xclang" || args[i] == "-Xpreprocessor") {
+ 			continue
+ 		}
+ 		if absNext {
+diff --git a/go/tools/builders/env_test.go b/go/tools/builders/env_test.go
+--- a/go/tools/builders/env_test.go
++++ b/go/tools/builders/env_test.go
+@@ -62,6 +62,30 @@
+ 			flags:    []string{"-internal-isystem"},
+ 			expected: []string{"-Xclang", "-internal-isystem", "-Xclang", "RELATIVE/PATH"},
+ 		},
++		{
++			name:     "extern-C forwarding",
++			args:     []string{"-Xclang", "-internal-externc-isystem", "-Xclang", "relative/path"},
++			flags:    cgoAbsEnvFlags,
++			expected: []string{"-Xclang", "-internal-externc-isystem", "-Xclang", "RELATIVE/PATH"},
++		},
++		{
++			name:     "early C forwarding",
++			args:     []string{"-Xpreprocessor", "-internal-externc-isystem", "-Xpreprocessor", "relative/path"},
++			flags:    cgoAbsEnvFlags,
++			expected: []string{"-Xpreprocessor", "-internal-externc-isystem", "-Xpreprocessor", "RELATIVE/PATH"},
++		},
++		{
++			name:     "early C++ forwarding",
++			args:     []string{"-Xpreprocessor", "-internal-isystem", "-Xpreprocessor", "relative/path"},
++			flags:    cgoAbsEnvFlags,
++			expected: []string{"-Xpreprocessor", "-internal-isystem", "-Xpreprocessor", "RELATIVE/PATH"},
++		},
++		{
++			name:     "joined C++ path",
++			args:     []string{"-stdlib++-isystemrelative/path"},
++			flags:    cgoAbsEnvFlags,
++			expected: []string{"-stdlib++-isystemRELATIVE/PATH"},
++		},
+ 	}
+ 
+ 	for _, tc := range testCases {

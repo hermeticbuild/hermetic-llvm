@@ -168,6 +168,18 @@ bazel_dep(name = "gazelle", version = "0.47.0", dev_dependency = True)
 bazel_dep(name = "bazel_skylib_gazelle_plugin", version = "1.9.0", dev_dependency = True)
 bazel_dep(name = "buildifier_prebuilt", version = "8.5.1.2", dev_dependency = True)
 bazel_dep(name = "rules_go", version = "0.61.1", dev_dependency = True)
+
+# cgo changes directory while building the standard library. Normalize the
+# explicit Clang component paths and skip both frontend forwarding spellings.
+# Root-only override: downstream cgo consumers need this patch until rules_go
+# supports these flags in a release.
+single_version_override(
+    module_name = "rules_go",
+    patch_strip = 1,
+    patches = ["//3rd_party/rules_go:0001-normalize-clang-component-paths.patch"],
+    version = "0.62.0",
+)
+
 bazel_dep(name = "rules_platform", version = "0.1.0", dev_dependency = True)
 
 go_sdk = use_extension("@rules_go//go:extensions.bzl", "go_sdk", dev_dependency = True)
