@@ -5,15 +5,20 @@
 #
 # Usage: verify.sh <release tag> <all release tags in chain order...>
 #
+# The build bootstraps from llvm-22.1.7-2 instead of the seed the release used.
+# Stages 2 and 3 are compiled by stage 1, which is built from the release's
+# sources, so they do not depend on which correct compiler built stage 1.
+#
 # Every action is executed except the FDO training actions, whose profile
 # counters depend on memory addresses and thus differ between runs. Those reuse
-# the results that the release build stored in the remote cache. A profile only
-# steers optimizations, so it cannot change what the rebuilt binaries do. The
-# execution log is checked to ensure that no other action used a cached result.
+# the results that the release build stored in the remote cache, which have the
+# same action digests if stage 2 is identical. A profile only steers
+# optimizations, so it cannot change what the rebuilt binaries do. The execution
+# log is checked to ensure that no other action used a cached result.
 #
 # Release archives downloaded during the build must come from releases published
 # before the first release in the chain or from releases earlier in the chain,
-# which the preceding jobs have already verified.
+# which have already been verified.
 #
 # The rebuilt archives must be identical to the published ones. The only
 # accepted difference is the link time that lld-link records in the COFF header
@@ -99,12 +104,15 @@ sys.exit(0 if ok else 1)
 PY
 }
 
+python3 "${VERIFY_DIR}/.github/verify-prebuilts/use_seed.py"
+git diff --stat
+
 build_log="${RUNNER_TEMP}/build.log"
 GITHUB_REF_NAME="${tag}" bash .github/workflows/llvm-prebuilt.sh 2>&1 | tee "${build_log}"
 
 failed=0
 summary="${GITHUB_STEP_SUMMARY:-/dev/stdout}"
-echo "## ${tag} ($(git rev-parse --short HEAD))" >> "${summary}"
+echo "## ${tag} ($(git rev-parse --short HEAD), bootstrapped from llvm-22.1.7-2)" >> "${summary}"
 
 # Only FDO training actions may have taken their results from a cache.
 echo "### Build" >> "${summary}"
