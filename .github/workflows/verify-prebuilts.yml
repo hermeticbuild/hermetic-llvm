@@ -1,0 +1,369 @@
+name: Verify LLVM prebuilt releases
+
+# Rebuilds each LLVM prebuilt release from its commit without accepting cached
+# results and compares the archives with the published ones. Releases are
+# verified in the order they were published, so the bootstrap seed of each
+# release has been verified before it is rebuilt.
+
+on:
+  push:
+    branches:
+      - verify-prebuilts
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-prebuilts
+  cancel-in-progress: false
+
+jobs:
+  llvm-22-1-5-1:
+    name: Verify llvm-22.1.5-1
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          path: verify
+          persist-credentials: false
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: 1b21cdd6e67bb24b73cb20dd522cafc1343e46e0
+          path: src
+          persist-credentials: false
+      - name: Rebuild and compare
+        working-directory: src
+        env:
+          VERIFY_DIR: ${{ github.workspace }}/verify
+        run: bash "$VERIFY_DIR/.github/verify-prebuilts/verify.sh" llvm-22.1.5-1 llvm-22.1.5-1 llvm-22.1.6-1 llvm-22.1.7-1 llvm-22.1.7-2 llvm-22.1.8-1 llvm-21.1.8-10 llvm-23.1.0-rc1-1 llvm-23.1.0-1 llvm-22.1.8-2 llvm-23.1.0-2 llvm-23.1.0-3 llvm-23.1.0-4 llvm-23.1.2-1
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: rebuilt-llvm-22.1.5-1
+          path: src/release/
+          if-no-files-found: ignore
+
+  llvm-22-1-6-1:
+    name: Verify llvm-22.1.6-1
+    needs: llvm-22-1-5-1
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          path: verify
+          persist-credentials: false
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: f9627ab7affb6a842c4eba58558291bdf299bcb6
+          path: src
+          persist-credentials: false
+      - name: Rebuild and compare
+        working-directory: src
+        env:
+          VERIFY_DIR: ${{ github.workspace }}/verify
+        run: bash "$VERIFY_DIR/.github/verify-prebuilts/verify.sh" llvm-22.1.6-1 llvm-22.1.5-1 llvm-22.1.6-1 llvm-22.1.7-1 llvm-22.1.7-2 llvm-22.1.8-1 llvm-21.1.8-10 llvm-23.1.0-rc1-1 llvm-23.1.0-1 llvm-22.1.8-2 llvm-23.1.0-2 llvm-23.1.0-3 llvm-23.1.0-4 llvm-23.1.2-1
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: rebuilt-llvm-22.1.6-1
+          path: src/release/
+          if-no-files-found: ignore
+
+  llvm-22-1-7-1:
+    name: Verify llvm-22.1.7-1
+    needs: llvm-22-1-6-1
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          path: verify
+          persist-credentials: false
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: 4caa4a3b707e9fdcbfba2e764011a5b864a91cc4
+          path: src
+          persist-credentials: false
+      - name: Rebuild and compare
+        working-directory: src
+        env:
+          VERIFY_DIR: ${{ github.workspace }}/verify
+        run: bash "$VERIFY_DIR/.github/verify-prebuilts/verify.sh" llvm-22.1.7-1 llvm-22.1.5-1 llvm-22.1.6-1 llvm-22.1.7-1 llvm-22.1.7-2 llvm-22.1.8-1 llvm-21.1.8-10 llvm-23.1.0-rc1-1 llvm-23.1.0-1 llvm-22.1.8-2 llvm-23.1.0-2 llvm-23.1.0-3 llvm-23.1.0-4 llvm-23.1.2-1
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: rebuilt-llvm-22.1.7-1
+          path: src/release/
+          if-no-files-found: ignore
+
+  llvm-22-1-7-2:
+    name: Verify llvm-22.1.7-2
+    needs: llvm-22-1-7-1
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          path: verify
+          persist-credentials: false
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: 6d23a767189d8ab06913b5426b05ed280c97889d
+          path: src
+          persist-credentials: false
+      - name: Rebuild and compare
+        working-directory: src
+        env:
+          VERIFY_DIR: ${{ github.workspace }}/verify
+        run: bash "$VERIFY_DIR/.github/verify-prebuilts/verify.sh" llvm-22.1.7-2 llvm-22.1.5-1 llvm-22.1.6-1 llvm-22.1.7-1 llvm-22.1.7-2 llvm-22.1.8-1 llvm-21.1.8-10 llvm-23.1.0-rc1-1 llvm-23.1.0-1 llvm-22.1.8-2 llvm-23.1.0-2 llvm-23.1.0-3 llvm-23.1.0-4 llvm-23.1.2-1
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: rebuilt-llvm-22.1.7-2
+          path: src/release/
+          if-no-files-found: ignore
+
+  llvm-22-1-8-1:
+    name: Verify llvm-22.1.8-1
+    needs: llvm-22-1-7-2
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          path: verify
+          persist-credentials: false
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: e086af4b77f850070d7b5db3523aece3ac6ecf9a
+          path: src
+          persist-credentials: false
+      - name: Rebuild and compare
+        working-directory: src
+        env:
+          VERIFY_DIR: ${{ github.workspace }}/verify
+        run: bash "$VERIFY_DIR/.github/verify-prebuilts/verify.sh" llvm-22.1.8-1 llvm-22.1.5-1 llvm-22.1.6-1 llvm-22.1.7-1 llvm-22.1.7-2 llvm-22.1.8-1 llvm-21.1.8-10 llvm-23.1.0-rc1-1 llvm-23.1.0-1 llvm-22.1.8-2 llvm-23.1.0-2 llvm-23.1.0-3 llvm-23.1.0-4 llvm-23.1.2-1
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: rebuilt-llvm-22.1.8-1
+          path: src/release/
+          if-no-files-found: ignore
+
+  llvm-21-1-8-10:
+    name: Verify llvm-21.1.8-10
+    needs: llvm-22-1-8-1
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          path: verify
+          persist-credentials: false
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: c6e45dfcb71009ac44b66386fe83e0e0b9cdfb2d
+          path: src
+          persist-credentials: false
+      - name: Rebuild and compare
+        working-directory: src
+        env:
+          VERIFY_DIR: ${{ github.workspace }}/verify
+        run: bash "$VERIFY_DIR/.github/verify-prebuilts/verify.sh" llvm-21.1.8-10 llvm-22.1.5-1 llvm-22.1.6-1 llvm-22.1.7-1 llvm-22.1.7-2 llvm-22.1.8-1 llvm-21.1.8-10 llvm-23.1.0-rc1-1 llvm-23.1.0-1 llvm-22.1.8-2 llvm-23.1.0-2 llvm-23.1.0-3 llvm-23.1.0-4 llvm-23.1.2-1
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: rebuilt-llvm-21.1.8-10
+          path: src/release/
+          if-no-files-found: ignore
+
+  llvm-23-1-0-rc1-1:
+    name: Verify llvm-23.1.0-rc1-1
+    needs: llvm-21-1-8-10
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          path: verify
+          persist-credentials: false
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: 627850996ab873cdb18d14c288304669ff6d2e12
+          path: src
+          persist-credentials: false
+      - name: Rebuild and compare
+        working-directory: src
+        env:
+          VERIFY_DIR: ${{ github.workspace }}/verify
+        run: bash "$VERIFY_DIR/.github/verify-prebuilts/verify.sh" llvm-23.1.0-rc1-1 llvm-22.1.5-1 llvm-22.1.6-1 llvm-22.1.7-1 llvm-22.1.7-2 llvm-22.1.8-1 llvm-21.1.8-10 llvm-23.1.0-rc1-1 llvm-23.1.0-1 llvm-22.1.8-2 llvm-23.1.0-2 llvm-23.1.0-3 llvm-23.1.0-4 llvm-23.1.2-1
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: rebuilt-llvm-23.1.0-rc1-1
+          path: src/release/
+          if-no-files-found: ignore
+
+  llvm-23-1-0-1:
+    name: Verify llvm-23.1.0-1
+    needs: llvm-23-1-0-rc1-1
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          path: verify
+          persist-credentials: false
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: c872f50d272ae7c0a59f8f49c31fa6e1cad25f6f
+          path: src
+          persist-credentials: false
+      - name: Rebuild and compare
+        working-directory: src
+        env:
+          VERIFY_DIR: ${{ github.workspace }}/verify
+        run: bash "$VERIFY_DIR/.github/verify-prebuilts/verify.sh" llvm-23.1.0-1 llvm-22.1.5-1 llvm-22.1.6-1 llvm-22.1.7-1 llvm-22.1.7-2 llvm-22.1.8-1 llvm-21.1.8-10 llvm-23.1.0-rc1-1 llvm-23.1.0-1 llvm-22.1.8-2 llvm-23.1.0-2 llvm-23.1.0-3 llvm-23.1.0-4 llvm-23.1.2-1
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: rebuilt-llvm-23.1.0-1
+          path: src/release/
+          if-no-files-found: ignore
+
+  llvm-22-1-8-2:
+    name: Verify llvm-22.1.8-2
+    needs: llvm-23-1-0-1
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          path: verify
+          persist-credentials: false
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: e768d7589c1d0a6c6aa7aac61c24bd423a3e9efd
+          path: src
+          persist-credentials: false
+      - name: Rebuild and compare
+        working-directory: src
+        env:
+          VERIFY_DIR: ${{ github.workspace }}/verify
+        run: bash "$VERIFY_DIR/.github/verify-prebuilts/verify.sh" llvm-22.1.8-2 llvm-22.1.5-1 llvm-22.1.6-1 llvm-22.1.7-1 llvm-22.1.7-2 llvm-22.1.8-1 llvm-21.1.8-10 llvm-23.1.0-rc1-1 llvm-23.1.0-1 llvm-22.1.8-2 llvm-23.1.0-2 llvm-23.1.0-3 llvm-23.1.0-4 llvm-23.1.2-1
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: rebuilt-llvm-22.1.8-2
+          path: src/release/
+          if-no-files-found: ignore
+
+  llvm-23-1-0-2:
+    name: Verify llvm-23.1.0-2
+    needs: llvm-22-1-8-2
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          path: verify
+          persist-credentials: false
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: 63757394db1e312b35ed98df4eb64f79fb38f908
+          path: src
+          persist-credentials: false
+      - name: Rebuild and compare
+        working-directory: src
+        env:
+          VERIFY_DIR: ${{ github.workspace }}/verify
+        run: bash "$VERIFY_DIR/.github/verify-prebuilts/verify.sh" llvm-23.1.0-2 llvm-22.1.5-1 llvm-22.1.6-1 llvm-22.1.7-1 llvm-22.1.7-2 llvm-22.1.8-1 llvm-21.1.8-10 llvm-23.1.0-rc1-1 llvm-23.1.0-1 llvm-22.1.8-2 llvm-23.1.0-2 llvm-23.1.0-3 llvm-23.1.0-4 llvm-23.1.2-1
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: rebuilt-llvm-23.1.0-2
+          path: src/release/
+          if-no-files-found: ignore
+
+  llvm-23-1-0-3:
+    name: Verify llvm-23.1.0-3
+    needs: llvm-23-1-0-2
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          path: verify
+          persist-credentials: false
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: ab6bd645c759585112fde74540b7ebeb26ac56a7
+          path: src
+          persist-credentials: false
+      - name: Rebuild and compare
+        working-directory: src
+        env:
+          VERIFY_DIR: ${{ github.workspace }}/verify
+        run: bash "$VERIFY_DIR/.github/verify-prebuilts/verify.sh" llvm-23.1.0-3 llvm-22.1.5-1 llvm-22.1.6-1 llvm-22.1.7-1 llvm-22.1.7-2 llvm-22.1.8-1 llvm-21.1.8-10 llvm-23.1.0-rc1-1 llvm-23.1.0-1 llvm-22.1.8-2 llvm-23.1.0-2 llvm-23.1.0-3 llvm-23.1.0-4 llvm-23.1.2-1
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: rebuilt-llvm-23.1.0-3
+          path: src/release/
+          if-no-files-found: ignore
+
+  llvm-23-1-0-4:
+    name: Verify llvm-23.1.0-4
+    needs: llvm-23-1-0-3
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          path: verify
+          persist-credentials: false
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: a8135d96191c856c45f6a64a1743a17e46a4baca
+          path: src
+          persist-credentials: false
+      - name: Rebuild and compare
+        working-directory: src
+        env:
+          VERIFY_DIR: ${{ github.workspace }}/verify
+        run: bash "$VERIFY_DIR/.github/verify-prebuilts/verify.sh" llvm-23.1.0-4 llvm-22.1.5-1 llvm-22.1.6-1 llvm-22.1.7-1 llvm-22.1.7-2 llvm-22.1.8-1 llvm-21.1.8-10 llvm-23.1.0-rc1-1 llvm-23.1.0-1 llvm-22.1.8-2 llvm-23.1.0-2 llvm-23.1.0-3 llvm-23.1.0-4 llvm-23.1.2-1
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: rebuilt-llvm-23.1.0-4
+          path: src/release/
+          if-no-files-found: ignore
+
+  llvm-23-1-2-1:
+    name: Verify llvm-23.1.2-1
+    needs: llvm-23-1-0-4
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          path: verify
+          persist-credentials: false
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: 90a3a2fc9a296146c9b054faf6a5ca807b0430f7
+          path: src
+          persist-credentials: false
+      - name: Rebuild and compare
+        working-directory: src
+        env:
+          VERIFY_DIR: ${{ github.workspace }}/verify
+        run: bash "$VERIFY_DIR/.github/verify-prebuilts/verify.sh" llvm-23.1.2-1 llvm-22.1.5-1 llvm-22.1.6-1 llvm-22.1.7-1 llvm-22.1.7-2 llvm-22.1.8-1 llvm-21.1.8-10 llvm-23.1.0-rc1-1 llvm-23.1.0-1 llvm-22.1.8-2 llvm-23.1.0-2 llvm-23.1.0-3 llvm-23.1.0-4 llvm-23.1.2-1
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: rebuilt-llvm-23.1.2-1
+          path: src/release/
+          if-no-files-found: ignore
