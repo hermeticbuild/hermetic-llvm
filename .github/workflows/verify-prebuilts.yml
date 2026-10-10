@@ -27,24 +27,14 @@ jobs:
       max-parallel: 3
       matrix:
         include:
+          # Bootstrapping from the original seed shows whether stage 2, and
+          # thus the FDO training actions, depend on the seed.
           - tag: llvm-23.1.2-1
             sha: 90a3a2fc9a296146c9b054faf6a5ca807b0430f7
-          - tag: llvm-23.1.0-4
-            sha: a8135d96191c856c45f6a64a1743a17e46a4baca
-          - tag: llvm-22.1.8-2
-            sha: e768d7589c1d0a6c6aa7aac61c24bd423a3e9efd
-          - tag: llvm-23.1.0-3
-            sha: ab6bd645c759585112fde74540b7ebeb26ac56a7
-          - tag: llvm-23.1.0-2
-            sha: 63757394db1e312b35ed98df4eb64f79fb38f908
-          - tag: llvm-23.1.0-1
-            sha: c872f50d272ae7c0a59f8f49c31fa6e1cad25f6f
-          - tag: llvm-23.1.0-rc1-1
-            sha: 627850996ab873cdb18d14c288304669ff6d2e12
-          - tag: llvm-21.1.8-10
-            sha: c6e45dfcb71009ac44b66386fe83e0e0b9cdfb2d
+            keep_seed: 1
           - tag: llvm-22.1.8-1
             sha: e086af4b77f850070d7b5db3523aece3ac6ecf9a
+            keep_seed: 0
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
@@ -59,10 +49,11 @@ jobs:
         working-directory: src
         env:
           TAG: ${{ matrix.tag }}
+          KEEP_SEED: ${{ matrix.keep_seed }}
           VERIFY_DIR: ${{ github.workspace }}/verify
         run: bash "$VERIFY_DIR/.github/verify-prebuilts/verify.sh" "$TAG" llvm-22.1.5-1 llvm-22.1.6-1 llvm-22.1.7-1 llvm-22.1.7-2 "$TAG"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        if: failure()
+        if: always()
         with:
           name: rebuilt-${{ matrix.tag }}
           path: |

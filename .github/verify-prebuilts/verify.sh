@@ -104,15 +104,20 @@ sys.exit(0 if ok else 1)
 PY
 }
 
-python3 "${VERIFY_DIR}/.github/verify-prebuilts/use_seed.py"
-git diff --stat
+seed="llvm-22.1.7-2"
+if [[ "${KEEP_SEED:-0}" == 1 ]]; then
+  seed="its original seed"
+else
+  python3 "${VERIFY_DIR}/.github/verify-prebuilts/use_seed.py"
+  git diff --stat
+fi
 
 build_log="${RUNNER_TEMP}/build.log"
 GITHUB_REF_NAME="${tag}" bash .github/workflows/llvm-prebuilt.sh 2>&1 | tee "${build_log}"
 
 failed=0
 summary="${GITHUB_STEP_SUMMARY:-/dev/stdout}"
-echo "## ${tag} ($(git rev-parse --short HEAD), bootstrapped from llvm-22.1.7-2)" >> "${summary}"
+echo "## ${tag} ($(git rev-parse --short HEAD), bootstrapped from ${seed})" >> "${summary}"
 
 # Only FDO training actions may have taken their results from a cache.
 echo "### Build" >> "${summary}"
