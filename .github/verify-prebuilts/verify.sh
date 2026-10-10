@@ -5,10 +5,15 @@
 #
 # Usage: verify.sh <release tag> <all release tags in chain order...>
 #
-# The build accepts no cached results, so every action is executed. Release
-# archives downloaded during the build must come from releases published before
-# the first release in the chain or from releases earlier in the chain, which
-# the preceding jobs have already verified.
+# Every action is executed except the FDO training actions, whose profile
+# counters depend on memory addresses and thus differ between runs. Those reuse
+# the results that the release build stored in the remote cache. A profile only
+# steers optimizations, so it cannot change what the rebuilt binaries do. The
+# execution log is checked to ensure that no other action used a cached result.
+#
+# Release archives downloaded during the build must come from releases published
+# before the first release in the chain or from releases earlier in the chain,
+# which the preceding jobs have already verified.
 #
 # The rebuilt archives must be identical to the published ones. The only
 # accepted difference is the link time that lld-link records in the COFF header
@@ -31,9 +36,10 @@ done
 cat >> "${HOME}/.bazelrc" <<EOF
 common --remote_header=x-buildbuddy-api-key=4jtaxdhxtyu4ylxdEwI7
 common --bes_header=x-buildbuddy-api-key=4jtaxdhxtyu4ylxdEwI7
-common --remote_instance_name=$(python3 -c "import uuid; print(uuid.uuid4())")
-common --noremote_accept_cached
+common --remote_accept_cached
+common --modify_execution_info=.*=+no-remote-cache,LLVMFDOProfile(Compile|Link)=-no-remote-cache
 common --noremote_upload_local_results
+common --execution_log_compact_file=${RUNNER_TEMP}/exec_log.zst
 EOF
 
 # Checks that a rebuilt archive differs from the published one only in the
@@ -100,15 +106,12 @@ failed=0
 summary="${GITHUB_STEP_SUMMARY:-/dev/stdout}"
 echo "## ${tag} ($(git rev-parse --short HEAD))" >> "${summary}"
 
-# Every action must have been executed, not taken from a cache.
+# Only FDO training actions may have taken their results from a cache.
 echo "### Build" >> "${summary}"
 while read -r line; do
   echo "- \`${line}\`" >> "${summary}"
-  if [[ "${line}" == *"cache hit"* ]]; then
-    echo "::error::Build used cached results: ${line}"
-    failed=1
-  fi
 done < <(grep -o -E 'INFO: [0-9]+ processes: .*' "${build_log}")
+zstd -dc "${RUNNER_TEMP}/exec_log.zst" | python3 "${VERIFY_DIR}/.github/verify-prebuilts/check_exec_log.py" >> "${summary}" || failed=1
 
 # Release archives downloaded during the build (bootstrap seeds and extras).
 echo "### Downloaded release archives" >> "${summary}"
