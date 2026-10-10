@@ -9,6 +9,10 @@
 # archives downloaded during the build must come from releases published before
 # the first release in the chain or from releases earlier in the chain, which
 # the preceding jobs have already verified.
+#
+# The rebuilt archives must be identical to the published ones. The only
+# accepted difference is the link time that lld-link records in the COFF header
+# of Windows executables when it is not told to omit it.
 
 set -euo pipefail
 
@@ -31,6 +35,63 @@ common --remote_instance_name=$(python3 -c "import uuid; print(uuid.uuid4())")
 common --noremote_accept_cached
 common --noremote_upload_local_results
 EOF
+
+# Checks that a rebuilt archive differs from the published one only in the
+# COFF TimeDateStamp of Windows executables.
+same_except_pe_timestamps() {
+  local name="$1" dir
+  dir="$(mktemp -d)"
+  curl -fsSL "https://github.com/hermeticbuild/hermetic-llvm/releases/download/${tag}/${name}" -o "${dir}/published.tar.zst" || return 1
+  mkdir "${dir}/published" "${dir}/rebuilt" || return 1
+  zstd -dc "${dir}/published.tar.zst" | tar -xf - -C "${dir}/published" || return 1
+  zstd -dc "release/${name}" | tar -xf - -C "${dir}/rebuilt" || return 1
+  # Names, sizes, modes and times of all entries must match exactly.
+  diff <(zstd -dc "${dir}/published.tar.zst" | tar -tvf -) <(zstd -dc "release/${name}" | tar -tvf -) || return 1
+  python3 - "${dir}/published" "${dir}/rebuilt" <<'PY'
+import os
+import struct
+import sys
+
+published, rebuilt = sys.argv[1], sys.argv[2]
+
+
+def without_coff_timestamp(data):
+    if data[:2] != b"MZ" or len(data) < 0x40:
+        return None
+    pe = struct.unpack_from("<I", data, 0x3C)[0]
+    if data[pe:pe + 4] != b"PE\0\0":
+        return None
+    data = bytearray(data)
+    data[pe + 8:pe + 12] = bytes(4)
+    return bytes(data)
+
+
+ok = True
+for root, _, files in os.walk(published):
+    for file in files:
+        path = os.path.join(root, file)
+        rel = os.path.relpath(path, published)
+        other = os.path.join(rebuilt, rel)
+        if os.path.islink(path) or os.path.islink(other):
+            if not (os.path.islink(path) and os.path.islink(other) and os.readlink(path) == os.readlink(other)):
+                print(f"{rel}: differs")
+                ok = False
+            continue
+        with open(path, "rb") as f:
+            a = f.read()
+        with open(other, "rb") as f:
+            b = f.read()
+        if a == b:
+            continue
+        normalized = without_coff_timestamp(a)
+        if normalized is not None and normalized == without_coff_timestamp(b):
+            print(f"{rel}: differs only in the COFF TimeDateStamp")
+        else:
+            print(f"{rel}: differs")
+            ok = False
+sys.exit(0 if ok else 1)
+PY
+}
 
 build_log="${RUNNER_TEMP}/build.log"
 GITHUB_REF_NAME="${tag}" bash .github/workflows/llvm-prebuilt.sh 2>&1 | tee "${build_log}"
@@ -82,15 +143,20 @@ fi
 echo "### Archives" >> "${summary}"
 published="${RUNNER_TEMP}/published-SHA256.txt"
 curl -fsSL "https://github.com/hermeticbuild/hermetic-llvm/releases/download/${tag}/SHA256.txt" -o "${published}"
-echo "| Archive | Published | Rebuilt |" >> "${summary}"
-echo "| --- | --- | --- |" >> "${summary}"
+echo "| Archive | Published | Rebuilt | Result |" >> "${summary}"
+echo "| --- | --- | --- | --- |" >> "${summary}"
 while read -r expected name; do
   actual="$(awk -v n="${name}" '$2 == n {print $1}' release/SHA256.txt)"
-  echo "| ${name} | \`${expected:0:12}\` | \`${actual:0:12}\` $([[ "${actual}" == "${expected}" ]] && echo ✅ || echo ❌) |" >> "${summary}"
-  if [[ "${actual}" != "${expected}" ]]; then
+  if [[ "${actual}" == "${expected}" ]]; then
+    result="✅ identical"
+  elif [[ -n "${actual}" ]] && same_except_pe_timestamps "${name}"; then
+    result="✅ identical except the link time in Windows executables"
+  else
+    result="❌ different"
     echo "::error::${name} differs from the published archive (published ${expected}, rebuilt ${actual:-missing})"
     failed=1
   fi
+  echo "| ${name} | \`${expected:0:12}\` | \`${actual:0:12}\` | ${result} |" >> "${summary}"
 done < "${published}"
 if [[ "$(wc -l < release/SHA256.txt)" != "$(wc -l < "${published}")" ]]; then
   echo "::error::The rebuild produced a different set of archives than the release"
