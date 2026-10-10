@@ -1,6 +1,6 @@
 load("@bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
 load("//prebuilt:platforms.bzl", "PLATFORMS")
-load("//prebuilt/llvm:llvm_release.bzl", "llvm_release")
+load("//prebuilt/llvm:llvm_release.bzl", "exec_configured_file", "llvm_release")
 
 llvm_release(name = "llvm_release")
 
@@ -41,4 +41,39 @@ llvm_release(
         ("amd64", "x86_64"),
         ("arm64", "aarch64"),
     ]
+]
+
+# Instrumented Stage 2 archives for FDO training on a host of each platform, see
+# .github/workflows/llvm-prebuilt-pgo.yml. Stage 2 is only instrumented in an
+# exec configuration, so it is built for the host as an execution platform:
+# pass --extra_execution_platforms=<platform>.
+_FDO_TRAINING_HOSTS = {
+    "darwin-arm64": [
+        "@platforms//cpu:aarch64",
+        "@platforms//os:macos",
+    ],
+    "windows-amd64-msvc": [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:windows",
+        "//constraints/windows/abi:msvc",
+    ],
+}
+
+[
+    exec_configured_file(
+        name = "instrumented_stage2_llvm_" + host,
+        src = "//toolchain/bootstrap/stage2:llvm",
+        exec_compatible_with = constraints,
+        tags = ["manual"],
+    )
+    for host, constraints in _FDO_TRAINING_HOSTS.items()
+]
+
+[
+    llvm_release(
+        name = "instrumented_stage2_" + host,
+        bin_suffix = ".exe" if host.startswith("windows") else "",
+        llvm = ":instrumented_stage2_llvm_" + host,
+    )
+    for host in _FDO_TRAINING_HOSTS
 ]

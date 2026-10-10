@@ -1,0 +1,206 @@
+name: LLVM Prebuilt PGO
+
+# Builds the LLVM prebuilts with FDO profiles trained on a host of their own
+# platform. For macOS and Windows hosts:
+#   1. stage2: build the instrumented Stage 2 for the host, on Linux with
+#      BuildBuddy remote execution;
+#   2. train: run the FDO training workloads with it, split across several
+#      runners of the host (shards);
+#   3. stage3: build the release archives with the merged profile, on Linux
+#      with BuildBuddy remote execution.
+# Linux prebuilts train on BuildBuddy workers of their own architecture within
+# their Stage 3 build (stage3-buildbuddy). The release job collects every
+# archive with its checksums. See llvm-prebuilt-pgo.sh for the hosts.
+#
+# Runs manually for now, alongside the llvm-prebuilt.yml release workflow.
+
+on:
+  workflow_dispatch:
+    inputs:
+      hosts:
+        description: "Space-separated hosts: linux-amd64 linux-arm64 darwin-arm64 windows-amd64-msvc"
+        default: "linux-amd64 linux-arm64 darwin-arm64 windows-amd64-msvc"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: llvm-prebuilt-pgo-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  HOSTS: ${{ inputs.hosts || 'linux-amd64 linux-arm64 darwin-arm64 windows-amd64-msvc' }}
+
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      host_trained: ${{ steps.matrix.outputs.host_trained }}
+      training_shards: ${{ steps.matrix.outputs.training_shards }}
+      buildbuddy_trained: ${{ steps.matrix.outputs.buildbuddy_trained }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - id: matrix
+        run: bash .github/workflows/llvm-prebuilt-pgo.sh matrix "${HOSTS}" >> "${GITHUB_OUTPUT}"
+
+  stage2:
+    needs: matrix
+    if: ${{ needs.matrix.outputs.host_trained != '[]' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.matrix.outputs.host_trained) }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Mount bazel caches
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.cache/bazel-repo
+          key: llvm-prebuilt-pgo-bazel-${{ runner.os }}-${{ github.ref_name }}
+          restore-keys: llvm-prebuilt-pgo-bazel-${{ runner.os }}
+
+      - name: Build instrumented Stage 2
+        run: bash .github/workflows/llvm-prebuilt-pgo.sh stage2 "${{ matrix.host }}"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: stage2-${{ matrix.host }}
+          path: release/stage2-${{ matrix.host }}.tar.zst
+          retention-days: 7
+
+  train:
+    needs: [matrix, stage2]
+    # A matrix job waits for every host of the jobs it needs. Keep going for
+    # the other hosts when one fails: a host without an artifact fails alone.
+    if: ${{ !cancelled() && needs.matrix.result == 'success' && needs.matrix.outputs.host_trained != '[]' }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.matrix.outputs.training_shards) }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      # Keep Git Bash from rewriting //labels as Windows paths.
+      MSYS_NO_PATHCONV: "1"
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: stage2-${{ matrix.host }}
+          path: ${{ runner.temp }}/stage2-archive
+
+      - name: Free disk space
+        if: runner.os == 'macOS'
+        run: |
+          df -h /
+          # Only the default Xcode is used, for nothing but Bazel's host setup.
+          find /Applications -maxdepth 1 -name 'Xcode_*.app' ! -samefile "$(xcode-select -p)/../.." -exec sudo rm -rf {} + || true
+          sudo rm -rf ~/Library/Android /Library/Developer/CoreSimulator ~/Library/Developer/CoreSimulator || true
+          df -h /
+
+      - name: Train shard ${{ matrix.shard }} of ${{ matrix.shards }}
+        run: bash .github/workflows/llvm-prebuilt-pgo.sh train "${{ matrix.host }}" "${RUNNER_TEMP}/stage2-archive" "${{ matrix.shard }}" "${{ matrix.shards }}" 2>&1 | tee "${RUNNER_TEMP}/train.log"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: train-log-${{ matrix.host }}-${{ matrix.shard }}
+          path: ${{ runner.temp }}/train.log
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: profile-${{ matrix.host }}-${{ matrix.shard }}
+          path: release/profile-${{ matrix.host }}-${{ matrix.shard }}.profdata
+          retention-days: 30
+
+  stage3:
+    needs: [matrix, train]
+    if: ${{ !cancelled() && needs.matrix.result == 'success' && needs.matrix.outputs.host_trained != '[]' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.matrix.outputs.host_trained) }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Mount bazel caches
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.cache/bazel-repo
+          key: llvm-prebuilt-pgo-bazel-${{ runner.os }}-${{ github.ref_name }}
+          restore-keys: llvm-prebuilt-pgo-bazel-${{ runner.os }}
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: profile-${{ matrix.host }}-*
+          path: toolchain/bootstrap/external_fdo_profile
+          merge-multiple: true
+
+      - name: Build Stage 3 with the profile
+        run: bash .github/workflows/llvm-prebuilt-pgo.sh stage3 "${{ matrix.host }}"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: llvm-toolchain-minimal-${{ matrix.host }}
+          path: release/*.tar.zst
+
+  stage3-buildbuddy:
+    needs: matrix
+    if: ${{ needs.matrix.outputs.buildbuddy_trained != '[]' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.matrix.outputs.buildbuddy_trained) }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Mount bazel caches
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.cache/bazel-repo
+          key: llvm-prebuilt-pgo-bazel-${{ runner.os }}-${{ github.ref_name }}
+          restore-keys: llvm-prebuilt-pgo-bazel-${{ runner.os }}
+
+      - name: Train and build Stage 3
+        run: bash .github/workflows/llvm-prebuilt-pgo.sh stage3 "${{ matrix.host }}"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: llvm-toolchain-minimal-${{ matrix.host }}
+          path: release/*.tar.zst
+
+  release:
+    needs: [stage3, stage3-buildbuddy]
+    # Collects whatever archives the hosts produced, even when some failed.
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: llvm-toolchain-minimal-*
+          path: release
+          merge-multiple: true
+
+      - name: Write checksums
+        run: bash .github/workflows/llvm-prebuilt-pgo.sh checksums release
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: llvm-toolchain-minimal-release
+          path: |
+            release/*.tar.zst
+            release/SHA256.txt

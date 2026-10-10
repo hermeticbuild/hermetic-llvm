@@ -38,13 +38,102 @@ uses the host-architecture glibc execution platform. Pass `--config=release`
 after `--config=remote`, as the release scripts do, to override it with the
 x86_64 and aarch64 musl execution platforms.
 
-Windows MSVC Stage 3 binaries use ThinLTO but do not use FDO. Profile generation
-runs the instrumented compiler process, not the target program it emits. The
-available profile executors are Linux binaries and therefore record Itanium C++
+Windows MSVC Stage 3 binaries use ThinLTO, and FDO only with a profile trained
+on Windows. Profile generation runs the instrumented compiler process, not the
+target program it emits. The profiles of the Linux executors record Itanium C++
 linkage names, which do not match the Microsoft C++ linkage names in a Windows
-MSVC LLVM binary. Clang profile remapping does not support the Windows C++ ABI.
-MSVC FDO must remain unsupported until training can execute an instrumented
-Windows LLVM binary and demonstrate profile application to named C++ functions.
+MSVC LLVM binary, and Clang profile remapping does not support the Windows C++
+ABI. A profile trained by an instrumented MSVC-ABI LLVM binary on Windows applies
+with `--//toolchain/bootstrap:use_external_fdo_profile`, see below.
+
+## FDO training workloads
+
+LLVM prebuilts cross-compile to every supported target, so each training
+executor runs every target through the instrumented Stage 2 compiler.
+`_LLVM_FDO_EXECUTORS` in `stage3/BUILD.bazel` lists the executors; each one
+produces its own profile, `llvm_fdo_profdata_<executor>`. The Linux executors
+are BuildBuddy workers. The macOS and Windows executors are the host running the
+build, and their targets are manual: they train with
+`--//toolchain/bootstrap:fdo_training_compiler=prebuilt`, which runs the host's
+Stage 0 prebuilt, replaced by an instrumented Stage 2 archive through
+`--override_repository`.
+
+`llvm_fdo_profile_workload` in `fdo_profile.bzl` compiles for one target
+platform. Hosted targets run these passes:
+
+| Pass | Input | Flags | Trains |
+| --- | --- | --- | --- |
+| `lto` | zstd compressor (C) | `-O3 -flto=thin`, ThinLTO link | Frontend and IR optimizer; ThinLTO backend, codegen and linker |
+| `debug` | zstd compressor (C) | `-O0 -g`, link with debug info | `-O0` codegen, debug info emission, linker debug info: CodeView and a PDB on Windows, a dSYM from `dsymutil` on macOS |
+| `cxx_O2` | LLVM `Support` (C++) | `-O2` | C++ frontend, templates, optimized codegen |
+| `cxx_O0_g` | LLVM `Support` (C++) | `-O0 -g` | C++ debug builds |
+
+Freestanding targets (BPF, wasm) compile a small C function at `-O3`, and at
+`-O2 -g`, the flags BPF programs use to emit BTF.
+
+`Support` is also what LLVM's own `clang/utils/perf-training` builds. Its
+sources, include paths and defines come from the `@llvm-project//llvm:Support`
+target configured for the workload's target platform.
+
+MSVC-ABI targets use clang-cl flags (`/O2`, `/Od /Z7`, `/DEBUG /PDB:`). On the
+Windows executor they train the MSVC-ABI LLVM binary itself; in the other
+profiles they cover MSVC-target code paths such as the Microsoft C++ ABI,
+CodeView and PDB output.
+
+Workloads keep the release configuration's `thin_lto`, `no_exceptions` and
+`no_rtti` features out of their commands: each pass chooses its own LTO mode,
+and C++ input keeps exceptions and RTTI like typical user code.
+
+Each training pass is one action, like LLVM's `perf-training`: it runs the
+pass's compiles in parallel, then its link. Every instrumented process (the
+driver, lld, and `dsymutil` for macOS debug links) merges online into a pool of
+raw profiles (`LLVM_PROFILE_FILE=<dir>/%8m.profraw`), and the action outputs
+only the pass's sparse indexed profile. The C++ passes run in chunks of about
+24 sources, one action each: 206 training units per executor.
+`llvm_fdo_profile_data` merges the profiles of the units.
+
+`--//toolchain/bootstrap:fdo_training_shard=<index>/<count>` makes
+`llvm_fdo_profile_data` merge, and so build, only the units of one shard, chosen
+by a hash of their names. The workloads keep one configuration across shards,
+so the shards share their runtimes in the remote cache.
+`--//toolchain/bootstrap:use_external_fdo_profile` builds Stage 3, including
+MSVC-ABI binaries, with the profiles placed in
+`//toolchain/bootstrap/external_fdo_profile`, merged.
+
+### Training on other hosts
+
+`.github/workflows/llvm-prebuilt-pgo.yml` trains on a host of the prebuilt's
+own platform, so macOS and Windows prebuilts get a profile of themselves rather
+than of the Linux binaries:
+
+1. On Linux with BuildBuddy, `//prebuilt/llvm:instrumented_stage2_<host>`
+   packages the instrumented Stage 2 for the host. Stage 2 is instrumented only
+   in an exec configuration, so it is built with the host's platform appended to
+   `--extra_execution_platforms`.
+2. On a runner of the host, the archive replaces the host's Stage 0 repository
+   (`--override_repository`), and `llvm_fdo_profdata_<executor>` is built with
+   `--//toolchain/bootstrap:fdo_training_compiler=prebuilt`. The workloads run
+   on the runner; the target runtimes they link build on BuildBuddy.
+3. On Linux with BuildBuddy, the release archives are built with
+   `--//toolchain/bootstrap:use_external_fdo_profile`, which applies the profile
+   placed in `//toolchain/bootstrap/external_fdo_profile`.
+
+Prebuilts train on their own host, or reuse a profile of the other
+architecture of their OS: the training cross-compiles to every target on any
+host, and the function names match across architectures.
+
+| Prebuilt | Training host |
+| --- | --- |
+| Linux x86_64, arm64 | BuildBuddy workers of the architecture, within the Stage 3 build |
+| macOS arm64 | `macos-15` runners, 4 shards |
+| macOS x86_64 | reuses the macOS arm64 profile |
+| Windows x86_64 (MSVC ABI) | `windows-2025` runners, 6 shards |
+| Windows arm64 (MSVC ABI) | reuses the Windows x86_64 profile |
+
+The training jobs of a host each train one shard, and Stage 3 merges the
+profiles of all shards.
+
+A final job collects every archive with its checksums.
 
 ## Compiler resource headers
 

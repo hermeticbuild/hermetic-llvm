@@ -26,7 +26,6 @@ _UNSUPPORTED_FEATURES = [
     "coverage",
     "dfsan",
     "fission",
-    "fdo_optimize",
     "fully_static_link",
     "fuzzer",
     "gcc_coverage_map_format",
@@ -50,7 +49,6 @@ _UNSUPPORTED_FEATURES = [
 
 _UNSUPPORTED_LEGACY_FEATURES = {
     "coverage": "@rules_cc//cc/toolchains/features/legacy:coverage",
-    "fdo_optimize": "@rules_cc//cc/toolchains/features/legacy:fdo_optimize",
     "fully_static_link": "@rules_cc//cc/toolchains/features/legacy:fully_static_link",
     "gcc_coverage_map_format": "@rules_cc//cc/toolchains/features/legacy:gcc_coverage_map_format",
     "llvm_coverage_map_format": "@rules_cc//cc/toolchains/features/legacy:llvm_coverage_map_format",
@@ -194,6 +192,18 @@ cc_feature(
 config_setting(
     name = "static_crt_config",
     values = {"features": "static_link_msvcrt"},
+)
+
+# MSVC-ABI builds that link the C runtime statically. The LLVM binaries use
+# mimalloc as their allocator there.
+config_setting(
+    name = "windows_msvc_static_crt",
+    constraint_values = [
+        "@platforms//os:windows",
+        "//constraints/windows/abi:msvc",
+    ],
+    values = {"features": "static_link_msvcrt"},
+    visibility = ["//visibility:public"],
 )
 
 cc_mutually_exclusive_category(

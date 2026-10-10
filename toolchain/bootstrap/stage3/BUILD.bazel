@@ -2,19 +2,86 @@ load("//platforms:common.bzl", "SUPPORTED_TARGETS")
 load("//toolchain/bootstrap:bootstrap_binary.bzl", "bootstrap_binaries")
 load("//toolchain/bootstrap:fdo_profile.bzl", "llvm_fdo_profile_data", "llvm_fdo_profile_workload")
 
+# Hosts that run the instrumented stage2 LLVM on the training workloads. Each
+# one trains every target, since the LLVM it profiles cross-compiles to all of
+# them, and produces its own profile, llvm_fdo_profdata_<executor>.
+#
+# Linux executors are BuildBuddy workers. The others are the host running the
+# build, for multi-host training (.github/workflows/llvm-prebuilt-pgo.yml):
+# their workloads run locally with
+# --//toolchain/bootstrap:fdo_training_compiler=prebuilt, and are manual.
 _LLVM_FDO_EXECUTORS = {
     "linux_aarch64": {
         "buildbuddy_arch": "arm64",
         "cpu": "aarch64",
+        "os": "linux",
     },
     "linux_x86_64": {
         "buildbuddy_arch": "amd64",
         "cpu": "x86_64",
+        "os": "linux",
+    },
+    "macos_aarch64": {
+        "cpu": "aarch64",
+        "os": "macos",
+    },
+    "windows_x86_64": {
+        "cpu": "x86_64",
+        "os": "windows",
     },
 }
 
+# Training targets: (name, target platform). MSVC-ABI targets are trained with
+# clang-cl, like MSVC-style Windows builds.
+_LLVM_FDO_TARGETS = [
+    (
+        "%s_%s" % (target_os, target_cpu),
+        "//platforms:%s_%s" % (target_os, target_cpu),
+    )
+    for target_os, target_cpu in SUPPORTED_TARGETS
+] + [
+    (
+        "windows_%s_msvc" % target_cpu,
+        "//platforms:windows_%s_msvc" % target_cpu,
+    )
+    for target_cpu in [
+        "aarch64",
+        "x86_64",
+    ]
+]
+
+config_setting(
+    name = "use_external_fdo_profile",
+    flag_values = {"//toolchain/bootstrap:use_external_fdo_profile": "true"},
+)
+
+# Specializations of both :use_external_fdo_profile and the MSVC platform
+# settings, so an external profile also applies to MSVC-ABI binaries.
+[
+    config_setting(
+        name = "windows_%s_msvc_with_external_fdo_profile" % target_cpu,
+        constraint_values = [
+            "@platforms//cpu:" + target_cpu,
+            "@platforms//os:windows",
+            "//constraints/windows/abi:msvc",
+        ],
+        flag_values = {"//toolchain/bootstrap:use_external_fdo_profile": "true"},
+    )
+    for target_cpu in [
+        "aarch64",
+        "x86_64",
+    ]
+]
+
 bootstrap_binaries(
     fdo_profile = select({
+        # A profile trained on another host, see
+        # //toolchain/bootstrap:use_external_fdo_profile.
+        ":use_external_fdo_profile": "//toolchain/bootstrap:external_fdo_profile",
+        ":windows_aarch64_msvc_with_external_fdo_profile": "//toolchain/bootstrap:external_fdo_profile",
+        ":windows_x86_64_msvc_with_external_fdo_profile": "//toolchain/bootstrap:external_fdo_profile",
+        # The profile of this build comes from instrumented Linux LLVM binaries,
+        # whose Itanium C++ names do not match the MSVC-ABI LLVM binaries.
         "//platforms/config:windows_aarch64_msvc": None,
         "//platforms/config:windows_x86_64_msvc": None,
         "//conditions:default": ":llvm_fdo_profdata",
@@ -24,35 +91,36 @@ bootstrap_binaries(
 
 [
     llvm_fdo_profile_workload(
-        name = "llvm_fdo_profile_workload_%s_to_%s_%s" % (executor, target_os, target_cpu),
-        srcs = ":fdo_freestanding.c" if target_os == "none" else "@llvm_fdo_zstd//:zstd_compress_files",
+        name = "llvm_fdo_profile_workload_%s_to_%s" % (executor, target),
+        srcs = ":fdo_freestanding.c" if target.startswith("none_") else "@llvm_fdo_zstd//:zstd_compress_files",
+        # Hosted targets also compile LLVM's Support library as C++ input.
+        cxx_library = None if target.startswith("none_") else "@llvm-project//llvm:Support",
         exec_compatible_with = [
             "@platforms//cpu:" + executor_config["cpu"],
-            "@platforms//os:linux",
+            "@platforms//os:" + executor_config["os"],
         ],
         exec_properties = {
             "Arch": executor_config["buildbuddy_arch"],
-        },
-        target_platform = "//platforms:%s_%s" % (target_os, target_cpu),
-        workload_kind = "freestanding" if target_os == "none" else "hosted",
+        } if "buildbuddy_arch" in executor_config else {},
+        tags = [] if "buildbuddy_arch" in executor_config else ["manual"],
+        target_platform = target_platform,
+        workload_kind = "freestanding" if target.startswith("none_") else "hosted",
     )
     for executor, executor_config in _LLVM_FDO_EXECUTORS.items()
-    for target_os, target_cpu in SUPPORTED_TARGETS
+    for target, target_platform in _LLVM_FDO_TARGETS
 ]
 
 [
     llvm_fdo_profile_data(
-        name = "llvm_fdo_profdata_linux_" + executor_cpu,
+        name = "llvm_fdo_profdata_" + executor,
         profiles = [
-            "llvm_fdo_profile_workload_linux_%s_to_%s_%s" % (executor_cpu, target_os, target_cpu)
-            for target_os, target_cpu in SUPPORTED_TARGETS
+            "llvm_fdo_profile_workload_%s_to_%s" % (executor, target)
+            for target, _ in _LLVM_FDO_TARGETS
         ],
+        tags = [] if "buildbuddy_arch" in _LLVM_FDO_EXECUTORS[executor] else ["manual"],
         visibility = ["//visibility:public"],
     )
-    for executor_cpu in [
-        "aarch64",
-        "x86_64",
-    ]
+    for executor in _LLVM_FDO_EXECUTORS
 ]
 
 alias(

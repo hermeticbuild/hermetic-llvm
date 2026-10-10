@@ -3175,6 +3175,12 @@ cc_library(
     copts = SANITIZER_COMMON_CFLAGS + [
         "-fvisibility=hidden",
     ],
+    features = select({
+        # clang-cl links the profile runtime from its resource directory,
+        # outside Bazel's LTO compilation context, like the builtins.
+        ":windows_msvc": ["-thin_lto"],
+        "//conditions:default": [],
+    }),
     implementation_deps = [
         ":sanitizers_interface_headers",
     ] + select({
@@ -3192,6 +3198,7 @@ cc_library(
             "@glibc//:gnu_libc_headers",
         ],
         "@platforms//os:macos": [],
+        ":windows_msvc": [],
         "@platforms//os:windows": [
             "@mingw//:mingw_headers",
         ],
