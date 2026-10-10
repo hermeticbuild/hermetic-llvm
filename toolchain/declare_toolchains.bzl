@@ -1,6 +1,6 @@
 load("//platforms:common.bzl", "MSVC_TARGET_STAGE0_SUPPORTED_EXECS", "SUPPORTED_EXECS", "SUPPORTED_TARGETS")
 load("//toolchain:merged_resource_directory.bzl", "merged_resource_directory")
-load("//toolchain:selects.bzl", "platform_cc_tool_map", "platform_module_map", "platform_resource_dir")
+load("//toolchain:selects.bzl", "platform_cc_tool_map", "platform_module_map", "platform_resource_dir", "platform_resource_include_dir")
 load("//toolchain/args:resource_directory_args.bzl", "resource_directory_args")
 load(":cc_toolchain.bzl", "cc_toolchain")
 
@@ -24,6 +24,7 @@ def declare_toolchains(*, execs = SUPPORTED_EXECS, targets = SUPPORTED_TARGETS):
         resource_directory_args(
             name = cc_toolchain_name + "_resource_directory_args",
             compile_directory = platform_resource_dir(exec_os, exec_cpu),
+            compile_include_directory = platform_resource_include_dir(exec_os, exec_cpu),
             link_directory = cc_toolchain_name + "_resource_directory",
         )
 
