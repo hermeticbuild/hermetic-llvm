@@ -1,4 +1,5 @@
 load("@bazel_skylib//rules/directory:directory.bzl", "directory")
+load("@llvm//3rd_party/macos_sdk:sdk_headers.bzl", "macos_sdk_libcxx_headers")
 load(":host_sdk_config.bzl", "HOST_SDK_EXCLUDES", "HOST_SDK_INCLUDES")
 
 directory(
@@ -10,3 +11,5 @@ directory(
     ),
     visibility = ["//visibility:public"],
 )
+
+macos_sdk_libcxx_headers()
