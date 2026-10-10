@@ -16,6 +16,7 @@ load(
     "//:defs.bzl",
     "asan_cc_binary",
     "asan_cc_test",
+    "asan_fission_cc_binary",
     "cfi_cc_binary",
     "dfsan_cc_binary",
     "external_include_paths_glibc_alias",
@@ -752,6 +753,26 @@ sh_test(
     srcs = ["fission_debug_package_test.sh"],
     data = [":fission_main.dwp"],
     env = {"DWP": "$(rootpath :fission_main.dwp)"},
+    target_compatible_with = _FISSION_TEST_COMPATIBLE,
+)
+
+# ASan links the internal symbolizer, whose objects are LTO bitcode and so
+# never produce a .dwo. Fission must still build.
+asan_fission_cc_binary(
+    name = "asan_fission_main",
+    srcs = ["main.cc"],
+    target_compatible_with = _FISSION_TEST_COMPATIBLE,
+)
+
+sh_test(
+    name = "asan_fission_debug_package_test",
+    srcs = ["fission_debug_package_test.sh"],
+    # The binary, not just its .dwp, so the ASan runtime is linked.
+    data = [
+        ":asan_fission_main",
+        ":asan_fission_main.dwp",
+    ],
+    env = {"DWP": "$(rootpath :asan_fission_main.dwp)"},
     target_compatible_with = _FISSION_TEST_COMPATIBLE,
 )
 

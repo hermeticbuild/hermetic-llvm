@@ -8,6 +8,7 @@ def _reset_sanitizers_impl(settings, attr):
         "//command_line_option:cxxopt": settings["//command_line_option:cxxopt"] + attr.cxxopts,
         "//command_line_option:platforms": str(attr.platform) if attr.platform else settings["//command_line_option:platforms"],
         "@llvm-project//third-party:llvm_enable_zstd": False if attr.disable_zstd else settings["@llvm-project//third-party:llvm_enable_zstd"],
+        "//command_line_option:fission": [] if attr.disable_fission else settings["//command_line_option:fission"],
         "//config:ubsan": False,
         "//config:cfi": False,
         "//config:msan": False,
@@ -43,12 +44,14 @@ _reset_sanitizers = transition(
     inputs = [
         "//command_line_option:copt",
         "//command_line_option:cxxopt",
+        "//command_line_option:fission",
         "//command_line_option:platforms",
         "@llvm-project//third-party:llvm_enable_zstd",
     ],
     outputs = [
         "//command_line_option:copt",
         "//command_line_option:cxxopt",
+        "//command_line_option:fission",
         "//command_line_option:platforms",
         "@llvm-project//third-party:llvm_enable_zstd",
         "//config:ubsan",
@@ -108,6 +111,9 @@ cc_unsanitized_library = rule(
             cfg = _reset_sanitizers,
             providers = [CcInfo],
             aspects = [graph_structure_aspect],
+        ),
+        "disable_fission": attr.bool(
+            doc = "Compile without fission. Set when copts make the objects LTO bitcode, which never produce a .dwo.",
         ),
         "disable_zstd": attr.bool(),
         "platform": attr.label(),

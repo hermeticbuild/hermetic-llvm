@@ -107,6 +107,20 @@ fission_cc_binary, _fission_cc_binary_internal = with_cfg(cc_binary).set(
     ["dbg"],
 ).build()
 
+asan_fission_cc_binary, _asan_fission_cc_binary_internal = with_cfg(cc_binary).set(
+    Label("@llvm//config:asan"),
+    True,
+).set(
+    Label("@llvm//config:host_asan"),
+    True,
+).set(
+    "compilation_mode",
+    "dbg",
+).set(
+    "fission",
+    ["dbg"],
+).build()
+
 nsan_cc_binary, _nsan_cc_binary_internal = with_cfg(cc_binary).set(
     Label("@llvm//config:nsan"),
     True,
