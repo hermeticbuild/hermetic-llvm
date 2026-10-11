@@ -989,9 +989,10 @@ cc_args(
     actions = [
         "@rules_cc//cc/toolchains/actions:link_actions",
     ],
-    args = [
-        "-rtlib=compiler-rt",
-    ],
+    args = select({
+        "@platforms//os:macos": [],
+        "//conditions:default": ["-rtlib=compiler-rt"],
+    }),
 )
 
 cc_args(
