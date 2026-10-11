@@ -78,12 +78,16 @@ cc_library(
     ] + [
         # LIBCXXABI_ENABLE_NEW_DELETE_DEFINITIONS
         "src/stdlib_new_delete.cpp",
-    ] + [
+    ] + select({
         # LIBCXXABI_ENABLE_EXCEPTIONS
-        "src/cxa_exception.cpp",
-        "src/cxa_personality.cpp",
-        # src/cxa_noexception.cpp
-    ] + [
+        "@llvm//runtimes:exceptions_disabled": [
+            "src/cxa_noexception.cpp",
+        ],
+        "//conditions:default": [
+            "src/cxa_exception.cpp",
+            "src/cxa_personality.cpp",
+        ],
+    }) + [
         # LIBCXXABI_ENABLE_THREADS
         "src/cxa_thread_atexit.cpp",
     ],
@@ -93,9 +97,11 @@ cc_library(
     copts = [
         "-std=c++23",
         "-fstrict-aliasing",
-        "-funwind-tables",  # if exceptions
-        # "-fno-exceptions", # if no exceptions
     ] + select({
+        # LIBCXXABI_ENABLE_EXCEPTIONS
+        "@llvm//runtimes:exceptions_disabled": ["-fno-exceptions"],
+        "//conditions:default": ["-funwind-tables"],
+    }) + select({
         "@platforms//os:windows": [
             "-Wno-pragma-pack",
             "-Wno-unused-value",
