@@ -3,22 +3,34 @@
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
 
-def resource_directory_args(name, compile_directory, link_directory):
+def resource_directory_args(name, compile_directory, link_directory, compile_include_directory = None):
     """Declare compiler-native compile and fully assembled link directories.
 
     Args:
         name: Name of the stage-gated argument group.
         compile_directory: Resource directory belonging to the selected compiler.
         link_directory: Label of an already assembled resource directory.
+        compile_include_directory: Builtin header include directory under compile_directory.
     """
+    if compile_include_directory == None:
+        compile_include_directory = compile_directory
     cc_args(
         name = name + "_compile",
         actions = ["@rules_cc//cc/toolchains/actions:source_compile_actions"],
-        # Keep this semantic for driver-independent consumers such as bindgen,
-        # which cannot discover the selected compiler's adjacent resources.
-        args = ["-resource-dir={directory}"],
+        args = select({
+            "@llvm//constraints/windows/abi:msvc": [
+                "/clang:-nobuiltininc",
+                "/imsvc{include_directory}",
+            ],
+            "//conditions:default": [
+                "-Xclang",
+                "-internal-isystem",
+                "-Xclang",
+                "{include_directory}",
+            ],
+        }),
         data = [compile_directory],
-        format = {"directory": compile_directory},
+        format = {"include_directory": compile_include_directory},
     )
 
     cc_args(

@@ -38,7 +38,9 @@ cc_args(
         "@kernel_headers//:kernel_headers_directory",
     ],
     args = [
-        "-isystem",
+        "-Xclang",
+        "-internal-isystem",
+        "-Xclang",
         "{kernel_headers_include_search_path}",
     ],
     data = [
@@ -60,7 +62,9 @@ cc_args(
     ],
     args = [
         # "__GLIBC_MINOR__={d}", version.minor
-        "-isystem",
+        "-Xclang",
+        "-internal-isystem",
+        "-Xclang",
         "{libc_headers_include_search_path}",
     ],
     data = [
@@ -131,7 +135,9 @@ cc_args(
         "//toolchain:source_compile_actions",
     ],
     args = [
-        "-isystem",
+        "-Xclang",
+        "-internal-isystem",
+        "-Xclang",
         "{libc_headers_include_search_path}",
     ],
     data = [
