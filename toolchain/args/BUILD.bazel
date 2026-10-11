@@ -335,6 +335,23 @@ cc_args(
     },
 )
 
+# See //config:sanitizer_strip_foreign_source_paths. Only applies to compile
+# command lines without a `source_file`, i.e. the flags exported to foreign
+# build systems, which compile with absolute paths.
+cc_args(
+    name = "ubsan_strip_foreign_source_paths_flags",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:compile_actions",
+    ],
+    args = select({
+        ":sanitizer_strip_foreign_source_paths": [
+            "-fsanitize-undefined-strip-path-components=-1",
+        ],
+        "//conditions:default": [],
+    }),
+    requires_none = "@rules_cc//cc/toolchains/variables:source_file",
+)
+
 # Note that sanitizers must use `cc_unsanitized_library` on third-party deps
 # if they end up depending on an exec-configure binary, as linking that binary can fail
 # since it was compiled with sanitizer support but linked without it.
@@ -353,6 +370,7 @@ cc_args_list(
     args = select({
         "//config:ubsan_enabled": [
             ":ubsan_compiler_flags",
+            ":ubsan_strip_foreign_source_paths_flags",
             ":ubsan_linker_flags",
         ],
         "//conditions:default": [],
@@ -723,6 +741,24 @@ cc_args(
     ],
 )
 
+# See //config:sanitizer_strip_foreign_source_paths. ASan has no equivalent of
+# -fsanitize-undefined-strip-path-components; the only way to keep the source
+# path out of the __asan_global metadata is to not instrument globals at all.
+cc_args(
+    name = "asan_strip_foreign_source_paths_flags",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:compile_actions",
+    ],
+    args = select({
+        ":sanitizer_strip_foreign_source_paths": [
+            "-mllvm",
+            "-asan-globals=0",
+        ],
+        "//conditions:default": [],
+    }),
+    requires_none = "@rules_cc//cc/toolchains/variables:source_file",
+)
+
 # Note that sanitizers must use `cc_unsanitized_library` on third-party deps
 # if they end up depending on an exec-configure binary, as linking that binary can fail
 # since it was compiled with sanitizer support but linked without it.
@@ -741,10 +777,12 @@ cc_args_list(
     args = select({
         "//config:asan_enabled": [
             ":asan_compiler_flags",
+            ":asan_strip_foreign_source_paths_flags",
             ":asan_linker_flags",
         ],
         "//config:host_asan_enabled": [
             ":asan_compiler_flags",
+            ":asan_strip_foreign_source_paths_flags",
             ":asan_linker_flags",
         ],
         "//conditions:default": [],
@@ -965,6 +1003,13 @@ config_setting(
     name = "empty_sysroot",
     flag_values = {
         "//config:empty_sysroot": "True",
+    },
+)
+
+config_setting(
+    name = "sanitizer_strip_foreign_source_paths",
+    flag_values = {
+        "//config:sanitizer_strip_foreign_source_paths": "True",
     },
 )
 
