@@ -171,6 +171,33 @@ def config_settings():
         build_setting_default = True,
     )
 
+    # This flag strips directory components from the source paths that ASan and
+    # UBSan embed in compiled objects, but only for compile command lines that
+    # carry no `source_file` variable.
+    #
+    # Bazel's own C/C++ actions always set `source_file` and pass workspace
+    # relative paths, so their sanitizer metadata is already reproducible and is
+    # left untouched. Command lines without a `source_file` are the ones other
+    # rule sets extract from this toolchain to drive a foreign build system
+    # (rules_foreign_cc for CMake/autotools, rules_rust's cargo_build_script via
+    # cc-rs, the $(CC_FLAGS) make variable). Those build systems typically
+    # compile with absolute paths, and neither -ffile-prefix-map nor
+    # -fdebug-prefix-map rewrites UBSan source locations or ASan global
+    # metadata, so the absolute execroot ends up in the artifact. rules_rust
+    # rejects such artifacts ("rlib embeds the absolute working directory").
+    #
+    # When enabled:
+    #   * UBSan: -fsanitize-undefined-strip-path-components=-1 (reports from
+    #     foreign code show the basename only).
+    #   * ASan: -mllvm -asan-globals=0 (foreign code loses global-buffer-overflow
+    #     detection; its globals are no longer described with file:line:col).
+    #
+    # Off by default because both are observable behavior changes.
+    bool_flag(
+        name = "sanitizer_strip_foreign_source_paths",
+        build_setting_default = False,
+    )
+
     for sanitizer in SANITIZERS:
         bool_flag(
             name = sanitizer,
