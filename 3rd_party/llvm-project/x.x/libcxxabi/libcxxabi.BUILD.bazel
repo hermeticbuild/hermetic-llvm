@@ -1,7 +1,7 @@
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@bazel_skylib//lib:selects.bzl", "selects")
-load("@llvm//toolchain/runtimes:cc_runtime_shared_library.bzl", "cc_runtime_stage0_shared_library")
-load("@llvm//toolchain/runtimes:cc_runtime_static_library.bzl", "cc_runtime_stage0_static_library")
+load("@llvm//toolchain/runtimes:cc_runtime_shared_library.bzl", "cc_runtime_stage0_msan_shared_library")
+load("@llvm//toolchain/runtimes:cc_runtime_static_library.bzl", "cc_runtime_stage0_msan_static_library")
 load("@llvm-project//:vars.bzl", "LLVM_VERSION_MAJOR")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 
@@ -161,7 +161,7 @@ cc_library(
     visibility = ["//compiler-rt:__pkg__"],
 )
 
-cc_runtime_stage0_static_library(
+cc_runtime_stage0_msan_static_library(
     name = "libcxxabi.static",
     visibility = ["//visibility:public"],
     deps = [
@@ -169,7 +169,7 @@ cc_runtime_stage0_static_library(
     ],
 )
 
-cc_runtime_stage0_shared_library(
+cc_runtime_stage0_msan_shared_library(
     name = "libcxxabi.shared",
     shared_lib_name = "libc++abi.so.1",
     user_link_flags = [
