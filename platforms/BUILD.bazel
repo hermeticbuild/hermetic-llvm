@@ -3,6 +3,23 @@ load(":declare_platforms.bzl", "declare_platforms")
 
 declare_platforms()
 
+# glibc linked statically (see "Linking glibc statically" in the README): the
+# glibc release is part of the platform, because a program has to be compiled
+# against the public headers of the libc.a it is linked with.  One per
+# architecture //3rd_party/libc/glibc/static has a manifest for.
+[
+    platform(
+        name = "linux_%s_glibc_static" % cpu,
+        constraint_values = ["//constraints/glibc_linkage:static"],
+        parents = [":linux_%s_gnu.2.44" % cpu],
+        visibility = ["//visibility:public"],
+    )
+    for cpu in [
+        "aarch64",
+        "x86_64",
+    ]
+]
+
 bzl_library(
     name = "declare_platforms",
     srcs = ["declare_platforms.bzl"],

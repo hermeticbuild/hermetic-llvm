@@ -10,6 +10,7 @@ _SELECTED_FACADE_TARGETS = [
     "abi_headers_include_search_directory",
     "headers_include_search_directory",
     "libstdcxx.shared",
+    "libstdcxx.static",
     "libstdcxxfs",
     "libstdcxxfs.static",
 ]

@@ -1,0 +1,7 @@
+#define DTV_OFFSET 8
+#define TI_MODULE_OFFSET 0
+#define TI_OFFSET_OFFSET 8
+#define TLSDESC_ARG 8
+#define TLSDESC_GEN_COUNT 16
+#define TLSDESC_MODID 0
+#define TLSDESC_MODOFF 8
