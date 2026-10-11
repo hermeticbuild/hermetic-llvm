@@ -155,6 +155,7 @@ cc_args(
 
 cc_args(
     name = "cxxstdlib_headers_include_search_paths",
+    # Joined spelling also survives Go cmd/link trimLinkerArgv (-stdlib prefix).
     actions = [
         # cpp_compile_actions - lto_backend - cpp_module_codegen
         # Omitted to avoid unused arg warning for -I paths.
@@ -166,10 +167,8 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:objcpp_compile",
     ],
     args = [
-        "-isystem",
-        "{cxxstdlib_headers_include_search_path}",
-        "-isystem",
-        "{cxxstdlib_abi_headers_include_search_path}",
+        "-stdlib++-isystem{cxxstdlib_headers_include_search_path}",
+        "-stdlib++-isystem{cxxstdlib_abi_headers_include_search_path}",
     ],
     # Do not sort: keep the data order aligned with the argument order above.
     data = [
@@ -186,11 +185,9 @@ cc_args(
     name = "clang_cl_cxxstdlib_headers_include_search_paths",
     actions = _CLANG_CL_CXX_FRONTEND_ACTIONS,
     args = select({
-        # /imsvc comes after implicit builtins. libc++ wrappers must precede
-        # them, so use the Clang system-include category instead.
+        # Let the driver place libc++ before builtin and C headers.
         "//toolchain:runtimes_all": [
-            "/clang:-isystem",
-            "/clang:{cxxstdlib_headers_include_search_path}",
+            "/clang:-stdlib++-isystem{cxxstdlib_headers_include_search_path}",
         ],
         "//conditions:default": [],
     }),

@@ -113,38 +113,16 @@ cc_args(
 cc_args(
     name = "sdk_includes",
     actions = _FRONTEND_ACTIONS,
-    allowlist_include_directories = [
-        "//runtimes/msvc:msvc_com_support_headers",
-        "//runtimes/msvc:msvc_vcruntime_headers",
-        "//runtimes/msvc:winsdk_shared_include",
-        "//runtimes/msvc:winsdk_ucrt_include",
-        "//runtimes/msvc:winsdk_um_include",
-        "//runtimes/msvc:winsdk_winrt_include",
-    ],
+    allowlist_include_directories = ["//runtimes/msvc:header_sysroot"],
+    # Explicit SDK locations also prevent host INCLUDE/EXTERNAL_INCLUDE
+    # discovery. User /imsvc directories retain their native precedence.
     args = [
-        "/imsvc{msvc_com_support_include}",
-        "/imsvc{msvc_include}",
-        "/imsvc{winsdk_ucrt_include}",
-        "/imsvc{winsdk_shared_include}",
-        "/imsvc{winsdk_um_include}",
-        "/imsvc{winsdk_winrt_include}",
+        "/vctoolsdir{headers}/vc",
+        "/winsdkdir{headers}/sdk",
+        "/winsdkversion10.0.0",
     ],
-    data = [
-        "//runtimes/msvc:msvc_com_support_headers",
-        "//runtimes/msvc:msvc_vcruntime_headers",
-        "//runtimes/msvc:winsdk_shared_include",
-        "//runtimes/msvc:winsdk_ucrt_include",
-        "//runtimes/msvc:winsdk_um_include",
-        "//runtimes/msvc:winsdk_winrt_include",
-    ],
-    format = {
-        "msvc_com_support_include": "//runtimes/msvc:msvc_com_support_headers",
-        "msvc_include": "//runtimes/msvc:msvc_vcruntime_headers",
-        "winsdk_shared_include": "//runtimes/msvc:winsdk_shared_include",
-        "winsdk_ucrt_include": "//runtimes/msvc:winsdk_ucrt_include",
-        "winsdk_um_include": "//runtimes/msvc:winsdk_um_include",
-        "winsdk_winrt_include": "//runtimes/msvc:winsdk_winrt_include",
-    },
+    data = ["//runtimes/msvc:header_sysroot"],
+    format = {"headers": "//runtimes/msvc:header_sysroot"},
 )
 
 cc_args(

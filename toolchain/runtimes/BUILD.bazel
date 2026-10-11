@@ -35,16 +35,6 @@ cc_args_list(
     name = "linux_hosted_c_toolchain_args",
     args = select({
         "//platforms/config:musl": [
-            "//toolchain/args/linux:kernel_headers_include_search_paths",
-            "//toolchain/args/linux:musl_libc_headers_include_search_paths",
-        ],
-        "//platforms/config:gnu": [
-            "//toolchain/args/linux:kernel_headers_include_search_paths",
-            "//toolchain/args/linux:glibc_headers_include_search_paths",
-        ],
-        "//conditions:default": [],
-    }) + select({
-        "//platforms/config:musl": [
             # TODO: Handle musl dynamic linking.
             # musl implies static linking for now.
             "//toolchain/args:static_link_executable",
@@ -112,8 +102,7 @@ cc_args_list(
         "//toolchain:hermetic_compile_flags",
         ":hermetic_link_flags",
 
-        # Keep external -isystem directories before the toolchain C
-        # -isystem directories in :staged_platform_specific_args.
+        # The driver keeps these user paths ahead of native C headers.
         "@rules_cc//cc/toolchains/args/external_include_paths:external_include_paths",
 
         # TODO(cerisier): Explode this into specific args instead
@@ -147,14 +136,6 @@ cc_args_list(
     ],
 )
 
-cc_args_list(
-    name = "windows_headers_before_compiler_resource",
-    args = select({
-        "//toolchain:runtimes_stage1_hosted": ["//toolchain/args/windows:headers_before_compiler_resource"],
-        "//conditions:default": [],
-    }),
-)
-
 # Keep the complete Windows runtime composition explicit while its individual
 # compiler-personality, object-format, ABI, and runtime semantics are being
 # normalized. This mirrors :generic_toolchain_args instead of appending a bag
@@ -172,13 +153,12 @@ cc_args_list(
         "//toolchain:hermetic_compile_flags",
         ":hermetic_link_flags",
 
-        # Keep external -isystem directories before the toolchain C and C++
-        # -isystem directories below.
+        # User include features supply user paths; the driver places C/C++
+        # toolchain headers according to their semantic categories.
         "@rules_cc//cc/toolchains/args/external_include_paths:external_include_paths",
 
         # Windows compiler, ABI, CRT, object-format, and C++ runtime semantics.
         "//toolchain/args/windows:crt_compile_defines",
-        ":windows_headers_before_compiler_resource",
 
         # Optional sanitizers
         "//toolchain/runtimes/args:ubsan_flags",

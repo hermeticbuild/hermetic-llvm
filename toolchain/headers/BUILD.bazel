@@ -1,0 +1,30 @@
+load("//toolchain:header_sysroot.bzl", "header_sysroot")
+
+package(default_visibility = ["//visibility:public"])
+
+# Linux.cpp owns the GNU/musl distinction: musl's C headers precede Clang's
+# builtins; GNU's follow them. Supplying a sysroot preserves that decision.
+header_sysroot(
+    name = "linux",
+    directories = select({
+        "//platforms/config:gnu": {
+            "@kernel_headers//:kernel_headers_directory": "include",
+            "//runtimes/glibc:glibc_headers_include_search_directory": "usr/include",
+        },
+        "//platforms/config:musl": {
+            "@kernel_headers//:kernel_headers_directory": "include",
+            "//runtimes/musl:musl_headers_include_search_directory": "usr/include",
+        },
+    }),
+)
+
+header_sysroot(
+    name = "mingw",
+    # Reverse the old include-search order: first match becomes last writer.
+    directories = {
+        "@mingw//:mingw_w64_headers_crt_directory": "include",
+        "@mingw//:mingw_w64_headers_include_directory": "include",
+        "@mingw//:mingw_generated_headers_crt_directory": "include",
+        "@mingw//:mingw_w64_winpthreads_include_directory": "include",
+    },
+)

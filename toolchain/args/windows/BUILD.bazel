@@ -54,14 +54,15 @@ cc_args_list(
     name = "sysroot_flags",
     args = select({
         "//constraints/windows/abi:msvc": [],
-        "//conditions:default": ["//toolchain/args:empty_sysroot_flags"],
+        "//conditions:default": ["//toolchain/args/windows/mingw:sysroot_flags"],
     }),
 )
 
 cc_args_list(
     name = "hermetic_compile_flags",
     args = select({
-        "//constraints/windows/abi:msvc": ["//toolchain/args:clang_cl_hermetic_compile_flags"],
+        "//constraints/windows/abi:msvc": [],
+        "//toolchain:hosted_headers": [],
         "//conditions:default": ["//toolchain/args:hermetic_compile_flags"],
     }),
 )
@@ -149,16 +150,6 @@ cc_args_list(
     args = select({
         "//constraints/windows/abi:msvc": ["//toolchain/args:clang_cl_cxxstdlib_headers_include_search_paths"],
         "//conditions:default": ["//toolchain/args:cxxstdlib_headers_include_search_paths"],
-    }),
-)
-
-# MinGW target headers already precede the compiler resource directory. The
-# MSVC SDK headers remain in cc_toolchain's deferred post-resource append.
-cc_args_list(
-    name = "headers_before_compiler_resource",
-    args = select({
-        "//constraints/windows/abi:msvc": [],
-        "//conditions:default": ["//toolchain/args/windows/mingw:mingw_headers_include_search_paths"],
     }),
 )
 
