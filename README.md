@@ -149,7 +149,7 @@ If you wish to setup things manually, you will likely require a few flags:
 | **wasm32-unknown-unknown** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **wasm64-unknown-unknown** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
-¹ See "GNU C Library" section for glibc version selection.
+¹ See "Linux C library" section for glibc version selection.
 
 ² See "Windows" section.
 
@@ -157,26 +157,50 @@ If you wish to setup things manually, you will likely require a few flags:
 prebuilt; clang-cl still emits the MSVC target ABI. Source-built bootstrap
 stages also support native Windows execution. See "Windows" section.
 
-### musl
+### Linux C library (glibc and musl)
 
-Only static linking against the latest version of musl is supported for now.
+Linux targets compile against glibc or musl, depending on which of them the
+target platform makes available according to its
+[platforms_contrib](https://github.com/bazel-contrib/platforms_contrib)
+constraints:
 
-To target musl:
-`--platforms @llvm//platforms:linux_aarch64_musl`
+```starlark
+load("@platforms_contrib//os/linux/libc/glibc:glibc.bzl", "glibc_version_constraints")
+load("@platforms_contrib//os/linux/libc/musl:musl.bzl", "musl_version_constraints")
 
-> By default, binaries are fully statically linked (no dynamic linker at all).
+platform(
+    name = "ubuntu_22_04_x86_64",
+    constraint_values = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ] + glibc_version_constraints("2.35"),
+)
+```
 
-### GNU C Library (glibc) versions
+* glibc: code is compiled with the headers of the newest supported glibc version
+  (2.28 to 2.44) that the platform makes available and dynamically linked
+  against compatible stubs. This ensures your program runs on systems with that
+  glibc version or newer without using newer symbols. Platforms that only make
+  older glibc versions available aren't supported.
+* musl: code is fully statically linked (no dynamic linker at all) against the
+  latest version of musl, which is the only supported mode for now.
+* Both: `--@llvm//config:preferred_libc` chooses between them and defaults to
+  `glibc`. A platform can choose musl with
+  `flags = ["--@llvm//config:preferred_libc=musl"]`.
+* Neither: glibc 2.28 is used.
 
-Compiling and linking dynamically against specific glibc versions is supported.
-By default, the earliest glibc version that supports your target is used (2.28 in most cases).
+`@platforms_contrib//host:native` and `@platforms_contrib//host:generic` declare
+the libc of the host, so builds for them run on the host.
 
-To target a specific version, use:
-`--platforms @llvm//platforms:linux_x86_64_gnu.2.28`
+The platforms in `@llvm//platforms`, e.g.
+`--platforms @llvm//platforms:linux_x86_64_gnu.2.28` or
+`--platforms @llvm//platforms:linux_aarch64_musl`, have these constraints as
+well as a `@llvm//constraints/libc` value. Such a value takes precedence over
+the platforms_contrib constraints. It remains supported, but new platforms
+should only use the platforms_contrib constraints.
 
-Behind the scenes, code is compiled with headers for the selected glibc and linked against compatible stubs.
-
-This ensures your program runs on systems with that glibc version or newer without using newer symbols.
+To make code depend on the libc it's compiled against, `select()` on
+`@rules_cc//cc/libc:glibc` and `@rules_cc//cc/libc:musl`.
 
 ### C++ standard library selection
 
