@@ -1622,7 +1622,7 @@ cc_library(
     includes = ["header_precedence"],
 )
 
-_HEADER_SEARCH_PLATFORMS = [
+_HEADER_PRECEDENCE_PLATFORMS = [
     "linux_" + cpu + suffix
     for cpu in [
         "x86_64",
@@ -1643,10 +1643,6 @@ _HEADER_SEARCH_PLATFORMS = [
     "windows_x86_64_msvc",
     "windows_aarch64_msvc",
 ]
-
-# Musl retains its existing ordinary -isystem paths in this change. Those
-# paths can precede user system paths; fixing that is a separate change.
-_HEADER_PRECEDENCE_PLATFORMS = [p for p in _HEADER_SEARCH_PLATFORMS if not p.endswith("_musl")]
 
 [
     platform_transition_filegroup(
@@ -1692,7 +1688,7 @@ header_search(
         tags = ["manual"],
         target_platform = "@llvm//platforms:" + platform,
     )
-    for platform in _HEADER_SEARCH_PLATFORMS + [
+    for platform in _HEADER_PRECEDENCE_PLATFORMS + [
         "none_bpfeb",
         "none_bpfel",
         "none_wasm32",
