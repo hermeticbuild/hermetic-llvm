@@ -4,13 +4,12 @@ bazel_dep(name = "rules_cc", version = "0.2.25")
 bazel_dep(name = "rules_foreign_cc", version = "0.15.1")
 bazel_dep(name = "rules_python", version = "1.7.0")
 
-single_version_override(
+# Temporary merged commit: replace with a release before merging PR #819.
+# bazel-contrib/rules_foreign_cc#1603.
+git_override(
     module_name = "rules_foreign_cc",
-    patch_strip = 1,
-    patches = [
-        # https://github.com/bazel-contrib/rules_foreign_cc/pull/1470
-        "//:rules_foreign_cc.patch",
-    ],
+    commit = "1f8d2eadf0df7ca3de021e150c0f71c7481b721d",
+    remote = "https://github.com/bazel-contrib/rules_foreign_cc.git",
 )
 
 local_path_override(

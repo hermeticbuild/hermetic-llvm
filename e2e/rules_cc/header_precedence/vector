@@ -1,0 +1,2 @@
+#define HERMETIC_USER_VECTOR_HEADER 1
+#include_next <vector>

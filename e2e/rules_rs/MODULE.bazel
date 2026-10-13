@@ -40,8 +40,21 @@ register_toolchains(
 
 bazel_dep(name = "rules_rs", version = "0.0.102")
 
+# Temporary merged commit: replace with a rules_rs release containing this pin
+# before merging PR #819. hermeticbuild/rules_rust#85.
+bazel_dep(name = "rules_rust", version = "0.74.0")
+git_override(
+    module_name = "rules_rust",
+    commit = "669f49c3892a8b11aabb01a218f7d09dc8ebd872",
+    remote = "https://github.com/hermeticbuild/rules_rust.git",
+)
+
 rules_rust = use_extension("@rules_rs//rs:rules_rust.bzl", "rules_rust")
-use_repo(rules_rust, "rules_rust")
+
+override_repo(
+    rules_rust,
+    rules_rust = "rules_rust",
+)
 
 toolchains = use_extension("@rules_rs//rs/toolchains:module_extension.bzl", "toolchains")
 toolchains.toolchain(
