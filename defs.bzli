@@ -1,0 +1,16 @@
+"""Executable tests whose inner target uses the execution configuration."""
+
+def exec_test(
+    rule: Callable[..., object],
+    *,
+    name: str,
+    tags: list[str] = ...,
+    args: Sequence[str] | select[Sequence[str]] = ...,
+    env: dict[str, str] | select[dict[str, str]] = ...,
+    data: Sequence[str | Label] | select[Sequence[str | Label]] = ...,
+    inner_data: Sequence[str | Label] | select[Sequence[str | Label]] = ...,
+    tools: Sequence[str | Label] | select[Sequence[str | Label]] = ...,
+    **kwargs,
+) -> None: ...
+
+def _exec_test_impl(ctx) -> list[DefaultInfo | RunEnvironmentInfo]: ...

@@ -1,0 +1,3 @@
+[type-interfaces]
+"defs.bzl" = "defs.bzli"
+"directory.bzl" = "directory.bzli"
