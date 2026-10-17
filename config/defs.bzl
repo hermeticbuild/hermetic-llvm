@@ -1,4 +1,3 @@
-load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo", "bool_flag", "string_flag")
 
 OPTIMIZATION_MODES = [
@@ -63,6 +62,18 @@ _host_bool_flag = rule(
     },
 )
 
+def _selected_sanitizer_bool_flag_impl(ctx):
+    setting = ctx.attr.host_setting if _is_exec_configuration(ctx) else ctx.attr.target_setting
+    return [config_common.FeatureFlagInfo(value = str(setting[BuildSettingInfo].value).lower())]
+
+_selected_sanitizer_bool_flag = rule(
+    implementation = _selected_sanitizer_bool_flag_impl,
+    attrs = {
+        "host_setting": attr.label(mandatory = True),
+        "target_setting": attr.label(mandatory = True),
+    },
+)
+
 def _declare_sanitizer_config_setting(sanitizer):
     target_setting_name = "target_" + sanitizer
     target_feature_name = sanitizer + "_target_config"
@@ -93,12 +104,17 @@ def _declare_sanitizer_config_setting(sanitizer):
         },
     )
 
-    selects.config_setting_group(
+    # Keep the separate host and target predicates for direct users; common
+    # selectors need one result for this configuration.
+    selected_feature_name = sanitizer + "_selected_config"
+    _selected_sanitizer_bool_flag(
+        name = selected_feature_name,
+        host_setting = host_setting_name,
+        target_setting = sanitizer,
+    )
+    native.config_setting(
         name = sanitizer + "_enabled",
-        match_any = [
-            target_config_setting,
-            host_config_setting,
-        ],
+        flag_values = {selected_feature_name: "true"},
     )
 
 def config_settings():

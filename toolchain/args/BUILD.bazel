@@ -409,10 +409,6 @@ cc_args_list(
             ":cfi_compiler_flags",
             ":cfi_linker_flags",
         ],
-        "//config:host_cfi_enabled": [
-            ":cfi_compiler_flags",
-            ":cfi_linker_flags",
-        ],
         "//conditions:default": [],
     }),
 )
@@ -447,10 +443,6 @@ cc_args_list(
     name = "msan_flags",
     args = select({
         "//config:msan_enabled": [
-            ":msan_compiler_flags",
-            ":msan_linker_flags",
-        ],
-        "//config:host_msan_enabled": [
             ":msan_compiler_flags",
             ":msan_linker_flags",
         ],
@@ -497,10 +489,6 @@ cc_args_list(
             ":dfsan_compiler_flags",
             ":dfsan_linker_flags",
         ],
-        "//config:host_dfsan_enabled": [
-            ":dfsan_compiler_flags",
-            ":dfsan_linker_flags",
-        ],
         "//conditions:default": [],
     }),
 )
@@ -535,10 +523,6 @@ cc_args_list(
     name = "nsan_flags",
     args = select({
         "//config:nsan_enabled": [
-            ":nsan_compiler_flags",
-            ":nsan_linker_flags",
-        ],
-        "//config:host_nsan_enabled": [
             ":nsan_compiler_flags",
             ":nsan_linker_flags",
         ],
@@ -579,10 +563,6 @@ cc_args_list(
             ":safestack_compiler_flags",
             ":safestack_linker_flags",
         ],
-        "//config:host_safestack_enabled": [
-            ":safestack_compiler_flags",
-            ":safestack_linker_flags",
-        ],
         "//conditions:default": [],
     }),
 )
@@ -617,10 +597,6 @@ cc_args_list(
     name = "rtsan_flags",
     args = select({
         "//config:rtsan_enabled": [
-            ":rtsan_compiler_flags",
-            ":rtsan_linker_flags",
-        ],
-        "//config:host_rtsan_enabled": [
             ":rtsan_compiler_flags",
             ":rtsan_linker_flags",
         ],
@@ -661,10 +637,6 @@ cc_args_list(
             ":tysan_compiler_flags",
             ":tysan_linker_flags",
         ],
-        "//config:host_tysan_enabled": [
-            ":tysan_compiler_flags",
-            ":tysan_linker_flags",
-        ],
         "//conditions:default": [],
     }),
 )
@@ -699,10 +671,6 @@ cc_args_list(
     name = "tsan_flags",
     args = select({
         "//config:tsan_enabled": [
-            ":tsan_compiler_flags",
-            ":tsan_linker_flags",
-        ],
-        "//config:host_tsan_enabled": [
             ":tsan_compiler_flags",
             ":tsan_linker_flags",
         ],
@@ -743,10 +711,6 @@ cc_args_list(
             ":asan_compiler_flags",
             ":asan_linker_flags",
         ],
-        "//config:host_asan_enabled": [
-            ":asan_compiler_flags",
-            ":asan_linker_flags",
-        ],
         "//conditions:default": [],
     }),
 )
@@ -784,10 +748,6 @@ cc_args_list(
             ":lsan_compiler_flags",
             ":lsan_linker_flags",
         ],
-        "//config:host_lsan_enabled": [
-            ":lsan_compiler_flags",
-            ":lsan_linker_flags",
-        ],
         "//conditions:default": [],
     }),
 )
@@ -820,10 +780,6 @@ cc_args_list(
     name = "xray_flags",
     args = select({
         "//config:xray_enabled": [
-            ":xray_compiler_flags",
-            ":xray_linker_flags",
-        ],
-        "//config:host_xray_enabled": [
             ":xray_compiler_flags",
             ":xray_linker_flags",
         ],
@@ -893,11 +849,6 @@ cc_args_list(
             ":fuzzer_linker_flags",
             ":profile_runtime_windows_linker_flags",
         ],
-        "//config:host_fuzzer_enabled": [
-            ":fuzzer_compiler_flags",
-            ":fuzzer_linker_flags",
-            ":profile_runtime_windows_linker_flags",
-        ],
         "//conditions:default": [],
     }),
 )
@@ -906,11 +857,6 @@ cc_args_list(
     name = "profile_flags",
     args = select({
         "//config:profile_enabled": [
-            ":profile_compiler_flags",
-            ":profile_linker_flags",
-            ":profile_runtime_windows_linker_flags",
-        ],
-        "//config:host_profile_enabled": [
             ":profile_compiler_flags",
             ":profile_linker_flags",
             ":profile_runtime_windows_linker_flags",
