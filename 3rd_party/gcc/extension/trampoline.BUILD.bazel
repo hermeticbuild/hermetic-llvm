@@ -8,6 +8,7 @@ package(default_visibility = ["//visibility:public"])
 # hermetic-llvm.
 _SELECTED_FACADE_TARGETS = [
     "abi_headers_include_search_directory",
+    "build_headers",
     "headers_include_search_directory",
     "libstdcxx.shared",
     "libstdcxxfs",

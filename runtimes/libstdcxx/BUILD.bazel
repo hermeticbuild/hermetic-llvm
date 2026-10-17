@@ -52,9 +52,11 @@ copy_file(
 copy_to_directory(
     name = "libstdcxx_library_search_directory",
     srcs = [
-        ":stdc++",
         ":stdc++fs",
         ":supc++",
-    ],
+    ] + select({
+        "//runtimes/cxxstdlib:libstdcxx_linux_system": [":libstdcxx_shared_linker_name"],
+        "//conditions:default": [":stdc++"],
+    }),
     visibility = ["//visibility:public"],
 )

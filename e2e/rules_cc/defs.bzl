@@ -281,3 +281,9 @@ lsan_cc_test, _lsan_cc_test_internal = with_cfg(cc_test).set(
     Label("@llvm//config:host_lsan"),
     True,
 ).build()
+
+# Keep this smoke test compatible with the worker's GNU runtime ABI.
+system_libstdcxx_cc_binary, _system_libstdcxx_cc_binary_internal = with_cfg(cc_binary).set(
+    Label("@llvm//config:system_libstdcxx"),
+    True,
+).build()
