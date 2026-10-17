@@ -3,6 +3,7 @@ load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 load("@llvm//toolchain/runtimes:cc_runtime_library.bzl", "cc_runtime_stage0_library")
 load("@llvm-project//:vars.bzl", "LLVM_VERSION_MAJOR")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_python//python:defs.bzl", "py_binary")
 
 LIBOMP_COMMON_SOURCES = [
@@ -281,5 +282,12 @@ cc_runtime_stage0_library(
         "@platforms//os:windows": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "headers",
+    hdrs = [":omp_h"],
+    strip_include_prefix = "runtime/src/include",
     visibility = ["//visibility:public"],
 )

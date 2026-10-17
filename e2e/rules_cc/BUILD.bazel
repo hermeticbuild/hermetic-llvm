@@ -1586,3 +1586,9 @@ test_suite(
         for cpu, _, _ in _WINDOWS_MSVC_ARTIFACT_PLATFORMS
     ],
 )
+
+cc_binary(
+    name = "openmp_headers_test",
+    srcs = ["openmp_headers_test.cc"],
+    deps = ["@llvm-project//openmp:headers"],
+)
