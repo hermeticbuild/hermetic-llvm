@@ -12,6 +12,7 @@ _SELECTED_FACADE_TARGETS = [
     "libstdcxx.shared",
     "libstdcxxfs",
     "libstdcxxfs.static",
+    "libsupcxx.static",
 ]
 
 _VERSION_MATRIX_TARGETS = [

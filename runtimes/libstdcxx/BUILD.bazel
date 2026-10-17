@@ -38,8 +38,11 @@ stub_library(
     name = "stdc++",
 )
 
-stub_library(
+copy_file(
     name = "supc++",
+    src = "@gcc//:libsupcxx.static",
+    out = "libsupc++.a",
+    allow_symlink = True,
 )
 
 copy_file(

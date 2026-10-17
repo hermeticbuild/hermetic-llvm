@@ -164,3 +164,14 @@ filegroup(
         ":libstdcxx_cxx26_compile_linux_x86_64_all_versions",
     ],
 )
+
+cc_binary(
+    name = "libsupcxx_link_smoke",
+    srcs = ["libsupcxx_link_smoke.cc"],
+    linkopts = ["-lsupc++"],
+    linkstatic = False,
+    target_compatible_with = select({
+        "//constraints/cxxstdlib:libstdcxx": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }) + ["@platforms//os:linux"],
+)
