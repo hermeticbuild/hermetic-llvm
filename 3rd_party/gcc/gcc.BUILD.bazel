@@ -1047,6 +1047,11 @@ cc_library(
     ],
 )
 
+cc_runtime_stage0_static_library(
+    name = "libsupcxx.static",
+    deps = [":libsupcxx"],
+)
+
 filegroup(
     name = "libstdcxx_src_internal_headers",
     srcs = glob([
