@@ -1,0 +1,2 @@
+#define HERMETIC_LLVM_DEPENDENCY_CSTDDEF 1
+#include_next <cstddef>
