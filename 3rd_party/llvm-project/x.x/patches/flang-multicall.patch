@@ -1,0 +1,159 @@
+diff --git a/clang/lib/Driver/ToolChains/Flang.cpp b/clang/lib/Driver/ToolChains/Flang.cpp
+index d900037..e7e86db 100644
+--- a/clang/lib/Driver/ToolChains/Flang.cpp
++++ b/clang/lib/Driver/ToolChains/Flang.cpp
+@@ -1352,9 +1352,11 @@ void Flang::ConstructJob(Compilation &C, const JobAction &JA,
+   const char *Exec = isClangDriverWithFlangMode
+                          ? Args.MakeArgString(D.GetProgramPath("flang", TC))
+                          : D.getDriverProgramPath();
+-  C.addCommand(std::make_unique<Command>(JA, *this,
+-                                         ResponseFileSupport::AtFileUTF8(),
+-                                         Exec, CmdArgs, Inputs, Output));
++  // A flang driver that is part of the llvm multicall binary re-enters itself
++  // through its PrependArg, like clang does for -cc1.
++  C.addCommand(std::make_unique<Command>(
++      JA, *this, ResponseFileSupport::AtFileUTF8(), Exec, CmdArgs, Inputs,
++      Output, isClangDriverWithFlangMode ? nullptr : D.getPrependArg()));
+ }
+ 
+ Flang::Flang(const ToolChain &TC) : Tool("flang", "flang frontend", TC) {}
+diff --git a/flang/tools/flang-driver/BUILD.bazel b/flang/tools/flang-driver/BUILD.bazel
+index acebb15..06060ed 100644
+--- a/flang/tools/flang-driver/BUILD.bazel
++++ b/flang/tools/flang-driver/BUILD.bazel
+@@ -2,7 +2,8 @@
+ # See https://llvm.org/LICENSE.txt for license information.
+ # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+ 
+-load("@rules_cc//cc:defs.bzl", "cc_binary")
++load("@rules_cc//cc:defs.bzl", "cc_library")
++load("//llvm:driver.bzl", "llvm_driver_cc_binary")
+ 
+ package(
+     default_visibility = ["//visibility:public"],
+@@ -13,8 +14,8 @@ package(
+ 
+ licenses(["notice"])
+ 
+-cc_binary(
+-    name = "flang",
++cc_library(
++    name = "flang-driver-lib",
+     srcs = [
+         "driver.cpp",
+         "fc1_main.cpp",
+@@ -34,3 +35,8 @@ cc_binary(
+         "//llvm:TargetParser",
+     ],
+ )
++
++llvm_driver_cc_binary(
++    name = "flang",
++    deps = [":flang-driver-lib"],
++)
+diff --git a/flang/tools/flang-driver/CMakeLists.txt b/flang/tools/flang-driver/CMakeLists.txt
+index d11e7f5..12d8b15 100644
+--- a/flang/tools/flang-driver/CMakeLists.txt
++++ b/flang/tools/flang-driver/CMakeLists.txt
+@@ -15,6 +15,8 @@ set( LLVM_LINK_COMPONENTS
+ add_flang_tool(flang
+   driver.cpp
+   fc1_main.cpp
++
++  GENERATE_DRIVER
+ )
+ 
+ target_link_libraries(flang
+diff --git a/flang/tools/flang-driver/driver.cpp b/flang/tools/flang-driver/driver.cpp
+index 2e301e0..43e1f88 100644
+--- a/flang/tools/flang-driver/driver.cpp
++++ b/flang/tools/flang-driver/driver.cpp
+@@ -28,7 +28,7 @@
+ #include "llvm/ADT/IntrusiveRefCntPtr.h"
+ #include "llvm/Option/ArgList.h"
+ #include "llvm/Support/CommandLine.h"
+-#include "llvm/Support/InitLLVM.h"
++#include "llvm/Support/LLVMDriver.h"
+ #include "llvm/Support/VirtualFileSystem.h"
+ #include "llvm/Support/raw_ostream.h"
+ #include "llvm/TargetParser/Host.h"
+@@ -37,7 +37,7 @@
+ // main frontend method. Lives inside fc1_main.cpp
+ extern int fc1_main(llvm::ArrayRef<const char *> argv, const char *argv0);
+ 
+-std::string getExecutablePath(const char *argv0) {
++static std::string getExecutablePath(const char *argv0) {
+   // This just needs to be some symbol in the binary
+   void *p = (void *)(intptr_t)getExecutablePath;
+   return llvm::sys::fs::getMainExecutable(argv0, p);
+@@ -106,15 +106,20 @@ static bool rejectAssemblyInputs(const llvm::opt::ArgList &args,
+   return false;
+ }
+ 
+-int main(int argc, const char **argv) {
+-
+-  // Initialize variables to call the driver
+-  llvm::InitLLVM x(argc, argv);
++int flang_main(int argc, char **argv, const llvm::ToolContext &toolContext) {
+   llvm::SmallVector<const char *, 256> args(argv, argv + argc);
+ 
++  // Inside the llvm multicall driver, the tool name rather than the multicall
++  // binary's name selects the driver mode.
++  const char *progName =
++      toolContext.NeedsPrependArg ? toolContext.PrependArg : toolContext.Path;
+   clang::driver::ParsedClangName targetandMode =
+-      clang::driver::ToolChain::getTargetAndModeFromProgramName(argv[0]);
++      clang::driver::ToolChain::getTargetAndModeFromProgramName(progName);
+   std::string driverPath = getExecutablePath(args[0]);
++  // getExecutablePath() resolves to the llvm multicall binary when flang is
++  // part of it.
++  const bool inLLVMDriver =
++      llvm::sys::path::stem(driverPath).equals_insensitive("llvm");
+ 
+   llvm::BumpPtrAllocator a;
+   llvm::StringSaver saver(a);
+@@ -144,14 +149,19 @@ int main(int argc, const char **argv) {
+ 
+   // Not in the frontend mode - continue in the compiler driver mode.
+ 
++  // Without --driver-mode, the clang driver library derives the mode from the
++  // executable's name, which is "llvm" inside the multicall binary. Insert it
++  // first so that a --driver-mode on the command line still takes precedence.
++  if (inLLVMDriver)
++    args.insert(args.begin() + 1, "--driver-mode=flang");
++
+   // Create DiagnosticsEngine for the compiler driver
+   std::unique_ptr<clang::DiagnosticOptions> diagOpts =
+       createAndPopulateDiagOpts(args);
+   Fortran::frontend::TextDiagnosticPrinter *diagClient =
+       new Fortran::frontend::TextDiagnosticPrinter(llvm::errs(), *diagOpts);
+ 
+-  diagClient->setPrefix(
+-      std::string(llvm::sys::path::stem(getExecutablePath(args[0]))));
++  diagClient->setPrefix(std::string(llvm::sys::path::stem(progName)));
+ 
+   clang::DiagnosticsEngine diags(clang::DiagnosticIDs::create(), *diagOpts,
+                                  diagClient);
+@@ -161,6 +171,10 @@ int main(int argc, const char **argv) {
+                                   llvm::sys::getDefaultTargetTriple(), diags,
+                                   "flang LLVM compiler");
+   theDriver.setTargetAndMode(targetandMode);
++  // Prepend the tool name so that -fc1 jobs re-enter flang through the
++  // multicall binary.
++  if (inLLVMDriver)
++    theDriver.setPrependArg(toolContext.PrependArg);
+   theDriver.setPreferredLinker(FLANG_DEFAULT_LINKER);
+ #ifdef FLANG_RUNTIME_F128_MATH_LIB
+   theDriver.setFlangF128MathLibrary(FLANG_RUNTIME_F128_MATH_LIB);
+diff --git a/llvm/driver.bzl b/llvm/driver.bzl
+index 1158366..151b79e 100644
+--- a/llvm/driver.bzl
++++ b/llvm/driver.bzl
+@@ -16,6 +16,7 @@ _TOOLS = {
+     "clang-scan-deps": "//clang:clang-scan-deps-lib",
+     "clang": "//clang:clang-driver",
+     "dsymutil": "//llvm:dsymutil-lib",
++    "flang": "//flang/tools/flang-driver:flang-driver-lib",
+     "lld": "//lld:lld-lib",
+     "llvm-ar": "//llvm:llvm-ar-lib",
+     "llvm-cgdata": "//llvm:llvm-cgdata-lib",
