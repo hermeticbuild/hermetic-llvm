@@ -51,6 +51,28 @@ This ecosystem simplifies the process by cross-compiling all target-specific com
 
 ## Advanced Usage
 
+### Header checks and modules
+
+The toolchain supports the following opt-in features. Set `features` on a target or package to enable them selectively, or use the command-line flags below. Pass each feature as a separate `--features` flag.
+
+| Option | Purpose |
+| --- | --- |
+| `--features=parse_headers` | Check headers as standalone translation units to catch missing includes. |
+| `--features=layering_check` | Require direct dependencies for included headers and check access to private headers. |
+| `--process_headers_in_dependencies` | Run enabled header checks in dependencies too. This is off by default and does not enable `parse_headers` itself. |
+| `--features=use_header_modules` | Reuse compiled libc++ and dependency headers to reduce repeated parsing. Requires Bazel 9.3 or later. |
+| `features = ["header_modules"]` | Compile a library's headers into a module for consumers. Requires `use_header_modules` and headers that compile on their own. |
+
+For example, check headers and dependency declarations throughout a build with the following flags.
+
+```sh
+bazel build --features=parse_headers --features=layering_check --process_headers_in_dependencies //:app
+```
+
+Header parsing, module maps, and layering checks work with the Clang driver, including MinGW Windows targets. They are not implemented for MSVC/clang-cl targets.
+
+Compiled header modules can speed up incremental builds after the initial module build, but require compatible dependencies and currently do not work for Windows targets. See the [header module guide](toolchain/features/header_modules/README.md) for setup and limitations.
+
 ### Registering a subset of all toolchains
 
 Use the toolchain module extension:
@@ -273,12 +295,9 @@ bazel build \
   //:app
 ```
 
-MSVC targets default to the retail dynamic CRT (`/MD`). Select the retail static
-CRT (`/MT`) with
-`--features=-dynamic_link_msvcrt,static_link_msvcrt`. Debug CRT modes (`/MDd`
-and `/MTd`) are not supported. Sanitizers, coverage/FDO, header parsing, module
-maps, and layering checks are also not yet supported for MSVC targets; requests
-for unsupported features fail during analysis rather than being ignored.
+MSVC targets default to the retail dynamic CRT (`/MD`). Select the retail static CRT (`/MT`) with `--features=-dynamic_link_msvcrt --features=static_link_msvcrt`. Debug CRT modes (`/MDd` and `/MTd`) are not supported.
+
+MSVC/clang-cl targets do not yet support sanitizers, coverage/FDO, or header parsing. Requests for these features fail during analysis. Module maps and layering checks are also unimplemented on this route, but `use_module_maps` and `layering_check` are currently accepted without effect. MinGW targets support header parsing, module maps, and layering checks.
 
 ### macOS notes
 

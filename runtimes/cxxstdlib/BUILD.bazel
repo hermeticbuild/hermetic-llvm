@@ -1,6 +1,53 @@
+load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@bazel_skylib//lib:selects.bzl", "selects")
 
 package(default_visibility = ["//visibility:public"])
+
+# Public headers form the libc++ module. Implementation headers and C wrappers
+# remain textual.
+#
+# Copy SDK headers until Bazel can stage them alongside the SDK directory.
+# TODO(fmeum) Remove these copies once our minimum Bazel includes
+# https://github.com/bazelbuild/bazel/pull/31206
+copy_to_directory(
+    name = "macos_cxx_public_headers",
+    srcs = ["@macos_sdk//sysroot:libcxx_public_headers"],
+    include_external_repositories = ["*"],
+    root_paths = ["sysroot/usr/include/c++/v1"],
+)
+
+copy_to_directory(
+    name = "macos_cxx_detail_headers",
+    srcs = ["@macos_sdk//sysroot:libcxx_textual_headers"],
+    include_external_repositories = ["*"],
+    root_paths = ["sysroot/usr/include/c++/v1"],
+)
+
+filegroup(
+    name = "no_headers",
+)
+
+alias(
+    name = "public_headers_directory",
+    actual = select({
+        "@platforms//os:macos": ":macos_cxx_public_headers",
+        ":libstdcxx_linux": "//runtimes/libstdcxx:headers_include_search_directory",
+        ":libstdcxx_windows": ":libstdcxx_windows_unsupported",
+        "//conditions:default": "@llvm-project//libcxx:libcxx_public_headers_directory",
+    }),
+)
+
+alias(
+    name = "detail_headers_directory",
+    actual = select({
+        "@platforms//os:macos": ":macos_cxx_detail_headers",
+        # libstdc++ keeps all headers in public_headers_directory.
+        ":libstdcxx_linux": ":no_headers",
+        ":libstdcxx_windows": ":libstdcxx_windows_unsupported",
+        "//conditions:default": "@llvm-project//libcxx:libcxx_detail_headers_directory",
+    }),
+)
 
 config_setting(
     name = "libcxx_linux",
@@ -135,4 +182,9 @@ filegroup(
         # TODO(zbarsky): windows?
         "//conditions:default": [],
     }),
+)
+
+bzl_library(
+    name = "libcxx_headers",
+    srcs = ["libcxx_headers.bzl"],
 )
