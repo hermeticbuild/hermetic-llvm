@@ -129,8 +129,14 @@ def _create_llvm_project_repository(mctx, llvm_version, llvm_version_index, targ
             llvm_project_archive(name = "llvm-project", targets = targets, **structs.to_dict(tag))
 
     if not had_override:
-        source_archive = _source_archive_for_version(llvm_version, llvm_version_index)
-        llvm_project_archive(name = "llvm-project", targets = targets, **structs.to_dict(source_archive))
+        source_archive = structs.to_dict(_source_archive_for_version(llvm_version, llvm_version_index))
+        source_archive["patches"] = source_archive["patches"] + [
+            patch
+            for module in mctx.modules
+            for configure in module.tags.configure
+            for patch in configure.patches
+        ]
+        llvm_project_archive(name = "llvm-project", targets = targets, **source_archive)
 
 def _parse_llvm_major(llvm_version):
     major = llvm_version.partition(".")[0]
@@ -249,6 +255,9 @@ _version_tag = tag_class(
 _configure_tag = tag_class(
     attrs = {
         "targets": attr.string_list(mandatory = True),
+        "patches": attr.label_list(
+            doc = "Additional -p1 patches for the default source archive and extracted upstream BUILD overlay.",
+        ),
     },
 )
 
