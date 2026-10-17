@@ -16,7 +16,18 @@ def resource_directory_args(name, compile_directory, link_directory):
         actions = ["@rules_cc//cc/toolchains/actions:source_compile_actions"],
         # Keep this semantic for driver-independent consumers such as bindgen,
         # which cannot discover the selected compiler's adjacent resources.
-        args = ["-resource-dir={directory}"],
+        args = ["-resource-dir={directory}"] + select({
+            "@platforms//os:macos": [],
+            "@llvm//constraints/windows/abi:msvc": [],
+            "//conditions:default": [
+                # libc++ wrappers must precede Clang's builtin headers.
+                "-nobuiltininc",
+                "-Xclang",
+                "-internal-isystem",
+                "-Xclang",
+                "{directory}/include",
+            ],
+        }),
         data = [compile_directory],
         format = {"directory": compile_directory},
     )

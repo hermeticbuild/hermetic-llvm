@@ -1586,3 +1586,16 @@ test_suite(
         for cpu, _, _ in _WINDOWS_MSVC_ARTIFACT_PLATFORMS
     ],
 )
+
+cc_library(
+    name = "cstddef_wrapper",
+    hdrs = ["header_wrapper/cstddef"],
+)
+
+cc_binary(
+    name = "include_next_test",
+    srcs = ["include_next_test.cc"],
+    # Ordinary -I paths always precede toolchain headers. Exercise -isystem.
+    copts = ["-isystemheader_wrapper"],
+    deps = [":cstddef_wrapper"],
+)
