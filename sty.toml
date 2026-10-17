@@ -10,5 +10,9 @@ missing-type-argument = "error"
 unsound-assignment = "error"
 unsound-return-statement = "error"
 explicit-any = "error"
-# Native Bazel declarations still contain gradual parameter and field types.
+# exec_test forwards the supplied rule's unknown keyword signature.
 non-static-type = "ignore"
+
+[[stub-packages]]
+manifest = "@bazel_skylib//:stubs.toml"
+allow-unversioned = true
