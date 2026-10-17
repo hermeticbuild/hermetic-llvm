@@ -35,6 +35,31 @@ selects.config_setting_group(
     ],
 )
 
+selects.config_setting_group(
+    name = "libstdcxx_system_arch",
+    match_any = [
+        "@platforms//cpu:x86_64",
+        "@platforms//cpu:aarch64",
+    ],
+)
+
+selects.config_setting_group(
+    name = "libstdcxx_linux_system",
+    match_all = [
+        ":libstdcxx_linux",
+        ":libstdcxx_system_arch",
+        "//config:system_libstdcxx_enabled",
+    ],
+)
+
+selects.config_setting_group(
+    name = "libstdcxx_linux_system_complete",
+    match_all = [
+        ":libstdcxx_linux_system",
+        "//toolchain:runtimes_all",
+    ],
+)
+
 # Recognize the Windows selection only to fail at the cxxstdlib routing
 # boundary. The MinGW source/header entries in the libstdc++ port are audit
 # parity with GCC, not supported runtime wiring yet.
@@ -77,9 +102,23 @@ alias(
     }),
 )
 
-alias(
+filegroup(
     name = "libstdcxx_dynamic_runtime_lib",
-    actual = "//runtimes/libstdcxx:libstdcxx_shared_soname",
+    srcs = select({
+        ":libstdcxx_linux_system": [],
+        "//conditions:default": [
+            "//runtimes/libstdcxx:libstdcxx_shared_soname",
+            "//runtimes/libunwind:libunwind.shared",
+        ],
+    }),
+)
+
+filegroup(
+    name = "libstdcxx_linux_static_runtime_lib",
+    srcs = select({
+        ":libstdcxx_linux_system": [],
+        "//conditions:default": [":libstdcxx_static_runtime_lib"],
+    }),
 )
 
 genrule(
@@ -99,7 +138,7 @@ genrule(
 filegroup(
     name = "static_runtime_lib",
     srcs = select({
-        ":libstdcxx_linux": [":libstdcxx_static_runtime_lib"],
+        ":libstdcxx_linux": [":libstdcxx_linux_static_runtime_lib"],
         ":libstdcxx_windows": [":libstdcxx_windows_unsupported"],
         ":libcxx_windows_msvc_vcruntime": ["//runtimes/libcxx:libcxx.static"],
         ":libcxx_linux": [
@@ -119,10 +158,8 @@ filegroup(
 filegroup(
     name = "dynamic_runtime_lib",
     srcs = select({
-        ":libstdcxx_linux": [
-            ":libstdcxx_dynamic_runtime_lib",
-            "//runtimes/libunwind:libunwind.shared",
-        ],
+        # Keep libstdc++ paired with the host's GNU exception unwinder.
+        ":libstdcxx_linux": [":libstdcxx_dynamic_runtime_lib"],
         ":libstdcxx_windows": [":libstdcxx_windows_unsupported"],
         # Windows MSVC libc++ is configuration-wide static even when ordinary
         # dependency linkage selects dynamic libraries.

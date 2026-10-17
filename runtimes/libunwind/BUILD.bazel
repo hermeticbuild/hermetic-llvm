@@ -1,3 +1,4 @@
+load("@bazel_lib//lib:copy_file.bzl", "copy_file")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("//runtimes:defs.bzl", "stub_library")
 
@@ -23,6 +24,13 @@ stub_library(
     visibility = ["//visibility:public"],
 )
 
+copy_file(
+    name = "gcc_s_dynamic",
+    src = "@llvm-project//libunwind:libgcc_s.shared",
+    out = "libgcc_s.so",
+    allow_symlink = True,
+)
+
 config_setting(
     name = "stub_libgcc_s",
     flag_values = {
@@ -36,6 +44,9 @@ copy_to_directory(
         ":unwind",
     ] + select({
         ":stub_libgcc_s": [":gcc_s"],
+        "//conditions:default": [],
+    }) + select({
+        "//runtimes/cxxstdlib:libstdcxx_linux_system": [":gcc_s_dynamic"],
         "//conditions:default": [],
     }),
     visibility = ["//visibility:public"],

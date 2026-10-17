@@ -114,7 +114,15 @@ cc_args(
         # Since libunwind is linked statically, we need to link dl as well.
         "-ldl",
         "-Wl,--pop-state",
-    ],
+    ] + select({
+        "//runtimes/cxxstdlib:libstdcxx_linux_system_complete": [
+            "-Wl,--push-state,--as-needed,-Bdynamic",
+            "-lstdc++",
+            "-lgcc_s",
+            "-Wl,--pop-state",
+        ],
+        "//conditions:default": [],
+    }),
     data = [
         "//runtimes/glibc:glibc_library_search_directory",
     ],

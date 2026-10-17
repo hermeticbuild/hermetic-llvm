@@ -570,213 +570,244 @@ CF_PROTECTION_COPTS = select({
     "//conditions:default": [],
 })
 
+_BUILTINS_SRCS = select(
+    {
+        "@platforms//cpu:x86_64": [":builtins_x86_64_sources"],
+        "@platforms//cpu:aarch64": [":builtins_aarch64_sources"],
+        "@platforms//cpu:riscv64": [":builtins_riscv64_sources"],
+        "@platforms//cpu:s390x": [":builtins_s390x_sources"],
+        "@platforms//cpu:armv7": [":builtins_armv7_sources"],
+        "@platforms//cpu:wasm32": [":builtins_wasm32_sources"],
+        "@platforms//cpu:wasm64": [":builtins_wasm64_sources"],
+    },
+    no_match_error = """
+    Architecture not supported for compiler-rt.builtins.
+    It is likely that we are just missing the filegroups for that platform.
+    Please file an issue.
+""",
+) + [
+    "lib/builtins/assembly.h",
+    "lib/builtins/fp_extend.h",
+    "lib/builtins/fp_lib.h",
+    "lib/builtins/fp_mode.h",
+    "lib/builtins/fp_trunc.h",
+    "lib/builtins/int_endianness.h",
+    "lib/builtins/int_lib.h",
+    "lib/builtins/int_math.h",
+    "lib/builtins/int_to_fp.h",
+    "lib/builtins/int_types.h",
+    "lib/builtins/int_util.h",
+] + select({
+    "@platforms//cpu:aarch64": [
+        "lib/builtins/cpu_model/aarch64.h",
+    ],
+    "@platforms//cpu:armv7": [
+        "lib/builtins/arm/sync-ops.h",
+    ],
+    "@platforms//cpu:riscv64": [
+        "lib/builtins/cpu_model/riscv.h",
+    ] if int(LLVM_VERSION_MAJOR) >= 23 else [],
+    "//conditions:default": [],
+}) + selects.with_or({
+    (
+        # The following additional architectures support float16:
+        # - aarch64_be
+        # - riscv32
+        # - riscv64
+        "@platforms//cpu:aarch64",
+        "@platforms//cpu:riscv64",
+        "@platforms//cpu:x86_64",
+    ): [
+        ":builtins_bf16_sources",
+    ],
+    "//conditions:default": [],
+})
+
+_BUILTINS_COPTS = select({
+    ":windows_msvc": [
+        "/clang:-fno-builtin",
+        "/clang:-std=c11",
+    ],
+    "//conditions:default": [
+        "-fno-builtin",
+        "-std=c11",
+        # "-Wbuiltin-declaration-mismatch",
+    ],
+}) + select({
+    ":windows_msvc_optimized": [
+        "/clang:-fomit-frame-pointer",
+    ],
+    "@llvm//config:runtimes_optimization_mode_optimized": [
+        "-fomit-frame-pointer",
+    ],
+    "//conditions:default": [],
+}) + select({
+    ":windows_msvc": [
+        "/clang:-Wno-missing-declarations",
+        "/clang:-Wno-pragma-pack",
+    ],
+    "//conditions:default": [],
+}) + select({
+    "@platforms//os:macos": [
+        "-Wno-deprecated-declarations",
+        # TODO(zbarsky): This is spammy, but we should do a real fix.
+        # "-Wno-macro-redefined",
+    ],
+    "@platforms//os:windows": [
+        "-Wno-missing-declarations",
+        "-Wno-pragma-pack",
+    ],
+    "@platforms//os:uefi": [
+        "-ffreestanding",
+        "-DKERNEL_USE",
+    ],
+    "//conditions:default": [],
+}) + CF_PROTECTION_COPTS
+
+_BUILTINS_FEATURES = select({
+    # clang-cl discovers builtins in its resource directory, outside
+    # Bazel's LTO compilation context. Keep the implicit archive native.
+    ":windows_msvc": ["-thin_lto"],
+    "//conditions:default": [],
+})
+
+_BUILTINS_IMPLEMENTATION_DEPS = select({
+    "@platforms//os:macos": [],
+    "@platforms//os:linux": [
+        # TODO(cerisier): Provide only a subset of linux UAPI headers for musl.
+        # https://github.com/hermeticbuild/hermetic-llvm/issues/146
+        "@kernel_headers",
+    ],
+    "@platforms//os:windows": [],
+    "@platforms//os:uefi": [],
+    "@platforms//os:none": [],
+}) + select({
+    "@llvm//platforms/config:musl": [
+        "@musl_libc//:musl_libc_headers",
+    ],
+    "@llvm//platforms/config:gnu": [
+        "@glibc//:gnu_libc_headers",
+    ],
+    "@platforms//os:macos": [
+        # on macOS we implicitly use SDK provided headers
+    ],
+    ":windows_msvc": [],
+    "@platforms//os:windows": [
+        "@mingw//:mingw_headers",
+    ],
+    "@platforms//os:uefi": [],
+    "@platforms//os:none": [],
+})
+
+_BUILTINS_LOCAL_DEFINES = selects.with_or({
+    (
+        # The following additional architectures support float16:
+        # - aarch64_be
+        # - arm
+        # - armeb
+        # - hexagon
+        # - riscv32
+        # - riscv64
+        # - spirv
+        # - thumb
+        # - thumbeb
+        "@platforms//cpu:aarch64",
+        "@platforms//cpu:riscv64",
+        "@platforms//cpu:x86_64",
+    ): [
+        "COMPILER_RT_HAS_FLOAT16",
+    ],
+    "//conditions:default": [],
+})
+
+_BUILTINS_TEXTUAL_HDRS = [
+    "lib/builtins/fp_add_impl.inc",
+    "lib/builtins/fp_compare_impl.inc",
+    "lib/builtins/fp_div_impl.inc",
+    "lib/builtins/fp_extend_impl.inc",
+    "lib/builtins/fp_fixint_impl.inc",
+    "lib/builtins/fp_fixuint_impl.inc",
+    "lib/builtins/fp_mul_impl.inc",
+    "lib/builtins/fp_trunc_impl.inc",
+    "lib/builtins/int_div_impl.inc",
+    "lib/builtins/int_mulo_impl.inc",
+    "lib/builtins/int_mulv_impl.inc",
+    "lib/builtins/int_to_fp_impl.inc",
+    "lib/builtins/cpu_model/cpu_model.h",
+    "lib/builtins/unwind-ehabi-helpers.h",
+] + select({
+    "@platforms//cpu:aarch64": [
+        "lib/builtins/cpu_model/AArch64CPUFeatures.inc",
+        "lib/builtins/cpu_model/aarch64/hwcap.inc",
+        # "lib/builtins/cpu_model/aarch64/lse_atomics/atomic_helper.inc",
+        "lib/builtins/cpu_model/aarch64/lse_atomics/getauxval.inc",
+    ],
+    "@platforms//cpu:riscv64": [
+        "lib/builtins/riscv/int_mul_impl.inc",
+    ] + ([
+        "lib/builtins/cpu_model/riscv/hwprobe.inc",
+        "lib/builtins/cpu_model/riscv/unimplemented.inc",
+    ] if int(LLVM_VERSION_MAJOR) >= 23 else []),
+    "//conditions:default": [],
+}) + select({
+    "@llvm//platforms/config:windows_aarch64": [
+        "lib/builtins/cpu_model/aarch64/lse_atomics/windows.inc",
+    ],
+    "//conditions:default": [],
+}) + select({
+    "@llvm//platforms/config:linux_aarch64": ([
+        "lib/builtins/cpu_model/aarch64/fmv/hwcap.inc",
+    ] if int(LLVM_VERSION_MAJOR) >= 22 else [
+        "lib/builtins/cpu_model/aarch64/fmv/mrs.inc",
+    ]) + [
+        "lib/builtins/cpu_model/aarch64/fmv/getauxval.inc",
+    ],
+    "@llvm//platforms/config:macos_aarch64": [
+        "lib/builtins/cpu_model/aarch64/fmv/apple.inc",
+    ],
+    "@llvm//platforms/config:windows_aarch64": [
+        "lib/builtins/cpu_model/aarch64/fmv/windows.inc",
+    ],
+    "//conditions:default": [],
+})
+
+_BUILTINS_DEPS = select({
+    "@platforms//cpu:aarch64": [
+        ":builtins_aarch64_atomic",
+    ],
+    "//conditions:default": [],
+})
+
 cc_library(
     name = "builtins",
-    srcs = select(
-        {
-            "@platforms//cpu:x86_64": [":builtins_x86_64_sources"],
-            "@platforms//cpu:aarch64": [":builtins_aarch64_sources"],
-            "@platforms//cpu:riscv64": [":builtins_riscv64_sources"],
-            "@platforms//cpu:s390x": [":builtins_s390x_sources"],
-            "@platforms//cpu:armv7": [":builtins_armv7_sources"],
-            "@platforms//cpu:wasm32": [":builtins_wasm32_sources"],
-            "@platforms//cpu:wasm64": [":builtins_wasm64_sources"],
-        },
-        no_match_error = """
-        Architecture not supported for compiler-rt.builtins.
-        It is likely that we are just missing the filegroups for that platform.
-        Please file an issue.
-    """,
-    ) + [
-        "lib/builtins/assembly.h",
-        "lib/builtins/fp_extend.h",
-        "lib/builtins/fp_lib.h",
-        "lib/builtins/fp_mode.h",
-        "lib/builtins/fp_trunc.h",
-        "lib/builtins/int_endianness.h",
-        "lib/builtins/int_lib.h",
-        "lib/builtins/int_math.h",
-        "lib/builtins/int_to_fp.h",
-        "lib/builtins/int_types.h",
-        "lib/builtins/int_util.h",
-    ] + select({
-        "@platforms//cpu:aarch64": [
-            "lib/builtins/cpu_model/aarch64.h",
-        ],
-        "@platforms//cpu:armv7": [
-            "lib/builtins/arm/sync-ops.h",
-        ],
-        "@platforms//cpu:riscv64": [
-            "lib/builtins/cpu_model/riscv.h",
-        ] if int(LLVM_VERSION_MAJOR) >= 23 else [],
-        "//conditions:default": [],
-    }) + selects.with_or({
-        (
-            # The following additional architectures support float16:
-            # - aarch64_be
-            # - riscv32
-            # - riscv64
-            "@platforms//cpu:aarch64",
-            "@platforms//cpu:riscv64",
-            "@platforms//cpu:x86_64",
-        ): [
-            ":builtins_bf16_sources",
-        ],
-        "//conditions:default": [],
+    srcs = _BUILTINS_SRCS,
+    copts = _BUILTINS_COPTS + select({
+        ":windows_msvc": ["/clang:-fvisibility=hidden"],
+        "//conditions:default": ["-fvisibility=hidden"],
     }),
-    copts = select({
-        ":windows_msvc": [
-            "/clang:-fno-builtin",
-            "/clang:-std=c11",
-            "/clang:-fvisibility=hidden",
-        ],
-        "//conditions:default": [
-            "-fno-builtin",
-            "-std=c11",
-            "-fvisibility=hidden",
-            # "-Wbuiltin-declaration-mismatch",
-        ],
-    }) + select({
-        ":windows_msvc_optimized": [
-            "/clang:-fomit-frame-pointer",
-        ],
-        "@llvm//config:runtimes_optimization_mode_optimized": [
-            "-fomit-frame-pointer",
-        ],
-        "//conditions:default": [],
-    }) + select({
-        ":windows_msvc": [
-            "/clang:-Wno-missing-declarations",
-            "/clang:-Wno-pragma-pack",
-        ],
-        "//conditions:default": [],
-    }) + select({
-        "@platforms//os:macos": [
-            "-Wno-deprecated-declarations",
-            # TODO(zbarsky): This is spammy, but we should do a real fix.
-            # "-Wno-macro-redefined",
-        ],
-        "@platforms//os:windows": [
-            "-Wno-missing-declarations",
-            "-Wno-pragma-pack",
-        ],
-        "@platforms//os:uefi": [
-            "-ffreestanding",
-            "-DKERNEL_USE",
-        ],
-        "//conditions:default": [],
-    }) + CF_PROTECTION_COPTS,
-    features = select({
-        # clang-cl discovers builtins in its resource directory, outside
-        # Bazel's LTO compilation context. Keep the implicit archive native.
-        ":windows_msvc": ["-thin_lto"],
-        "//conditions:default": [],
-    }),
-    implementation_deps = select({
-        "@platforms//os:macos": [],
-        "@platforms//os:linux": [
-            # TODO(cerisier): Provide only a subset of linux UAPI headers for musl.
-            # https://github.com/hermeticbuild/hermetic-llvm/issues/146
-            "@kernel_headers",
-        ],
-        "@platforms//os:windows": [],
-        "@platforms//os:uefi": [],
-        "@platforms//os:none": [],
-    }) + select({
-        "@llvm//platforms/config:musl": [
-            "@musl_libc//:musl_libc_headers",
-        ],
-        "@llvm//platforms/config:gnu": [
-            "@glibc//:gnu_libc_headers",
-        ],
-        "@platforms//os:macos": [
-            # on macOS we implicitly use SDK provided headers
-        ],
-        ":windows_msvc": [],
-        "@platforms//os:windows": [
-            "@mingw//:mingw_headers",
-        ],
-        "@platforms//os:uefi": [],
-        "@platforms//os:none": [],
-    }),
+    features = _BUILTINS_FEATURES,
+    implementation_deps = _BUILTINS_IMPLEMENTATION_DEPS,
     includes = ["lib/builtins"],
     linkstatic = True,
-    local_defines = selects.with_or({
-        (
-            # The following additional architectures support float16:
-            # - aarch64_be
-            # - arm
-            # - armeb
-            # - hexagon
-            # - riscv32
-            # - riscv64
-            # - spirv
-            # - thumb
-            # - thumbeb
-            "@platforms//cpu:aarch64",
-            "@platforms//cpu:riscv64",
-            "@platforms//cpu:x86_64",
-        ): [
-            "COMPILER_RT_HAS_FLOAT16",
-        ],
-        "//conditions:default": [],
-    }),
-    textual_hdrs = [
-        "lib/builtins/fp_add_impl.inc",
-        "lib/builtins/fp_compare_impl.inc",
-        "lib/builtins/fp_div_impl.inc",
-        "lib/builtins/fp_extend_impl.inc",
-        "lib/builtins/fp_fixint_impl.inc",
-        "lib/builtins/fp_fixuint_impl.inc",
-        "lib/builtins/fp_mul_impl.inc",
-        "lib/builtins/fp_trunc_impl.inc",
-        "lib/builtins/int_div_impl.inc",
-        "lib/builtins/int_mulo_impl.inc",
-        "lib/builtins/int_mulv_impl.inc",
-        "lib/builtins/int_to_fp_impl.inc",
-        "lib/builtins/cpu_model/cpu_model.h",
-        "lib/builtins/unwind-ehabi-helpers.h",
-    ] + select({
-        "@platforms//cpu:aarch64": [
-            "lib/builtins/cpu_model/AArch64CPUFeatures.inc",
-            "lib/builtins/cpu_model/aarch64/hwcap.inc",
-            # "lib/builtins/cpu_model/aarch64/lse_atomics/atomic_helper.inc",
-            "lib/builtins/cpu_model/aarch64/lse_atomics/getauxval.inc",
-        ],
-        "@platforms//cpu:riscv64": [
-            "lib/builtins/riscv/int_mul_impl.inc",
-        ] + ([
-            "lib/builtins/cpu_model/riscv/hwprobe.inc",
-            "lib/builtins/cpu_model/riscv/unimplemented.inc",
-        ] if int(LLVM_VERSION_MAJOR) >= 23 else []),
-        "//conditions:default": [],
-    }) + select({
-        "@llvm//platforms/config:windows_aarch64": [
-            "lib/builtins/cpu_model/aarch64/lse_atomics/windows.inc",
-        ],
-        "//conditions:default": [],
-    }) + select({
-        "@llvm//platforms/config:linux_aarch64": ([
-            "lib/builtins/cpu_model/aarch64/fmv/hwcap.inc",
-        ] if int(LLVM_VERSION_MAJOR) >= 22 else [
-            "lib/builtins/cpu_model/aarch64/fmv/mrs.inc",
-        ]) + [
-            "lib/builtins/cpu_model/aarch64/fmv/getauxval.inc",
-        ],
-        "@llvm//platforms/config:macos_aarch64": [
-            "lib/builtins/cpu_model/aarch64/fmv/apple.inc",
-        ],
-        "@llvm//platforms/config:windows_aarch64": [
-            "lib/builtins/cpu_model/aarch64/fmv/windows.inc",
-        ],
-        "//conditions:default": [],
-    }),
-    deps = select({
-        "@platforms//cpu:aarch64": [
-            ":builtins_aarch64_atomic",
-        ],
-        "//conditions:default": [],
-    }),
+    local_defines = _BUILTINS_LOCAL_DEFINES,
+    textual_hdrs = _BUILTINS_TEXTUAL_HDRS,
+    deps = _BUILTINS_DEPS,
+)
+
+# Export the GNU-compatible builtin symbols through the libgcc_s version map.
+cc_library(
+    name = "gcc_s_builtins",
+    srcs = _BUILTINS_SRCS,
+    copts = _BUILTINS_COPTS + ["-fvisibility=default"],
+    features = _BUILTINS_FEATURES,
+    implementation_deps = _BUILTINS_IMPLEMENTATION_DEPS,
+    includes = ["lib/builtins"],
+    linkstatic = True,
+    local_defines = _BUILTINS_LOCAL_DEFINES,
+    target_compatible_with = ["@platforms//os:linux"],
+    textual_hdrs = _BUILTINS_TEXTUAL_HDRS,
+    visibility = ["//libunwind:__pkg__"],
+    deps = _BUILTINS_DEPS,
 )
 
 cc_runtime_stage0_static_library(
@@ -939,7 +970,12 @@ cc_library(
     name = "libcxx_headers",
     deps = select({
         "@platforms//os:macos": [],
-        "@platforms//os:linux": [
+        "@llvm//runtimes/cxxstdlib:libstdcxx_linux": [
+            # do not sort: GCC wrappers must precede the libc headers.
+            "@gcc//:build_headers",
+            ":linux_libc_headers",
+        ],
+        "@llvm//runtimes/cxxstdlib:libcxx_linux": [
             # do not sort: linux_libc_headers have to come after libcxx
             "@llvm-project//libcxx:headers",
             "@llvm-project//libcxxabi:headers",

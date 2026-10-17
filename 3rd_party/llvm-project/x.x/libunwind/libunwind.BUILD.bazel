@@ -1,4 +1,7 @@
+load("@bazel_lib//lib:run_binary.bzl", "run_binary")
 load("@bazel_skylib//lib:selects.bzl", "selects")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("@llvm//toolchain/args:llvm_target_triple.bzl", "LLVM_TARGET_TRIPLE")
 load("@llvm//toolchain/runtimes:cc_runtime_shared_library.bzl", "cc_runtime_stage1_shared_library")
 load("@llvm//toolchain/runtimes:cc_runtime_static_library.bzl", "cc_runtime_stage0_static_library")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
@@ -180,5 +183,60 @@ cc_runtime_stage1_shared_library(
     visibility = ["//visibility:public"],
     deps = [
         ":libunwind",
+    ],
+)
+
+# This is a link-time facade for GNU libgcc_s. Hide compiler-rt-only helpers
+# that are absent from the upstream compatibility map and the host runtime.
+write_file(
+    name = "libgcc_s_local_symbols",
+    out = "libgcc_s_local_symbols.version",
+    content = ["GCC_3.0 { local: *; };"],
+)
+
+# Follow llvm-libgcc/CMakeLists.txt: preprocess the upstream version map for
+# the target architecture, including its GNU frame-registration symbol versions.
+run_binary(
+    name = "libgcc_s_version",
+    srcs = [
+        ":libgcc_s_local_symbols",
+        "@llvm-project//:llvm-libgcc/gcc_s.ver.in",
+    ],
+    outs = ["libgcc_s.version"],
+    args = [
+        "-E",
+        "-P",
+        "-x",
+        "c",
+        "-target",
+    ] + LLVM_TARGET_TRIPLE + [
+        "-include",
+        "$(location :libgcc_s_local_symbols)",
+        "$(location @llvm-project//:llvm-libgcc/gcc_s.ver.in)",
+        "-o",
+        "$@",
+    ],
+    tool = "@llvm//tools:clang",
+)
+
+# Use the host's GNU unwinder when libstdc++ crosses shared-library boundaries.
+cc_runtime_stage1_shared_library(
+    name = "libgcc_s.shared",
+    additional_linker_inputs = [
+        ":libgcc_s_version",
+    ],
+    shared_lib_name = "libgcc_s.so.1",
+    target_compatible_with = select({
+        "@llvm//runtimes/cxxstdlib:libstdcxx_linux_system": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+    user_link_flags = [
+        "-Wl,-soname,libgcc_s.so.1",
+        "-Wl,--version-script,$(location :libgcc_s_version)",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":libunwind",
+        "@llvm-project//compiler-rt:gcc_s_builtins",
     ],
 )

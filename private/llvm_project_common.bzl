@@ -89,6 +89,8 @@ def write_llvm_project_files(rctx):
     rctx.file("BUILD.bazel", """\
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 
+exports_files(["llvm-libgcc/gcc_s.ver.in"])
+
 bzl_library(
     name = "version",
     srcs = ["vars.bzl"],

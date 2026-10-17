@@ -31,6 +31,7 @@ load(
     "profile_cc_binary",
     "rtsan_cc_binary",
     "safestack_cc_binary",
+    "system_libstdcxx_cc_binary",
     "tsan_cc_binary",
     "tysan_cc_binary",
     "ubsan_cc_binary",
@@ -178,6 +179,34 @@ cc_binary(
         "@llvm//constraints/libc:musl": ["@platforms//:incompatible"],
         "//conditions:default": [],
     }),
+)
+
+cc_binary(
+    name = "libstdcxx_exception_dso",
+    srcs = ["libstdcxx_exception_dso.cc"],
+    linkshared = True,
+    target_compatible_with = select({
+        "@llvm//runtimes/cxxstdlib:libstdcxx_linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }) + select({
+        "@llvm//platforms/config:gnu": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)
+
+cc_import(
+    name = "libstdcxx_exception_import",
+    shared_library = ":libstdcxx_exception_dso",
+)
+
+system_libstdcxx_cc_binary(
+    name = "libstdcxx_main_default",
+    srcs = ["libstdcxx_exception_main.cc"],
+    target_compatible_with = select({
+        "@llvm//runtimes/cxxstdlib:libstdcxx_linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+    deps = [":libstdcxx_exception_import"],
 )
 
 cc_binary(
@@ -1586,3 +1615,57 @@ test_suite(
         for cpu, _, _ in _WINDOWS_MSVC_ARTIFACT_PLATFORMS
     ],
 )
+
+[
+    platform_transition_filegroup(
+        name = "libstdcxx_main_default_linux_" + arch,
+        srcs = [":libstdcxx_main_default"],
+        target_compatible_with = _LIBSTDCXX_E2E_TARGET_COMPATIBLE_WITH,
+        target_platform = ":linux_" + arch + "_system_libstdcxx",
+    )
+    for arch in [
+        "x86_64",
+        "aarch64",
+    ]
+]
+
+[
+    exec_test(
+        sh_test,
+        name = "libstdcxx_main_default_" + arch + "_output_test",
+        srcs = ["system_libstdcxx_output_test.sh"],
+        data = [
+            ":libstdcxx_main_default_linux_" + arch,
+            "@llvm//tools:llvm-readelf",
+        ],
+        env = {
+            "BINARY": "$(rootpath :libstdcxx_main_default_linux_" + arch + ")",
+            "READELF": "$(rootpath @llvm//tools:llvm-readelf)",
+        },
+        target_compatible_with = [
+            "@platforms//cpu:" + arch,
+            "@platforms//os:linux",
+        ],
+    )
+    for arch in [
+        "x86_64",
+        "aarch64",
+    ]
+]
+
+# GCC 12 headers allow the test to use the system runtimes on CI workers.
+[
+    platform(
+        name = "linux_" + arch + "_system_libstdcxx",
+        constraint_values = [
+            "@platforms//cpu:" + arch,
+            "@platforms//os:linux",
+            "@llvm//constraints/libc:gnu.2.28",
+            "@llvm//constraints/cxxstdlib:libstdcxx.12.5.0",
+        ],
+    )
+    for arch in [
+        "x86_64",
+        "aarch64",
+    ]
+]

@@ -171,6 +171,17 @@ def config_settings():
         build_setting_default = True,
     )
 
+    # Resolve GNU runtimes from the deployment host while retaining static
+    # project-library linkage. The host must provide the selected symbol ABI.
+    bool_flag(
+        name = "system_libstdcxx",
+        build_setting_default = False,
+    )
+    native.config_setting(
+        name = "system_libstdcxx_enabled",
+        flag_values = {":system_libstdcxx": "true"},
+    )
+
     for sanitizer in SANITIZERS:
         bool_flag(
             name = sanitizer,
