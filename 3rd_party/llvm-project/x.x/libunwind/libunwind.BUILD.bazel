@@ -182,3 +182,53 @@ cc_runtime_stage1_shared_library(
         ":libunwind",
     ],
 )
+
+# Stack walking without pulling in a second exception unwinder.
+cc_library(
+    name = "libunwind_stacktrace",
+    srcs = [
+        "src/UnwindRegistersRestore.S",
+        "src/UnwindRegistersSave.S",
+        "src/libunwind.cpp",
+    ],
+    hdrs = glob([
+        "src/*.h",
+        "src/*.hpp",
+    ]),
+    copts = [
+        "-Wa,--noexecstack",
+        "-funwind-tables",
+    ] + CF_PROTECTION_COPTS,
+    cxxopts = [
+        "-fno-exceptions",
+        "-fno-rtti",
+    ],
+    implementation_deps = [
+        "@glibc//:gnu_libc_headers",
+        "@kernel_headers",
+    ],
+    includes = ["src"],
+    local_defines = [
+        "_LIBUNWIND_IS_NATIVE_ONLY",
+        "_NDEBUG",
+        "_LIBUNWIND_USE_FRAME_HEADER_CACHE",
+    ],
+    target_compatible_with = select({
+        "@llvm//platforms/config:gnu": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }) + ["@platforms//os:linux"],
+    deps = [
+        ":headers",
+        "@llvm-project//compiler-rt:sanitizers_interface_headers",
+    ],
+)
+
+cc_runtime_stage0_static_library(
+    name = "libunwind_stacktrace.static",
+    target_compatible_with = select({
+        "@llvm//platforms/config:gnu": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }) + ["@platforms//os:linux"],
+    visibility = ["//visibility:public"],
+    deps = [":libunwind_stacktrace"],
+)
