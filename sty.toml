@@ -3,8 +3,7 @@
 "directory.bzl" = "directory.bzli"
 
 [rules]
-# exec_test forwards arbitrary keyword arguments to its supplied rule.
-missing-parameter-annotation = "ignore"
+missing-parameter-annotation = "error"
 missing-return-annotation = "error"
 missing-type-argument = "error"
 unsound-assignment = "error"

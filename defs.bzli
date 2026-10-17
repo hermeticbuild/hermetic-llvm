@@ -1,5 +1,9 @@
 """Executable tests whose inner target uses the execution configuration."""
 
+type _LabelListInput = Iterable[str | Label] | depset[str | Label]
+type _ConstraintsInput = _LabelListInput | select[_LabelListInput | None] | None
+type _Forwarded = dict[{"target_compatible_with": NotRequired[_ConstraintsInput]}, ...]
+
 def exec_test(
     rule: Callable[..., object],
     *,
@@ -10,7 +14,7 @@ def exec_test(
     data: Sequence[str | Label] | select[Sequence[str | Label]] = ...,
     inner_data: Sequence[str | Label] | select[Sequence[str | Label]] = ...,
     tools: Sequence[str | Label] | select[Sequence[str | Label]] = ...,
-    **kwargs,
+    **kwargs: Unpack[_Forwarded],
 ) -> None: ...
 
 def _exec_test_impl(ctx) -> list[DefaultInfo | RunEnvironmentInfo]: ...
