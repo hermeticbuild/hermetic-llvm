@@ -1586,3 +1586,32 @@ test_suite(
         for cpu, _, _ in _WINDOWS_MSVC_ARTIFACT_PLATFORMS
     ],
 )
+
+[
+    platform_transition_filegroup(
+        name = "glibc_2_39_" + lib + "_compat_stubs",
+        srcs = ["@llvm//runtimes/glibc:lib" + lib + ".s"],
+        target_platform = "@llvm//platforms:linux_x86_64_gnu.2.39",
+    )
+    for lib in [
+        "pthread",
+        "dl",
+        "c",
+    ]
+]
+
+exec_test(
+    sh_test,
+    name = "glibc_merged_libraries_compat_test",
+    srcs = ["glibc_merged_libraries_compat_test.sh"],
+    args = [
+        "$(rootpath :glibc_2_39_pthread_compat_stubs)",
+        "$(rootpath :glibc_2_39_dl_compat_stubs)",
+        "$(rootpath :glibc_2_39_c_compat_stubs)",
+    ],
+    data = [
+        ":glibc_2_39_c_compat_stubs",
+        ":glibc_2_39_dl_compat_stubs",
+        ":glibc_2_39_pthread_compat_stubs",
+    ],
+)
