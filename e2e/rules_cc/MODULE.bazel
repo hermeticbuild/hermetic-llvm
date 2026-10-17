@@ -19,6 +19,13 @@ local_path_override(
     path = "../../",
 )
 
+# Overrides only apply in the root module, so this repeats the one in @llvm.
+git_override(
+    module_name = "platforms_contrib",
+    commit = "3761bcf01e24afcedd9590831dc7b3284c766423",
+    remote = "https://github.com/bazel-contrib/platforms_contrib.git",
+)
+
 llvm = use_extension("@llvm//extensions:llvm.bzl", "llvm")
 use_repo(llvm, "llvm-project")
 

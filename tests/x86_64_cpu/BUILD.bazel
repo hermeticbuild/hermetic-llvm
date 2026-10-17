@@ -1,0 +1,3 @@
+load(":x86_64_cpu_test.bzl", "x86_64_cpu_test_suite")
+
+x86_64_cpu_test_suite(name = "x86_64_cpu")
