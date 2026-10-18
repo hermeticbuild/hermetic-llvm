@@ -10,17 +10,37 @@ type _DefaultForwarded = dict[{
     "inner_data": NotRequired[Never],
 }, ...]
 
+type _ImplementationForwarded = dict[{
+    "target_compatible_with": NotRequired[_ConstraintsInput],
+    "inner_data": NotRequired[_InnerDataInput],
+}, ...]
+
 type _InnerTags[T] = list[T | Literal["manual"]]
 
+# The supplied rule determines the remaining parameters. ParamSpec forwards a
+# whole signature; this wrapper replaces data, tags, and the generated name.
+# The remaining keyword parameters and generated-name constraint stay gradual;
+# this contract checks the data and tags relationship only.
 class _DataRule[D, T: str](Protocol):
-    def __call__(self, *args: Unknown, data: D, tags: _InnerTags[T], **kwargs: Unknown) -> object: ...
+    def __call__(
+        self,  # ty: ignore[non-static-type]
+        *args: Unknown,  # ty: ignore[non-static-type]
+        data: D,
+        tags: _InnerTags[T],
+        **kwargs: Unknown,  # ty: ignore[non-static-type]
+    ) -> object: ...
 
 class _TagsRule[T: str](Protocol):
-    def __call__(self, *args: Unknown, tags: _InnerTags[T], **kwargs: Unknown) -> object: ...
+    def __call__(
+        self,  # ty: ignore[non-static-type]
+        *args: Unknown,  # ty: ignore[non-static-type]
+        tags: _InnerTags[T],
+        **kwargs: Unknown,  # ty: ignore[non-static-type]
+    ) -> object: ...
 
 @overload
 def exec_test[D: _InnerDataInput, T: str](
-    rule: _DataRule[D, T],
+    rule: _DataRule[D, T],  # ty: ignore[non-static-type]
     *,
     name: str,
     tags: list[T] = ...,
@@ -34,7 +54,7 @@ def exec_test[D: _InnerDataInput, T: str](
 
 @overload
 def exec_test[D, T: str](
-    rule: _DataRule[list[D], T],
+    rule: _DataRule[list[D], T],  # ty: ignore[non-static-type]
     *,
     name: str,
     tags: list[T] = ...,
@@ -46,16 +66,15 @@ def exec_test[D, T: str](
 ) -> None: ...
 
 def exec_test[T: str](
-    rule: _TagsRule[T],
+    rule: _TagsRule[T],  # ty: ignore[non-static-type]
     *,
     name: str,
     tags: list[T] = ...,
     args: Sequence[str] | select[Sequence[str]] = ...,
     env: dict[str, str] | select[dict[str, str]] = ...,
     data: Sequence[str | Label] | select[Sequence[str | Label]] = ...,
-    inner_data: Sequence[str | Label] | select[Sequence[str | Label]] = ...,
     tools: Sequence[str | Label] | select[Sequence[str | Label]] = ...,
-    **kwargs: Unpack[_Forwarded],
+    **kwargs: Unpack[_ImplementationForwarded],
 ) -> None: ...
 
 def _exec_test_impl(ctx) -> list[DefaultInfo | RunEnvironmentInfo]: ...
