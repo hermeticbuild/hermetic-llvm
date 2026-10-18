@@ -4,6 +4,7 @@ strict-generic-narrowing = true
 [type-interfaces]
 "defs.bzl" = "defs.bzli"
 "directory.bzl" = "directory.bzli"
+"toolchain/llvm/llvm.bzl" = "toolchain/llvm/llvm.bzli"
 
 [rules]
 missing-parameter-annotation = "error"
@@ -15,7 +16,11 @@ explicit-any = "error"
 non-static-type = "error"
 blanket-ignore-comment = "error"
 possibly-unresolved-reference = "error"
+possibly-missing-attribute = "error"
 division-by-zero = "error"
 
 [[stub-packages]]
 manifest = "@bazel_skylib//:stubs.toml"
+
+[[stub-packages]]
+manifest = "@rules_cc//:stubs.toml"
