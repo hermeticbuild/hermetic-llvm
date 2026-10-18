@@ -10,15 +10,20 @@ type _DefaultForwarded = dict[{
     "inner_data": NotRequired[Never],
 }, ...]
 
-class _DataRule[D](Protocol):
-    def __call__(self, *args: Unknown, data: D, **kwargs: Unknown) -> object: ...
+type _InnerTags[T] = list[T | Literal["manual"]]
+
+class _DataRule[D, T: str](Protocol):
+    def __call__(self, *args: Unknown, data: D, tags: _InnerTags[T], **kwargs: Unknown) -> object: ...
+
+class _TagsRule[T: str](Protocol):
+    def __call__(self, *args: Unknown, tags: _InnerTags[T], **kwargs: Unknown) -> object: ...
 
 @overload
-def exec_test[D: _InnerDataInput](
-    rule: _DataRule[D],
+def exec_test[D: _InnerDataInput, T: str](
+    rule: _DataRule[D, T],
     *,
     name: str,
-    tags: list[str] = ...,
+    tags: list[T] = ...,
     args: Sequence[str] | select[Sequence[str]] = ...,
     env: dict[str, str] | select[dict[str, str]] = ...,
     data: Sequence[str | Label] | select[Sequence[str | Label]] = ...,
@@ -28,11 +33,11 @@ def exec_test[D: _InnerDataInput](
 ) -> None: ...
 
 @overload
-def exec_test[T](
-    rule: _DataRule[list[T]],
+def exec_test[D, T: str](
+    rule: _DataRule[list[D], T],
     *,
     name: str,
-    tags: list[str] = ...,
+    tags: list[T] = ...,
     args: Sequence[str] | select[Sequence[str]] = ...,
     env: dict[str, str] | select[dict[str, str]] = ...,
     data: Sequence[str | Label] | select[Sequence[str | Label]] = ...,
@@ -40,11 +45,11 @@ def exec_test[T](
     **kwargs: Unpack[_DefaultForwarded],
 ) -> None: ...
 
-def exec_test(
-    rule: Callable[..., object],
+def exec_test[T: str](
+    rule: _TagsRule[T],
     *,
     name: str,
-    tags: list[str] = ...,
+    tags: list[T] = ...,
     args: Sequence[str] | select[Sequence[str]] = ...,
     env: dict[str, str] | select[dict[str, str]] = ...,
     data: Sequence[str | Label] | select[Sequence[str | Label]] = ...,

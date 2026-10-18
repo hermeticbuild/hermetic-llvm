@@ -1,4 +1,8 @@
 def exec_test(rule, *, name, tags = [], args = [], env = {}, data = [], inner_data = [], tools = [], **kwargs):
+    inner_tags = list(tags)  # type: _InnerTags[T]
+    if "manual" not in tags:
+        inner_tags.append("manual")
+
     # The inner executable is built in the exec configuration. Keep target
     # artifacts on the outer test unless an inner rule attribute itself uses a
     # location expansion for one of them (for example go_test.x_defs), in which
@@ -6,7 +10,7 @@ def exec_test(rule, *, name, tags = [], args = [], env = {}, data = [], inner_da
     rule(
         name = name + "_",
         data = inner_data,
-        tags = tags + (["manual"] if "manual" not in tags else []),
+        tags = inner_tags,
         **kwargs
     )
 
