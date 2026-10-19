@@ -36,3 +36,24 @@ declare_glibc_repository_target(
     bazel_target = "glibc_crt1.object",
     target_compatible_with = ["@platforms//os:linux"],
 )
+
+declare_glibc_repository_target(
+    name = "glibc_static_srcs",
+    bazel_repository = "@glibc",
+    bazel_target = "static_srcs",
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+declare_glibc_repository_target(
+    name = "glibc_static_src_marker",
+    bazel_repository = "@glibc",
+    bazel_target = "static_src_marker",
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+declare_glibc_repository_target(
+    name = "glibc_static_kernel_headers",
+    bazel_repository = "@glibc",
+    bazel_target = "static_kernel_headers",
+    target_compatible_with = ["@platforms//os:linux"],
+)
