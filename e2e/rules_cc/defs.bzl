@@ -49,7 +49,7 @@ external_include_paths_glibc_alias, _external_include_paths_glibc_alias_internal
 # run time; Linux links the static runtime, so nothing is added there. Callers
 # never repeat the dynamic_dep per target.
 def _with_macos_sanitizer_runtime(inner_binary, macos_runtime):
-    def _macro(name, dynamic_deps = None, **kwargs):
+    def _macro(name, dynamic_deps = None, **kwargs):  # type: (str, _DynamicDeps | None, **KeywordArgs[P]) -> None
         inner_binary(
             name = name,
             dynamic_deps = (dynamic_deps or []) + select({
