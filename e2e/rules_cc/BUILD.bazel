@@ -266,57 +266,9 @@ LIBSTDCXX_PLATFORMS = [
 ]
 
 [
-    cc_binary(
-        name = "libstdcxx_runtime_" + linkage,
-        srcs = ["libstdcxx_runtime.cc"],
-        linkstatic = linkage == "static",
-        target_compatible_with = select({
-            "@llvm//constraints/cxxstdlib:libstdcxx": [],
-            "//conditions:default": ["@platforms//:incompatible"],
-        }) + [
-            "@platforms//os:linux",
-        ],
-    )
-    for linkage in [
-        "static",
-        "dynamic",
-    ]
-]
-
-[
-    platform_transition_filegroup(
-        name = "libstdcxx_runtime_{}_linux_x86_64".format(linkage),
-        srcs = [":libstdcxx_runtime_" + linkage],
-        target_compatible_with = select({
-            "@platforms//os:linux": [],
-            "//conditions:default": ["@platforms//:incompatible"],
-        }),
-        target_platform = ":linux_x86_64_libstdcxx",
-    )
-    for linkage in [
-        "static",
-        "dynamic",
-    ]
-]
-
-[
-    exec_test(
-        sh_test,
+    test_suite(
         name = "libstdcxx_runtime_{}_test".format(linkage),
-        srcs = ["libstdcxx_runtime_test.sh"],
-        data = [
-            ":libstdcxx_runtime_{}_linux_x86_64".format(linkage),
-            "@llvm//tools:llvm-readelf",
-        ],
-        env = {
-            "BINARY": "$(rootpath :libstdcxx_runtime_{}_linux_x86_64)".format(linkage),
-            "LINKAGE": linkage,
-            "READELF": "$(rootpath @llvm//tools:llvm-readelf)",
-        },
-        target_compatible_with = [
-            "@platforms//cpu:x86_64",
-            "@platforms//os:linux",
-        ],
+        tests = ["@llvm//runtimes/libstdcxx/tests:runtime_{}_test".format(linkage)],
     )
     for linkage in [
         "static",

@@ -1,8 +1,8 @@
 load("@bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
-load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
-load("//3rd_party/gcc:version.bzl", "GCC_VERSIONS", "gcc_repository_label", "gcc_target_suffix", "libstdcxx_constraint_value")
+load("//:defs.bzl", "exec_test")
+load("//3rd_party/gcc:version.bzl", "DEFAULT_GCC_VERSION", "GCC_VERSIONS", "gcc_repository_label", "gcc_target_suffix", "libstdcxx_constraint_value")
 load("//constraints/libc:libc_versions.bzl", "default_libc")
 
 package(default_visibility = ["//visibility:public"])
@@ -28,26 +28,9 @@ sh_test(
     }),
 )
 
-write_file(
-    name = "libstdcxx_link_smoke_src",
-    out = "libstdcxx_link_smoke.cc",
-    content = [
-        "#include <stdexcept>",
-        "#include <string>",
-        "#include <vector>",
-        "",
-        "int main() {",
-        "  std::vector<std::string> values;",
-        "  values.emplace_back(\"libstdc++\");",
-        "  if (values.front().size() != 9) throw std::runtime_error(\"bad string\");",
-        "  return 0;",
-        "}",
-    ],
-)
-
 cc_binary(
     name = "toolchain_dynamic_link_smoke",
-    srcs = [":libstdcxx_link_smoke_src"],
+    srcs = ["libstdcxx_runtime.cc"],
     linkstatic = False,
     target_compatible_with = select({
         "//constraints/cxxstdlib:libstdcxx": [],
@@ -59,7 +42,7 @@ cc_binary(
 
 cc_binary(
     name = "toolchain_static_link_smoke",
-    srcs = [":libstdcxx_link_smoke_src"],
+    srcs = ["libstdcxx_runtime.cc"],
     linkstatic = True,
     target_compatible_with = select({
         "//constraints/cxxstdlib:libstdcxx": [],
@@ -68,6 +51,59 @@ cc_binary(
         "@platforms//os:linux",
     ],
 )
+
+# Pin the execution tests' glibc baseline so the resulting binaries can run
+# in the Ubuntu 22.04 execution container.
+platform(
+    name = "runtime_test_linux_x86_64",
+    constraint_values = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+        "//constraints/libc:gnu.2.28",
+        "//constraints/cxxstdlib:" + libstdcxx_constraint_value(DEFAULT_GCC_VERSION),
+    ],
+)
+
+[
+    platform_transition_filegroup(
+        name = "runtime_{}_linux_x86_64".format(linkage),
+        srcs = [":toolchain_{}_link_smoke".format(linkage)],
+        target_compatible_with = select({
+            "@platforms//os:linux": [],
+            "//conditions:default": ["@platforms//:incompatible"],
+        }),
+        target_platform = ":runtime_test_linux_x86_64",
+    )
+    for linkage in [
+        "static",
+        "dynamic",
+    ]
+]
+
+[
+    exec_test(
+        sh_test,
+        name = "runtime_{}_test".format(linkage),
+        srcs = ["libstdcxx_runtime_test.sh"],
+        data = [
+            ":runtime_{}_linux_x86_64".format(linkage),
+            "@llvm//tools:llvm-readelf",
+        ],
+        env = {
+            "BINARY": "$(rootpath :runtime_{}_linux_x86_64)".format(linkage),
+            "LINKAGE": linkage,
+            "READELF": "$(rootpath @llvm//tools:llvm-readelf)",
+        },
+        target_compatible_with = [
+            "@platforms//cpu:x86_64",
+            "@platforms//os:linux",
+        ],
+    )
+    for linkage in [
+        "static",
+        "dynamic",
+    ]
+]
 
 [
     platform(
