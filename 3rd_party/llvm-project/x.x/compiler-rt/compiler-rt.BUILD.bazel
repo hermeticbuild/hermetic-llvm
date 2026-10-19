@@ -1408,18 +1408,6 @@ _INTERNAL_SYMBOLIZER_CONSTRAINTS = [
     for libc in LIBCS
 ]
 
-[
-    platform(
-        name = "internal_symbolizer_{}_{}".format(
-            target_os,
-            target_cpu,
-        ),
-        constraint_values = _INTERNAL_SYMBOLIZER_CONSTRAINTS,
-        parents = ["@llvm//platforms:{}_{}".format(target_os, target_cpu)],
-    )
-    for target_os, target_cpu in LIBC_SUPPORTED_TARGETS
-]
-
 _INTERNAL_SYMBOLIZER_PLATFORMS = {
     "@llvm//platforms/config:{}_{}_{}".format(target_os, target_cpu, libc): ":internal_symbolizer_{}_{}_{}".format(
         target_os,
@@ -1429,11 +1417,6 @@ _INTERNAL_SYMBOLIZER_PLATFORMS = {
     for target_os, target_cpu in LIBC_SUPPORTED_TARGETS
     for libc in LIBCS
 }
-
-_INTERNAL_SYMBOLIZER_PLATFORMS.update({
-    "@llvm//platforms/config:{}_{}_unconstrained".format(target_os, target_cpu): ":internal_symbolizer_{}_{}".format(target_os, target_cpu)
-    for target_os, target_cpu in LIBC_SUPPORTED_TARGETS
-})
 
 _INTERNAL_SYMBOLIZER_COPTS = [
     "-DNDEBUG",

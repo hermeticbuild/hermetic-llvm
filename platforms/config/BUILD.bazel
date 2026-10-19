@@ -26,10 +26,22 @@ bzl_library(
     srcs = ["declare_config_settings.bzl"],
     visibility = ["//visibility:public"],
     deps = [
+        ":libc",
         "//constraints/libc:libc_versions",
         "//constraints/windows/abi:abis",
         "//platforms:common",
         "//toolchain:bootstrap_stages",
         "@bazel_skylib//lib:selects",
+    ],
+)
+
+bzl_library(
+    name = "libc",
+    srcs = ["libc.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//constraints/libc:libc_versions",
+        "//platforms:common",
+        "@bazel_skylib//rules:common_settings",
     ],
 )

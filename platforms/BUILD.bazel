@@ -12,6 +12,10 @@ bzl_library(
         "//constraints/cxxstdlib:cxxstdlib_versions",
         "//constraints/libc:libc_versions",
         "//constraints/windows/abi:abis",
+        "//toolchain/args:x86_64_cpu",
+        "@bazel_features//:features",
+        "@platforms_contrib//os/linux/libc/glibc:glibc_bzl",
+        "@platforms_contrib//os/linux/libc/musl:musl_bzl",
     ],
 )
 

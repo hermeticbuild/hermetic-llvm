@@ -3,6 +3,7 @@ load("//constraints/libc:libc_versions.bzl", "GLIBCS", "LIBCS")
 load("//constraints/windows/abi:abis.bzl", "WINDOWS_ABIS", "WINDOWS_MINGW_COMPATIBLE_ABIS")
 load("//platforms:common.bzl", "LIBC_SUPPORTED_TARGETS", "SUPPORTED_TARGETS", "WINDOWS_TARGETS")
 load("//toolchain:bootstrap_stages.bzl", "BOOTSTRAP_STAGES")
+load(":libc.bzl", "target_libc")
 
 def declare_config_settings():
     for (target_os, target_cpu) in SUPPORTED_TARGETS:
@@ -32,47 +33,62 @@ def declare_config_settings():
     declare_config_settings_windows_abi_aware()
 
 def declare_config_settings_libc_aware():
-    for (target_os, target_cpu) in LIBC_SUPPORTED_TARGETS:
-        for libc in LIBCS + ["unconstrained"]:
-            native.config_setting(
-                name = "{}_{}_{}".format(target_os, target_cpu, libc),
-                constraint_values = [
-                    "@platforms//cpu:{}".format(target_cpu),
-                    "@platforms//os:{}".format(target_os),
-                    "//constraints/libc:{}".format(libc),
-                ],
-                visibility = ["//visibility:public"],
-            )
-
-        selects.config_setting_group(
-            name = "{}_{}_gnu".format(target_os, target_cpu),
-            match_all = [
-                "@platforms//cpu:{}".format(target_cpu),
-                "@platforms//os:{}".format(target_os),
-                ":gnu",
-            ],
-            visibility = ["//visibility:public"],
-        )
-
-    selects.config_setting_group(
-        name = "gnu",
-        match_any = [
-            "//constraints/libc:{}".format(libc)
-            for libc in GLIBCS
-        ] + [
-            "{}_{}_unconstrained".format(target_os, target_cpu)
-            for (target_os, target_cpu) in LIBC_SUPPORTED_TARGETS
-        ],
-        visibility = ["//visibility:public"],
+    # See target_libc for how the libc that Linux targets compile against is chosen.
+    target_libc(
+        name = "target_libc",
+    )
+    target_libc(
+        name = "target_libc_family",
+        family = True,
     )
 
     native.config_setting(
         name = "musl",
-        constraint_values = [
-            "//constraints/libc:musl",
-        ],
+        flag_values = {":target_libc_family": "musl"},
         visibility = ["//visibility:public"],
     )
+
+    # Also matches if the target platform only makes unsupported glibc versions available, which
+    # the per-version settings below don't.
+    native.config_setting(
+        name = "gnu",
+        flag_values = {":target_libc_family": "gnu"},
+        visibility = ["//visibility:public"],
+    )
+
+    for glibc in GLIBCS:
+        native.config_setting(
+            name = glibc,
+            flag_values = {":target_libc": glibc},
+            visibility = ["//visibility:public"],
+        )
+
+    for (target_os, target_cpu) in LIBC_SUPPORTED_TARGETS:
+        constraint_values = [
+            "@platforms//cpu:{}".format(target_cpu),
+            "@platforms//os:{}".format(target_os),
+        ]
+        for libc in LIBCS:
+            native.config_setting(
+                name = "{}_{}_{}".format(target_os, target_cpu, libc),
+                constraint_values = constraint_values,
+                flag_values = {":target_libc": libc},
+                visibility = ["//visibility:public"],
+            )
+
+        native.config_setting(
+            name = "{}_{}_gnu".format(target_os, target_cpu),
+            constraint_values = constraint_values,
+            flag_values = {":target_libc_family": "gnu"},
+            visibility = ["//visibility:public"],
+        )
+
+        # Matches platforms without a //constraints/libc value, whatever libc they compile against.
+        native.config_setting(
+            name = "{}_{}_unconstrained".format(target_os, target_cpu),
+            constraint_values = constraint_values + ["//constraints/libc:unconstrained"],
+            visibility = ["//visibility:public"],
+        )
 
 def declare_config_settings_windows_abi_aware():
     for target_os, target_cpu in WINDOWS_TARGETS:

@@ -175,7 +175,7 @@ cc_binary(
     target_compatible_with = select({
         # We do not support musl libc.so
         "@platforms//os:windows": ["@platforms//:incompatible"],
-        "@llvm//constraints/libc:musl": ["@platforms//:incompatible"],
+        "@rules_cc//cc/libc:musl": ["@platforms//:incompatible"],
         "//conditions:default": [],
     }),
 )
@@ -192,7 +192,7 @@ cc_binary(
         "//conditions:default": ["@platforms//:incompatible"],
     }) + select({
         # We do not support musl libc.so.
-        "@llvm//constraints/libc:musl": ["@platforms//:incompatible"],
+        "@rules_cc//cc/libc:musl": ["@platforms//:incompatible"],
         "//conditions:default": [],
     }),
 )
@@ -214,7 +214,7 @@ cc_binary(
         "//conditions:default": ["@platforms//:incompatible"],
     }) + select({
         # We do not support musl libc.so.
-        "@llvm//constraints/libc:musl": ["@platforms//:incompatible"],
+        "@rules_cc//cc/libc:musl": ["@platforms//:incompatible"],
         "//conditions:default": [],
     }),
 )
@@ -232,7 +232,7 @@ cc_binary(
         "//conditions:default": ["@platforms//:incompatible"],
     }) + select({
         # We do not support musl libc.so.
-        "@llvm//constraints/libc:musl": ["@platforms//:incompatible"],
+        "@rules_cc//cc/libc:musl": ["@platforms//:incompatible"],
         "//conditions:default": [],
     }),
     deps = ["@gcc//:libstdcxxfs"],
@@ -252,7 +252,7 @@ cc_binary(
         "//conditions:default": ["@platforms//:incompatible"],
     }) + select({
         # We do not support musl libc.so.
-        "@llvm//constraints/libc:musl": ["@platforms//:incompatible"],
+        "@rules_cc//cc/libc:musl": ["@platforms//:incompatible"],
         "//conditions:default": [],
     }),
 )
@@ -719,7 +719,7 @@ cc_test(
     target_compatible_with = select({
         "@platforms//os:windows": ["@platforms//:incompatible"],
         # We do not support musl libc.so
-        "@llvm//constraints/libc:musl": ["@platforms//:incompatible"],
+        "@rules_cc//cc/libc:musl": ["@platforms//:incompatible"],
         "//conditions:default": [],
     }),
 )

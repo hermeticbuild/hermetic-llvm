@@ -2,6 +2,7 @@ load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
 load("//toolchain/args:llvm_target_triple.bzl", "LLVM_TARGET_TRIPLE")
+load(":x86_64_cpu.bzl", "x86_64_all_feature_flags", "x86_64_level_flags", "x86_64_macos_default_cpu")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -87,6 +88,89 @@ cc_args_list(
     args = select({
         "//constraints/windows/abi:msvc": [":clang_cl_target_flags"],
         "//conditions:default": [":clang_target_flags"],
+    }) + [":x86_64_cpu_flags"],
+)
+
+# The @platforms_contrib//cpu/x86_64 features of the target platform. Without a CPU model, -march
+# names the highest x86-64 level whose features are all available.
+cc_args(
+    name = "x86_64_level_flags",
+    actions = ["@rules_cc//cc/toolchains/actions:compile_actions"],
+    args = x86_64_level_flags(macos_default_cpu = ":x86_64_macos_default_cpu"),
+)
+
+x86_64_macos_default_cpu(name = "x86_64_macos_default_cpu")
+
+# With a CPU model, -march names it and flags for every feature follow, as for -march=native. This
+# makes e.g. @platforms_contrib//host:native match -march=native without depending on the machine
+# that runs the compiler.
+cc_args(
+    name = "x86_64_model_flags",
+    actions = ["@rules_cc//cc/toolchains/actions:compile_actions"],
+    args = ["-march={X86_64_MODEL}"] + x86_64_all_feature_flags(),
+    toolchains = ["@platforms_contrib//cpu/x86_64:model"],
+)
+
+config_setting(
+    name = "x86_64_without_model",
+    constraint_values = ["@platforms//cpu:x86_64"],
+    flag_values = {"@platforms_contrib//cpu/x86_64:model": ""},
+)
+
+# -mtune is always explicit, since clang tunes for the -march CPU without it.
+_TUNE_ACTIONS = [
+    "@rules_cc//cc/toolchains/actions:c_compile_actions",
+    "@rules_cc//cc/toolchains/actions:cpp_compile_actions",
+    "@rules_cc//cc/toolchains/actions:objc_compile",
+]
+
+cc_args(
+    name = "x86_64_tune_cpu_flags",
+    # Clang warns about -mtune when assembling without preprocessing.
+    actions = _TUNE_ACTIONS,
+    args = ["-mtune={X86_64_TUNE_CPU}"],
+    toolchains = ["//config:x86_64_tune_cpu"],
+)
+
+cc_args(
+    name = "x86_64_tune_model_flags",
+    actions = _TUNE_ACTIONS,
+    args = ["-mtune={X86_64_MODEL}"],
+    toolchains = ["@platforms_contrib//cpu/x86_64:model"],
+)
+
+cc_args(
+    name = "x86_64_tune_generic_flags",
+    actions = _TUNE_ACTIONS,
+    args = ["-mtune=generic"],
+)
+
+config_setting(
+    name = "x86_64_without_tune_cpu",
+    constraint_values = ["@platforms//cpu:x86_64"],
+    flag_values = {"//config:x86_64_tune_cpu": ""},
+)
+
+config_setting(
+    name = "x86_64_without_tune_cpu_and_model",
+    constraint_values = ["@platforms//cpu:x86_64"],
+    flag_values = {
+        "//config:x86_64_tune_cpu": "",
+        "@platforms_contrib//cpu/x86_64:model": "",
+    },
+)
+
+cc_args_list(
+    name = "x86_64_cpu_flags",
+    args = select({
+        ":x86_64_without_model": [":x86_64_level_flags"],
+        "@platforms//cpu:x86_64": [":x86_64_model_flags"],
+        "//conditions:default": [],
+    }) + select({
+        ":x86_64_without_tune_cpu_and_model": [":x86_64_tune_generic_flags"],
+        ":x86_64_without_tune_cpu": [":x86_64_tune_model_flags"],
+        "@platforms//cpu:x86_64": [":x86_64_tune_cpu_flags"],
+        "//conditions:default": [],
     }),
 )
 
@@ -1133,4 +1217,9 @@ bzl_library(
     name = "llvm_target_triple",
     srcs = ["llvm_target_triple.bzl"],
     deps = ["//constraints/windows/abi:abis"],
+)
+
+bzl_library(
+    name = "x86_64_cpu",
+    srcs = ["x86_64_cpu.bzl"],
 )

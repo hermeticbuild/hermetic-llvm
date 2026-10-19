@@ -4,7 +4,7 @@ load(
     "LINUX_KERNEL_VERSION_MAP",
 )
 load("//constraints/kernel/linux:linux_kernel_versions.bzl", "LINUX_KERNEL_VERSIONS")
-load("//constraints/libc:libc_versions.bzl", "LIBCS")
+load("//constraints/libc:libc_versions.bzl", "LIBCS", "UNSUPPORTED_GLIBC_ERROR")
 load("//platforms:common.bzl", "LIBC_SUPPORTED_TARGETS")
 load(":kernel_helpers.bzl", "arch_to_kernel_arch")
 load(":libc_kernel_versions.bzl", "LIBC_KERNEL_VERSIONS")
@@ -44,11 +44,11 @@ def _declare_libc_kernel_headers_aliases(name, bazel_target):
     targets = {}
     for (target_os, target_arch) in LIBC_SUPPORTED_TARGETS:
         versions = {}
-        for libc_version in LIBCS + ["unconstrained"]:
-            kernel_version = LIBC_KERNEL_VERSIONS[libc_version]
+        for libc in LIBCS:
+            kernel_version = LIBC_KERNEL_VERSIONS[libc]
             if not _kernel_headers_available(target_arch, kernel_version):
                 continue
-            versions["@llvm//constraints/libc:{}".format(libc_version)] = _kernel_headers_repository_target(target_arch, kernel_version, bazel_target)
+            versions["@llvm//platforms/config:{}".format(libc)] = _kernel_headers_repository_target(target_arch, kernel_version, bazel_target)
 
         if not versions:
             continue
@@ -56,7 +56,7 @@ def _declare_libc_kernel_headers_aliases(name, bazel_target):
         target_name = "{}_{}_{}".format(name, target_os, target_arch)
         native.alias(
             name = target_name,
-            actual = select(versions),
+            actual = select(versions, no_match_error = UNSUPPORTED_GLIBC_ERROR),
             visibility = ["//visibility:private"],
         )
         targets["@llvm//platforms/config:{}_{}".format(target_os, target_arch)] = target_name

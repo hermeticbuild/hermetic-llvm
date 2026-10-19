@@ -188,7 +188,7 @@ write_file(
                   "//conditions:default": [],
               }) +
               select({
-                  "@llvm//constraints/libc:musl": _CONFIG_SITE_MUSL_LINES,
+                  "@llvm//platforms/config:musl": _CONFIG_SITE_MUSL_LINES,
                   "//conditions:default": _CONFIG_SITE_NO_MUSL_LINES,
               }) +
               select({
