@@ -1704,6 +1704,15 @@ cc_library(
     ],
 )
 
+# GCC's src/Makefile.am also archives these source partitions, including
+# libsupc++. The static runtime transition selects the compatibility objects
+# without _GLIBCXX_SHARED; the archive must remain usable in shared libraries.
+cc_runtime_stage0_static_library(
+    name = "libstdcxx.static",
+    visibility = ["//visibility:public"],
+    deps = [":libstdcxx"],
+)
+
 # The shared library version and linker flags should stay aligned with GCC's
 # libstdc++-v3/acinclude.m4 shared library and symbol-version settings.
 cc_runtime_stage1_shared_library(

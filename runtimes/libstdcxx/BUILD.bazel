@@ -27,6 +27,11 @@ alias(
     actual = ":libstdcxx.shared",
 )
 
+alias(
+    name = "libstdcxx.static",
+    actual = "@gcc//:libstdcxx.static",
+)
+
 copy_file(
     name = "libstdcxx_shared_linker_name",
     src = ":libstdcxx_shared_soname",
@@ -34,6 +39,8 @@ copy_file(
     allow_symlink = True,
 )
 
+# Runtime attributes supply the real static or shared library. Keep implicit
+# -lstdc++ lookups harmless instead of pulling the archive into dynamic links.
 stub_library(
     name = "stdc++",
 )

@@ -57,6 +57,18 @@ cc_binary(
     ],
 )
 
+cc_binary(
+    name = "toolchain_static_link_smoke",
+    srcs = [":libstdcxx_link_smoke_src"],
+    linkstatic = True,
+    target_compatible_with = select({
+        "//constraints/cxxstdlib:libstdcxx": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }) + [
+        "@platforms//os:linux",
+    ],
+)
+
 [
     platform(
         name = "linux_{}_{}".format(
@@ -118,6 +130,40 @@ filegroup(
     srcs = [
         ":toolchain_dynamic_link_smoke_linux_aarch64_all_versions",
         ":toolchain_dynamic_link_smoke_linux_x86_64_all_versions",
+    ],
+)
+
+[
+    platform_transition_filegroup(
+        name = "toolchain_static_link_smoke_linux_{}_{}".format(
+            arch,
+            gcc_target_suffix(version),
+        ),
+        srcs = [":toolchain_static_link_smoke"],
+        target_platform = ":linux_{}_{}".format(
+            arch,
+            libstdcxx_constraint_value(version),
+        ),
+    )
+    for arch in [
+        "x86_64",
+        "aarch64",
+    ]
+    for version in GCC_VERSIONS
+]
+
+filegroup(
+    name = "toolchain_static_link_smoke_linux_all_versions",
+    srcs = [
+        ":toolchain_static_link_smoke_linux_{}_{}".format(
+            arch,
+            gcc_target_suffix(version),
+        )
+        for arch in [
+            "x86_64",
+            "aarch64",
+        ]
+        for version in GCC_VERSIONS
     ],
 )
 
