@@ -20,10 +20,6 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
-      - uses: tamird/sty@ec7c566c6abed0c87bc1bd5c82d327371df7fa81
+      - uses: tamird/sty@f9027c84126ec3ed1d498b36fe6e407a50e87506
         with:
           audit-loads: true
-          files: |
-            defs.bzl
-            directory.bzl
-            toolchain/llvm/llvm.bzl
