@@ -158,6 +158,9 @@ cmd=("$tool")
 for arg in "$@"; do
     case "$arg" in
         "$source_placeholder")
+            # Bash <4.4 treats empty arrays as unset under set -u.
+            # Keep the outer expansion unquoted to emit zero arguments for an
+            # empty array while preserving each element of a nonempty array.
             cmd+=(${extra_flags[@]+"${extra_flags[@]}"})
             cmd+=("$source")
             ;;
