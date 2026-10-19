@@ -1,5 +1,5 @@
 def exec_test(
-        rule,  # ty: ignore[non-static-type]
+        rule,
         *,
         name,
         tags = [],
@@ -20,7 +20,6 @@ def exec_test(
     forwarded.pop("inner_data", None)
 
     # Allocate omitted inner_data here so calls cannot share the default list.
-    # ty: ignore[non-static-type]
     rule(
         name = name + "_",
         data = kwargs["inner_data"] if "inner_data" in kwargs else [],

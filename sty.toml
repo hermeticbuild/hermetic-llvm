@@ -1,4 +1,5 @@
 [analysis]
+require-valid-suppressions = true
 strict-generic-narrowing = true
 
 [type-interfaces]

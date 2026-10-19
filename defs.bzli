@@ -2,78 +2,107 @@
 
 type _LabelListInput = Iterable[str | Label] | depset[str | Label]
 type _ConstraintsInput = _LabelListInput | select[_LabelListInput | None] | None
-type _Forwarded = dict[{"target_compatible_with": NotRequired[_ConstraintsInput]}, ...]
-
-type _InnerDataInput = Sequence[str | Label] | select[Sequence[str | Label]]
-type _DefaultForwarded = dict[{
-    "target_compatible_with": NotRequired[_ConstraintsInput],
-    "inner_data": NotRequired[Never],
-}, ...]
+type _Labels = Sequence[str | Label] | select[Sequence[str | Label]]
+type _Strings = Sequence[str] | select[Sequence[str]]
+type _Environment = dict[str, str] | select[dict[str, str]]
 
 type _ImplementationForwarded = dict[{
     "target_compatible_with": NotRequired[_ConstraintsInput],
-    "inner_data": NotRequired[_InnerDataInput],
+    "inner_data": NotRequired[_Labels],
 }, ...]
 
 type _InnerTags[T] = list[T | Literal["manual"]]
 
-# The supplied rule determines the remaining parameters. ParamSpec forwards a
-# whole signature; this wrapper replaces data, tags, and the generated name.
-# The remaining keyword parameters and generated-name constraint stay gradual;
-# this contract checks the data and tags relationship only.
-class _DataRule[D, T: str](Protocol):
+class _DataRule[D, T: str, **P](Protocol):
     def __call__(
-        self,  # ty: ignore[non-static-type]
-        *args: Unknown,  # ty: ignore[non-static-type]
+        self,
+        *,
+        name: str,
         data: D,
         tags: _InnerTags[T],
-        **kwargs: Unknown,  # ty: ignore[non-static-type]
+        **kwargs: KeywordArgs[P],
     ) -> object: ...
 
-class _TagsRule[T: str](Protocol):
+class _TargetDataRule[D, T: str, C: _ConstraintsInput, **P](Protocol):
     def __call__(
-        self,  # ty: ignore[non-static-type]
-        *args: Unknown,  # ty: ignore[non-static-type]
+        self,
+        *,
+        name: str,
+        data: D,
         tags: _InnerTags[T],
-        **kwargs: Unknown,  # ty: ignore[non-static-type]
+        target_compatible_with: C,
+        **kwargs: KeywordArgs[P],
     ) -> object: ...
 
 @overload
-def exec_test[D: _InnerDataInput, T: str](
-    rule: _DataRule[D, T],  # ty: ignore[non-static-type]
+def exec_test[D: _Labels, T: str, C: _ConstraintsInput, **P](
+    rule: _TargetDataRule[D, T, C, P],
     *,
     name: str,
     tags: list[T] = ...,
-    args: Sequence[str] | select[Sequence[str]] = ...,
-    env: dict[str, str] | select[dict[str, str]] = ...,
-    data: Sequence[str | Label] | select[Sequence[str | Label]] = ...,
+    args: _Strings = ...,
+    env: _Environment = ...,
+    data: _Labels = ...,
+    tools: _Labels = ...,
     inner_data: D,
-    tools: Sequence[str | Label] | select[Sequence[str | Label]] = ...,
-    **kwargs: Unpack[_Forwarded],
+    target_compatible_with: C,
+    **kwargs: KeywordArgs[P],
 ) -> None: ...
 
 @overload
-def exec_test[D, T: str](
-    rule: _DataRule[list[D], T],  # ty: ignore[non-static-type]
+def exec_test[D: _Labels, T: str, **P](
+    rule: _DataRule[D, T, P],
     *,
     name: str,
     tags: list[T] = ...,
-    args: Sequence[str] | select[Sequence[str]] = ...,
-    env: dict[str, str] | select[dict[str, str]] = ...,
-    data: Sequence[str | Label] | select[Sequence[str | Label]] = ...,
-    tools: Sequence[str | Label] | select[Sequence[str | Label]] = ...,
-    **kwargs: Unpack[_DefaultForwarded],
+    args: _Strings = ...,
+    env: _Environment = ...,
+    data: _Labels = ...,
+    tools: _Labels = ...,
+    inner_data: D,
+    target_compatible_with: Never = ...,
+    **kwargs: KeywordArgs[P],
+) -> None: ...
+
+@overload
+def exec_test[D, T: str, C: _ConstraintsInput, **P](
+    rule: _TargetDataRule[list[D], T, C, P],
+    *,
+    name: str,
+    tags: list[T] = ...,
+    args: _Strings = ...,
+    env: _Environment = ...,
+    data: _Labels = ...,
+    tools: _Labels = ...,
+    inner_data: Never = ...,
+    target_compatible_with: C,
+    **kwargs: KeywordArgs[P],
+) -> None: ...
+
+@overload
+def exec_test[D, T: str, **P](
+    rule: _DataRule[list[D], T, P],
+    *,
+    name: str,
+    tags: list[T] = ...,
+    args: _Strings = ...,
+    env: _Environment = ...,
+    data: _Labels = ...,
+    tools: _Labels = ...,
+    inner_data: Never = ...,
+    target_compatible_with: Never = ...,
+    **kwargs: KeywordArgs[P],
 ) -> None: ...
 
 def exec_test[T: str](
-    rule: _TagsRule[T],  # ty: ignore[non-static-type]
+    rule: object,
     *,
     name: str,
     tags: list[T] = ...,
-    args: Sequence[str] | select[Sequence[str]] = ...,
-    env: dict[str, str] | select[dict[str, str]] = ...,
-    data: Sequence[str | Label] | select[Sequence[str | Label]] = ...,
-    tools: Sequence[str | Label] | select[Sequence[str | Label]] = ...,
+    args: _Strings = ...,
+    env: _Environment = ...,
+    data: _Labels = ...,
+    tools: _Labels = ...,
     **kwargs: Unpack[_ImplementationForwarded],
 ) -> None: ...
 
