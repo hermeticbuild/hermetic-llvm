@@ -528,6 +528,7 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
         stage1_prefix = "stage1_" + exec_prefix
         stage2_prefix = "stage2_" + exec_prefix
         stage3_prefix = "stage3_" + exec_prefix
+        msvc_case_overlays = [] if exec_os == "windows" else ["@llvm//toolchain/args/windows/msvc:case_overlays"]
 
         _declare_exec_platform(exec_os, exec_cpu)
         declare_tool_map(
@@ -577,11 +578,11 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
                     "@llvm//platforms/config:windows_x86_64_msvc": [
                         "@llvm//toolchain/args/windows/msvc:normalized_default_libs_for_runtime",
                         "@llvm//toolchain/args/windows/msvc:normalized_sdk_compile_args",
-                    ],
+                    ] + msvc_case_overlays,
                     "@llvm//platforms/config:windows_aarch64_msvc": [
                         "@llvm//toolchain/args/windows/msvc:normalized_default_libs_for_runtime",
                         "@llvm//toolchain/args/windows/msvc:normalized_sdk_compile_args",
-                    ],
+                    ] + msvc_case_overlays,
                     "//conditions:default": [],
                 }),
                 tool_map = select({
