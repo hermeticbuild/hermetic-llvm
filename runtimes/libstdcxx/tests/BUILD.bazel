@@ -1,8 +1,7 @@
 load("@bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
-load("//:defs.bzl", "exec_test")
-load("//3rd_party/gcc:version.bzl", "DEFAULT_GCC_VERSION", "GCC_VERSIONS", "gcc_repository_label", "gcc_target_suffix", "libstdcxx_constraint_value")
+load("//3rd_party/gcc:version.bzl", "GCC_VERSIONS", "gcc_repository_label", "gcc_target_suffix", "libstdcxx_constraint_value")
 load("//constraints/libc:libc_versions.bzl", "default_libc")
 
 package(default_visibility = ["//visibility:public"])
@@ -28,80 +27,23 @@ sh_test(
     }),
 )
 
-cc_binary(
-    name = "toolchain_dynamic_link_smoke",
+filegroup(
+    name = "link_smoke_sources",
     srcs = [
         "libstdcxx_legacy_list.cc",
         "libstdcxx_runtime.cc",
-    ],
-    linkstatic = False,
-    target_compatible_with = select({
-        "//constraints/cxxstdlib:libstdcxx": [],
-        "//conditions:default": ["@platforms//:incompatible"],
-    }) + [
-        "@platforms//os:linux",
-    ],
-)
-
-cc_binary(
-    name = "toolchain_static_link_smoke",
-    srcs = [
-        "libstdcxx_legacy_list.cc",
-        "libstdcxx_runtime.cc",
-    ],
-    linkstatic = True,
-    target_compatible_with = select({
-        "//constraints/cxxstdlib:libstdcxx": [],
-        "//conditions:default": ["@platforms//:incompatible"],
-    }) + [
-        "@platforms//os:linux",
-    ],
-)
-
-# Pin the execution tests' glibc baseline so the resulting binaries can run
-# in the Ubuntu 22.04 execution container.
-platform(
-    name = "runtime_test_linux_x86_64",
-    constraint_values = [
-        "@platforms//cpu:x86_64",
-        "@platforms//os:linux",
-        "//constraints/libc:gnu.2.28",
-        "//constraints/cxxstdlib:" + libstdcxx_constraint_value(DEFAULT_GCC_VERSION),
     ],
 )
 
 [
-    platform_transition_filegroup(
-        name = "runtime_{}_linux_x86_64".format(linkage),
-        srcs = [":toolchain_{}_link_smoke".format(linkage)],
+    cc_binary(
+        name = "toolchain_{}_link_smoke".format(linkage),
+        srcs = [":link_smoke_sources"],
+        linkstatic = linkage == "static",
         target_compatible_with = select({
-            "@platforms//os:linux": [],
+            "//constraints/cxxstdlib:libstdcxx": [],
             "//conditions:default": ["@platforms//:incompatible"],
-        }),
-        target_platform = ":runtime_test_linux_x86_64",
-    )
-    for linkage in [
-        "static",
-        "dynamic",
-    ]
-]
-
-[
-    exec_test(
-        name = "runtime_{}_test".format(linkage),
-        srcs = ["libstdcxx_runtime_test.sh"],
-        data = [
-            ":runtime_{}_linux_x86_64".format(linkage),
-            "@llvm//tools:llvm-readelf",
-        ],
-        env = {
-            "BINARY": "$(rootpath :runtime_{}_linux_x86_64)".format(linkage),
-            "LINKAGE": linkage,
-            "READELF": "$(rootpath @llvm//tools:llvm-readelf)",
-        },
-        rule = sh_test,
-        target_compatible_with = [
-            "@platforms//cpu:x86_64",
+        }) + [
             "@platforms//os:linux",
         ],
     )
@@ -133,16 +75,21 @@ platform(
 
 [
     platform_transition_filegroup(
-        name = "toolchain_dynamic_link_smoke_linux_{}_{}".format(
+        name = "toolchain_{}_link_smoke_linux_{}_{}".format(
+            linkage,
             arch,
             gcc_target_suffix(version),
         ),
-        srcs = [":toolchain_dynamic_link_smoke"],
+        srcs = [":toolchain_{}_link_smoke".format(linkage)],
         target_platform = ":linux_{}_{}".format(
             arch,
             libstdcxx_constraint_value(version),
         ),
     )
+    for linkage in [
+        "static",
+        "dynamic",
+    ]
     for arch in [
         "x86_64",
         "aarch64",
@@ -152,62 +99,42 @@ platform(
 
 [
     filegroup(
-        name = "toolchain_dynamic_link_smoke_linux_{}_all_versions".format(arch),
+        name = "toolchain_{}_link_smoke_linux_{}_all_versions".format(linkage, arch),
         srcs = [
-            ":toolchain_dynamic_link_smoke_linux_{}_{}".format(
+            ":toolchain_{}_link_smoke_linux_{}_{}".format(
+                linkage,
                 arch,
                 gcc_target_suffix(version),
             )
             for version in GCC_VERSIONS
         ],
     )
+    for linkage in [
+        "static",
+        "dynamic",
+    ]
     for arch in [
         "x86_64",
         "aarch64",
     ]
 ]
-
-filegroup(
-    name = "toolchain_dynamic_link_smoke_linux_all_versions",
-    srcs = [
-        ":toolchain_dynamic_link_smoke_linux_aarch64_all_versions",
-        ":toolchain_dynamic_link_smoke_linux_x86_64_all_versions",
-    ],
-)
 
 [
-    platform_transition_filegroup(
-        name = "toolchain_static_link_smoke_linux_{}_{}".format(
-            arch,
-            gcc_target_suffix(version),
-        ),
-        srcs = [":toolchain_static_link_smoke"],
-        target_platform = ":linux_{}_{}".format(
-            arch,
-            libstdcxx_constraint_value(version),
-        ),
+    filegroup(
+        name = "toolchain_{}_link_smoke_linux_all_versions".format(linkage),
+        srcs = [
+            ":toolchain_{}_link_smoke_linux_{}_all_versions".format(linkage, arch)
+            for arch in [
+                "x86_64",
+                "aarch64",
+            ]
+        ],
     )
-    for arch in [
-        "x86_64",
-        "aarch64",
+    for linkage in [
+        "static",
+        "dynamic",
     ]
-    for version in GCC_VERSIONS
 ]
-
-filegroup(
-    name = "toolchain_static_link_smoke_linux_all_versions",
-    srcs = [
-        ":toolchain_static_link_smoke_linux_{}_{}".format(
-            arch,
-            gcc_target_suffix(version),
-        )
-        for arch in [
-            "x86_64",
-            "aarch64",
-        ]
-        for version in GCC_VERSIONS
-    ],
-)
 
 [
     platform_transition_filegroup(

@@ -265,17 +265,6 @@ LIBSTDCXX_PLATFORMS = [
     ("linux_s390x_libstdcxx", "@platforms//cpu:s390x", "@llvm//constraints/libc:gnu.2.28"),
 ]
 
-[
-    test_suite(
-        name = "libstdcxx_runtime_{}_test".format(linkage),
-        tests = ["@llvm//runtimes/libstdcxx/tests:runtime_{}_test".format(linkage)],
-    )
-    for linkage in [
-        "static",
-        "dynamic",
-    ]
-]
-
 _LIBSTDCXX_E2E_TARGET_COMPATIBLE_WITH = select({
     # The transition wrappers below build Linux libstdc++ artifacts. Keep them
     # out of non-Linux //... expansion until libstdc++ supports those targets.
@@ -296,6 +285,67 @@ _DEFAULT_LIBSTDCXX_CONSTRAINT = "@llvm//constraints/cxxstdlib:" + libstdcxx_cons
         ],
     )
     for name, cpu, libc in LIBSTDCXX_PLATFORMS
+]
+
+# Keep these linkage checks opt-in until they are enabled in CI. Reuse the
+# runtime's ABI/exception fixture without duplicating the GCC version matrix.
+[
+    cc_binary(
+        name = "libstdcxx_runtime_{}".format(linkage),
+        testonly = True,
+        srcs = ["@llvm//runtimes/libstdcxx/tests:link_smoke_sources"],
+        linkstatic = linkage == "static",
+        tags = ["manual"],
+        target_compatible_with = select({
+            "@llvm//constraints/cxxstdlib:libstdcxx": [],
+            "//conditions:default": ["@platforms//:incompatible"],
+        }) + ["@platforms//os:linux"],
+    )
+    for linkage in [
+        "static",
+        "dynamic",
+    ]
+]
+
+[
+    platform_transition_filegroup(
+        name = "libstdcxx_runtime_{}_linux_x86_64".format(linkage),
+        testonly = True,
+        srcs = [":libstdcxx_runtime_{}".format(linkage)],
+        tags = ["manual"],
+        target_compatible_with = _LIBSTDCXX_E2E_TARGET_COMPATIBLE_WITH,
+        target_platform = ":linux_x86_64_libstdcxx",
+    )
+    for linkage in [
+        "static",
+        "dynamic",
+    ]
+]
+
+[
+    exec_test(
+        sh_test,
+        name = "libstdcxx_runtime_{}_test".format(linkage),
+        srcs = ["libstdcxx_runtime_test.sh"],
+        data = [
+            ":libstdcxx_runtime_{}_linux_x86_64".format(linkage),
+            "@llvm//tools:llvm-readelf",
+        ],
+        env = {
+            "BINARY": "$(rootpath :libstdcxx_runtime_{}_linux_x86_64)".format(linkage),
+            "LINKAGE": linkage,
+            "READELF": "$(rootpath @llvm//tools:llvm-readelf)",
+        },
+        tags = ["manual"],
+        target_compatible_with = [
+            "@platforms//cpu:x86_64",
+            "@platforms//os:linux",
+        ],
+    )
+    for linkage in [
+        "static",
+        "dynamic",
+    ]
 ]
 
 platform_transition_filegroup(
