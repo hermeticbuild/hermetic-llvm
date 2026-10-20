@@ -7,6 +7,7 @@ strict-generic-narrowing = true
 
 [rules]
 missing-parameter-annotation = "error"
+missing-return-annotation = "error"
 missing-type-argument = "error"
 unsound-assignment = "error"
 unsound-return-statement = "error"

@@ -1,3 +1,5 @@
+def _external_include_paths_glibc_headers_test_impl(ctx) -> list[DefaultInfo]: ...
+
 # Bazel groups lists and tuples into the same selector concatenation kind.
 type _SelectedDynamicDeps = select[Sequence[str | Label] | None, Literal["list"]]
 type _DynamicDeps = Sequence[str | Label] | _SelectedDynamicDeps
