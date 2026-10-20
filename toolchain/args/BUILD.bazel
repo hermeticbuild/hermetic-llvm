@@ -166,9 +166,9 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:objcpp_compile",
     ],
     args = [
-        "-isystem",
+        "-stdlib++-isystem",
         "{cxxstdlib_headers_include_search_path}",
-        "-isystem",
+        "-stdlib++-isystem",
         "{cxxstdlib_abi_headers_include_search_path}",
     ],
     # Do not sort: keep the data order aligned with the argument order above.
