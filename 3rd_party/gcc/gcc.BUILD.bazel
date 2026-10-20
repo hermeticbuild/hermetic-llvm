@@ -898,13 +898,9 @@ copy_to_directory(
     ],
 )
 
-# GCC's configure.ac enables this define for convenience objects reused by
-# both linkage modes. src/Makefile.am rebuilds only the top-level compatibility
-# objects without it for the static archive.
 LIBSTDCXX_BUILD_COPTS = [
     "-nostdinc++",
     "-fno-implicit-templates",
-    "-D_GLIBCXX_SHARED",
 ]
 
 LIBSTDCXX_LIBRARY_COPTS = LIBSTDCXX_BUILD_COPTS + [
@@ -913,9 +909,15 @@ LIBSTDCXX_LIBRARY_COPTS = LIBSTDCXX_BUILD_COPTS + [
     "-Wno-init-priority-reserved",
 ]
 
-LIBSTDCXX_COMPATIBILITY_COPTS = select({
-    "@llvm//runtimes:linkmode_dynamic": [],
-    "//conditions:default": ["-U_GLIBCXX_SHARED"],
+# GCC's configure.ac enables this define for convenience objects reused by
+# both linkage modes. src/Makefile.am rebuilds only the top-level compatibility
+# objects without it for the static archive. The runtime transition sets
+# //runtimes:linkmode, which selects their definitions here.
+LIBSTDCXX_CONVENIENCE_DEFINES = ["_GLIBCXX_SHARED"]
+
+LIBSTDCXX_COMPATIBILITY_DEFINES = select({
+    "@llvm//runtimes:linkmode_dynamic": ["_GLIBCXX_SHARED"],
+    "//conditions:default": [],
 })
 
 LIBSTDCXX_BUILD_HEADER_DEPS = [
@@ -1013,6 +1015,7 @@ cc_library(
         "libgcc",
         "libstdc++-v3/libsupc++",
     ],
+    local_defines = LIBSTDCXX_CONVENIENCE_DEFINES,
 )
 
 cc_library(
@@ -1020,6 +1023,7 @@ cc_library(
     srcs = [":libsupcxx_atomicity_cc"],
     copts = LIBSTDCXX_BUILD_COPTS + ["-fwrapv"],
     implementation_deps = LIBSTDCXX_BUILD_HEADER_DEPS,
+    local_defines = LIBSTDCXX_CONVENIENCE_DEFINES,
 )
 
 cc_library(
@@ -1040,6 +1044,7 @@ cc_library(
         "libiberty",
         "libsupcxx_generated",
     ],
+    local_defines = LIBSTDCXX_CONVENIENCE_DEFINES,
 )
 
 cc_library(
@@ -1487,6 +1492,7 @@ cc_library(
     copts = LIBSTDCXX_LIBRARY_COPTS + ["-std=gnu++98"],
     implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
     includes = LIBSTDCXX_LIBRARY_INCLUDES,
+    local_defines = LIBSTDCXX_CONVENIENCE_DEFINES,
 )
 
 cc_library(
@@ -1499,6 +1505,7 @@ cc_library(
     ],
     implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
     includes = LIBSTDCXX_LIBRARY_INCLUDES,
+    local_defines = LIBSTDCXX_CONVENIENCE_DEFINES,
 )
 
 cc_library(
@@ -1512,6 +1519,7 @@ cc_library(
     ],
     implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
     includes = LIBSTDCXX_LIBRARY_INCLUDES,
+    local_defines = LIBSTDCXX_CONVENIENCE_DEFINES,
 )
 
 cc_library(
@@ -1525,6 +1533,7 @@ cc_library(
     ],
     implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
     includes = LIBSTDCXX_LIBRARY_INCLUDES,
+    local_defines = LIBSTDCXX_CONVENIENCE_DEFINES,
 )
 
 cc_library(
@@ -1537,6 +1546,7 @@ cc_library(
     ],
     implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
     includes = LIBSTDCXX_LIBRARY_INCLUDES,
+    local_defines = LIBSTDCXX_CONVENIENCE_DEFINES,
 )
 
 cc_library(
@@ -1549,6 +1559,7 @@ cc_library(
     ],
     implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
     includes = LIBSTDCXX_LIBRARY_INCLUDES,
+    local_defines = LIBSTDCXX_CONVENIENCE_DEFINES,
 )
 
 cc_library(
@@ -1558,6 +1569,7 @@ cc_library(
     copts = LIBSTDCXX_LIBRARY_COPTS + ["-std=gnu++11"],
     implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
     includes = LIBSTDCXX_LIBRARY_INCLUDES,
+    local_defines = LIBSTDCXX_CONVENIENCE_DEFINES,
 )
 
 cc_library(
@@ -1570,6 +1582,7 @@ cc_library(
     ],
     implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
     includes = LIBSTDCXX_LIBRARY_INCLUDES,
+    local_defines = LIBSTDCXX_CONVENIENCE_DEFINES,
 )
 
 cc_library(
@@ -1582,6 +1595,7 @@ cc_library(
     ],
     implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
     includes = LIBSTDCXX_LIBRARY_INCLUDES,
+    local_defines = LIBSTDCXX_CONVENIENCE_DEFINES,
 )
 
 cc_library(
@@ -1594,6 +1608,7 @@ cc_library(
     ],
     implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
     includes = LIBSTDCXX_LIBRARY_INCLUDES,
+    local_defines = LIBSTDCXX_CONVENIENCE_DEFINES,
 )
 
 cc_library(
@@ -1606,6 +1621,7 @@ cc_library(
     ],
     implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
     includes = LIBSTDCXX_LIBRARY_INCLUDES,
+    local_defines = LIBSTDCXX_CONVENIENCE_DEFINES,
 )
 
 cc_library(
@@ -1619,6 +1635,7 @@ cc_library(
     ],
     implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
     includes = LIBSTDCXX_LIBRARY_INCLUDES,
+    local_defines = LIBSTDCXX_CONVENIENCE_DEFINES,
 )
 
 cc_library(
@@ -1632,6 +1649,7 @@ cc_library(
     ],
     implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
     includes = LIBSTDCXX_LIBRARY_INCLUDES,
+    local_defines = LIBSTDCXX_CONVENIENCE_DEFINES,
 )
 
 cc_library(
@@ -1644,6 +1662,7 @@ cc_library(
     ],
     implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
     includes = LIBSTDCXX_LIBRARY_INCLUDES,
+    local_defines = LIBSTDCXX_CONVENIENCE_DEFINES,
 )
 
 cc_library(
@@ -1656,24 +1675,27 @@ cc_library(
     ],
     implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
     includes = LIBSTDCXX_LIBRARY_INCLUDES,
+    local_defines = LIBSTDCXX_CONVENIENCE_DEFINES,
 )
 
 cc_library(
     name = "libstdcxx_cxx98_compat",
     srcs = [":libstdcxx_cxx98_compat_sources"],
     hdrs = LIBSTDCXX_LIBRARY_HDRS,
-    copts = LIBSTDCXX_LIBRARY_COPTS + LIBSTDCXX_COMPATIBILITY_COPTS + ["-std=gnu++98"],
+    copts = LIBSTDCXX_LIBRARY_COPTS + ["-std=gnu++98"],
     implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
     includes = LIBSTDCXX_LIBRARY_INCLUDES,
+    local_defines = LIBSTDCXX_COMPATIBILITY_DEFINES,
 )
 
 cc_library(
     name = "libstdcxx_cxx11_compat",
     srcs = [":libstdcxx_cxx11_compat_sources"],
     hdrs = LIBSTDCXX_LIBRARY_HDRS,
-    copts = LIBSTDCXX_LIBRARY_COPTS + LIBSTDCXX_COMPATIBILITY_COPTS + ["-std=gnu++11"],
+    copts = LIBSTDCXX_LIBRARY_COPTS + ["-std=gnu++11"],
     implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
     includes = LIBSTDCXX_LIBRARY_INCLUDES,
+    local_defines = LIBSTDCXX_COMPATIBILITY_DEFINES,
 )
 
 # The symbol version script input comes from GLIBCXX_ENABLE_SYMVERS in
@@ -1769,6 +1791,7 @@ cc_library(
     copts = LIBSTDCXX_LIBRARY_COPTS + ["-std=gnu++17"],
     implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
     includes = LIBSTDCXX_LIBRARY_INCLUDES,
+    local_defines = LIBSTDCXX_CONVENIENCE_DEFINES,
 )
 
 cc_runtime_stage0_static_library(
