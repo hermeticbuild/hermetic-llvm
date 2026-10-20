@@ -418,6 +418,8 @@ See https://github.com/hermeticbuild/hermetic-llvm/milestone/1
 - [Internet Computer](https://github.com/dfinity/ic)
 - [rules_dotnet](https://github.com/bazel-contrib/rules_dotnet)
 - [Google HEIR](https://github.com/google/heir)
+- [SoundCloud](https://soundcloud.com)
+- [Datadog](https://github.com/DataDog/datadog-agent)
 
 ## Prior art
 
