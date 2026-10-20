@@ -30,7 +30,10 @@ sh_test(
 
 cc_binary(
     name = "toolchain_dynamic_link_smoke",
-    srcs = ["libstdcxx_runtime.cc"],
+    srcs = [
+        "libstdcxx_legacy_list.cc",
+        "libstdcxx_runtime.cc",
+    ],
     linkstatic = False,
     target_compatible_with = select({
         "//constraints/cxxstdlib:libstdcxx": [],
@@ -42,7 +45,10 @@ cc_binary(
 
 cc_binary(
     name = "toolchain_static_link_smoke",
-    srcs = ["libstdcxx_runtime.cc"],
+    srcs = [
+        "libstdcxx_legacy_list.cc",
+        "libstdcxx_runtime.cc",
+    ],
     linkstatic = True,
     target_compatible_with = select({
         "//constraints/cxxstdlib:libstdcxx": [],

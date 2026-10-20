@@ -2,7 +2,12 @@
 #include <string>
 #include <thread>
 
+bool legacy_list_abi_works();
+
 int main() {
+    if (!legacy_list_abi_works()) {
+        return 1;
+    }
     unsigned answer = 0;
     std::thread worker([&answer] {
         try {

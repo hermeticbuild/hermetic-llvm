@@ -898,9 +898,13 @@ copy_to_directory(
     ],
 )
 
+# GCC's configure.ac enables this define for convenience objects reused by
+# both linkage modes. src/Makefile.am rebuilds only the top-level compatibility
+# objects without it for the static archive.
 LIBSTDCXX_BUILD_COPTS = [
     "-nostdinc++",
     "-fno-implicit-templates",
+    "-D_GLIBCXX_SHARED",
 ]
 
 LIBSTDCXX_LIBRARY_COPTS = LIBSTDCXX_BUILD_COPTS + [
@@ -910,8 +914,8 @@ LIBSTDCXX_LIBRARY_COPTS = LIBSTDCXX_BUILD_COPTS + [
 ]
 
 LIBSTDCXX_COMPATIBILITY_COPTS = select({
-    "@llvm//runtimes:linkmode_dynamic": ["-D_GLIBCXX_SHARED"],
-    "//conditions:default": [],
+    "@llvm//runtimes:linkmode_dynamic": [],
+    "//conditions:default": ["-U_GLIBCXX_SHARED"],
 })
 
 LIBSTDCXX_BUILD_HEADER_DEPS = [
