@@ -62,10 +62,13 @@ def _toolchain_impl(mctx):
         ),
     )
 
+    # Report llvm_toolchains the way the root module uses the extension, so
+    # a root module can make its usage a dev_dependency.
+    dev = not mctx.root_module_has_non_dev_dependency
     return mctx.extension_metadata(
         reproducible = True,
-        root_module_direct_deps = ["llvm_toolchains"],
-        root_module_direct_dev_deps = [],
+        root_module_direct_deps = [] if dev else ["llvm_toolchains"],
+        root_module_direct_dev_deps = ["llvm_toolchains"] if dev else [],
     )
 
 _exec_platform_tag = tag_class(
