@@ -1394,8 +1394,8 @@ filegroup(
     ] + (_GCC_14_CXX11_CHAR8_SOURCES if gcc_version_at_least_for(GCC_VERSION, "14.0.0") else _GCC_LT_14_CXX11_CHAR8_SOURCES),
 )
 
-# These compatibility objects are linked with _GLIBCXX_SHARED for dynamic
-# libstdc++ builds, matching the conditions in src/c++11/Makefile.am.
+# These compatibility objects are compiled with _GLIBCXX_SHARED for dynamic
+# libstdc++ linkage and without it for static linkage, following src/Makefile.am.
 filegroup(
     name = "libstdcxx_cxx11_compat_sources",
     srcs = [
