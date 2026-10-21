@@ -24,6 +24,9 @@ jobs:
         uses: tamird/sty@77d44bed62de63ee25cca84aa2302d01fa5d1597
         with:
           audit-loads: true
+          files: |
+            runtimes/glibc/glibc_dynamic_linker.bzl
+            runtimes/glibc/libc_aware_target_triple.bzl
       - name: Check rules_cc example workspace
         uses: tamird/sty@77d44bed62de63ee25cca84aa2302d01fa5d1597
         with:
