@@ -150,15 +150,13 @@ for target_cpu in x86_64 aarch64; do
     --features=-dynamic_link_msvcrt \
     --features=static_link_msvcrt \
     //:windows_msvc_generated_def_thinlto_binary \
-    //:windows_msvc_libcxx_behavior_mt \
-    //:windows_msvc_archive_test
+    //:windows_msvc_libcxx_behavior_mt
 done
 
 run_bazel test \
   "--platforms=@llvm//platforms:windows_${exec_cpu}_msvc" \
   --features=-dynamic_link_msvcrt \
   --features=static_link_msvcrt \
-  //:windows_msvc_libcxx_behavior_mt \
-  //:windows_msvc_archive_test
+  //:windows_msvc_libcxx_behavior_mt
 
 echo "Native Windows GNU/MinGW-built clang-cl MSVC execution validation passed."

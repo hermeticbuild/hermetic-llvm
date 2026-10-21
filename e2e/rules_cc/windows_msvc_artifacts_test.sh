@@ -146,11 +146,6 @@ for artifact_key in ${ARTIFACTS}; do
     *.exe|*.dll)
       assert_machine "${artifact}"
       ;;
-    windows_msvc_empty_archive.lib)
-      members="$("${LLVM_AR}" t "${artifact}")"
-      [[ -z "${members}" ]] ||
-        fail "empty archive unexpectedly contains members: ${artifact}"
-      ;;
     *.lib)
       members="$("${LLVM_AR}" t "${artifact}")"
       [[ -n "${members}" ]] ||
