@@ -2,6 +2,7 @@ load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 
 exports_files([
     "kernel-headers.BUILD.bazel",
+    "kernel_helpers.bzli",
     "trampoline.BUILD.bazel",
 ])
 
