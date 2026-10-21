@@ -442,6 +442,42 @@ cc_library(
     ],
 )
 
+# A bare apostrophe must survive the Windows archive response-file protocol.
+cc_library(
+    name = "windows_msvc_archive_members",
+    srcs = [
+        "windows_msvc_archive's.c",
+        "windows_msvc_archive_first.c",
+        "windows_msvc_archive_last.c",
+    ],
+    # Isolate archive parsing from compiler response-file serialization.
+    features = ["-compiler_param_file"],
+    linkstatic = True,
+    target_compatible_with = [
+        "@llvm//constraints/windows/abi:msvc",
+        "@platforms//os:windows",
+    ],
+)
+
+cc_static_library(
+    name = "windows_msvc_empty_archive",
+    target_compatible_with = _VALIDATE_STATIC_LIBRARY_COMPATIBLE + [
+        "@llvm//constraints/windows/abi:msvc",
+        "@platforms//os:windows",
+    ],
+)
+
+cc_test(
+    name = "windows_msvc_archive_test",
+    srcs = ["windows_msvc_archive_test.c"],
+    data = ["windows_msvc_empty_archive"] if bazel_features.cc.supports_starlarkified_toolchains else [],
+    target_compatible_with = [
+        "@llvm//constraints/windows/abi:msvc",
+        "@platforms//os:windows",
+    ],
+    deps = ["windows_msvc_archive_members"],
+)
+
 cc_library(
     name = "windows_msvc_libcxx_alwayslink",
     srcs = ["windows_msvc_libcxx_alwayslink.cc"],
@@ -1613,6 +1649,8 @@ platform(
 )
 
 _WINDOWS_MSVC_MD_ARTIFACTS = [
+    "windows_msvc_archive_test",
+    "windows_msvc_archive_members",
     "windows_msvc_libcxx_behavior_md",
     "windows_msvc_libcxx_behavior_thinlto",
     "windows_msvc_libcxx_behavior_debug",
@@ -1631,6 +1669,7 @@ _WINDOWS_MSVC_MD_ARTIFACTS = [
 ]
 
 _WINDOWS_MSVC_MT_ARTIFACTS = [
+    "windows_msvc_archive_test",
     "windows_msvc_libcxx_behavior_mt",
 ]
 

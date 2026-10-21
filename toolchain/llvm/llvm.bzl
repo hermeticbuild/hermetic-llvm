@@ -1,4 +1,5 @@
 load("@bazel_features//:features.bzl", "bazel_features")
+load("@bazel_lib//lib:copy_file.bzl", "copy_file")
 load("@llvm//runtimes:module_map.bzl", "include_path", "module_map")
 load("@rules_cc//cc/toolchains:tool.bzl", "cc_tool")
 load("@rules_cc//cc/toolchains:tool_map.bzl", "cc_tool_map")
@@ -149,7 +150,7 @@ def declare_llvm_targets(*, suffix = ""):
         "@rules_cc//cc/toolchains/actions:lto_backend": ":clang-cl",
         "@rules_cc//cc/toolchains/actions:preprocess_assemble": ":clang-cl",
         "@rules_cc//cc/toolchains/actions:cpp_header_parsing": ":clang-cl",
-        "@rules_cc//cc/toolchains/actions:ar_actions": ":llvm-ar",
+        "@rules_cc//cc/toolchains/actions:ar_actions": ":llvm-lib",
         "@rules_cc//cc/toolchains/actions:cpp_link_executable": ":clang-cl",
         "@rules_cc//cc/toolchains/actions:cpp_link_dynamic_library": ":clang-cl",
         "@rules_cc//cc/toolchains/actions:cpp_link_nodeps_dynamic_library": ":clang-cl",
@@ -381,6 +382,26 @@ def declare_llvm_targets(*, suffix = ""):
     cc_tool(
         name = "llvm-ar",
         src = "bin/llvm-ar" + suffix,
+    )
+
+    lib_binary = "bin/llvm-lib" + suffix
+    if not native.glob([lib_binary], allow_empty = True):
+        # Older seeds contain the LIB driver in llvm-ar's multicall binary but
+        # do not publish its name. Expose it natively, without a process adapter.
+        copy_file(
+            name = "llvm_lib_binary",
+            src = "bin/llvm-ar" + suffix,
+            out = "lib-driver/llvm-lib" + suffix,
+            allow_symlink = True,
+            is_executable = True,
+        )
+        lib_binary = "llvm_lib_binary"
+
+    cc_tool(
+        name = "llvm-lib",
+        src = lib_binary,
+        # Input lookup must not fall back to ambient Visual Studio libraries.
+        env = {"LIB": "__hermetic_llvm_empty_lib__"},
     )
 
     cc_tool(

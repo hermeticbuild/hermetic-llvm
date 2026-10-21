@@ -102,7 +102,7 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
         "@rules_cc//cc/toolchains/actions:lto_backend": prefix + "/clang-cl",
         "@rules_cc//cc/toolchains/actions:preprocess_assemble": prefix + "/clang-cl",
         "@rules_cc//cc/toolchains/actions:cpp_header_parsing": prefix + "/clang-cl",
-        "@rules_cc//cc/toolchains/actions:ar_actions": prefix + "/llvm-ar",
+        "@rules_cc//cc/toolchains/actions:ar_actions": prefix + "/llvm-lib",
         "@rules_cc//cc/toolchains/actions:cpp_link_executable": prefix + "/clang-cl",
         "@rules_cc//cc/toolchains/actions:cpp_link_dynamic_library": prefix + "/clang-cl",
         "@rules_cc//cc/toolchains/actions:cpp_link_nodeps_dynamic_library": prefix + "/clang-cl",
@@ -469,6 +469,13 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
             "llvm_readtapi": prefix + "/bin/llvm-readtapi",
             "strip": prefix + "/bin/llvm-strip",
         },
+    )
+
+    _bootstrap_cc_tool(
+        prefix,
+        "llvm-lib",
+        bootstrap_binary_kwargs,
+        env = {"LIB": "__hermetic_llvm_empty_lib__"},
     )
 
     for tool in [

@@ -106,14 +106,15 @@ cc_args(
     data = [":configuration_validation"],
 )
 
-# The MSVC ABI route still archives COFF objects with llvm-ar. This is an
-# artifact/tool contract, not clang-cl command-line syntax.
+# The LIB driver always parses Windows response files and supplies deterministic
+# COFF output with lib.exe member ordering, independently of the execution OS.
 cc_args(
     name = "archive_create_args",
     actions = ["@rules_cc//cc/toolchains/actions:cpp_link_static_library"],
     args = [
-        "rcsD",
-        "{output_execpath}",
+        "/OUT:{output_execpath}",
+        # Bazel requires a declared archive even when there are no objects.
+        "/llvmlibempty",
     ],
     format = {"output_execpath": "@rules_cc//cc/toolchains/variables:output_execpath"},
     requires_not_none = "@rules_cc//cc/toolchains/variables:output_execpath",
