@@ -10,6 +10,7 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:cc_static_library.bzl", "cc_static_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_cc//cc:objc_library.bzl", "objc_library")
+load("@rules_cc//cc/toolchains:fdo_profile.bzl", "fdo_profile")
 load("@rules_python//python:defs.bzl", "py_test")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load(
@@ -40,6 +41,7 @@ load(
     "xray_cc_binary",
 )
 load(":bazel_version.bzl", "validate_static_library_compatible")
+load(":fdo_optimize_test.bzl", "cs_fdo_optimize_test", "fdo_optimize_test")
 load(":musl_header_generation_tests.bzl", "musl_header_generation_tests")
 load(":thin_lto_features_test.bzl", "thin_lto_features_test")
 load(":windows_msvc_artifacts.bzl", "windows_msvc_artifacts")
@@ -78,6 +80,11 @@ config_setting(
     constraint_values = ["@llvm//constraints/windows/abi:msvc"],
 )
 
+_FDO_OPTIMIZE_COMPATIBLE = select({
+    "windows_msvc_abi": ["@platforms//:incompatible"],
+    "//conditions:default": [],
+})
+
 _WINDOWS_MSVC_RAW_ASSEMBLY_SRCS = select({
     "@llvm//platforms/config:windows_aarch64_msvc": ["windows_msvc_raw_assembly_aarch64.s"],
     "@llvm//platforms/config:windows_x86_64_msvc": ["windows_msvc_raw_assembly_x86_64.s"],
@@ -97,6 +104,55 @@ _EXTERNAL_INCLUDE_PATHS_TEST_COMPATIBLE = (
 ) if bazel_features.cc.supports_starlarkified_toolchains else ["@platforms//:incompatible"]
 
 musl_header_generation_tests(name = "musl_header_generation_tests")
+
+# Analysis-only fixtures: their contents are never consumed by profile tools.
+write_file(
+    name = "fdo_optimize_profile_data",
+    out = "fdo_optimize.profdata",
+    content = [],
+)
+
+write_file(
+    name = "cs_fdo_optimize_profile_data",
+    out = "cs_fdo_optimize.profdata",
+    content = [],
+)
+
+fdo_profile(
+    name = "fdo_optimize_profile",
+    profile = "fdo_optimize_profile_data",
+)
+
+fdo_profile(
+    name = "cs_fdo_optimize_profile",
+    profile = "cs_fdo_optimize_profile_data",
+)
+
+cc_binary(
+    name = "fdo_optimize_probe",
+    testonly = True,
+    srcs = ["profile_main.cc"],
+    features = ["thin_lto"],
+    tags = ["manual"],
+    target_compatible_with = _FDO_OPTIMIZE_COMPATIBLE,
+)
+
+# Like the ThinLTO feature tests below, Windows CI builds these analysis tests.
+fdo_optimize_test(
+    name = "fdo_optimize_test",
+    tags = ["thin_lto_feature"],
+    target_compatible_with = _FDO_OPTIMIZE_COMPATIBLE,
+    target_under_test = "fdo_optimize_probe",
+)
+
+cs_fdo_optimize_test(
+    name = "cs_fdo_optimize_test",
+    tags = ["thin_lto_feature"],
+    # Bazel 8's native profile merger requires legacy llvm-profdata tool-path
+    # wiring; this toolchain provides the action-based mapping used by Bazel 9+.
+    target_compatible_with = _FDO_OPTIMIZE_COMPATIBLE if bazel_features.cc.supports_starlarkified_toolchains else ["@platforms//:incompatible"],
+    target_under_test = "fdo_optimize_probe",
+)
 
 # The toolchain and this dependency both provide sanitizer headers. Sandboxed
 # compilation must not receive both compiler-rt/include and files beneath it.

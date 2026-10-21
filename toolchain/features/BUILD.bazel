@@ -624,6 +624,14 @@ cc_feature(
     overrides = "@rules_cc//cc/toolchains/features/legacy:fdo_optimize",
 )
 
+# rules_cc gates the merged profile input and fdo_profile_path for ThinLTO
+# backends on this feature. fdo_optimize already emits the argument for
+# compile_actions, which includes lto_backend.
+cc_feature(
+    name = "cs_fdo_optimize",
+    overrides = "@rules_cc//cc/toolchains/features/legacy:cs_fdo_optimize",
+)
+
 cc_args(
     name = "module_map_home_cwd_args",
     actions = [

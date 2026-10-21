@@ -187,7 +187,9 @@ jobs:
               --jobs=100 \
               //:thin_lto_shared_backends_disabled_test \
               //:thin_lto_linkstatic_tests_shared_backends_test \
-              //:thin_lto_all_linkstatic_shared_backends_test
+              //:thin_lto_all_linkstatic_shared_backends_test \
+              //:fdo_optimize_test \
+              //:cs_fdo_optimize_test
           fi
 
   # macOS: smoke build (//:main_default) plus the supported sanitizer e2e tests.

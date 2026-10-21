@@ -110,6 +110,7 @@ def cc_toolchain(
             "@llvm//toolchain/features:fdo_instrument",
             "@llvm//toolchain/features:cs_fdo_instrument",
             "@llvm//toolchain/features:fdo_optimize",
+            "@llvm//toolchain/features:cs_fdo_optimize",
             "@llvm//toolchain/features:skip_virtual_includes",
             "@rules_cc//cc/toolchains/args/thin_lto:feature",
             "@llvm//toolchain/features:thin_lto_linkstatic_tests_use_shared_nonlto_backends",
