@@ -539,6 +539,29 @@ cc_library(
     ]
 ]
 
+[
+    cc_test(
+        name = "windows_msvc_com_support_" + charset + "_" + crt,
+        srcs = ["windows_msvc_com_support.cc"],
+        local_defines = [
+            "UNICODE",
+            "_UNICODE",
+        ] if charset == "unicode" else [],
+        target_compatible_with = [
+            "@llvm//constraints/windows/abi:msvc",
+            "@platforms//os:windows",
+        ],
+    )
+    for charset in [
+        "ansi",
+        "unicode",
+    ]
+    for crt in [
+        "md",
+        "mt",
+    ]
+]
+
 cc_test(
     name = "windows_msvc_libcxx_behavior_thinlto",
     srcs = [
@@ -1669,6 +1692,8 @@ platform(
 )
 
 _WINDOWS_MSVC_MD_ARTIFACTS = [
+    "windows_msvc_com_support_ansi_md",
+    "windows_msvc_com_support_unicode_md",
     "windows_msvc_libcxx_behavior_md",
     "windows_msvc_libcxx_behavior_thinlto",
     "windows_msvc_libcxx_behavior_debug",
@@ -1687,6 +1712,8 @@ _WINDOWS_MSVC_MD_ARTIFACTS = [
 ]
 
 _WINDOWS_MSVC_MT_ARTIFACTS = [
+    "windows_msvc_com_support_ansi_mt",
+    "windows_msvc_com_support_unicode_mt",
     "windows_msvc_libcxx_behavior_mt",
 ]
 
