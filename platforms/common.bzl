@@ -1,3 +1,12 @@
+# These backends are absent from the published minimal compiler seeds.
+SOURCE_ONLY_LINUX_TARGETS = {
+    "mips64": "Mips",
+    "ppc32": "PowerPC",
+    "ppc64le": "PowerPC",
+}
+
+FREESTANDING_LINUX_CPUS = ["x86_64", "aarch64", "armv7", "x86_32", "mips64", "ppc32", "ppc64le", "riscv32", "riscv64", "s390x"]
+
 ARCH_ALIASES = {
     "x86_64": ["amd64"],
     "aarch64": ["arm64"],
@@ -14,6 +23,11 @@ SUPPORTED_TARGETS = [
     ("linux", "riscv64"),
     ("linux", "s390x"),
     ("linux", "armv7"),
+    ("linux", "x86_32"),
+    ("linux", "mips64"),
+    ("linux", "ppc32"),
+    ("linux", "ppc64le"),
+    ("linux", "riscv32"),
     ("windows", "x86_64"),
     ("windows", "aarch64"),
     ("uefi", "x86_64"),

@@ -1,4 +1,4 @@
-load("//platforms:common.bzl", "MSVC_TARGET_STAGE0_SUPPORTED_EXECS", "SUPPORTED_EXECS", "SUPPORTED_TARGETS")
+load("//platforms:common.bzl", "MSVC_TARGET_STAGE0_SUPPORTED_EXECS", "SOURCE_ONLY_LINUX_TARGETS", "SUPPORTED_EXECS", "SUPPORTED_TARGETS")
 load("//toolchain:merged_resource_directory.bzl", "merged_resource_directory")
 load("//toolchain:selects.bzl", "platform_cc_tool_map", "platform_module_map", "platform_resource_dir")
 load("//toolchain/args:resource_directory_args.bzl", "resource_directory_args")
@@ -69,7 +69,7 @@ def declare_toolchains(*, execs = SUPPORTED_EXECS, targets = SUPPORTED_TARGETS):
                     "@platforms//os:" + target_os,
                 ],
                 target_settings = target_settings,
-                toolchain = cc_toolchain_name,
+                toolchain = "stage1_%s_%s_cc_toolchain" % (exec_os, exec_cpu) if target_os == "linux" and target_cpu in SOURCE_ONLY_LINUX_TARGETS else cc_toolchain_name,
                 toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
                 visibility = ["//visibility:public"],
             )

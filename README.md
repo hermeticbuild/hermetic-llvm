@@ -294,11 +294,23 @@ osx = use_extension("@llvm//extensions:osx.bzl", "osx")
 osx.from_host()
 ```
 
+### Freestanding Linux targets
+
+Register `@llvm//toolchain:all` and add `@llvm//constraints/libc:none` to the
+Linux target platform to omit hosted headers, CRTs, and runtime libraries.
+The registered CPUs are x86_64, x86_32, AArch64, ARMv7, MIPS64, PPC32,
+PPC64 little-endian, RISC-V32, RISC-V64, and s390x. The five CPUs without
+hosted libc support in this module use this constraint in their predefined platforms.
+
+MIPS and PowerPC use the existing source bootstrap compiler automatically
+because the published minimal seeds omit those backends. The LLVM source
+extension includes the backends required by these registered targets.
+Consumers do not need separate C++ toolchain definitions or backend tags.
+
 ### RISC-V
 
-For now, RISC-V support is limited to Linux and currently hard-wired to the
-rv64gc ISA and lp64d ABI while we work out a clean way to configure freestanding
-targets and ISA matrices.
+Hosted RISC-V support uses Linux RV64GC and the LP64D ABI. Freestanding
+consumers can override the ISA and ABI through their compilation flags.
 
 ### Other platforms
 

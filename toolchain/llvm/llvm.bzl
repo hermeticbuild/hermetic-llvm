@@ -501,7 +501,7 @@ def declare_llvm_targets(*, suffix = ""):
     )
 
     include_path(
-        name = "wasm_target_headers",
+        name = "freestanding_target_headers",
         srcs = [
             ":builtin_resource_include_dir",
             # TODO(zbarsky): We'll want to add wasi libc headers here.
@@ -511,11 +511,12 @@ def declare_llvm_targets(*, suffix = ""):
     module_map(
         name = "module_map",
         include_path = select({
+            "@llvm//platforms/config:linux_freestanding": ":freestanding_target_headers",
             "@platforms//os:macos": ":macos_target_headers",
             "@platforms//os:linux": ":linux_target_headers",
             "@platforms//os:windows": ":windows_target_headers",
             "@platforms//os:uefi": ":uefi_target_headers",
-            "@platforms//os:none": ":wasm_target_headers",
+            "@platforms//os:none": ":freestanding_target_headers",
         }),
         # The generator is built with the stage1_hosted toolchain, whose own
         # module map thus can't depend on it.

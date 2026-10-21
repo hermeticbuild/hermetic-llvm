@@ -1,7 +1,7 @@
 load("@bazel_skylib//lib:selects.bzl", "selects")
 load("//constraints/libc:libc_versions.bzl", "GLIBCS", "LIBCS")
 load("//constraints/windows/abi:abis.bzl", "WINDOWS_ABIS", "WINDOWS_MINGW_COMPATIBLE_ABIS")
-load("//platforms:common.bzl", "LIBC_SUPPORTED_TARGETS", "SUPPORTED_TARGETS", "WINDOWS_TARGETS")
+load("//platforms:common.bzl", "FREESTANDING_LINUX_CPUS", "LIBC_SUPPORTED_TARGETS", "SUPPORTED_TARGETS", "WINDOWS_TARGETS")
 load("//toolchain:bootstrap_stages.bzl", "BOOTSTRAP_STAGES")
 
 def declare_config_settings():
@@ -27,6 +27,22 @@ def declare_config_settings():
                 },
                 visibility = ["//visibility:public"],
             )
+
+    native.config_setting(
+        name = "linux_freestanding",
+        constraint_values = ["@platforms//os:linux", "//constraints/libc:none"],
+        visibility = ["//visibility:public"],
+    )
+    for cpu in FREESTANDING_LINUX_CPUS:
+        native.config_setting(
+            name = "linux_" + cpu + "_none",
+            constraint_values = [
+                "@platforms//os:linux",
+                "@platforms//cpu:" + cpu,
+                "//constraints/libc:none",
+            ],
+            visibility = ["//visibility:public"],
+        )
 
     declare_config_settings_libc_aware()
     declare_config_settings_windows_abi_aware()
