@@ -46,6 +46,15 @@ for cpu in x86_64 aarch64; do
   done
 done
 
+for cpu in x86_64 aarch64; do
+  expect_failure \
+    "windows-msvc-${cpu}-incompatible-stdio" \
+    "mismatch detected for '_CRT_STDIO_ISO_WIDE_SPECIFIERS'" \
+    "${common_flags[@]}" \
+    --platforms="@llvm//platforms:windows_${cpu}_msvc" \
+    //:windows_msvc_incompatible_stdio
+done
+
 expect_failure \
   windows-msvc-libstdcxx \
   "Layer 1 MSVC ABI requires //constraints/cxxstdlib:libcxx" \

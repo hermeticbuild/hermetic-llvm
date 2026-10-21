@@ -42,12 +42,11 @@ cc_args(
 cc_args(
     name = "msvc_crt_compile_defines",
     actions = _FRONTEND_ACTIONS,
-    # Keep native stdio defaults. Forcing ISO-wide mode conflicts with the
-    # legacy-wide archive pulled in by out-of-line stdio/FFI definitions.
     args = [
         "/D_CRT_NONSTDC_NO_WARNINGS",
         "/D_CRT_SECURE_NO_DEPRECATE",
         "/D_CRT_SECURE_NO_WARNINGS",
+        "/D_CRT_STDIO_ISO_WIDE_SPECIFIERS",
     ],
 )
 

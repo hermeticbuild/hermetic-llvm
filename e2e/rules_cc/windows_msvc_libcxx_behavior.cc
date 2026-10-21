@@ -46,9 +46,11 @@ void operator delete(void* allocation, std::size_t) noexcept {
 }
 
 int main() {
-  // Keep wide formatting working alongside the C FFI-style stdio definitions.
+  // ISO wide %s consumes a narrow string; native MSVC mode consumes wchar_t*.
+  // Pad and align the input so a wrong mode fails without reading past it.
+  alignas(wchar_t) const char narrow[8] = "wide";
   wchar_t formatted[16];
-  if (std::swprintf(formatted, 16, L"%ls:%d", L"wide", 42) != 7 ||
+  if (std::swprintf(formatted, 16, L"%s:%d", narrow, 42) != 7 ||
       std::wstring(formatted) != L"wide:42") {
     return 8;
   }

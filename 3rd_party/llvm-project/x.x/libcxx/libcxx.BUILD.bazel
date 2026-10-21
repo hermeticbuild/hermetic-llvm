@@ -487,14 +487,13 @@ cc_library(
         "@llvm//config:runtimes_optimization_mode_debug": [],
         "//conditions:default": ["NDEBUG"],
     }) + select({
-        # Match consumers' native stdio mode rather than CMake's forced
-        # ISO-wide mode, which cannot link with legacy_stdio_definitions.
         ":windows_msvc": [
             "_ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH",
             "_ALLOW_MSC_VER_MISMATCH",
             "_CRTBLD",
             "_CRT_NONSTDC_NO_WARNINGS",
             "_CRT_SECURE_NO_WARNINGS",
+            "_CRT_STDIO_ISO_WIDE_SPECIFIERS",
         ],
         # The Itanium route builds libc++ against libc++abi. Defining this on
         # the VCRuntime route makes LLVM 21's exception.cpp include cxxabi.h
