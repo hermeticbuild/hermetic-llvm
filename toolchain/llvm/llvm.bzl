@@ -441,6 +441,9 @@ def declare_llvm_targets(*, suffix = ""):
             ":builtin_resource_include_dir",
             "@macos_sdk//sysroot",
             "@llvm//sanitizers:sanitizers_headers_include_search_directory",
+            # Match the libc++ include paths.
+            "@llvm//runtimes/cxxstdlib:public_headers_directory",
+            "@llvm//runtimes/cxxstdlib:detail_headers_directory",
         ],
     )
 
@@ -451,7 +454,8 @@ def declare_llvm_targets(*, suffix = ""):
             ":builtin_resource_include_dir",
         ] + select({
             "@llvm//toolchain:runtimes_all": [
-                "@llvm//runtimes/cxxstdlib:headers_include_search_directory",
+                "@llvm//runtimes/cxxstdlib:public_headers_directory",
+                "@llvm//runtimes/cxxstdlib:detail_headers_directory",
                 "@llvm//runtimes/cxxstdlib:abi_headers_include_search_directory",
             ],
             "//conditions:default": [],
@@ -475,7 +479,8 @@ def declare_llvm_targets(*, suffix = ""):
             ":builtin_resource_include_dir",
         ] + select({
             "@llvm//toolchain:runtimes_all": [
-                "@llvm//runtimes/cxxstdlib:headers_include_search_directory",
+                "@llvm//runtimes/cxxstdlib:public_headers_directory",
+                "@llvm//runtimes/cxxstdlib:detail_headers_directory",
                 "@llvm//runtimes/cxxstdlib:abi_headers_include_search_directory",
             ],
             "//conditions:default": [],
