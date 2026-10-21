@@ -21,11 +21,11 @@ jobs:
         with:
           persist-credentials: false
       - name: Check root workspace
-        uses: tamird/sty@dd3ad69621c3f24ee617481d1aff5a6a2986f572
+        uses: tamird/sty@10eab86f75ebadb0a611db0d702f7eb73aaa3a6c
         with:
           audit-loads: true
       - name: Check rules_cc example workspace
-        uses: tamird/sty@dd3ad69621c3f24ee617481d1aff5a6a2986f572
+        uses: tamird/sty@10eab86f75ebadb0a611db0d702f7eb73aaa3a6c
         with:
           working-directory: e2e/rules_cc
           artifact-name: sty-rules-cc

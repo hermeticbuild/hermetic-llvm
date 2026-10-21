@@ -5,6 +5,7 @@ strict-generic-narrowing = true
 [type-interfaces]
 "defs.bzl" = "defs.bzli"
 "directory.bzl" = "directory.bzli"
+"runtimes/module_map.bzl" = "runtimes/module_map.bzli"
 "toolchain/llvm/llvm.bzl" = "toolchain/llvm/llvm.bzli"
 
 [rules]
