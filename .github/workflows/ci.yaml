@@ -172,7 +172,7 @@ jobs:
             --repository_cache= \
             --repo_contents_cache= \
             --jobs=100 \
-            --test_tag_filters=-thin_lto_feature \
+            --test_tag_filters=-analysis \
             $EXTRA_ARGS \
             //...
 
