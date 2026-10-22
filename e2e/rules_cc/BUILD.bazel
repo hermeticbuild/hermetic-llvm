@@ -1515,27 +1515,17 @@ filegroup(
 # Inspect real link artifacts without executing foreign target code. Musl is
 # omitted until its shared libc and loader are wired into the consumer path;
 # archive-only output is an implementation gap, not a permanent musl contract.
+# MSVC retains its existing support and separately opted-in CI coverage.
 _SHARED_LIBRARY_PLATFORMS = [
-    "linux_" + arch
+    "{}_{}".format(os, arch)
+    for os in [
+        "linux",
+        "macos",
+        "windows",
+    ]
     for arch in [
         "x86_64",
         "aarch64",
-    ]
-] + [
-    "macos_" + arch
-    for arch in [
-        "x86_64",
-        "aarch64",
-    ]
-] + [
-    "windows_" + arch + abi
-    for arch in [
-        "x86_64",
-        "aarch64",
-    ]
-    for abi in [
-        "",
-        "_msvc",
     ]
 ]
 
