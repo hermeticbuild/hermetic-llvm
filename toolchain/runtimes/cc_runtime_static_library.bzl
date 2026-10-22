@@ -13,4 +13,10 @@ cc_runtime_stage0_asan_static_library, _cc_stage0_asan_static_library_internal =
     _builder.clone(),
     "stage0",
     inherit_asan = True,
+    inherit_msan = True,
+).build()
+cc_runtime_stage0_msan_static_library, _cc_stage0_msan_static_library_internal = configure_builder_for_runtimes(
+    _builder.clone(),
+    "stage0",
+    inherit_msan = True,
 ).build()
