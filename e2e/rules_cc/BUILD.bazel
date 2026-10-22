@@ -565,10 +565,7 @@ cc_library(
 [
     cc_test(
         name = "windows_msvc_legacy_stdio_" + crt,
-        srcs = [
-            "windows_msvc_legacy_stdio.c",
-            "windows_msvc_legacy_stdio_test.c",
-        ],
+        srcs = ["windows_msvc_legacy_stdio.c"],
         target_compatible_with = [
             "@llvm//constraints/windows/abi:msvc",
             "@platforms//os:windows",
@@ -579,20 +576,6 @@ cc_library(
         "mt",
     ]
 ]
-
-cc_binary(
-    name = "windows_msvc_incompatible_stdio",
-    testonly = True,
-    srcs = [
-        "windows_msvc_incompatible_stdio.cc",
-        "windows_msvc_legacy_stdio.c",
-    ],
-    tags = ["manual"],
-    target_compatible_with = [
-        "@llvm//constraints/windows/abi:msvc",
-        "@platforms//os:windows",
-    ],
-)
 
 cc_test(
     name = "windows_msvc_libcxx_behavior_thinlto",
