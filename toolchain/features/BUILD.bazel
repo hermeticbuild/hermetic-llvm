@@ -55,33 +55,18 @@ cc_feature(
     feature_name = "supports_dynamic_linker",
 )
 
-cc_feature_set(
-    name = "hosted_dynamic_linker",
-    all_of = select({
-        ":hosted_dynamic_linking_supported": [":supports_dynamic_linker"],
-        "//conditions:default": [],
-    }),
-)
-
 # Temporary implementation boundary: musl has shared libc/loader targets, but
 # the consumer path still exposes only libc.a and forces static executables.
 # Enable musl here when that integration is complete; libc choice itself does
 # not determine whether a target supports dynamic linking.
-selects.config_setting_group(
-    name = "linux_dynamic_linking_supported",
-    match_all = [
-        "@platforms//os:linux",
-        "//platforms/config:gnu",
-    ],
-)
-
-selects.config_setting_group(
-    name = "hosted_dynamic_linking_supported",
-    match_any = [
-        ":linux_dynamic_linking_supported",
-        "@platforms//os:macos",
-        "@platforms//os:windows",
-    ],
+cc_feature_set(
+    name = "hosted_dynamic_linker",
+    all_of = select({
+        "//constraints/libc:musl": [],
+        "@platforms//os:uefi": [],
+        "@platforms//os:none": [],
+        "//conditions:default": [":supports_dynamic_linker"],
+    }),
 )
 
 cc_args(
