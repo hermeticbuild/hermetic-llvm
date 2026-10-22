@@ -1,5 +1,6 @@
 # The proper fix belongs in Clang (llvm/llvm-project#95154), but retain
 # this libstdc++ workaround nonetheless.
+# Upstream fix: llvm/llvm-project#233862.
 
 diff --git a/libstdc++-v3/src/c++17/fs_dir.cc b/libstdc++-v3/src/c++17/fs_dir.cc
 --- a/libstdc++-v3/src/c++17/fs_dir.cc
