@@ -283,6 +283,8 @@ GCC_PATCHES = {
 }
 
 def gcc_patches(version):
+    # The proper fix belongs in Clang (llvm/llvm-project#95154), but retain
+    # these libstdc++ workarounds nonetheless.
     # Spell _Dir's complete namespace in both ABIs. Clang otherwise mangles
     # the new-ABI definition as the old-ABI type (llvm/llvm-project#95154).
     filesystem_patch = (
