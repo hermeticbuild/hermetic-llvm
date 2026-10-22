@@ -613,6 +613,7 @@ cc_feature(
     name = "cs_fdo_instrument",
     args = [
         "//toolchain/args:cs_fdo_instrument_args",
+        "//toolchain/args:cs_fdo_instrument_macos_linker_flags",
         "//toolchain/args:profile_runtime_windows_linker_flags",
     ],
     overrides = "@rules_cc//cc/toolchains/features/legacy:cs_fdo_instrument",

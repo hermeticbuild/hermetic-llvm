@@ -884,6 +884,19 @@ cc_args(
     requires_not_none = "@rules_cc//cc/toolchains/variables:cs_fdo_instrument_path",
 )
 
+# Under ThinLTO on macOS the thin link drops __llvm_profile_filename, so CS
+# profiles go to ./default.profraw instead of the --cs_fdo_instrument directory.
+cc_args(
+    name = "cs_fdo_instrument_macos_linker_flags",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    args = select({
+        "@platforms//os:macos": ["-Wl,-u,___llvm_profile_filename"],
+        "//conditions:default": [],
+    }),
+)
+
 # The fdo_optimize feature consumes the profile selected by --fdo_profile or
 # --fdo_optimize. The LLVM bootstrap already uses this path for its merged data.
 cc_args(
