@@ -1,0 +1,41 @@
+load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+
+package(default_visibility = ["//visibility:public"])
+
+bzl_library(
+    name = "extensions",
+    srcs = ["extensions.bzl"],
+    deps = ["@bazel_tools//tools/build_defs/repo:http.bzl"],
+)
+
+alias(
+    name = "component_ld",
+    actual = select({
+        "//platforms/config:linux_aarch64": "@wasm_component_ld_linux_aarch64//:wasm-component-ld",
+        "//platforms/config:linux_x86_64": "@wasm_component_ld_linux_x86_64//:wasm-component-ld",
+        "//platforms/config:macos_aarch64": "@wasm_component_ld_macos_aarch64//:wasm-component-ld",
+        "//platforms/config:macos_x86_64": "@wasm_component_ld_macos_x86_64//:wasm-component-ld",
+        "//platforms/config:windows_aarch64": "@wasm_component_ld_windows_aarch64//:wasm-component-ld.exe",
+        "//platforms/config:windows_x86_64": "@wasm_component_ld_windows_x86_64//:wasm-component-ld.exe",
+    }),
+)
+
+alias(
+    name = "wasm_tools",
+    actual = select({
+        "//platforms/config:linux_aarch64": "@wasm_tools_linux_aarch64//:wasm-tools",
+        "//platforms/config:linux_x86_64": "@wasm_tools_linux_x86_64//:wasm-tools",
+        "//platforms/config:macos_aarch64": "@wasm_tools_macos_aarch64//:wasm-tools",
+        "//platforms/config:macos_x86_64": "@wasm_tools_macos_x86_64//:wasm-tools",
+        "//platforms/config:windows_aarch64": "@wasm_tools_windows_aarch64//:wasm-tools.exe",
+        "//platforms/config:windows_x86_64": "@wasm_tools_windows_x86_64//:wasm-tools.exe",
+    }),
+)
+
+copy_to_directory(
+    name = "component_ld_directory",
+    srcs = [":component_ld"],
+    include_external_repositories = ["**"],
+    root_paths = ["."],
+)

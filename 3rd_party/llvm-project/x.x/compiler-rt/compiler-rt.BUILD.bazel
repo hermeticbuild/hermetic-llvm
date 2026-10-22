@@ -254,6 +254,7 @@ filegroup(
         "//conditions:default": [],
     }) + select({
         "@platforms//os:none": [],
+        "@platforms//os:wasi": [],
         "@platforms//os:uefi": [],
         "//conditions:default": [
             # Not Fuchsia and not a bare-metal build.
@@ -682,6 +683,7 @@ cc_library(
         "@platforms//os:windows": [],
         "@platforms//os:uefi": [],
         "@platforms//os:none": [],
+        "@platforms//os:wasi": [],
     }) + select({
         "@llvm//platforms/config:musl": [
             "@musl_libc//:musl_libc_headers",
@@ -698,6 +700,7 @@ cc_library(
         ],
         "@platforms//os:uefi": [],
         "@platforms//os:none": [],
+        "@platforms//os:wasi": [],
     }),
     includes = ["lib/builtins"],
     linkstatic = True,

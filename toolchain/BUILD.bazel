@@ -147,6 +147,7 @@ cc_args_list(
         "@platforms//os:windows": ["//toolchain/args/windows:default_link_flags"],
         "@platforms//os:uefi": [],
         "@platforms//os:none": [],
+        "@platforms//os:wasi": [],
     }),
 )
 
@@ -160,6 +161,7 @@ cc_args_list(
         "@platforms//os:windows": ["//toolchain/args/windows:default_startfiles"],
         "@platforms//os:uefi": [],
         "@platforms//os:none": [],
+        "@platforms//os:wasi": [],
     }),
 )
 
@@ -182,6 +184,7 @@ cc_args_list(
             "//toolchain/args/linux:default_libs",
         ],
         "@platforms//os:windows": ["//toolchain/args/windows:default_libs"],
+        "@platforms//os:wasi": ["//toolchain/args/wasi:default_libs"],
         "//conditions:default": [],
     }),
 )
@@ -328,6 +331,7 @@ cc_args_list(
         # Windows uses the complete :windows_toolchain_args composition below.
         "@platforms//os:windows": [],
         "@platforms//os:none": [],
+        "@platforms//os:wasi": ["//toolchain/args/wasi:headers"],
         "//conditions:default": [],
     }),
 )

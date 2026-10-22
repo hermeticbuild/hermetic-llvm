@@ -22,6 +22,7 @@ SUPPORTED_TARGETS = [
     ("none", "bpfel"),
     ("none", "wasm32"),
     ("none", "wasm64"),
+    ("wasi", "wasm32"),
 ]
 
 SUPPORTED_EXECS = [

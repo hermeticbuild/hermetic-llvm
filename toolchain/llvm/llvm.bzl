@@ -511,8 +511,16 @@ def declare_llvm_targets(*, suffix = ""):
         name = "wasm_target_headers",
         srcs = [
             ":builtin_resource_include_dir",
-            # TODO(zbarsky): We'll want to add wasi libc headers here.
         ],
+    )
+
+    include_path(
+        name = "wasi_target_headers",
+        srcs = [":builtin_resource_include_dir"] + select({
+            "@llvm//toolchain:runtimes_all": ["@llvm//runtimes/wasi:wasi_headers_include_search_directory"],
+            "@llvm//toolchain:runtimes_stage1_hosted": ["@llvm//runtimes/wasi:wasi_headers_include_search_directory"],
+            "//conditions:default": [],
+        }),
     )
 
     module_map(
@@ -523,6 +531,7 @@ def declare_llvm_targets(*, suffix = ""):
             "@platforms//os:windows": ":windows_target_headers",
             "@platforms//os:uefi": ":uefi_target_headers",
             "@platforms//os:none": ":wasm_target_headers",
+            "@platforms//os:wasi": ":wasi_target_headers",
         }),
         # The generator is built with the stage1_hosted toolchain, whose own
         # module map thus can't depend on it.

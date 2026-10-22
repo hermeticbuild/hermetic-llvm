@@ -68,6 +68,10 @@ cc_args_list(
         # Windows uses the complete :windows_toolchain_args composition below.
         "@platforms//os:windows": [],
         "@platforms//os:none": [],
+        "@platforms//os:wasi": [
+            "//toolchain/args/wasi:headers",
+            "//toolchain/args/wasi:runtime_compile_flags",
+        ],
     }),
     visibility = ["//toolchain:__subpackages__"],
 )
@@ -82,6 +86,7 @@ cc_args_list(
         # Windows uses the complete :windows_toolchain_args composition below.
         "@platforms//os:windows": [],
         "@platforms//os:none": [],
+        "@platforms//os:wasi": ["//toolchain/args/wasi:runtime_compile_flags"],
     }),
     visibility = ["//toolchain:__subpackages__"],
 )
@@ -135,7 +140,7 @@ cc_args_list(
 
         # Common default link flags.
         "//toolchain:deterministic_link_flags",
-        "//toolchain/args:fuse_ld",
+        "//toolchain/args:fuse_lld",
         "//toolchain/args:lto_plugin_target_flags",
         ":rtlib",
         ":default_link_flags",
@@ -196,7 +201,7 @@ cc_args_list(
 
         # Common default link flags.
         "//toolchain:deterministic_link_flags",
-        "//toolchain/args:fuse_ld",
+        "//toolchain/args:fuse_lld",
         "//toolchain/args:lto_plugin_target_flags",
         ":rtlib",
         ":default_link_flags",

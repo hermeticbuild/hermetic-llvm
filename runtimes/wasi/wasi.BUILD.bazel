@@ -1,0 +1,540 @@
+load("@bazel_lib//lib:copy_file.bzl", "copy_file")
+load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@bazel_lib//lib:run_binary.bzl", "run_binary")
+load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
+load("@llvm//3rd_party/libc/musl:musl_headers.bzl", "musl_alltypes_headers")
+load("@llvm//runtimes/wasi:sources.bzl", "BOTTOM_COMPONENT_SOURCES", "BOTTOM_P1_SOURCES", "BOTTOM_P2_SOURCES", "BOTTOM_P3_SOURCES", "BOTTOM_SOURCES", "BOTTOM_THREAD_CONTEXT_SOURCES", "BULK_MEMORY_SOURCES", "PRINTSCAN_SOURCES", "TOP_HEADERS_EXCLUDE", "TOP_P1_THREADS_SOURCES", "TOP_SINGLE_THREADED_SOURCES", "TOP_SOURCES", "TOP_SOURCES_GLOBS", "TOP_SOURCES_GLOB_EXCLUDE")
+load("@llvm//runtimes/wasi:wasi.bzl", "wasi_crt_object", "wasi_headers", "wasi_static_library")
+load("@llvm-project//:vars.bzl", "LLVM_VERSION_MAJOR")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:private"])
+
+# wasi-libc/CMakeLists.txt: target triple, thread model, and compiler options.
+COMMON_COPTS = [
+    "-fno-trapping-math",
+    "-Wall",
+    "-Wextra",
+] + select({
+    "@llvm//constraints/wasi:p1_threads": [
+        "-mthread-model",
+        "posix",
+        "-pthread",
+        "-ftls-model=local-exec",
+        "-matomics",
+    ],
+    "//conditions:default": [
+        "-mthread-model",
+        "single",
+    ],
+}) + (["-fdefer-ts"] if int(LLVM_VERSION_MAJOR) >= 22 else [])
+
+MUSL_COPTS = COMMON_COPTS + [
+    "-Wno-bitwise-op-parentheses",
+    "-Wno-dangling-else",
+    "-Wno-ignored-attributes",
+    "-Wno-ignored-pragmas",
+    "-Wno-logical-op-parentheses",
+    "-Wno-missing-braces",
+    "-Wno-parentheses",
+    "-Wno-shift-op-parentheses",
+    "-Wno-sign-compare",
+    "-Wno-string-plus-int",
+    "-Wno-unknown-pragmas",
+    "-Wno-unused-but-set-variable",
+    "-Wno-unused-function",
+    "-Wno-unused-parameter",
+    "-Wno-unused-variable",
+]
+
+ALLTYPES_HEADERS = musl_alltypes_headers(
+    name = "alltypes",
+    arch = "wasm32",
+    source_prefix = "libc-top-half/musl/",
+)
+
+expand_template(
+    name = "wasi_version",
+    out = "generated/include/wasi/version.h",
+    substitutions = {
+        "#cmakedefine __wasi_cooperative_threads__": "/* #undef __wasi_cooperative_threads__ */",
+        "#cmakedefine __wasi_sdk_major__ @__wasi_sdk_major__@": "#define __wasi_sdk_major__ 34",
+        "#cmakedefine __wasi_sdk_version__ \"@__wasi_sdk_version__@\"": "#define __wasi_sdk_version__ \"34\"",
+    } | select({
+        "@llvm//constraints/wasi:p2": {
+            "#cmakedefine __wasip1__": "/* #undef __wasip1__ */",
+            "#cmakedefine __wasip2__": "#define __wasip2__",
+            "#cmakedefine __wasip3__": "/* #undef __wasip3__ */",
+        },
+        "@llvm//constraints/wasi:p3": {
+            "#cmakedefine __wasip1__": "/* #undef __wasip1__ */",
+            "#cmakedefine __wasip2__": "/* #undef __wasip2__ */",
+            "#cmakedefine __wasip3__": "#define __wasip3__",
+        },
+        "//conditions:default": {
+            "#cmakedefine __wasip1__": "#define __wasip1__",
+            "#cmakedefine __wasip2__": "/* #undef __wasip2__ */",
+            "#cmakedefine __wasip3__": "/* #undef __wasip3__ */",
+        },
+    }),
+    template = "libc-bottom-half/headers/public/wasi/version.h.in",
+)
+
+# libc-top-half/CMakeLists.txt:55-176 and libc-bottom-half/CMakeLists.txt:19-37.
+# Bottom-half WASI headers provide the errno and ABI definitions not in musl.
+filegroup(
+    name = "public_headers",
+    srcs = glob(
+        [
+            "libc-top-half/musl/include/**/*.h",
+            "libc-top-half/musl/arch/generic/bits/**/*.h",
+            "libc-top-half/musl/arch/wasm32/bits/**/*.h",
+        ],
+        exclude = TOP_HEADERS_EXCLUDE + ["libc-top-half/musl/include/netdb.h"],
+    ) + glob(
+        ["libc-bottom-half/headers/public/**/*.h"],
+        exclude = [
+            "libc-bottom-half/headers/public/wasi/__generated_wasip2.h",
+            "libc-bottom-half/headers/public/wasi/__generated_wasip3.h",
+        ],
+    ) + select({
+        "@llvm//constraints/wasi:p2": [
+            "libc-top-half/musl/include/netdb.h",
+            "libc-bottom-half/headers/public/wasi/__generated_wasip2.h",
+        ],
+        "@llvm//constraints/wasi:p3": [
+            "libc-top-half/musl/include/netdb.h",
+            "libc-bottom-half/headers/public/wasi/__generated_wasip3.h",
+        ],
+        "//conditions:default": [],
+    }) + [
+        "fts/musl-fts/fts.h",
+        ":wasi_version",
+    ] + ALLTYPES_HEADERS,
+)
+
+copy_to_directory(
+    name = "headers_include_directory",
+    srcs = [":public_headers"],
+    out = "generated/sysroot/include",
+    root_paths = [
+        "libc-top-half/musl/include",
+        "libc-top-half/musl/arch/generic",
+        "libc-top-half/musl/arch/wasm32",
+        "libc-bottom-half/headers/public",
+        "fts/musl-fts",
+        "obj/wasm32/include",
+        "generated/include",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+wasi_headers(
+    name = "sysroot_headers",
+    public_headers = ":headers_include_directory",
+)
+
+# Keep musl's relative #includes resolvable while placing its private headers
+# before the sysroot's system includes, as musl-top-half-interface does.
+wasi_headers(
+    name = "musl_top_half_interface",
+    hdrs = glob([
+        "libc-top-half/musl/src/**/*.h",
+        "libc-top-half/musl/include/**/*.h",
+        "libc-top-half/musl/arch/wasm32/**/*.h",
+        "libc-top-half/musl/arch/generic/**/*.h",
+        "libc-top-half/headers/private/**/*.h",
+        "libc-bottom-half/cloudlibc/src/**/*.h",
+    ]),
+    includes = [
+        "libc-top-half/musl/src/include",
+        "libc-top-half/musl/src/internal",
+        "libc-top-half/musl/arch/wasm32",
+        "libc-top-half/musl/arch/generic",
+        "libc-top-half/headers/private",
+        "libc-bottom-half/cloudlibc/src",
+    ],
+    public_headers = ":headers_include_directory",
+)
+
+wasi_headers(
+    name = "bottom_half_headers",
+    hdrs = glob([
+        "libc-bottom-half/headers/private/**/*.h",
+        "libc-bottom-half/cloudlibc/src/**/*.h",
+        "libc-bottom-half/crt/**/*.h",
+    ]),
+    includes = [
+        "libc-bottom-half/cloudlibc/src/include",
+        "libc-bottom-half/cloudlibc/src",
+        "libc-bottom-half/headers/private",
+    ],
+)
+
+wasi_headers(
+    name = "dlmalloc_headers",
+    hdrs = glob(["dlmalloc/include/**/*.h"]),
+    includes = ["dlmalloc/include"],
+)
+
+wasi_headers(
+    name = "fts_headers",
+    hdrs = glob(["fts/**/*.h"]),
+    includes = [
+        "fts",
+        "fts/musl-fts",
+    ],
+)
+
+cc_library(
+    name = "bottom_half",
+    srcs = BOTTOM_SOURCES + select({
+        "@llvm//constraints/wasi:p2": BOTTOM_COMPONENT_SOURCES + BOTTOM_P2_SOURCES,
+        "@llvm//constraints/wasi:p3": BOTTOM_COMPONENT_SOURCES + BOTTOM_P3_SOURCES,
+        "//conditions:default": BOTTOM_P1_SOURCES,
+    }) + (select({
+        "@llvm//constraints/wasi:p3": BOTTOM_THREAD_CONTEXT_SOURCES,
+        "//conditions:default": [],
+    }) if int(LLVM_VERSION_MAJOR) >= 23 else []),
+    copts = COMMON_COPTS,
+    implementation_deps = [
+        ":musl_top_half_interface",
+        ":bottom_half_headers",
+    ],
+)
+
+cc_library(
+    name = "top_half",
+    srcs = TOP_SOURCES + glob(
+        TOP_SOURCES_GLOBS,
+        exclude = TOP_SOURCES_GLOB_EXCLUDE + PRINTSCAN_SOURCES + BULK_MEMORY_SOURCES,
+    ) + select({
+        "@llvm//constraints/wasi:p2": ["libc-top-half/musl/src/network/gai_strerror.c"],
+        "@llvm//constraints/wasi:p3": ["libc-top-half/musl/src/network/gai_strerror.c"],
+        "//conditions:default": [],
+    }) + select({
+        "@llvm//constraints/wasi:p1_threads": TOP_P1_THREADS_SOURCES,
+        "//conditions:default": TOP_SINGLE_THREADED_SOURCES,
+    }),
+    copts = MUSL_COPTS,
+    implementation_deps = [":musl_top_half_interface"],
+)
+
+cc_library(
+    name = "dlmalloc",
+    srcs = ["dlmalloc/src/dlmalloc.c"],
+    copts = COMMON_COPTS + [
+        "-Wno-null-pointer-arithmetic",
+        "-Wno-unused-but-set-variable",
+    ],
+    implementation_deps = [
+        ":sysroot_headers",
+        ":dlmalloc_headers",
+    ],
+    textual_hdrs = ["dlmalloc/src/malloc.c"],
+)
+
+cc_library(
+    name = "emmalloc",
+    srcs = ["emmalloc/emmalloc.c"],
+    copts = COMMON_COPTS + [
+        "-Wno-unused-function",
+        "-fno-strict-aliasing",
+    ],
+    implementation_deps = [":sysroot_headers"],
+)
+
+cc_library(
+    name = "fts",
+    srcs = ["fts/musl-fts/fts.c"],
+    copts = COMMON_COPTS + [
+        "-Wno-unused-parameter",
+        "-Wno-unused-variable",
+    ],
+    implementation_deps = [
+        ":musl_top_half_interface",
+        ":fts_headers",
+    ],
+)
+
+cc_library(
+    name = "bulk_memory",
+    srcs = BULK_MEMORY_SOURCES,
+    copts = MUSL_COPTS + [
+        "-mbulk-memory",
+        "-DBULK_MEMORY_THRESHOLD=32",
+    ],
+    implementation_deps = [":musl_top_half_interface"],
+)
+
+[
+    cc_library(
+        name = "printscan_" + variant,
+        srcs = PRINTSCAN_SOURCES,
+        copts = MUSL_COPTS + definitions,
+        implementation_deps = [":musl_top_half_interface"],
+    )
+    for variant, definitions in {
+        "default": [
+            "-D__wasilibc_printscan_no_long_double",
+            "'-D__wasilibc_printscan_full_support_option=\"add -lc-printscan-long-double to the link command\"'",
+        ],
+        "nofloat": [
+            "-D__wasilibc_printscan_no_floating_point",
+            "'-D__wasilibc_printscan_floating_point_support_option=\"remove -lc-printscan-no-floating-point from the link command\"'",
+        ],
+        "longdouble": [],
+    }.items()
+]
+
+# Component type objects are checked-in upstream and must be part of libc.a.
+cc_library(
+    name = "component_type",
+    srcs = select({
+        "@llvm//constraints/wasi:p2": ["libc-bottom-half/sources/wasip2_component_type.o"],
+        "@llvm//constraints/wasi:p3": ["libc-bottom-half/sources/wasip3_component_type.o"],
+        "//conditions:default": [],
+    }),
+)
+
+wasi_static_library(
+    name = "c",
+    deps = [
+        ":bottom_half",
+        ":top_half",
+        ":printscan_default",
+        ":bulk_memory",
+        ":fts",
+        ":component_type",
+    ] + select({
+        "@llvm//runtimes/wasi:malloc_emmalloc": [":emmalloc"],
+        "@llvm//runtimes/wasi:malloc_none": [],
+        "//conditions:default": [":dlmalloc"],
+    }),
+)
+
+wasi_static_library(
+    name = "c-printscan-no-floating-point",
+    deps = [":printscan_nofloat"],
+)
+
+wasi_static_library(
+    name = "c-printscan-long-double",
+    deps = [":printscan_longdouble"],
+)
+
+cc_library(
+    name = "setjmp_objects",
+    srcs = ["libc-top-half/musl/src/setjmp/wasm32/rt.c"],
+    copts = MUSL_COPTS + [
+        "-mllvm",
+        "-wasm-enable-sjlj",
+        "-fno-lto",
+    ],
+    implementation_deps = [":musl_top_half_interface"],
+)
+
+wasi_static_library(
+    name = "setjmp",
+    deps = [":setjmp_objects"],
+)
+
+cc_library(
+    name = "dl_objects",
+    srcs = ["libc-top-half/musl/src/misc/dl.c"],
+    copts = MUSL_COPTS,
+    implementation_deps = [":musl_top_half_interface"],
+)
+
+wasi_static_library(
+    name = "dl",
+    deps = [":dl_objects"],
+)
+
+[
+    cc_library(
+        name = name + "_objects",
+        srcs = srcs,
+        copts = COMMON_COPTS,
+        implementation_deps = [":musl_top_half_interface"],
+    )
+    for name, srcs in {
+        "wasi-emulated-mman": ["libc-bottom-half/mman/mman.c"],
+        "wasi-emulated-getpid": ["libc-bottom-half/getpid/getpid.c"],
+        "wasi-emulated-process-clocks": [
+            "libc-bottom-half/clocks/clock.c",
+            "libc-bottom-half/clocks/getrusage.c",
+            "libc-bottom-half/clocks/times.c",
+        ],
+    }.items()
+]
+
+cc_library(
+    name = "signal_top_half",
+    srcs = [
+        "libc-top-half/musl/src/signal/psignal.c",
+        "libc-top-half/musl/src/string/strsignal.c",
+    ],
+    copts = COMMON_COPTS + [
+        "-D_WASI_EMULATED_SIGNAL",
+        "-Wno-unused-function",
+    ],
+    implementation_deps = [":musl_top_half_interface"],
+)
+
+cc_library(
+    name = "signal_bottom_half",
+    srcs = ["libc-bottom-half/signal/signal.c"],
+    copts = COMMON_COPTS + ["-Wno-unused-function"],
+    implementation_deps = [":sysroot_headers"],
+)
+
+wasi_static_library(
+    name = "wasi-emulated-signal",
+    deps = [
+        ":signal_top_half",
+        ":signal_bottom_half",
+    ],
+)
+
+[
+    wasi_static_library(
+        name = name,
+        deps = [":" + name + "_objects"],
+    )
+    for name in [
+        "wasi-emulated-mman",
+        "wasi-emulated-getpid",
+        "wasi-emulated-process-clocks",
+    ]
+]
+
+# libc-bottom-half/CMakeLists.txt:216-287. Preserve export_name by extracting
+# the compilation output instead of relinking the CRT through wasm-ld -r.
+[
+    wasi_crt_object(
+        name = "crt1_" + mode + "_raw",
+        srcs = ["libc-bottom-half/crt/crt1-" + mode + ".c"],
+        out = "objects/crt1-" + mode + ".o",
+        copts = COMMON_COPTS + [
+            "-fPIC",
+            "-fvisibility=default",
+            "-fno-lto",
+        ],
+        implementation_deps = [
+            ":musl_top_half_interface",
+            ":bottom_half_headers",
+        ],
+    )
+    for mode in ["command", "reactor"]
+]
+
+[
+    copy_to_directory(
+        name = snapshot + "_wit",
+        srcs = glob(["wasi/" + snapshot + "/wit/**/*.wit"]),
+        out = "generated/" + snapshot + "/wit",
+        root_paths = ["wasi/" + snapshot + "/wit"],
+    )
+    for snapshot in ["p2", "p3"]
+]
+
+[
+    run_binary(
+        name = "crt1_command_" + snapshot,
+        srcs = [
+            ":crt1_command_raw",
+            ":" + snapshot + "_wit",
+        ],
+        outs = ["objects/" + snapshot + "/crt1-command.o"],
+        args = [
+            "component",
+            "embed",
+            "$(location :" + snapshot + "_wit)",
+            "$(location :crt1_command_raw)",
+            "--world",
+            "wasi:cli/command@" + version,
+            "-o",
+            "$@",
+        ],
+        tool = "@llvm//runtimes/wasi/tools:wasm_tools",
+    )
+    for snapshot, version in {
+        "p2": "0.2.12",
+        "p3": "0.3.0",
+    }.items()
+]
+
+copy_file(
+    name = "crt1_command",
+    src = select({
+        "@llvm//constraints/wasi:p2": ":crt1_command_p2",
+        "@llvm//constraints/wasi:p3": ":crt1_command_p3",
+        "//conditions:default": ":crt1_command_raw",
+    }),
+    out = "lib/crt1-command.o",
+    allow_symlink = True,
+)
+
+copy_file(
+    name = "crt1",
+    src = ":crt1_command",
+    out = "lib/crt1.o",
+    allow_symlink = True,
+)
+
+copy_file(
+    name = "crt1_reactor",
+    src = ":crt1_reactor_raw",
+    out = "lib/crt1-reactor.o",
+    allow_symlink = True,
+)
+
+STUB_LIBRARIES = ["crypt", "m", "pthread", "resolv", "rt", "util", "xnet"]
+
+[
+    run_binary(
+        name = name + "_stub",
+        outs = ["lib/lib" + name + ".a"],
+        args = [
+            "rc",
+            "$@",
+            "--format=gnu",
+        ],
+        tool = "@llvm//tools:llvm-ar",
+    )
+    for name in STUB_LIBRARIES
+]
+
+copy_to_directory(
+    name = "library_directory",
+    srcs = [
+        ":c",
+        ":c-printscan-long-double",
+        ":c-printscan-no-floating-point",
+        ":setjmp",
+        ":dl",
+        ":wasi-emulated-mman",
+        ":wasi-emulated-getpid",
+        ":wasi-emulated-process-clocks",
+        ":wasi-emulated-signal",
+        ":crt1",
+        ":crt1_command",
+        ":crt1_reactor",
+    ] + [":" + lib + "_stub" for lib in STUB_LIBRARIES],
+    out = "generated/sysroot/lib",
+    root_paths = ["lib"],
+    visibility = ["//visibility:public"],
+)
+
+# Upstream's check-symbols header set, used by the toolchain compilation tests.
+filegroup(
+    name = "expected_include_all",
+    srcs = select({
+        "@llvm//constraints/wasi:p1_threads": ["expected/wasm32-wasip1-threads/include-all.c"],
+        "@llvm//constraints/wasi:p2": ["expected/wasm32-wasip2/include-all.c"],
+        "@llvm//constraints/wasi:p3": ["expected/wasm32-wasip3/include-all.c"],
+        "//conditions:default": ["expected/wasm32-wasip1/include-all.c"],
+    }),
+    visibility = ["//visibility:public"],
+)

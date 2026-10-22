@@ -2,6 +2,7 @@
 
 load("@bazel_lib//lib:copy_file.bzl", "COPY_FILE_TOOLCHAINS", "copy_file_action")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory_bin_action")
+load("//constraints/wasi:variants.bzl", "WASI_TARGET_TRIPLES_BY_CONFIG")
 load("//constraints/windows/abi:abis.bzl", "WINDOWS_TARGET_TRIPLES_BY_CONFIG")
 
 # echo 'int main() {}' | bazel run //tools:clang -- -x c - -fuse-ld=lld -v --rtlib=compiler-rt -### --target=<triple>
@@ -29,7 +30,10 @@ TRIPLE_SELECT_DICT = {
     "@llvm//platforms/config:none_bpfel": "bpfel-unknown-none",
     "@llvm//platforms/config:none_wasm32": "wasm32-unknown-unknown",
     "@llvm//platforms/config:none_wasm64": "wasm64-unknown-unknown",
-} | WINDOWS_TARGET_TRIPLES_BY_CONFIG
+} | WINDOWS_TARGET_TRIPLES_BY_CONFIG | {
+    target_config: target_triple.replace("wasm32-", "wasm32-unknown-")
+    for target_config, target_triple in WASI_TARGET_TRIPLES_BY_CONFIG.items()
+}
 
 def _resource_directory_impl(ctx):
     # Private staging folder inside the output-dir layout before we rewrite prefixes.
