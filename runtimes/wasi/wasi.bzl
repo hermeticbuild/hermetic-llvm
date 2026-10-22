@@ -34,7 +34,7 @@ wasi_headers = rule(
     },
 )
 
-def wasi_static_library(name, deps, out = None, visibility = None):
+def wasi_static_library(name, deps):
     """Archives stage-0 runtime dependencies under their WASI sysroot filename."""
     cc_runtime_stage0_static_library(
         name = name + "_archive",
@@ -43,13 +43,12 @@ def wasi_static_library(name, deps, out = None, visibility = None):
     copy_file(
         name = name,
         src = name + "_archive",
-        out = "lib/" + (out or "lib%s.a" % name),
+        out = "lib/lib%s.a" % name,
         allow_symlink = True,
-        visibility = visibility,
     )
 
 def _wasi_compilation_object_impl(ctx):
-    objects = ctx.files.src
+    objects = ctx.attr.src[OutputGroupInfo].compilation_outputs.to_list()
 
     # cc_library may compile both pic and non-pic object outputs. CRT copts
     # explicitly specify -fPIC in both, as in wasi-libc's CMakeLists.txt.
@@ -67,7 +66,7 @@ _wasi_compilation_object = rule(
     implementation = _wasi_compilation_object_impl,
     attrs = {
         "out": attr.output(mandatory = True),
-        "src": attr.label(mandatory = True, allow_files = True),
+        "src": attr.label(mandatory = True),
     },
 )
 
@@ -77,13 +76,8 @@ def wasi_crt_object(name, out, **kwargs):
         name = name + "_lib",
         **kwargs
     )
-    native.filegroup(
-        name = name + "_compilation",
-        srcs = [name + "_lib"],
-        output_group = "compilation_outputs",
-    )
     _wasi_compilation_object(
         name = name,
-        src = name + "_compilation",
+        src = name + "_lib",
         out = out,
     )

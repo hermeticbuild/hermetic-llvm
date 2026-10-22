@@ -129,11 +129,6 @@ exec_test(
     go_test,
     name = "wasi_p1_test",
     srcs = ["wasi_p1_test.go"],
-    data = [
-        ":wasi_default_blob",
-        ":wasi_p1_command_blob",
-        ":wasi_p1_reactor_blob",
-    ],
     inner_data = [
         ":wasi_default_blob",
         ":wasi_p1_command_blob",
@@ -157,12 +152,6 @@ exec_test(
     go_test,
     name = "wasi_variants_test",
     srcs = ["wasi_variants_test.go"],
-    data = [
-        ":wasi_p1_threads_blob",
-        ":wasi_p2_command_blob",
-        ":wasi_p3_command_blob",
-        "//runtimes/wasi/tools:wasm_tools",
-    ],
     inner_data = [
         ":wasi_p1_threads_blob",
         ":wasi_p2_command_blob",

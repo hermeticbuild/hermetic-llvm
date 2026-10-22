@@ -3,7 +3,7 @@ load("@bazel_skylib//rules/directory:subdirectory.bzl", "subdirectory")
 load("@llvm-project//:vars.bzl", "LLVM_VERSION_MAJOR")
 load("@rules_cc//cc/toolchains:tool.bzl", "cc_tool")
 load("@rules_cc//cc/toolchains:tool_map.bzl", "cc_tool_map")
-load("//platforms:common.bzl", "MSVC_TARGET_BOOTSTRAP_SUPPORTED_EXECS", "SUPPORTED_EXECS", "SUPPORTED_TARGETS")
+load("//platforms:common.bzl", "MSVC_TARGET_BOOTSTRAP_SUPPORTED_EXECS", "SUPPORTED_TARGETS")
 load("//toolchain:cc_toolchain.bzl", "cc_toolchain")
 load("//toolchain:merged_resource_directory.bzl", "merged_resource_directory")
 load("//toolchain/args:resource_directory_args.bzl", "resource_directory_args")
@@ -527,7 +527,7 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
             # If we can compile a compiler for that target, we can use that compiler
             # to compile for any other target.
             for (target_os, target_cpu) in targets
-            if (target_os, target_cpu) in SUPPORTED_EXECS
+            if target_os not in ["none", "wasi"]
         ]
 
     for (exec_os, exec_cpu) in execs:

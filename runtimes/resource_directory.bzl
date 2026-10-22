@@ -30,10 +30,7 @@ TRIPLE_SELECT_DICT = {
     "@llvm//platforms/config:none_bpfel": "bpfel-unknown-none",
     "@llvm//platforms/config:none_wasm32": "wasm32-unknown-unknown",
     "@llvm//platforms/config:none_wasm64": "wasm64-unknown-unknown",
-} | WINDOWS_TARGET_TRIPLES_BY_CONFIG | {
-    target_config: target_triple.replace("wasm32-", "wasm32-unknown-")
-    for target_config, target_triple in WASI_TARGET_TRIPLES_BY_CONFIG.items()
-}
+} | WINDOWS_TARGET_TRIPLES_BY_CONFIG | WASI_TARGET_TRIPLES_BY_CONFIG
 
 def _resource_directory_impl(ctx):
     # Private staging folder inside the output-dir layout before we rewrite prefixes.

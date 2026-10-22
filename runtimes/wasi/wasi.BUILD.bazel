@@ -10,24 +10,12 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 
 package(default_visibility = ["//visibility:private"])
 
-# wasi-libc/CMakeLists.txt: target triple, thread model, and compiler options.
+# wasi-libc/CMakeLists.txt options; the stage-0 toolchain supplies thread flags.
 COMMON_COPTS = [
     "-fno-trapping-math",
     "-Wall",
     "-Wextra",
-] + select({
-    "@llvm//constraints/wasi:p1_threads": [
-        "-mthread-model",
-        "posix",
-        "-pthread",
-        "-ftls-model=local-exec",
-        "-matomics",
-    ],
-    "//conditions:default": [
-        "-mthread-model",
-        "single",
-    ],
-}) + (["-fdefer-ts"] if int(LLVM_VERSION_MAJOR) >= 22 else [])
+] + (["-fdefer-ts"] if int(LLVM_VERSION_MAJOR) >= 22 else [])
 
 MUSL_COPTS = COMMON_COPTS + [
     "-Wno-bitwise-op-parentheses",
@@ -60,21 +48,18 @@ expand_template(
         "#cmakedefine __wasi_cooperative_threads__": "/* #undef __wasi_cooperative_threads__ */",
         "#cmakedefine __wasi_sdk_major__ @__wasi_sdk_major__@": "#define __wasi_sdk_major__ 34",
         "#cmakedefine __wasi_sdk_version__ \"@__wasi_sdk_version__@\"": "#define __wasi_sdk_version__ \"34\"",
+        "#cmakedefine __wasip1__": "/* #undef __wasip1__ */",
+        "#cmakedefine __wasip2__": "/* #undef __wasip2__ */",
+        "#cmakedefine __wasip3__": "/* #undef __wasip3__ */",
     } | select({
         "@llvm//constraints/wasi:p2": {
-            "#cmakedefine __wasip1__": "/* #undef __wasip1__ */",
             "#cmakedefine __wasip2__": "#define __wasip2__",
-            "#cmakedefine __wasip3__": "/* #undef __wasip3__ */",
         },
         "@llvm//constraints/wasi:p3": {
-            "#cmakedefine __wasip1__": "/* #undef __wasip1__ */",
-            "#cmakedefine __wasip2__": "/* #undef __wasip2__ */",
             "#cmakedefine __wasip3__": "#define __wasip3__",
         },
         "//conditions:default": {
             "#cmakedefine __wasip1__": "#define __wasip1__",
-            "#cmakedefine __wasip2__": "/* #undef __wasip2__ */",
-            "#cmakedefine __wasip3__": "/* #undef __wasip3__ */",
         },
     }),
     template = "libc-bottom-half/headers/public/wasi/version.h.in",
@@ -82,8 +67,8 @@ expand_template(
 
 # libc-top-half/CMakeLists.txt:55-176 and libc-bottom-half/CMakeLists.txt:19-37.
 # Bottom-half WASI headers provide the errno and ABI definitions not in musl.
-filegroup(
-    name = "public_headers",
+copy_to_directory(
+    name = "headers_include_directory",
     srcs = glob(
         [
             "libc-top-half/musl/include/**/*.h",
@@ -111,11 +96,6 @@ filegroup(
         "fts/musl-fts/fts.h",
         ":wasi_version",
     ] + ALLTYPES_HEADERS,
-)
-
-copy_to_directory(
-    name = "headers_include_directory",
-    srcs = [":public_headers"],
     out = "generated/sysroot/include",
     root_paths = [
         "libc-top-half/musl/include",
@@ -212,8 +192,7 @@ cc_library(
         TOP_SOURCES_GLOBS,
         exclude = TOP_SOURCES_GLOB_EXCLUDE + PRINTSCAN_SOURCES + BULK_MEMORY_SOURCES,
     ) + select({
-        "@llvm//constraints/wasi:p2": ["libc-top-half/musl/src/network/gai_strerror.c"],
-        "@llvm//constraints/wasi:p3": ["libc-top-half/musl/src/network/gai_strerror.c"],
+        "@llvm//platforms/config:wasi_components": ["libc-top-half/musl/src/network/gai_strerror.c"],
         "//conditions:default": [],
     }) + select({
         "@llvm//constraints/wasi:p1_threads": TOP_P1_THREADS_SOURCES,
@@ -357,6 +336,16 @@ wasi_static_library(
     deps = [":dl_objects"],
 )
 
+EMULATED_SOURCES = {
+    "wasi-emulated-mman": ["libc-bottom-half/mman/mman.c"],
+    "wasi-emulated-getpid": ["libc-bottom-half/getpid/getpid.c"],
+    "wasi-emulated-process-clocks": [
+        "libc-bottom-half/clocks/clock.c",
+        "libc-bottom-half/clocks/getrusage.c",
+        "libc-bottom-half/clocks/times.c",
+    ],
+}
+
 [
     cc_library(
         name = name + "_objects",
@@ -364,15 +353,7 @@ wasi_static_library(
         copts = COMMON_COPTS,
         implementation_deps = [":musl_top_half_interface"],
     )
-    for name, srcs in {
-        "wasi-emulated-mman": ["libc-bottom-half/mman/mman.c"],
-        "wasi-emulated-getpid": ["libc-bottom-half/getpid/getpid.c"],
-        "wasi-emulated-process-clocks": [
-            "libc-bottom-half/clocks/clock.c",
-            "libc-bottom-half/clocks/getrusage.c",
-            "libc-bottom-half/clocks/times.c",
-        ],
-    }.items()
+    for name, srcs in EMULATED_SOURCES.items()
 ]
 
 cc_library(
@@ -409,11 +390,7 @@ wasi_static_library(
         name = name,
         deps = [":" + name + "_objects"],
     )
-    for name in [
-        "wasi-emulated-mman",
-        "wasi-emulated-getpid",
-        "wasi-emulated-process-clocks",
-    ]
+    for name in EMULATED_SOURCES
 ]
 
 # libc-bottom-half/CMakeLists.txt:216-287. Preserve export_name by extracting
@@ -539,11 +516,8 @@ copy_to_directory(
         ":crt1_reactor",
         ":dl",
         ":setjmp",
-        ":wasi-emulated-getpid",
-        ":wasi-emulated-mman",
-        ":wasi-emulated-process-clocks",
         ":wasi-emulated-signal",
-    ] + [":" + lib + "_stub" for lib in STUB_LIBRARIES],
+    ] + [":" + lib for lib in EMULATED_SOURCES] + [":" + lib + "_stub" for lib in STUB_LIBRARIES],
     out = "generated/sysroot/lib",
     root_paths = ["lib"],
     visibility = ["//visibility:public"],

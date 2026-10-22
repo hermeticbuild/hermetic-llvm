@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <string.h>
 
 static int *counter;
 
@@ -7,8 +6,7 @@ __attribute__((constructor))
 static void initialize_counter(void) {
     counter = malloc(sizeof(*counter));
     if (counter != NULL) {
-        const int initial_value = 37;
-        memcpy(counter, &initial_value, sizeof(*counter));
+        *counter = 37;
     }
 }
 

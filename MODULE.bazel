@@ -128,6 +128,8 @@ use_repo(
     "wasm_tools_windows_x86_64",
 )
 
+register_toolchains("//runtimes/wasi/tools:all")
+
 # The Microsoft payloads remain lazily fetched: the EULA gate is evaluated
 # only when an MSVC-ABI target requests @msvc_runtime.
 msvc_runtime = use_extension(

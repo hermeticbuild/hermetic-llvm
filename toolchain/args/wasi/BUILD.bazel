@@ -1,7 +1,5 @@
-load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 load("@llvm-project//:vars.bzl", "LLVM_VERSION_MAJOR")
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
-load(":exec_directory.bzl", "exec_directory")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -59,11 +57,6 @@ cc_args(
     })),
 )
 
-exec_directory(
-    name = "component_ld_directory",
-    src = "//runtimes/wasi/tools:component_ld_directory",
-)
-
 cc_args(
     name = "component_linker",
     actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
@@ -73,12 +66,7 @@ cc_args(
         "-B{component_ld}",
         "-fuse-ld=ld",
     ],
-    data = [":component_ld_directory"],
-    format = {"component_ld": ":component_ld_directory"},
+    data = ["//runtimes/wasi/tools:component_ld_directory"],
+    format = {"component_ld": "//runtimes/wasi/tools:component_ld_directory"},
     target_compatible_with = ["@platforms//os:wasi"],
-)
-
-bzl_library(
-    name = "exec_directory",
-    srcs = ["exec_directory.bzl"],
 )
