@@ -99,12 +99,12 @@ filegroup(
         ],
     ) + select({
         "@llvm//constraints/wasi:p2": [
-            "libc-top-half/musl/include/netdb.h",
             "libc-bottom-half/headers/public/wasi/__generated_wasip2.h",
+            "libc-top-half/musl/include/netdb.h",
         ],
         "@llvm//constraints/wasi:p3": [
-            "libc-top-half/musl/include/netdb.h",
             "libc-bottom-half/headers/public/wasi/__generated_wasip3.h",
+            "libc-top-half/musl/include/netdb.h",
         ],
         "//conditions:default": [],
     }) + [
@@ -147,6 +147,7 @@ wasi_headers(
         "libc-bottom-half/cloudlibc/src/**/*.h",
     ]),
     includes = [
+        # do not sort: match upstream CMake; musl's internal and wasm32 headers override generic headers.
         "libc-top-half/musl/src/include",
         "libc-top-half/musl/src/internal",
         "libc-top-half/musl/arch/wasm32",
@@ -165,6 +166,7 @@ wasi_headers(
         "libc-bottom-half/crt/**/*.h",
     ]),
     includes = [
+        # do not sort: search cloudlibc's include directory before its source directory.
         "libc-bottom-half/cloudlibc/src/include",
         "libc-bottom-half/cloudlibc/src",
         "libc-bottom-half/headers/private",
@@ -198,6 +200,7 @@ cc_library(
     }) if int(LLVM_VERSION_MAJOR) >= 23 else []),
     copts = COMMON_COPTS,
     implementation_deps = [
+        # do not sort: musl's sysroot headers must resolve before cloudlibc headers.
         ":musl_top_half_interface",
         ":bottom_half_headers",
     ],
@@ -228,6 +231,7 @@ cc_library(
         "-Wno-unused-but-set-variable",
     ],
     implementation_deps = [
+        # do not sort: public sysroot headers must resolve before dlmalloc's private headers.
         ":sysroot_headers",
         ":dlmalloc_headers",
     ],
@@ -252,6 +256,7 @@ cc_library(
         "-Wno-unused-variable",
     ],
     implementation_deps = [
+        # do not sort: musl's sysroot headers must resolve before fts headers.
         ":musl_top_half_interface",
         ":fts_headers",
     ],
@@ -300,6 +305,7 @@ cc_library(
 wasi_static_library(
     name = "c",
     deps = [
+        # do not sort: retain the wasi-libc archive order for weak definitions.
         ":bottom_half",
         ":top_half",
         ":printscan_default",
@@ -392,6 +398,7 @@ cc_library(
 wasi_static_library(
     name = "wasi-emulated-signal",
     deps = [
+        # do not sort: retain the wasi-libc archive order for weak definitions.
         ":signal_top_half",
         ":signal_bottom_half",
     ],
@@ -422,11 +429,15 @@ wasi_static_library(
             "-fno-lto",
         ],
         implementation_deps = [
+            # do not sort: musl's sysroot headers must resolve before cloudlibc headers.
             ":musl_top_half_interface",
             ":bottom_half_headers",
         ],
     )
-    for mode in ["command", "reactor"]
+    for mode in [
+        "command",
+        "reactor",
+    ]
 ]
 
 [
@@ -436,7 +447,10 @@ wasi_static_library(
         out = "generated/" + snapshot + "/wit",
         root_paths = ["wasi/" + snapshot + "/wit"],
     )
-    for snapshot in ["p2", "p3"]
+    for snapshot in [
+        "p2",
+        "p3",
+    ]
 ]
 
 [
@@ -490,7 +504,15 @@ copy_file(
     allow_symlink = True,
 )
 
-STUB_LIBRARIES = ["crypt", "m", "pthread", "resolv", "rt", "util", "xnet"]
+STUB_LIBRARIES = [
+    "crypt",
+    "m",
+    "pthread",
+    "resolv",
+    "rt",
+    "util",
+    "xnet",
+]
 
 [
     run_binary(
@@ -512,15 +534,15 @@ copy_to_directory(
         ":c",
         ":c-printscan-long-double",
         ":c-printscan-no-floating-point",
-        ":setjmp",
-        ":dl",
-        ":wasi-emulated-mman",
-        ":wasi-emulated-getpid",
-        ":wasi-emulated-process-clocks",
-        ":wasi-emulated-signal",
         ":crt1",
         ":crt1_command",
         ":crt1_reactor",
+        ":dl",
+        ":setjmp",
+        ":wasi-emulated-getpid",
+        ":wasi-emulated-mman",
+        ":wasi-emulated-process-clocks",
+        ":wasi-emulated-signal",
     ] + [":" + lib + "_stub" for lib in STUB_LIBRARIES],
     out = "generated/sysroot/lib",
     root_paths = ["lib"],
