@@ -18,7 +18,8 @@ def _module_map_impl(ctx):
         # Clang resolve them lazily instead of stat'ing every one of them
         # whenever the module map is parsed. Separate submodules preserve
         # lazy resolution when Clang validates nested textual includes.
-        # Computing sizes requires the headers as inputs.
+        # Computing sizes requires the headers as inputs. The map isn't path
+        # mapped: its paths must match those of compiles that read it.
         output_args = ctx.actions.args()
         output_args.add(module_map)
         header_args = ctx.actions.args()
@@ -32,7 +33,6 @@ def _module_map_impl(ctx):
             outputs = [module_map],
             mnemonic = "CppModuleMap",
             progress_message = "Writing module map %{output}",
-            execution_requirements = {"supports-path-mapping": "1"},
         )
         return DefaultInfo(files = depset([module_map]))
 

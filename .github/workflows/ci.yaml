@@ -40,7 +40,7 @@ jobs:
           # Path mapping requires Bazel 9+.
           - bazel_version: last_rc
             folder: "e2e/rules_cc"
-            extra_flags: "--experimental_output_paths=strip"
+            extra_flags: "--experimental_output_paths=strip --config=cpp_path_mapping"
     runs-on: ${{ matrix.os }}
     environment: ${{ github.ref == 'refs/heads/main' && 'ci' || '' }}
 
@@ -103,6 +103,22 @@ jobs:
               //:main_windows_x86_64_msvc \
               //:main_windows_aarch64_msvc
           fi
+
+      # The tests above opt C++ actions into path mapping. Without that opt-in,
+      # the toolchain module map must keep the paths the compiles use.
+      - name: bazel build //... with path mapping, C++ actions not opted in
+        if: matrix.folder == 'e2e/rules_cc' && matrix.bazel_version == 'last_rc'
+        env:
+          USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
+        working-directory: ${{ matrix.folder }}
+        shell: bash
+        run: |
+          bazel \
+            --bazelrc=$GITHUB_WORKSPACE/.github/workflows/ci.bazelrc \
+            --bazelrc=.bazelrc \
+            build \
+            --experimental_output_paths=strip \
+            //...
 
       - name: bazel coverage e2e (lcov)
         if: matrix.folder == 'e2e/rules_cc' && matrix.bazel_version == 'last_rc'
