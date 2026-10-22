@@ -3,6 +3,7 @@ load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 load("@rules_cc//cc/toolchains:feature.bzl", "cc_feature")
 load("@rules_cc//cc/toolchains:feature_set.bzl", "cc_feature_set")
+load("@rules_cc//cc/toolchains:mutually_exclusive_category.bzl", "cc_mutually_exclusive_category")
 load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
 
 package(default_visibility = ["//visibility:public"])
@@ -618,9 +619,42 @@ cc_args(
     args = ["--coverage"],
 )
 
+selects.config_setting_group(
+    name = "_sanitizer_requires_dynamic_libc",
+    match_any = [
+        "//config:asan_enabled",
+        "//config:msan_enabled",
+        "//config:tsan_enabled",
+    ],
+)
+
+selects.config_setting_group(
+    name = "_linux_sanitizer_requires_dynamic_libc",
+    match_all = [
+        "@platforms//os:linux",
+        ":_sanitizer_requires_dynamic_libc",
+    ],
+)
+
+cc_mutually_exclusive_category(name = "executable_libc_linkage")
+
+cc_feature(
+    name = "sanitizer_requires_dynamic_libc",
+    feature_name = "sanitizer_requires_dynamic_libc",
+    mutually_exclusive = [":executable_libc_linkage"],
+)
+
+# Reject the requested feature instead of silently changing executable linkage.
+# An implication makes target-local and command-line requests fail in the
+# consuming feature configuration, including when a runtime is built on demand.
 cc_feature(
     name = "fully_static_link",
     args = [":fully_static_link_args"],
+    implies = select({
+        ":_linux_sanitizer_requires_dynamic_libc": [":sanitizer_requires_dynamic_libc"],
+        "//conditions:default": [],
+    }),
+    mutually_exclusive = [":executable_libc_linkage"],
     overrides = "@rules_cc//cc/toolchains/features/legacy:fully_static_link",
 )
 
@@ -722,6 +756,7 @@ cc_feature_set(
         ":llvm_coverage_map_format",
         ":gcc_coverage_map_format",
         ":fully_static_link",
+        ":sanitizer_requires_dynamic_libc",
     ] + select({
         "@platforms//os:windows": [
             ":copy_dynamic_libraries_to_binary",
