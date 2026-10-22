@@ -4,6 +4,7 @@ load("//constraints/windows/abi:abis.bzl", "WINDOWS_GENERIC_PLATFORM_ABI")
 load("//platforms:common.bzl", "ARCH_ALIASES", "LIBC_SUPPORTED_TARGETS", "SUPPORTED_TARGETS")
 
 def declare_platforms():
+    # type: () -> None
     for (target_os, target_cpu) in SUPPORTED_TARGETS:
         constraints = [
             "@platforms//cpu:{}".format(target_cpu),
@@ -48,6 +49,7 @@ def declare_platforms():
     declare_windows_msvc_platforms()
 
 def declare_windows_msvc_platforms():
+    # type: () -> None
     for target_cpu in ["x86_64", "aarch64"]:
         native.platform(
             name = "windows_{}_msvc".format(target_cpu),
@@ -62,6 +64,7 @@ def declare_windows_msvc_platforms():
         )
 
 def declare_platforms_libc_aware():
+    # type: () -> None
     for target_os, target_cpu in LIBC_SUPPORTED_TARGETS:
         for libc in LIBCS:
             native.platform(

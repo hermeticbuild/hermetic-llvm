@@ -25,6 +25,8 @@ jobs:
         with:
           audit-loads: true
           files: |
+            platforms/common.bzl
+            platforms/declare_platforms.bzl
             runtimes/glibc/glibc_dynamic_linker.bzl
             runtimes/glibc/libc_aware_target_triple.bzl
       - name: Check rules_cc example workspace
