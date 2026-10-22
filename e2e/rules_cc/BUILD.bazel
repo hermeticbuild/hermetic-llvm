@@ -1544,7 +1544,7 @@ _SHARED_LIBRARY_PLATFORMS = [
         srcs = ["cc_library_outputs_test.sh"],
         data = ["shared_library_outputs_" + platform],
         env = {
-            "EXPECT_SHARED": "yes",
+            "EXPECT_SHARED": "no" if platform.startswith("macos_") and not bazel_features.cc.supports_starlarkified_toolchains else "yes",
             "LIBRARY_OUTPUTS": "$(rootpaths :shared_library_outputs_{})".format(platform),
         },
         target_compatible_with = ["@platforms//os:linux"],
@@ -1555,9 +1555,14 @@ _SHARED_LIBRARY_PLATFORMS = [
 cc_test(
     name = "shared_library_consumer_test",
     srcs = ["shared_library_consumer.c"],
+    exec_properties = select({
+        "@platforms//os:windows": {"test.no-remote": "1"},
+        "//conditions:default": {},
+    }),
     linkstatic = False,
     target_compatible_with = select({
         "@llvm//platforms/config:musl": ["@platforms//:incompatible"],
+        "@platforms//os:macos": [] if bazel_features.cc.supports_starlarkified_toolchains else ["@platforms//:incompatible"],
         "@platforms//os:uefi": ["@platforms//:incompatible"],
         "@platforms//os:none": ["@platforms//:incompatible"],
         "//conditions:default": [],
