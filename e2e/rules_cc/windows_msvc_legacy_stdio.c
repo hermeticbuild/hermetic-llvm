@@ -1,5 +1,6 @@
-// Model Rust's libc binding: call the out-of-line definition without stdio.h's
-// inline wrapper. Extracting it also requests legacy_stdio_wide_specifiers.lib.
+// Model Rust's libc binding: declare sscanf without compiling stdio.h's
+// implementation. The linker must use legacy_stdio_definitions.lib's
+// implementation, which also requests legacy_stdio_wide_specifiers.lib.
 #pragma comment(lib, "legacy_stdio_definitions.lib")
 int sscanf(const char* buffer, const char* format, ...);
 
