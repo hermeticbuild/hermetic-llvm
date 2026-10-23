@@ -10,6 +10,8 @@ local_path_override(
     path = "../../",
 )
 
+bazel_dep(name = "platforms_contrib", version = "1.0.0-alpha.0")
+
 qemu = use_extension("@rules_qemu//qemu/extension:qemu.bzl", "qemu")
 use_repo(
     qemu,

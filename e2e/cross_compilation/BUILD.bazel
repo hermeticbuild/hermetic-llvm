@@ -3,6 +3,9 @@ load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
 load("@llvm//constraints/libc:libc_versions.bzl", "LIBCS")
 load("@llvm//platforms/distros/linux:constraints.bzl", "UBUNTU_20_04_CONSTRAINTS")
 load("@platforms//host:constraints.bzl", "HOST_CONSTRAINTS")
+load("@platforms_contrib//cpu/x86_64:x86_64.bzl", "x86_64_level_constraints")
+load("@platforms_contrib//os/linux/libc/glibc:glibc.bzl", "glibc_version_constraints")
+load("@platforms_contrib//os/linux/libc/musl:musl.bzl", "musl_version_constraints")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
@@ -72,6 +75,32 @@ platform_transition_binary(
     target_platform = ":ubuntu_20_04_amd64",
 )
 
+# Platforms that only describe what's available on them via @platforms_contrib constraints.
+platform(
+    name = "linux_x86_64_v3_glibc_2_35",
+    constraint_values = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ] + glibc_version_constraints("2.35") + x86_64_level_constraints("v3"),
+)
+
+platform(
+    name = "linux_aarch64_musl_1_2",
+    constraint_values = [
+        "@platforms//cpu:aarch64",
+        "@platforms//os:linux",
+    ] + musl_version_constraints("1.2"),
+)
+
+platform(
+    name = "linux_x86_64_glibc_2_35_and_musl_1_2",
+    constraint_values = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ] + glibc_version_constraints("2.35") + musl_version_constraints("1.2"),
+    flags = ["--@llvm//config:preferred_libc=musl"],
+)
+
 # TODO(cerisier): should the toolchain provide its own list ?
 PLATFORMS = [
     "@llvm//platforms:linux_x86_64",
@@ -101,6 +130,9 @@ PLATFORMS = [
     # RISC-V needs special LIBC treatment because of the kernel-glibc association we do.
     # Builtins requires kernel headers >= 5.10 which we hardcode to be 2.33+
     "@llvm//platforms:linux_riscv64_musl",
+    ":linux_x86_64_v3_glibc_2_35",
+    ":linux_aarch64_musl_1_2",
+    ":linux_x86_64_glibc_2_35_and_musl_1_2",
 ]
 
 [
@@ -128,6 +160,12 @@ platform(
 )
 
 QEMU_MUSL_PLATFORMS = {
+    "linux_aarch64_musl_1_2": {
+        "target_platform": ":linux_aarch64_musl_1_2",
+    },
+    "linux_x86_64_glibc_2_35_and_musl_1_2": {
+        "target_platform": ":linux_x86_64_glibc_2_35_and_musl_1_2",
+    },
     "linux_riscv64_musl": {
         "target_platform": "@llvm//platforms:linux_riscv64_musl",
     },
