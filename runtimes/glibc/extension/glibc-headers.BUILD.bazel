@@ -8,6 +8,16 @@ cc_library(
     # but it seems glibc itself includes as <...>
     features = ["system_include_paths"],
     includes = ["include"],
+    # Stage 0 runtime libraries consume this CcInfo directly rather than the
+    # final toolchain's glibc_headers_include_search_paths argument set.
+    defines = select({
+        "@llvm//constraints/libc:gnu.2.17": [
+            "__STDC_CONSTANT_MACROS",
+            "__STDC_LIMIT_MACROS",
+            "__STDC_FORMAT_MACROS",
+        ],
+        "//conditions:default": [],
+    }),
     visibility = ["//visibility:public"],
 )
 

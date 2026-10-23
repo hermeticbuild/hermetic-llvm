@@ -175,4 +175,5 @@ bzl_library(
     name = "glibc_stubs_assembly_files",
     srcs = ["glibc_stubs_assembly_files.bzl"],
     visibility = ["//visibility:public"],
+    deps = ["//constraints/libc:libc_versions"],
 )
