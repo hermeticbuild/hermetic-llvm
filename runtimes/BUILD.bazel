@@ -339,7 +339,9 @@ resource_directory(
 # safestack, scudo, gwp_asan, cfi, nsan, rtsan, tysan) are intentionally absent.
 resource_directory(
     name = "resource_directory_macos",
-    srcs = select({
+    srcs = {
+        "//runtimes/compiler-rt:clang_rt.builtins.static": "libclang_rt.osx",
+    } | select({
         "//config:asan_enabled": {
             # asan ships as a dylib on Darwin (no static standalone runtime);
             # asan_cxx is folded into the dylib. The asan_static archive carries
