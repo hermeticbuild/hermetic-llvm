@@ -1,6 +1,6 @@
 """Executable tests whose inner target uses the execution configuration."""
 
-type _LabelListInput = Iterable[str | Label] | depset[str | Label]
+type _LabelListInput = Collection[str | Label] | depset[str | Label]
 type _ConstraintsInput = _LabelListInput | select[_LabelListInput | None] | None
 type _Labels = Sequence[str | Label] | select[Sequence[str | Label]]
 type _Strings = Sequence[str] | select[Sequence[str]]

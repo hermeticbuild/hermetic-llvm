@@ -21,7 +21,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Check root workspace
-        uses: tamird/sty@77d44bed62de63ee25cca84aa2302d01fa5d1597
+        uses: tamird/sty@567dbae64bee48b18bcf1c0e05755674132732fb
         with:
           audit-loads: true
           files: |
@@ -30,7 +30,7 @@ jobs:
             runtimes/glibc/glibc_dynamic_linker.bzl
             runtimes/glibc/libc_aware_target_triple.bzl
       - name: Check rules_cc example workspace
-        uses: tamird/sty@77d44bed62de63ee25cca84aa2302d01fa5d1597
+        uses: tamird/sty@567dbae64bee48b18bcf1c0e05755674132732fb
         with:
           working-directory: e2e/rules_cc
           artifact-name: sty-rules-cc
