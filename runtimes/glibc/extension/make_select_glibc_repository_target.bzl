@@ -2,7 +2,7 @@ load("//constraints/libc:libc_versions.bzl", "DEFAULT_LIBC", "GLIBCS")
 load("//platforms:common.bzl", "LIBC_SUPPORTED_TARGETS")
 load(":glibc.bzl", "glibc_triple")
 
-def declare_glibc_repository_target(name, bazel_repository, bazel_target, **kwargs):
+def declare_glibc_repository_target(name, bazel_repository, bazel_target, architecture_specific = True, **kwargs):
     """Select a target architecture before selecting its glibc version."""
     targets = {}
     for (target_os, target_arch) in LIBC_SUPPORTED_TARGETS:
@@ -14,7 +14,8 @@ def declare_glibc_repository_target(name, bazel_repository, bazel_target, **kwar
             # libc constraint values are "gnu.X.Y"; the glibc repos are keyed
             # by the numeric version only.
             glibc_version = apparent_libc_value.split(".", 1)[1]
-            versions["@llvm//constraints/libc:{}".format(libc_version)] = "{}_{}.{}//:{}".format(bazel_repository, triple, glibc_version, bazel_target)
+            repository = "{}_{}.{}".format(bazel_repository, triple, glibc_version) if architecture_specific else "{}_{}".format(bazel_repository, glibc_version)
+            versions["@llvm//constraints/libc:{}".format(libc_version)] = "{}//:{}".format(repository, bazel_target)
 
         target_name = "{}_{}_{}".format(name, target_os, target_arch)
         native.alias(

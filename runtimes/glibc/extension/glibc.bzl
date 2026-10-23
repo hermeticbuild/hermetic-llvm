@@ -101,44 +101,43 @@ def _glibc_impl(module_ctx):
             index = json.decode(file_content, default = None)
 
     for version in GLIBC_VERSIONS:
+        http_archive(
+            name = "glibc_%s" % version,
+            urls = _glibc_release_urls(version),
+            strip_prefix = _glibc_release_strip_prefix(version),
+            sha256 = GLIBC_RELEASE_INTEGRITY[version],
+            build_file = "//3rd_party/libc/glibc:glibc.BUILD.bazel",
+            patches = [
+                # This file is generated when compiling the glibc.
+                #
+                # We add it as an empty file because all the constant it
+                # normally defines are manually passed as `defines`
+                "//3rd_party/libc/glibc:0001-Add-empty-config.h.patch",
+
+                # This file is generated when compiling the glibc.
+                #
+                # It defines the ABI tag value used in the ELF note included
+                # in the startup code linked into every program.
+                #
+                # On linux, it is the same value all the time:
+                # .*-.*-linux.* 0 2.0.0 # earliest compatible kernel version
+                "//3rd_party/libc/glibc:0002-Add-abi-tag.h.patch",
+
+                # This file is generated when compiling the glibc.
+                #
+                # It defines constants and macros used during the glibc c
+                # files compilation. We can hardcode the values safely as
+                # long as every module that existed in the range of libc
+                # we support is listed in this file with a value associated.
+                "//3rd_party/libc/glibc:0003-Adding-libc-modules.h.patch",
+            ],
+            patch_args = [
+                "-p1",
+            ],
+        )
+
         for (target_os, target_arch) in LIBC_SUPPORTED_TARGETS:
             target = glibc_triple(target_os, target_arch)
-
-            #TODO(cerisier): Share the repository between targets
-            http_archive(
-                name = "glibc_%s.%s" % (target, version),
-                urls = _glibc_release_urls(version),
-                strip_prefix = _glibc_release_strip_prefix(version),
-                sha256 = GLIBC_RELEASE_INTEGRITY[version],
-                build_file = "//3rd_party/libc/glibc:glibc.BUILD.bazel",
-                patches = [
-                    # This file is generated when compiling the glibc.
-                    #
-                    # We add it as an empty file because all the constant it
-                    # normally defines are manually passed as `defines`
-                    "//3rd_party/libc/glibc:0001-Add-empty-config.h.patch",
-
-                    # This file is generated when compiling the glibc.
-                    #
-                    # It defines the ABI tag value used in the ELF note included
-                    # in the startup code linked into every program.
-                    #
-                    # On linux, it is the same value all the time:
-                    # .*-.*-linux.* 0 2.0.0 # earliest compatible kernel version
-                    "//3rd_party/libc/glibc:0002-Add-abi-tag.h.patch",
-
-                    # This file is generated when compiling the glibc.
-                    #
-                    # It defines constants and macros used during the glibc c
-                    # files compilation. We can hardcode the values safely as
-                    # long as every module that existed in the range of libc
-                    # we support is listed in this file with a value associated.
-                    "//3rd_party/libc/glibc:0003-Adding-libc-modules.h.patch",
-                ],
-                patch_args = [
-                    "-p1",
-                ],
-            )
 
             index_entry = index.get(version, {}).get(target, None)
             if index_entry == None:
