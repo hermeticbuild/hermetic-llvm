@@ -91,6 +91,7 @@ _LLVM_23_SOURCE_PATCHES = [
     "//3rd_party/llvm-project/x.x/patches:llvm-cov-multicall.patch",
     "//3rd_party/llvm-project/x.x/patches:thinlto-roundtrip-before-codegen.patch",
     "//3rd_party/llvm-project/x.x/patches:llvm-bazel-libxml2.patch",
+    "//3rd_party/llvm-project/x.x/patches:flang-multicall.patch",
 ] + _DEFAULT_SOURCE_PATCHES
 
 _LLVM_PATCHES_BY_MAJOR = {
