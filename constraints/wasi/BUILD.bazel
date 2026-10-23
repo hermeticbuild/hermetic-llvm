@@ -1,0 +1,22 @@
+load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load(":variants.bzl", "WASI_TARGET_TRIPLES")
+
+package(default_visibility = ["//visibility:public"])
+
+constraint_setting(
+    name = "preview",
+    default_constraint_value = ":p1",
+)
+
+[
+    constraint_value(
+        name = variant,
+        constraint_setting = ":preview",
+    )
+    for variant in WASI_TARGET_TRIPLES
+]
+
+bzl_library(
+    name = "variants",
+    srcs = ["variants.bzl"],
+)

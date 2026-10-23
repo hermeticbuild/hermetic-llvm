@@ -1,0 +1,60 @@
+load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("//platforms:common.bzl", "SUPPORTED_EXECS")
+load(":toolchains.bzl", "resolved_component_ld", "resolved_wasm_tools", "wasi_tools_toolchain")
+
+package(default_visibility = ["//visibility:public"])
+
+bzl_library(
+    name = "extensions",
+    srcs = ["extensions.bzl"],
+    deps = ["@bazel_tools//tools/build_defs/repo:http.bzl"],
+)
+
+toolchain_type(name = "toolchain_type")
+
+[
+    wasi_tools_toolchain(
+        name = "{}_{}_tools".format(os, arch),
+        component_ld = "@wasm_component_ld_{}_{}//:wasm-component-ld{}".format(
+            os,
+            arch,
+            ".exe" if os == "windows" else "",
+        ),
+        wasm_tools = "@wasm_tools_{}_{}//:wasm-tools{}".format(
+            os,
+            arch,
+            ".exe" if os == "windows" else "",
+        ),
+    )
+    for os, arch in SUPPORTED_EXECS
+]
+
+[
+    toolchain(
+        name = "{}_{}_toolchain".format(os, arch),
+        exec_compatible_with = [
+            "@platforms//os:" + os,
+            "@platforms//cpu:" + arch,
+        ],
+        toolchain = ":{}_{}_tools".format(os, arch),
+        toolchain_type = ":toolchain_type",
+    )
+    for os, arch in SUPPORTED_EXECS
+]
+
+resolved_component_ld(name = "component_ld")
+
+resolved_wasm_tools(name = "wasm_tools")
+
+copy_to_directory(
+    name = "component_ld_directory",
+    srcs = [":component_ld"],
+    include_external_repositories = ["**"],
+    root_paths = ["."],
+)
+
+bzl_library(
+    name = "toolchains",
+    srcs = ["toolchains.bzl"],
+)

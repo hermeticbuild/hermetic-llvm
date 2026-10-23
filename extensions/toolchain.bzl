@@ -85,7 +85,7 @@ _target_platform_tag = tag_class(
     attrs = {
         "os": attr.string(
             mandatory = True,
-            values = ["linux", "macos", "windows", "uefi", "none"],
+            values = ["linux", "macos", "windows", "uefi", "none", "wasi"],
         ),
         "arch": attr.string(
             mandatory = True,

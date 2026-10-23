@@ -173,6 +173,7 @@ def cc_toolchain(
             ],
             "@platforms//os:uefi": [],
             "@platforms//os:none": [],
+            "@platforms//os:wasi": [],
         }) + [
             "@llvm//toolchain/features:hosted_dynamic_linker",
             "@llvm//toolchain/features:prefer_pic_for_opt_binaries",
@@ -358,5 +359,6 @@ def cc_toolchain(
             "@platforms//os:macos": "macosx",
             "@platforms//os:uefi": "none",
             "@platforms//os:none": "none",
+            "@platforms//os:wasi": "wasi",
         }, no_match_error = "Unsupported target libc"),
     )

@@ -1,6 +1,7 @@
 load("@gazelle//:def.bzl", "gazelle")
 load("@llvm//:defs.bzl", "exec_test")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_go//go:def.bzl", "go_test")
 load("@rules_platform//platform_data:defs.bzl", "platform_data")
 
@@ -58,4 +59,110 @@ exec_test(
         "@com_github_tetratelabs_wazero//:wazero",
         "@rules_go//go/runfiles",
     ],
+)
+
+cc_library(
+    name = "wasi_public_headers",
+    srcs = ["@wasi_libc//:expected_include_all"],
+    copts = ["-std=gnu17"],
+    local_defines = ["_ALL_SOURCE"],
+    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:wasi"],
+)
+
+cc_binary(
+    name = "wasi_command",
+    srcs = ["wasi_command.c"],
+    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:wasi"],
+    deps = [":wasi_public_headers"],
+)
+
+cc_binary(
+    name = "wasi_reactor",
+    srcs = ["wasi_reactor.c"],
+    linkopts = ["-mexec-model=reactor"],
+    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:wasi"],
+)
+
+cc_binary(
+    name = "wasi_threads",
+    srcs = ["wasi_threads.c"],
+    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:wasi"],
+    deps = [":wasi_public_headers"],
+)
+
+platform_data(
+    name = "wasi_default_blob",
+    platform = "@llvm//platforms:wasi_wasm32",
+    target = ":wasi_command",
+)
+
+platform_data(
+    name = "wasi_p1_reactor_blob",
+    platform = "@llvm//platforms:wasi_wasm32_p1",
+    target = ":wasi_reactor",
+)
+
+platform_data(
+    name = "wasi_p1_threads_blob",
+    platform = "@llvm//platforms:wasi_wasm32_p1_threads",
+    target = ":wasi_threads",
+)
+
+[
+    platform_data(
+        name = "wasi_{}_command_blob".format(snapshot),
+        platform = "@llvm//platforms:wasi_wasm32_{}".format(snapshot),
+        target = ":wasi_command",
+    )
+    for snapshot in [
+        "p1",
+        "p2",
+        "p3",
+    ]
+]
+
+exec_test(
+    go_test,
+    name = "wasi_p1_test",
+    srcs = ["wasi_p1_test.go"],
+    inner_data = [
+        ":wasi_default_blob",
+        ":wasi_p1_command_blob",
+        ":wasi_p1_reactor_blob",
+    ],
+    x_defs = {
+        "wasiDefaultRlocationpath": "$(rlocationpath :wasi_default_blob)",
+        "wasiP1CommandRlocationpath": "$(rlocationpath :wasi_p1_command_blob)",
+        "wasiP1ReactorRlocationpath": "$(rlocationpath :wasi_p1_reactor_blob)",
+    },
+    deps = [
+        "@com_github_tetratelabs_wazero//:wazero",
+        "@com_github_tetratelabs_wazero//imports/wasi_snapshot_preview1",
+        "@rules_go//go/runfiles",
+    ],
+)
+
+# wazero implements Preview 1. Validate Preview 2 and 3 as components with
+# wasm-tools and compile/link pthread_create and pthread_join for p1-threads.
+exec_test(
+    go_test,
+    name = "wasi_variants_test",
+    srcs = ["wasi_variants_test.go"],
+    inner_data = [
+        ":wasi_p1_threads_blob",
+        ":wasi_p2_command_blob",
+        ":wasi_p3_command_blob",
+        "//runtimes/wasi/tools:wasm_tools",
+    ],
+    x_defs = {
+        "wasiP1ThreadsRlocationpath": "$(rlocationpath :wasi_p1_threads_blob)",
+        "wasiP2CommandRlocationpath": "$(rlocationpath :wasi_p2_command_blob)",
+        "wasiP3CommandRlocationpath": "$(rlocationpath :wasi_p3_command_blob)",
+        "wasmToolsRlocationpath": "$(rlocationpath //runtimes/wasi/tools:wasm_tools)",
+    },
+    deps = ["@rules_go//go/runfiles"],
 )

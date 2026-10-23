@@ -522,12 +522,12 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
     """
     if not execs:
         execs = [
-            (arch, os)
+            (target_os, target_cpu)
             # Any supported target that can run a compiler is a supported exec.
             # If we can compile a compiler for that target, we can use that compiler
             # to compile for any other target.
-            for (arch, os) in targets
-            if arch != "none"  # wasm is no good for us.
+            for (target_os, target_cpu) in targets
+            if target_os not in ["none", "wasi"]
         ]
 
     for (exec_os, exec_cpu) in execs:

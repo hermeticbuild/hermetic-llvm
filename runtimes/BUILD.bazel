@@ -400,6 +400,7 @@ bzl_library(
     srcs = ["resource_directory.bzl"],  # keep
     visibility = ["//visibility:public"],
     deps = [
+        "//constraints/wasi:variants",
         "//constraints/windows/abi:abis",
         "@bazel_lib//lib:copy_file",
         "@bazel_lib//lib:copy_to_directory",

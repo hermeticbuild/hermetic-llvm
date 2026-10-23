@@ -1,5 +1,6 @@
 load("//constraints/cxxstdlib:cxxstdlib_versions.bzl", "DEFAULT_CXXSTDLIB")
 load("//constraints/libc:libc_versions.bzl", "LIBCS", "default_libc")
+load("//constraints/wasi:variants.bzl", "WASI_TARGET_TRIPLES")
 load("//constraints/windows/abi:abis.bzl", "WINDOWS_GENERIC_PLATFORM_ABI")
 load("//platforms:common.bzl", "ARCH_ALIASES", "LIBC_SUPPORTED_TARGETS", "SUPPORTED_TARGETS")
 
@@ -10,7 +11,7 @@ def declare_platforms():
             "@platforms//os:{}".format(target_os),
         ]
 
-        if target_os != "none":
+        if target_os not in ["none", "wasi"]:
             constraints.append("//constraints/cxxstdlib:{}".format(DEFAULT_CXXSTDLIB))
 
         if target_os == "linux":
@@ -46,6 +47,19 @@ def declare_platforms():
 
     declare_platforms_libc_aware()
     declare_windows_msvc_platforms()
+    declare_wasi_platforms()
+
+def declare_wasi_platforms():
+    for variant in WASI_TARGET_TRIPLES:
+        native.platform(
+            name = "wasi_wasm32_" + variant,
+            constraint_values = [
+                "@platforms//cpu:wasm32",
+                "@platforms//os:wasi",
+                "//constraints/wasi:" + variant,
+            ],
+            visibility = ["//visibility:public"],
+        )
 
 def declare_windows_msvc_platforms():
     for target_cpu in ["x86_64", "aarch64"]:

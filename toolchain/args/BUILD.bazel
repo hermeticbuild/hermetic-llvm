@@ -260,7 +260,7 @@ cc_args_list(
 )
 
 cc_args(
-    name = "fuse_ld",
+    name = "fuse_lld",
     actions = [
         "@rules_cc//cc/toolchains/actions:link_actions",
     ],
@@ -274,6 +274,14 @@ cc_args(
             # It would have been great to set the path explicitly.
             # "--ld-path={lld_path}",
         ],
+    }),
+)
+
+cc_args_list(
+    name = "fuse_ld",
+    args = select({
+        "//platforms/config:wasi_components": ["//toolchain/args/wasi:component_linker"],
+        "//conditions:default": [":fuse_lld"],
     }),
 )
 
@@ -1177,5 +1185,8 @@ bzl_library(
 bzl_library(
     name = "llvm_target_triple",
     srcs = ["llvm_target_triple.bzl"],
-    deps = ["//constraints/windows/abi:abis"],
+    deps = [
+        "//constraints/wasi:variants",
+        "//constraints/windows/abi:abis",
+    ],
 )

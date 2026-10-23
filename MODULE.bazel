@@ -108,6 +108,28 @@ use_repo(musl, "musl_libc")
 mingw = use_extension("//runtimes/mingw/extension:mingw.bzl", "mingw")
 use_repo(mingw, "mingw")
 
+wasi = use_extension("//runtimes/wasi/extension:wasi.bzl", "wasi")
+use_repo(wasi, "wasi_libc")
+
+wasi_tools = use_extension("//runtimes/wasi/tools:extensions.bzl", "wasi_tools")
+use_repo(
+    wasi_tools,
+    "wasm_component_ld_linux_aarch64",
+    "wasm_component_ld_linux_x86_64",
+    "wasm_component_ld_macos_aarch64",
+    "wasm_component_ld_macos_x86_64",
+    "wasm_component_ld_windows_aarch64",
+    "wasm_component_ld_windows_x86_64",
+    "wasm_tools_linux_aarch64",
+    "wasm_tools_linux_x86_64",
+    "wasm_tools_macos_aarch64",
+    "wasm_tools_macos_x86_64",
+    "wasm_tools_windows_aarch64",
+    "wasm_tools_windows_x86_64",
+)
+
+register_toolchains("//runtimes/wasi/tools:all")
+
 # The Microsoft payloads remain lazily fetched: the EULA gate is evaluated
 # only when an MSVC-ABI target requests @msvc_runtime.
 msvc_runtime = use_extension(
