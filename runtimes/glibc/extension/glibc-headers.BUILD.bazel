@@ -4,10 +4,6 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 cc_library(
     name = "gnu_libc_headers",
     hdrs = ["include"],
-    # user code should always get glibc headers as -isystem
-    # but it seems glibc itself includes as <...>
-    features = ["system_include_paths"],
-    includes = ["include"],
     # Stage 0 runtime libraries consume this CcInfo directly rather than the
     # final toolchain's glibc_headers_include_search_paths argument set.
     defines = select({
@@ -18,6 +14,10 @@ cc_library(
         ],
         "//conditions:default": [],
     }),
+    # user code should always get glibc headers as -isystem
+    # but it seems glibc itself includes as <...>
+    features = ["system_include_paths"],
+    includes = ["include"],
     visibility = ["//visibility:public"],
 )
 
