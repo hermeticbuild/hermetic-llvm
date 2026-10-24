@@ -166,13 +166,14 @@ bzl_library(
 )
 
 bzl_library(
-    name = "glibc_dynamic_linker",
-    srcs = ["glibc_dynamic_linker.bzl"],
+    name = "glibc_stubs_assembly_files",
+    srcs = ["glibc_stubs_assembly_files.bzl"],
     visibility = ["//visibility:public"],
+    deps = ["//constraints/libc:libc_versions"],
 )
 
 bzl_library(
-    name = "glibc_stubs_assembly_files",
-    srcs = ["glibc_stubs_assembly_files.bzl"],
+    name = "glibc_dynamic_linker",
+    srcs = ["glibc_dynamic_linker.bzl"],
     visibility = ["//visibility:public"],
 )
