@@ -43,6 +43,7 @@ jobs:
               'kernel/extension/libc_kernel_versions.bzl' \
               'kernel/extension/make_select_kernel_headers_repository_target.bzl' \
               'tools/*.bzl' \
+              'toolchain/selects.bzl' \
               '3rd_party/libc/*.bzl' \
               'runtimes/musl/libc_musl_srcs_filegroup.bzl' \
               'runtimes/glibc/glibc_dynamic_linker.bzl' \

@@ -9,6 +9,8 @@ load(":declare_toolchains.bzl", "declare_toolchains")
 
 package(default_visibility = ["//toolchain:__subpackages__"])
 
+exports_files(["selects.bzli"])
+
 # TODO(cerisier): Find a better name ?
 # This should be the semantic for "what are we building ?"
 # Runtimes without dependencies, runtimes with dependencies, user programs with runtime dependencies...
