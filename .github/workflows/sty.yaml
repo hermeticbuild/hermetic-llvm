@@ -20,17 +20,29 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
+      - name: Select platform and version implementations
+        id: files
+        shell: bash
+        run: |
+          {
+            echo 'root<<EOF'
+            git ls-files -- \
+              'constraints/*.bzl' \
+              'platforms/*.bzl' \
+              '3rd_party/gcc/version.bzl' \
+              '3rd_party/llvm-project/*/libcxx/*.bzl' \
+              'tools/*.bzl' \
+              'runtimes/glibc/glibc_dynamic_linker.bzl' \
+              'runtimes/glibc/libc_aware_target_triple.bzl'
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
       - name: Check root workspace
-        uses: tamird/sty@567dbae64bee48b18bcf1c0e05755674132732fb
+        uses: tamird/sty@c6fd17ce572ff4ea6bd781d03ab7d1c593a118fe
         with:
           audit-loads: true
-          files: |
-            platforms/common.bzl
-            platforms/declare_platforms.bzl
-            runtimes/glibc/glibc_dynamic_linker.bzl
-            runtimes/glibc/libc_aware_target_triple.bzl
+          files: ${{ steps.files.outputs.root }}
       - name: Check rules_cc example workspace
-        uses: tamird/sty@567dbae64bee48b18bcf1c0e05755674132732fb
+        uses: tamird/sty@c6fd17ce572ff4ea6bd781d03ab7d1c593a118fe
         with:
           working-directory: e2e/rules_cc
           artifact-name: sty-rules-cc

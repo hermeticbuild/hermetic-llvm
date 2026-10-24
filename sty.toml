@@ -3,10 +3,12 @@ require-valid-suppressions = true
 strict-generic-narrowing = true
 
 [type-interfaces]
+"3rd_party/gcc/version.bzl" = "3rd_party/gcc/version.bzli"
 "constraints/libc/libc_versions.bzl" = "constraints/libc/libc_versions.bzli"
 "defs.bzl" = "defs.bzli"
 "directory.bzl" = "directory.bzli"
 "kernel/extension/kernel_helpers.bzl" = "kernel/extension/kernel_helpers.bzli"
+"platforms/config/declare_config_settings.bzl" = "platforms/config/declare_config_settings.bzli"
 "runtimes/glibc/glibc_stubs_assembly_files.bzl" = "runtimes/glibc/glibc_stubs_assembly_files.bzli"
 "runtimes/module_map.bzl" = "runtimes/module_map.bzli"
 "toolchain/llvm/llvm.bzl" = "toolchain/llvm/llvm.bzli"
