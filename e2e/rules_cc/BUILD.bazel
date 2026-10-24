@@ -43,7 +43,6 @@ load(
 )
 load(":bazel_version.bzl", "validate_static_library_compatible")
 load(":fdo_optimize_test.bzl", "cs_fdo_optimize_test", "fdo_optimize_test")
-load(":glibc_matrix.bzl", "glibc_build_matrix")
 load(":musl_header_generation_tests.bzl", "musl_header_generation_tests")
 load(":thin_lto_features_test.bzl", "thin_lto_features_test")
 load(":windows_msvc_artifacts.bzl", "windows_msvc_artifacts")
@@ -106,20 +105,6 @@ _EXTERNAL_INCLUDE_PATHS_TEST_COMPATIBLE = (
 ) if bazel_features.cc.supports_starlarkified_toolchains else ["@platforms//:incompatible"]
 
 musl_header_generation_tests(name = "musl_header_generation_tests")
-
-glibc_build_matrix()
-
-# Downstream users can declare their own platforms. Unsupported pairs must
-# fail explicitly even though the public platform matrix omits them.
-platform(
-    name = "glibc_riscv64_2_17_unsupported",
-    constraint_values = [
-        "@platforms//cpu:riscv64",
-        "@platforms//os:linux",
-        "@llvm//constraints/libc:gnu.2.17",
-    ],
-    tags = ["manual"],
-)
 
 # Analysis-only fixtures: their contents are never consumed by profile tools.
 write_file(
