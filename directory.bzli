@@ -1,0 +1,13 @@
+"""Directory providers and header-directory targets."""
+
+load("@bazel_skylib//rules/directory:providers.bzl", "DirectoryInfo")
+
+def headers_directory(
+    name: str,
+    path: str,
+    visibility: Sequence[str | Label] | None = ...,
+) -> None: ...
+
+def _headers_directory_impl(ctx) -> list[DirectoryInfo | DefaultInfo]: ...
+
+def _directory_info_impl(ctx) -> list[DirectoryInfo | DefaultInfo]: ...

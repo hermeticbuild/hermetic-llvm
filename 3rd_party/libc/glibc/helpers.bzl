@@ -1,8 +1,9 @@
 # A good starting point for this is https://codeberg.org/ziglang/zig/src/branch/master/src/libs/glibc.zig add_include_dirs function
 def glibc_includes(cpu):
-    os_abi_variant = []
-    abi_variant = []
-    arch_parent = []
+    # Use comments for local types while Bazel 8 is supported.
+    os_abi_variant = []  # type: list[str]
+    abi_variant = []  # type: list[str]
+    arch_parent = []  # type: list[str]
     wordsize = "wordsize-64"
 
     if cpu == "x86_64":

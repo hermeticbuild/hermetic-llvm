@@ -249,3 +249,17 @@ register_toolchains(
     "@zig_toolchains//:all",
     dev_dependency = True,
 )
+
+# Use the directory provider contracts while bazelbuild/bazel-skylib#641 is in review.
+git_override(
+    module_name = "bazel_skylib",
+    commit = "c0108ada4fedbdfc5164cfa657867fba4e9669dc",
+    remote = "https://github.com/tamird/bazel-skylib.git",
+)
+
+# Use the tool contracts while bazelbuild/rules_cc#940 is in review.
+git_override(
+    module_name = "rules_cc",
+    commit = "9e54b2ce895d276cf066b64c29290146120c66a5",
+    remote = "https://github.com/tamird/rules_cc.git",
+)

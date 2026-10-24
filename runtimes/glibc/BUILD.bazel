@@ -8,6 +8,11 @@ load(":glibc_shared_library.bzl", "make_glibc_shared_library")
 load(":glibc_stubs_assembly_files.bzl", "glibc_stubs_assembly_files")
 load(":libc_aware_target_triple.bzl", "libc_aware_target_triple")
 
+exports_files([
+    "glibc_linker_script.bzli",
+    "glibc_stubs_assembly_files.bzli",
+])
+
 # Generate all support libraries unconditionally.
 #
 # The stubs generator creates empty .s files for libraries not provided by the

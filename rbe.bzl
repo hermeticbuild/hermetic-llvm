@@ -1,4 +1,5 @@
 def _rbe_platform_repo_impl(rctx):
+    # type: (repository_ctx) -> None
     arch = rctx.os.arch
     if arch in ["x86_64", "amd64"]:
         host_platform = "rbe_linux_x86_64"

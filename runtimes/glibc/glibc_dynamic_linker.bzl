@@ -10,15 +10,18 @@ _GLIBC_DYNAMIC_LINKERS = {
 _NO_MATCH_ERROR = "Unsupported glibc dynamic linker target. Add the target architecture to runtimes/glibc/glibc_dynamic_linker.bzl."
 
 def glibc_dynamic_linker():
+    # type: () -> select[str]
     return select(_GLIBC_DYNAMIC_LINKERS, no_match_error = _NO_MATCH_ERROR)
 
 def glibc_dynamic_linker_as_needed():
+    # type: () -> select[list[str], Literal["list"]]
     return select({
         config: ["AS_NEEDED({})".format(dynamic_linker)]
         for (config, dynamic_linker) in _GLIBC_DYNAMIC_LINKERS.items()
     }, no_match_error = _NO_MATCH_ERROR)
 
 def glibc_dynamic_linker_soname_flags():
+    # type: () -> select[list[str], Literal["list"]]
     return select({
         config: ["-Wl,-soname,{}".format(dynamic_linker)]
         for (config, dynamic_linker) in _GLIBC_DYNAMIC_LINKERS.items()

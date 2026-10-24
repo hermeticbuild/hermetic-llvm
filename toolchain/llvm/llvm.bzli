@@ -1,0 +1,3 @@
+"""Declare tools and headers from one installed LLVM distribution."""
+
+def declare_llvm_targets(*, suffix: str = ...) -> None: ...

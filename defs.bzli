@@ -1,0 +1,109 @@
+"""Executable tests whose inner target uses the execution configuration."""
+
+type _LabelListInput = Collection[str | Label] | depset[str | Label]
+type _ConstraintsInput = _LabelListInput | select[_LabelListInput | None] | None
+type _Labels = Sequence[str | Label] | select[Sequence[str | Label]]
+type _Strings = Sequence[str] | select[Sequence[str]]
+type _Environment = dict[str, str] | select[dict[str, str]]
+
+type _ImplementationForwarded = dict[{
+    "target_compatible_with": NotRequired[_ConstraintsInput],
+    "inner_data": NotRequired[_Labels],
+}, ...]
+
+type _InnerTags[T] = list[T | Literal["manual"]]
+
+class _DataRule[D, T: str, **P](Protocol):
+    def __call__(
+        self,
+        *,
+        name: str,
+        data: D,
+        tags: _InnerTags[T],
+        **kwargs: KeywordArgs[P],
+    ) -> object: ...
+
+class _TargetDataRule[D, T: str, C: _ConstraintsInput, **P](Protocol):
+    def __call__(
+        self,
+        *,
+        name: str,
+        data: D,
+        tags: _InnerTags[T],
+        target_compatible_with: C,
+        **kwargs: KeywordArgs[P],
+    ) -> object: ...
+
+@overload
+def exec_test[D: _Labels, T: str, C: _ConstraintsInput, **P](
+    rule: _TargetDataRule[D, T, C, P],
+    *,
+    name: str,
+    tags: list[T] = ...,
+    args: _Strings = ...,
+    env: _Environment = ...,
+    data: _Labels = ...,
+    tools: _Labels = ...,
+    inner_data: D,
+    target_compatible_with: C,
+    **kwargs: KeywordArgs[P],
+) -> None: ...
+
+@overload
+def exec_test[D: _Labels, T: str, **P](
+    rule: _DataRule[D, T, P],
+    *,
+    name: str,
+    tags: list[T] = ...,
+    args: _Strings = ...,
+    env: _Environment = ...,
+    data: _Labels = ...,
+    tools: _Labels = ...,
+    inner_data: D,
+    target_compatible_with: Never = ...,
+    **kwargs: KeywordArgs[P],
+) -> None: ...
+
+@overload
+def exec_test[D, T: str, C: _ConstraintsInput, **P](
+    rule: _TargetDataRule[list[D], T, C, P],
+    *,
+    name: str,
+    tags: list[T] = ...,
+    args: _Strings = ...,
+    env: _Environment = ...,
+    data: _Labels = ...,
+    tools: _Labels = ...,
+    inner_data: Never = ...,
+    target_compatible_with: C,
+    **kwargs: KeywordArgs[P],
+) -> None: ...
+
+@overload
+def exec_test[D, T: str, **P](
+    rule: _DataRule[list[D], T, P],
+    *,
+    name: str,
+    tags: list[T] = ...,
+    args: _Strings = ...,
+    env: _Environment = ...,
+    data: _Labels = ...,
+    tools: _Labels = ...,
+    inner_data: Never = ...,
+    target_compatible_with: Never = ...,
+    **kwargs: KeywordArgs[P],
+) -> None: ...
+
+def exec_test[T: str](
+    rule: object,
+    *,
+    name: str,
+    tags: list[T] = ...,
+    args: _Strings = ...,
+    env: _Environment = ...,
+    data: _Labels = ...,
+    tools: _Labels = ...,
+    **kwargs: Unpack[_ImplementationForwarded],
+) -> None: ...
+
+def _exec_test_impl(ctx) -> list[DefaultInfo | RunEnvironmentInfo]: ...

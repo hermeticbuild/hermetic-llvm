@@ -1,0 +1,13 @@
+type _Visibility = Collection[str | Label] | depset[str | Label] | None
+
+def _typedef_replacement(declaration: object, name: object) -> str: ...
+
+def _struct_replacement(name: object, body: object) -> str: ...
+
+def _alltypes_substitutions() -> dict[str, str]: ...
+
+def musl_alltypes_headers(
+    name: str,
+    arch: str,
+    visibility: _Visibility = ...,
+) -> list[str]: ...

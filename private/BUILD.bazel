@@ -1,10 +1,9 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 
-bzl_library(
-    name = "llvm_project_common",
-    srcs = ["llvm_project_common.bzl"],
-    visibility = ["//:__subpackages__"],
-)
+exports_files([
+    "llvm_project_common.bzli",
+    "llvm_project_from_path.bzli",
+])
 
 bzl_library(
     name = "llvm_project_archive",
@@ -37,4 +36,10 @@ bzl_library(
     srcs = ["llvm_project_from_path.bzl"],
     visibility = ["//extensions:__pkg__"],
     deps = [":llvm_project_common"],
+)
+
+bzl_library(
+    name = "llvm_project_common",
+    srcs = ["llvm_project_common.bzl"],
+    visibility = ["//:__subpackages__"],
 )

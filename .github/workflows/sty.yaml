@@ -1,0 +1,68 @@
+name: Starlark types
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sty:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Select implementations
+        id: files
+        shell: bash
+        run: |
+          {
+            echo 'root<<EOF'
+            git ls-files -- \
+              'case_insensitive_vfs.bzl' \
+              'config/defs.bzl' \
+              'rbe.bzl' \
+              'constraints/*.bzl' \
+              'platforms/*.bzl' \
+              'private/llvm_project_common.bzl' \
+              'private/llvm_project_from_path.bzl' \
+              '3rd_party/gcc/extension/make_select_gcc_repository_target.bzl' \
+              '3rd_party/gcc/version.bzl' \
+              '3rd_party/gcc/libstdcxx/*.m4.bzl' \
+              '3rd_party/gcc/libstdcxx/configure.ac.bzl' \
+              '3rd_party/gcc/libstdcxx/gcc_config_checks.bzl' \
+              '3rd_party/gcc/libstdcxx/autoconf/checks.bzl' \
+              '3rd_party/llvm-project/*/libcxx/*.bzl' \
+              '3rd_party/llvm-project/x.x/compiler-rt/filter_builtin_sources.bzl' \
+              '3rd_party/llvm-project/x.x/compiler-rt/weak_symbols.bzl' \
+              'kernel/extension/libc_kernel_versions.bzl' \
+              'kernel/extension/make_select_kernel_headers_repository_target.bzl' \
+              'tools/*.bzl' \
+              'toolchain/bootstrap/transition_settings.bzl' \
+              'toolchain/bootstrap_stages.bzl' \
+              'toolchain/selects.bzl' \
+              '3rd_party/libc/*.bzl' \
+              'runtimes/musl/libc_musl_srcs_filegroup.bzl' \
+              'runtimes/glibc/glibc_dynamic_linker.bzl' \
+              'runtimes/glibc/glibc_linker_script.bzl' \
+              'runtimes/glibc/libc_aware_target_triple.bzl'
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+      - name: Check root workspace
+        uses: tamird/sty@c6fd17ce572ff4ea6bd781d03ab7d1c593a118fe
+        with:
+          audit-loads: true
+          files: ${{ steps.files.outputs.root }}
+      - name: Check rules_cc example workspace
+        uses: tamird/sty@c6fd17ce572ff4ea6bd781d03ab7d1c593a118fe
+        with:
+          working-directory: e2e/rules_cc
+          artifact-name: sty-rules-cc

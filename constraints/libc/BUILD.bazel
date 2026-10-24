@@ -3,6 +3,8 @@ load(":libc_versions.bzl", "LIBCS")
 
 package(default_visibility = ["//visibility:public"])
 
+exports_files(["libc_versions.bzli"])
+
 constraint_setting(
     name = "variant",
     # For linux, platform declarations may map this to an explicit default glibc.

@@ -1,0 +1,53 @@
+[analysis]
+require-valid-suppressions = true
+strict-generic-narrowing = true
+
+[type-interfaces]
+"3rd_party/gcc/extension/make_select_gcc_repository_target.bzl" = "3rd_party/gcc/extension/make_select_gcc_repository_target.bzli"
+"3rd_party/gcc/libstdcxx/acinclude.m4.bzl" = "3rd_party/gcc/libstdcxx/acinclude.m4.bzli"
+"3rd_party/gcc/libstdcxx/autoconf/checks.bzl" = "3rd_party/gcc/libstdcxx/autoconf/checks.bzli"
+"3rd_party/gcc/libstdcxx/configure.ac.bzl" = "3rd_party/gcc/libstdcxx/configure.ac.bzli"
+"3rd_party/gcc/libstdcxx/crossconfig.m4.bzl" = "3rd_party/gcc/libstdcxx/crossconfig.m4.bzli"
+"3rd_party/gcc/libstdcxx/gcc_config_checks.bzl" = "3rd_party/gcc/libstdcxx/gcc_config_checks.bzli"
+"3rd_party/gcc/libstdcxx/linkage.m4.bzl" = "3rd_party/gcc/libstdcxx/linkage.m4.bzli"
+"3rd_party/gcc/version.bzl" = "3rd_party/gcc/version.bzli"
+"3rd_party/libc/glibc/helpers.bzl" = "3rd_party/libc/glibc/helpers.bzli"
+"3rd_party/libc/musl/musl_headers.bzl" = "3rd_party/libc/musl/musl_headers.bzli"
+"3rd_party/llvm-project/x.x/compiler-rt/filter_builtin_sources.bzl" = "3rd_party/llvm-project/x.x/compiler-rt/filter_builtin_sources.bzli"
+"3rd_party/llvm-project/x.x/compiler-rt/weak_symbols.bzl" = "3rd_party/llvm-project/x.x/compiler-rt/weak_symbols.bzli"
+"case_insensitive_vfs.bzl" = "case_insensitive_vfs.bzli"
+"config/defs.bzl" = "config/defs.bzli"
+"constraints/libc/libc_versions.bzl" = "constraints/libc/libc_versions.bzli"
+"defs.bzl" = "defs.bzli"
+"directory.bzl" = "directory.bzli"
+"kernel/extension/kernel_helpers.bzl" = "kernel/extension/kernel_helpers.bzli"
+"kernel/extension/make_select_kernel_headers_repository_target.bzl" = "kernel/extension/make_select_kernel_headers_repository_target.bzli"
+"platforms/config/declare_config_settings.bzl" = "platforms/config/declare_config_settings.bzli"
+"private/llvm_project_common.bzl" = "private/llvm_project_common.bzli"
+"private/llvm_project_from_path.bzl" = "private/llvm_project_from_path.bzli"
+"runtimes/glibc/glibc_linker_script.bzl" = "runtimes/glibc/glibc_linker_script.bzli"
+"runtimes/glibc/glibc_stubs_assembly_files.bzl" = "runtimes/glibc/glibc_stubs_assembly_files.bzli"
+"runtimes/module_map.bzl" = "runtimes/module_map.bzli"
+"runtimes/musl/libc_musl_srcs_filegroup.bzl" = "runtimes/musl/libc_musl_srcs_filegroup.bzli"
+"toolchain/bootstrap/transition_settings.bzl" = "toolchain/bootstrap/transition_settings.bzli"
+"toolchain/llvm/llvm.bzl" = "toolchain/llvm/llvm.bzli"
+"toolchain/selects.bzl" = "toolchain/selects.bzli"
+
+[rules]
+missing-parameter-annotation = "error"
+missing-return-annotation = "error"
+missing-type-argument = "error"
+unsound-assignment = "error"
+unsound-return-statement = "error"
+explicit-any = "error"
+non-static-type = "error"
+blanket-ignore-comment = "error"
+possibly-unresolved-reference = "error"
+possibly-missing-attribute = "error"
+division-by-zero = "error"
+
+[[stub-packages]]
+manifest = "@bazel_skylib//:stubs.toml"
+
+[[stub-packages]]
+manifest = "@rules_cc//:stubs.toml"
