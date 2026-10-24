@@ -88,8 +88,8 @@ jobs:
             ${{ matrix.extra_flags }} \
             //...
 
-          # The transitioned cross-compilation binaries are not tests, so
-          # `bazel test //...` does not build them. Exercise both MSVC target
+          # The MSVC cross-compilation binaries are tagged manual, so
+          # `bazel test //...` excludes them. Exercise both MSVC target
           # architectures in the existing cross-compilation jobs without
           # adding a dedicated lane or executing the resulting PE files.
           if [[ "${{ matrix.folder }}" == "e2e/cross_compilation" && "${{ matrix.bazel_version }}" == "last_rc" ]]; then
