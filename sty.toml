@@ -29,6 +29,7 @@ strict-generic-narrowing = true
 "runtimes/glibc/glibc_stubs_assembly_files.bzl" = "runtimes/glibc/glibc_stubs_assembly_files.bzli"
 "runtimes/module_map.bzl" = "runtimes/module_map.bzli"
 "runtimes/musl/libc_musl_srcs_filegroup.bzl" = "runtimes/musl/libc_musl_srcs_filegroup.bzli"
+"toolchain/bootstrap/transition_settings.bzl" = "toolchain/bootstrap/transition_settings.bzli"
 "toolchain/llvm/llvm.bzl" = "toolchain/llvm/llvm.bzli"
 "toolchain/selects.bzl" = "toolchain/selects.bzli"
 
