@@ -125,7 +125,7 @@ def symlink_source_and_overlay(rctx, source_root):
 
     for _ in range(_MAX_OVERLAY_DIRECTORIES):
         relative_dir = stack.pop()
-        overlay_dirs = {}
+        overlay_dirs = {}  # type: dict[str, None]
 
         for entry in overlay_root.get_child(relative_dir).readdir():
             relative_path = _relative_path(relative_dir, entry.basename)

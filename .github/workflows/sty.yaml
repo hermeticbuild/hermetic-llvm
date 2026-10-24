@@ -32,6 +32,8 @@ jobs:
               'rbe.bzl' \
               'constraints/*.bzl' \
               'platforms/*.bzl' \
+              'private/llvm_project_common.bzl' \
+              'private/llvm_project_from_path.bzl' \
               '3rd_party/gcc/extension/make_select_gcc_repository_target.bzl' \
               '3rd_party/gcc/version.bzl' \
               '3rd_party/gcc/libstdcxx/*.m4.bzl' \
