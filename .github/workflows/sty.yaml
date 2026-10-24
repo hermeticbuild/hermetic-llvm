@@ -28,6 +28,7 @@ jobs:
             echo 'root<<EOF'
             git ls-files -- \
               'case_insensitive_vfs.bzl' \
+              'rbe.bzl' \
               'constraints/*.bzl' \
               'platforms/*.bzl' \
               '3rd_party/gcc/extension/make_select_gcc_repository_target.bzl' \
