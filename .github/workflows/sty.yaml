@@ -27,6 +27,7 @@ jobs:
           {
             echo 'root<<EOF'
             git ls-files -- \
+              'case_insensitive_vfs.bzl' \
               'constraints/*.bzl' \
               'platforms/*.bzl' \
               '3rd_party/gcc/extension/make_select_gcc_repository_target.bzl' \
@@ -38,6 +39,7 @@ jobs:
               '3rd_party/llvm-project/*/libcxx/*.bzl' \
               '3rd_party/llvm-project/x.x/compiler-rt/filter_builtin_sources.bzl' \
               '3rd_party/llvm-project/x.x/compiler-rt/weak_symbols.bzl' \
+              'kernel/extension/libc_kernel_versions.bzl' \
               'kernel/extension/make_select_kernel_headers_repository_target.bzl' \
               'tools/*.bzl' \
               '3rd_party/libc/*.bzl' \

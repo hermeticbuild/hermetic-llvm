@@ -15,6 +15,7 @@ strict-generic-narrowing = true
 "3rd_party/libc/musl/musl_headers.bzl" = "3rd_party/libc/musl/musl_headers.bzli"
 "3rd_party/llvm-project/x.x/compiler-rt/filter_builtin_sources.bzl" = "3rd_party/llvm-project/x.x/compiler-rt/filter_builtin_sources.bzli"
 "3rd_party/llvm-project/x.x/compiler-rt/weak_symbols.bzl" = "3rd_party/llvm-project/x.x/compiler-rt/weak_symbols.bzli"
+"case_insensitive_vfs.bzl" = "case_insensitive_vfs.bzli"
 "constraints/libc/libc_versions.bzl" = "constraints/libc/libc_versions.bzli"
 "defs.bzl" = "defs.bzli"
 "directory.bzl" = "directory.bzli"
