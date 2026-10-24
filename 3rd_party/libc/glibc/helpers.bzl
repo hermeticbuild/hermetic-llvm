@@ -1,12 +1,5 @@
-def glob_one(include):
-    """Glob alternate source paths and require exactly one existing file."""
-    matches = native.glob(include, allow_empty = True)
-    if len(matches) != 1:
-        fail("Expected exactly one source matching {}, found {}: {}".format(include, len(matches), matches))
-    return matches
-
 # A good starting point for this is https://codeberg.org/ziglang/zig/src/branch/master/src/libs/glibc.zig add_include_dirs function
-def glibc_includes(cpu):
+def glibc_includes(cpu, use_ports = False):
     os_abi_variant = []
     abi_variant = []
     arch_parent = []
@@ -62,8 +55,7 @@ def glibc_includes(cpu):
     ]
 
     # ARM and AArch64 lived in the separate ports tree through glibc 2.19.
-    # Missing include directories are harmless for newer releases.
-    if cpu in ["arm", "aarch64"]:
+    if use_ports and cpu in ["arm", "aarch64"]:
         paths = paths[:1] + ["ports/" + path for path in paths if path.startswith("sysdeps/")] + paths[1:]
     return paths
 
