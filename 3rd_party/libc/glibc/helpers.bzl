@@ -1,3 +1,10 @@
+def glob_one(include):
+    """Glob alternate source paths and require exactly one existing file."""
+    matches = native.glob(include, allow_empty = True)
+    if len(matches) != 1:
+        fail("Expected exactly one source matching {}, found {}: {}".format(include, len(matches), matches))
+    return matches
+
 # A good starting point for this is https://codeberg.org/ziglang/zig/src/branch/master/src/libs/glibc.zig add_include_dirs function
 def glibc_includes(cpu):
     os_abi_variant = []
