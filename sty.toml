@@ -10,6 +10,8 @@ strict-generic-narrowing = true
 "3rd_party/gcc/libstdcxx/gcc_config_checks.bzl" = "3rd_party/gcc/libstdcxx/gcc_config_checks.bzli"
 "3rd_party/gcc/libstdcxx/linkage.m4.bzl" = "3rd_party/gcc/libstdcxx/linkage.m4.bzli"
 "3rd_party/gcc/version.bzl" = "3rd_party/gcc/version.bzli"
+"3rd_party/libc/glibc/helpers.bzl" = "3rd_party/libc/glibc/helpers.bzli"
+"3rd_party/libc/musl/musl_headers.bzl" = "3rd_party/libc/musl/musl_headers.bzli"
 "constraints/libc/libc_versions.bzl" = "constraints/libc/libc_versions.bzli"
 "defs.bzl" = "defs.bzli"
 "directory.bzl" = "directory.bzli"
@@ -17,6 +19,7 @@ strict-generic-narrowing = true
 "platforms/config/declare_config_settings.bzl" = "platforms/config/declare_config_settings.bzli"
 "runtimes/glibc/glibc_stubs_assembly_files.bzl" = "runtimes/glibc/glibc_stubs_assembly_files.bzli"
 "runtimes/module_map.bzl" = "runtimes/module_map.bzli"
+"runtimes/musl/libc_musl_srcs_filegroup.bzl" = "runtimes/musl/libc_musl_srcs_filegroup.bzli"
 "toolchain/llvm/llvm.bzl" = "toolchain/llvm/llvm.bzli"
 
 [rules]

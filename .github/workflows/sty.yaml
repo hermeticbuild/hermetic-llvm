@@ -36,6 +36,8 @@ jobs:
               '3rd_party/gcc/libstdcxx/autoconf/checks.bzl' \
               '3rd_party/llvm-project/*/libcxx/*.bzl' \
               'tools/*.bzl' \
+              '3rd_party/libc/*.bzl' \
+              'runtimes/musl/libc_musl_srcs_filegroup.bzl' \
               'runtimes/glibc/glibc_dynamic_linker.bzl' \
               'runtimes/glibc/libc_aware_target_triple.bzl'
             echo 'EOF'
