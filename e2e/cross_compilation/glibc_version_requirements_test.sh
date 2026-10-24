@@ -37,4 +37,4 @@ while read -r selected binary; do
     ' "${TEST_TMPDIR}/versions.txt"
     count=$((count + 1))
 done <<< "${GLIBC_BINARIES}"
-echo "Checked glibc version requirements for $count binaries."
+echo "Checked glibc version requirements; binaries: $count."
