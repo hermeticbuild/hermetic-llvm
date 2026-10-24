@@ -18,6 +18,7 @@ strict-generic-narrowing = true
 "defs.bzl" = "defs.bzli"
 "directory.bzl" = "directory.bzli"
 "kernel/extension/kernel_helpers.bzl" = "kernel/extension/kernel_helpers.bzli"
+"kernel/extension/make_select_kernel_headers_repository_target.bzl" = "kernel/extension/make_select_kernel_headers_repository_target.bzli"
 "platforms/config/declare_config_settings.bzl" = "platforms/config/declare_config_settings.bzli"
 "runtimes/glibc/glibc_stubs_assembly_files.bzl" = "runtimes/glibc/glibc_stubs_assembly_files.bzli"
 "runtimes/module_map.bzl" = "runtimes/module_map.bzli"
