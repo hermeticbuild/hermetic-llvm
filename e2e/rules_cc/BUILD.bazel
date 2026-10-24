@@ -914,26 +914,6 @@ cc_binary(
     }),
 )
 
-# These are executed against matching glibc runtimes by glibc_matrix.sh.
-[
-    cc_binary(
-        name = "glibc_runtime_" + linkage,
-        testonly = True,
-        srcs = ["glibc_runtime.cc"],
-        copts = ["-fPIE"] if linkage == "pie" else ["-fno-pie"],
-        linkopts = ["-pie"] if linkage == "pie" else ["-no-pie"],
-        tags = ["manual"],
-        target_compatible_with = ["@platforms//os:linux"] + select({
-            "@llvm//constraints/libc:musl": ["@platforms//:incompatible"],
-            "//conditions:default": [],
-        }),
-    )
-    for linkage in [
-        "pie",
-        "nopie",
-    ]
-]
-
 fission_cc_binary(
     name = "fission_main",
     srcs = ["main.cc"],

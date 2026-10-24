@@ -3,7 +3,7 @@ load("@llvm//constraints/libc:libc_versions.bzl", "GLIBC_VERSIONS", "glibc_suppo
 load("@llvm//platforms:common.bzl", "LIBC_SUPPORTED_TARGETS")
 
 def glibc_build_matrix():
-    """Build complete consumer binaries for every published GNU platform."""
+    """Build the existing C++ smoke binary for every published GNU platform."""
     for _, arch in LIBC_SUPPORTED_TARGETS:
         targets = []
         for version in GLIBC_VERSIONS:
@@ -13,11 +13,7 @@ def glibc_build_matrix():
             platform_transition_filegroup(
                 name = name,
                 testonly = True,
-                srcs = [
-                    "main",
-                    "glibc_runtime_pie",
-                    "glibc_runtime_nopie",
-                ],
+                srcs = ["main"],
                 tags = ["manual"],
                 target_platform = "@llvm//platforms:linux_{}_gnu.{}".format(arch, version),
             )

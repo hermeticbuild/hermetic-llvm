@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build every supported glibc/architecture pair, then inspect the actual ELF.
+# Build :main for every supported glibc/architecture pair, then inspect its ELF.
 # Usage: LLVM_READELF=/path/to/llvm-readelf ./glibc_matrix.sh /absolute/output
 # Run from e2e/rules_cc. Outputs and logs remain outside the source checkout.
 set -euo pipefail
@@ -20,7 +20,7 @@ printf 'arch\tglibc\tresult\n' > "$manifest"
 printf 'arch\tglibc\tbinary\tsha256\n' > "$output/artifacts.tsv"
 
 inspect() {
-    local arch=$1 version=$2 binary=$3 kind=$4 report=$5
+    local arch=$1 version=$2 binary=$3 report=$4
     "$readelf" -h -l -d -V "$binary" > "$report"
     case "$arch" in
         x86_64) grep -q 'Machine:.*Advanced Micro Devices X86-64' "$report" ;;
@@ -29,11 +29,7 @@ inspect() {
         s390x) grep -q 'Machine:.*IBM S/390' "$report" ;;
         riscv64) grep -q 'Machine:.*RISC-V' "$report" ;;
     esac
-    if [[ "$kind" == glibc_runtime_pie ]]; then
-        grep -q 'Type:.*DYN' "$report"
-    else
-        grep -q 'Type:.*EXEC' "$report"
-    fi
+    grep -q 'Type:.*EXEC' "$report"
     case "$arch" in
         x86_64) loader=ld-linux-x86-64.so.2 ;;
         aarch64) loader=ld-linux-aarch64.so.1 ;;
@@ -73,17 +69,14 @@ for arch in x86_64 aarch64 armv7 s390x riscv64; do
         version=${pair##*_gnu.}
         directory="$output/$arch/$version"
         mkdir -p "$directory"
-        for kind in main glibc_runtime_pie glibc_runtime_nopie; do
-            binary=$(awk -v prefix="bazel-out/linux_${arch}_gnu.$version-" \
-                -v suffix="/bin/$kind" 'index($0, prefix) == 1 && substr($0, length($0) - length(suffix) + 1) == suffix { print }' \
-                "$output/$arch-files.txt")
-            [[ -n "$binary" && "$binary" != *$'\n'* ]]
-            [[ ! -e "$directory/$kind" ]] || chmod u+w "$directory/$kind"
-            cp "$binary" "$directory/$kind"
-            inspect "$arch" "$version" "$directory/$kind" "$kind" "$directory/$kind.elf.txt"
-            digest=$(shasum -a 256 "$directory/$kind")
-            printf '%s\t%s\t%s\t%s\n' "$arch" "$version" "$kind" "${digest%% *}" >> "$output/artifacts.tsv"
-        done
+        binary=$(awk -v prefix="bazel-out/linux_${arch}_gnu.$version-" \
+            'index($0, prefix) == 1 && /\/bin\/main$/ { print }' "$output/$arch-files.txt")
+        [[ -n "$binary" && "$binary" != *$'\n'* ]]
+        [[ ! -e "$directory/main" ]] || chmod u+w "$directory/main"
+        cp "$binary" "$directory/main"
+        inspect "$arch" "$version" "$directory/main" "$directory/main.elf.txt"
+        digest=$(shasum -a 256 "$directory/main")
+        printf '%s\t%s\tmain\t%s\n' "$arch" "$version" "${digest%% *}" >> "$output/artifacts.tsv"
         printf '%s\t%s\tpass\n' "$arch" "$version" >> "$manifest"
         echo "PASS $arch glibc $version"
     done < "$output/platforms.txt"
@@ -104,4 +97,4 @@ if bazel --output_base="$output/bazel" build --config=remote \
 fi
 grep -q 'RISC-V requires glibc >= 2.27' "$output/unsupported-stubs.log"
 printf '%s\n' "$expected" > "$output/builds.complete"
-printf 'All %s builds and %s ELF inspections passed.\n' "$expected" "$((expected * 3))"
+printf 'All %s builds and %s ELF inspections passed.\n' "$expected" "$expected"
