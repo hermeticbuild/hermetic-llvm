@@ -77,6 +77,23 @@ If you need finer control, register individual toolchain targets. You can list t
 bazel query 'kind(toolchain, @llvm//toolchain:all)'
 ```
 
+### Linux UAPI header defaults
+
+Linux headers default to a version compatible with the target libc. A root
+module that needs newer UAPI declarations can choose a default independently
+of its libc version:
+
+```starlark
+kernel_headers = use_extension("@llvm//kernel/extension:kernel_headers.bzl", "kernel_headers")
+kernel_headers.configure(default_version = "6.6")
+use_repo(kernel_headers, "kernel_headers")
+```
+
+The version must be an indexed major.minor release. A target platform's
+explicit `@llvm//constraints/kernel/linux:<version>` constraint takes
+precedence. Without a `configure` tag, libc-derived defaults are unchanged.
+Only the root module may configure this default, and only once.
+
 ### Cgo compatibility
 To make the vanilla Go compiler work with a fully hermetic toolchain, we had to send some patches upstream. Only versions of Go >= 1.27 are supported out of the box.
 

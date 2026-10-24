@@ -1,0 +1,10 @@
+bazel_dep(name = "llvm", version = "")
+local_path_override(
+    module_name = "llvm",
+    path = "../../../..",
+)
+
+kernel_headers = use_extension("@llvm//kernel/extension:kernel_headers.bzl", "kernel_headers")
+use_repo(kernel_headers, "kernel_headers")
+
+kernel_headers.configure(default_version = "")
