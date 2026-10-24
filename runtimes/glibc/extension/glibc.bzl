@@ -115,7 +115,6 @@ _glibc_trampoline_repository = repository_rule(
 def _glibc_impl(module_ctx):
     """glibc sources and headers extension."""
 
-    source_build = module_ctx.read(Label("//3rd_party/libc/glibc:glibc.BUILD.bazel"))
     index = {}
     for mod in module_ctx.modules:
         for index in mod.tags.index:
@@ -129,7 +128,7 @@ def _glibc_impl(module_ctx):
             urls = _glibc_release_urls(version),
             strip_prefix = _glibc_release_strip_prefix(version),
             sha256 = GLIBC_RELEASE_INTEGRITY[version],
-            build_file_content = source_build.replace("@GLIBC_VERSION@", version),
+            build_file = "//3rd_party/libc/glibc:glibc.BUILD.bazel",
             patches = [
                 # This file is generated when compiling the glibc.
                 #
