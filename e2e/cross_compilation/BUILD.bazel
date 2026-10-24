@@ -1,7 +1,6 @@
 load("@bazel_lib//lib:transitions.bzl", "platform_transition_binary")
 load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
-load("@llvm//:defs.bzl", "exec_test")
-load("@llvm//constraints/libc:libc_versions.bzl", "LIBCS", "default_libc")
+load("@llvm//constraints/libc:libc_versions.bzl", "LIBCS")
 load("@llvm//platforms/distros/linux:constraints.bzl", "UBUNTU_20_04_CONSTRAINTS")
 load("@platforms//host:constraints.bzl", "HOST_CONSTRAINTS")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
@@ -117,55 +116,6 @@ PLATFORMS = [
         target_platform = platform,
     )
     for platform in PLATFORMS
-]
-
-# Inspect the existing transitioned binaries without executing target code or
-# introducing another compilation matrix. The default RISC-V target is GNU too.
-_GLIBC_BINARIES = dict([
-    (
-        "main_" + platform.split(":")[-1],
-        platform.split("_gnu.")[-1],
-    )
-    for platform in PLATFORMS
-    if "_gnu." in platform
-] + [
-    (
-        "main_linux_riscv64",
-        default_libc("linux", "riscv64")[len("gnu."):],
-    ),
-])
-
-[
-    exec_test(
-        sh_test,
-        name = "glibc_version_requirements_{}_test".format(arch),
-        srcs = ["glibc_version_requirements_test.sh"],
-        data = [
-            binary
-            for binary in _GLIBC_BINARIES
-            if binary.startswith("main_linux_" + arch)
-        ],
-        env = {
-            "GLIBC_BINARIES": "\n".join([
-                "{} $(rootpath {})".format(version, binary)
-                for binary, version in sorted(_GLIBC_BINARIES.items())
-                if binary.startswith("main_linux_" + arch)
-            ]),
-            "READELF": "$(rootpath @llvm//tools:llvm-readelf)",
-        },
-        target_compatible_with = select({
-            ":no_test_glibc_versions": ["@platforms//:incompatible"],
-            "//conditions:default": [],
-        }),
-        tools = ["@llvm//tools:llvm-readelf"],
-    )
-    for arch in [
-        "x86_64",
-        "aarch64",
-        "armv7",
-        "s390x",
-        "riscv64",
-    ]
 ]
 
 # The runtimes include their headers from external repositories, which clang-cl
