@@ -45,6 +45,7 @@ jobs:
               '3rd_party/libc/*.bzl' \
               'runtimes/musl/libc_musl_srcs_filegroup.bzl' \
               'runtimes/glibc/glibc_dynamic_linker.bzl' \
+              'runtimes/glibc/glibc_linker_script.bzl' \
               'runtimes/glibc/libc_aware_target_triple.bzl'
             echo 'EOF'
           } >> "$GITHUB_OUTPUT"
