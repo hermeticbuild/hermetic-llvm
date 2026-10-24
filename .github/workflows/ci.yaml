@@ -427,6 +427,15 @@ jobs:
             //tools/case_insensitive_vfs:test \
             //tools/def_file_generator:test
 
+      - name: Test root-module Linux header defaults
+        env:
+          USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
+        working-directory: e2e/kernel_headers
+        shell: bash
+        run: |
+          bazel --bazelrc=$GITHUB_WORKSPACE/.github/workflows/ci.bazelrc --bazelrc=$GITHUB_WORKSPACE/.bazelrc test //...
+          bash test_errors.sh --bazelrc=$GITHUB_WORKSPACE/.github/workflows/ci.bazelrc --bazelrc=$GITHUB_WORKSPACE/.bazelrc
+
       - name: Stop Bazel before saving repository cache
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.bazel-repository-cache.outputs.cache-hit != 'true'
         env:

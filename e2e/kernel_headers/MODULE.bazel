@@ -1,0 +1,15 @@
+bazel_dep(name = "bazel_lib", version = "3.2.2")
+bazel_dep(name = "bazel_skylib", version = "1.9.0")
+bazel_dep(name = "platforms", version = "1.1.0")
+bazel_dep(name = "rules_cc", version = "0.2.25")
+bazel_dep(name = "llvm", version = "")
+local_path_override(
+    module_name = "llvm",
+    path = "../../",
+)
+
+kernel_headers = use_extension("@llvm//kernel/extension:kernel_headers.bzl", "kernel_headers")
+kernel_headers.configure(default_version = "6.6")
+use_repo(kernel_headers, "kernel_headers")
+
+register_toolchains("@llvm//toolchain:all")
