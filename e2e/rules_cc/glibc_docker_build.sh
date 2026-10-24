@@ -22,7 +22,10 @@ else
 # configure-time version check changes; upstream runtime sources stay intact.
     sed -i 's/3\.79\* | 3\.\[89\]\*)/3.79* | 3.[89]* | 4.*)/' /source/configure
     cd /build
-    CFLAGS='-O2 -g0 -fcommon -fno-stack-protector' \
+    # Ubuntu GCC enables fortify by default even with older glibc's
+    # -Wp,-U_FORTIFY_SOURCE. Disable it at the compiler driver as well.
+    # Upstream fix: glibc 127cefd84dc551a43d0ac58b4619503d04869042 (BZ 31928).
+    CFLAGS='-O2 -g0 -fcommon -fno-stack-protector -U_FORTIFY_SOURCE' \
         /source/configure --prefix=/runtime --disable-werror --disable-nscd \
         CXX= > /out/configure.log 2>&1
     make -j"${BUILD_JOBS:-8}" > /out/make.log 2>&1
