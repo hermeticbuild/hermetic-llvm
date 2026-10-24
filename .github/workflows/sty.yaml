@@ -29,6 +29,7 @@ jobs:
             git ls-files -- \
               'constraints/*.bzl' \
               'platforms/*.bzl' \
+              '3rd_party/gcc/extension/make_select_gcc_repository_target.bzl' \
               '3rd_party/gcc/version.bzl' \
               '3rd_party/gcc/libstdcxx/*.m4.bzl' \
               '3rd_party/gcc/libstdcxx/configure.ac.bzl' \

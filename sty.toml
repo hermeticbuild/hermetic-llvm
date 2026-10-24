@@ -3,6 +3,7 @@ require-valid-suppressions = true
 strict-generic-narrowing = true
 
 [type-interfaces]
+"3rd_party/gcc/extension/make_select_gcc_repository_target.bzl" = "3rd_party/gcc/extension/make_select_gcc_repository_target.bzli"
 "3rd_party/gcc/libstdcxx/acinclude.m4.bzl" = "3rd_party/gcc/libstdcxx/acinclude.m4.bzli"
 "3rd_party/gcc/libstdcxx/autoconf/checks.bzl" = "3rd_party/gcc/libstdcxx/autoconf/checks.bzli"
 "3rd_party/gcc/libstdcxx/configure.ac.bzl" = "3rd_party/gcc/libstdcxx/configure.ac.bzli"
