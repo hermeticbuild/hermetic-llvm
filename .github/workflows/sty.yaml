@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
-      - name: Select platform and version implementations
+      - name: Select implementations
         id: files
         shell: bash
         run: |
@@ -30,6 +30,10 @@ jobs:
               'constraints/*.bzl' \
               'platforms/*.bzl' \
               '3rd_party/gcc/version.bzl' \
+              '3rd_party/gcc/libstdcxx/*.m4.bzl' \
+              '3rd_party/gcc/libstdcxx/configure.ac.bzl' \
+              '3rd_party/gcc/libstdcxx/gcc_config_checks.bzl' \
+              '3rd_party/gcc/libstdcxx/autoconf/checks.bzl' \
               '3rd_party/llvm-project/*/libcxx/*.bzl' \
               'tools/*.bzl' \
               'runtimes/glibc/glibc_dynamic_linker.bzl' \

@@ -1,0 +1,62 @@
+def _make_check(fields: object) -> str: ...
+def _language(language: str) -> str: ...
+
+def compile_check(
+    name: str,
+    source: str,
+    language: str = ...,
+    flags: Sequence[str] = ...,
+    defines_on_success: Collection[str] | None = ...,
+    probe_contexts: Collection[str] = ...,
+) -> str: ...
+
+def link_check(
+    name: str,
+    source: str,
+    language: str = ...,
+    compile_flags: Sequence[str] = ...,
+    link_flags: Sequence[str] = ...,
+    defines_on_success: Collection[str] | None = ...,
+    probe_contexts: Collection[str] = ...,
+) -> str: ...
+
+def policy_define(name: str, value: object = ..., defines_on_success: Collection[str] | None = ...) -> str: ...
+def policy_undef(name: str) -> str: ...
+def policy_string_define(name: str, value: str) -> str: ...
+def header_check(header: str) -> str: ...
+def ac_check_headers(headers: Collection[str]) -> list[str]: ...
+
+def function_link_check(
+    name: str,
+    header: object,
+    expression: object,
+    language: str = ...,
+    compile_flags: Sequence[str] = ...,
+    link_flags: Sequence[str] = ...,
+    probe_contexts: Collection[str] = ...,
+) -> str: ...
+
+def AC_TRY_COMPILE(
+    name: str,
+    code: str,
+    language: str = ...,
+    CFLAGS: Sequence[str] = ...,
+    CXXFLAGS: Sequence[str] = ...,
+    define: str | None = ...,
+    probe_contexts: Collection[str] = ...,
+) -> str: ...
+
+def AC_TRY_LINK(
+    name: str,
+    code: str,
+    language: str = ...,
+    CFLAGS: Sequence[str] = ...,
+    CXXFLAGS: Sequence[str] = ...,
+    LIBS: Sequence[str] = ...,
+    define: str | None = ...,
+    probe_contexts: Collection[str] = ...,
+) -> str: ...
+
+def AC_DEFINE(name: str, value: object = ...) -> str: ...
+def AC_FAIL(name: str) -> str: ...
+def AC_CHECK_HEADERS(headers: Collection[str]) -> list[str]: ...

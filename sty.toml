@@ -3,6 +3,12 @@ require-valid-suppressions = true
 strict-generic-narrowing = true
 
 [type-interfaces]
+"3rd_party/gcc/libstdcxx/acinclude.m4.bzl" = "3rd_party/gcc/libstdcxx/acinclude.m4.bzli"
+"3rd_party/gcc/libstdcxx/autoconf/checks.bzl" = "3rd_party/gcc/libstdcxx/autoconf/checks.bzli"
+"3rd_party/gcc/libstdcxx/configure.ac.bzl" = "3rd_party/gcc/libstdcxx/configure.ac.bzli"
+"3rd_party/gcc/libstdcxx/crossconfig.m4.bzl" = "3rd_party/gcc/libstdcxx/crossconfig.m4.bzli"
+"3rd_party/gcc/libstdcxx/gcc_config_checks.bzl" = "3rd_party/gcc/libstdcxx/gcc_config_checks.bzli"
+"3rd_party/gcc/libstdcxx/linkage.m4.bzl" = "3rd_party/gcc/libstdcxx/linkage.m4.bzli"
 "3rd_party/gcc/version.bzl" = "3rd_party/gcc/version.bzli"
 "constraints/libc/libc_versions.bzl" = "constraints/libc/libc_versions.bzli"
 "defs.bzl" = "defs.bzli"
