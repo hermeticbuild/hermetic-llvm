@@ -6,12 +6,6 @@ exports_files([
 ])
 
 bzl_library(
-    name = "llvm_project_common",
-    srcs = ["llvm_project_common.bzl"],
-    visibility = ["//:__subpackages__"],
-)
-
-bzl_library(
     name = "llvm_project_archive",
     srcs = ["llvm_project_archive.bzl"],
     visibility = ["//extensions:__pkg__"],
@@ -42,4 +36,10 @@ bzl_library(
     srcs = ["llvm_project_from_path.bzl"],
     visibility = ["//extensions:__pkg__"],
     deps = [":llvm_project_common"],
+)
+
+bzl_library(
+    name = "llvm_project_common",
+    srcs = ["llvm_project_common.bzl"],
+    visibility = ["//:__subpackages__"],
 )
