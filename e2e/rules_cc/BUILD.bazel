@@ -44,6 +44,7 @@ load(
 load(":bazel_version.bzl", "validate_static_library_compatible")
 load(":fdo_optimize_test.bzl", "cs_fdo_optimize_test", "fdo_optimize_test")
 load(":musl_header_generation_tests.bzl", "musl_header_generation_tests")
+load(":sanitizer_link_test.bzl", "sanitizer_link_tests")
 load(":thin_lto_features_test.bzl", "thin_lto_features_test")
 load(":windows_msvc_artifacts.bzl", "windows_msvc_artifacts")
 load(":windows_runtime_dynamic_libraries_test.bzl", "windows_runtime_dynamic_libraries_assertion")
@@ -105,6 +106,8 @@ _EXTERNAL_INCLUDE_PATHS_TEST_COMPATIBLE = (
 ) if bazel_features.cc.supports_starlarkified_toolchains else ["@platforms//:incompatible"]
 
 musl_header_generation_tests(name = "musl_header_generation_tests")
+
+sanitizer_link_tests(name = "sanitizer_link")
 
 # Analysis-only fixtures: their contents are never consumed by profile tools.
 write_file(
@@ -1168,7 +1171,10 @@ exec_test(
     name = "tsan_output_test",
     srcs = ["tsan_output_test.sh"],
     data = [":tsan_fail"],
-    env = {"BINARY": "$(rootpath :tsan_fail)"},
+    env = {
+        "BINARY": "$(rootpath :tsan_fail)",
+        "READELF": "$(rootpath @llvm//tools:llvm-readelf)",
+    },
     target_compatible_with = select({
         # firecracker + docker on arm64 is too restrictive.
         # macOS: the TSan dylib builds/links/loads, but the runtime crashes
@@ -1177,6 +1183,7 @@ exec_test(
         "@llvm//platforms/config:linux_x86_64": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
+    tools = ["@llvm//tools:llvm-readelf"],
 )
 
 asan_cc_binary(
