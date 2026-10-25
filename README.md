@@ -169,10 +169,11 @@ To target musl:
 ### GNU C Library (glibc) versions
 
 Compiling and linking dynamically against specific glibc versions is supported.
-By default, the earliest glibc version that supports your target is used (2.28 in most cases).
+The earliest supported version is 2.17 for x86_64, AArch64, ARMv7, and s390x,
+and 2.27 for RISC-V. The default is 2.28, except for RISC-V, which defaults to 2.33.
 
-To target a specific version, use:
-`--platforms @llvm//platforms:linux_x86_64_gnu.2.28`
+To select an older supported version explicitly, use:
+`--platforms=@llvm//platforms:linux_x86_64_gnu.2.17`
 
 Behind the scenes, code is compiled with headers for the selected glibc and linked against compatible stubs.
 
