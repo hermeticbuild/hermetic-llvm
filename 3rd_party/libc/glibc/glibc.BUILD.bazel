@@ -48,20 +48,13 @@ HDRS = glob(
 
 cc_runtime_stage0_library(
     name = "glibc_init",
-    # Before 2.28 this file included stdio headers only to obtain the same
-    # vestigial _IO_stdin_used value (0x20001).
-    srcs = ["@llvm//3rd_party/libc/glibc/csu:init-2.31.c"],
+    srcs = ["csu/init.c"],
     copts = [
-        # Normally, we would pass -nostdinc, but since we pass -nostdlibinc
-        # from the stage0 toolchain args regarless, having them both cause a
-        # warning about -nostdlibinc being ignored, so we duplicate the
-        # -nostdlibinc and add -nobuiltininc to avoid the warning.
-        #
-        # -nostdinc = -nostdlibinc -nobuiltininc
+        # Older releases need Clang's builtin headers for stddef.h.
         "-nostdlibinc",
-        "-nobuiltininc",
         "-fno-addrsig",
     ],
+    implementation_deps = [":gnu_libc_headers"],
     visibility = ["//visibility:public"],
 )
 
