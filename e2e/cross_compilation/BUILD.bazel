@@ -98,7 +98,7 @@ platform(
         "@platforms//cpu:x86_64",
         "@platforms//os:linux",
     ] + glibc_version_constraints("2.35") + musl_version_constraints("1.2"),
-    flags = ["--@llvm//config:preferred_libc=musl"],
+    flags = ["--@llvm//config/linux:libc_preference=musl,glibc"],
 )
 
 # TODO(cerisier): should the toolchain provide its own list ?

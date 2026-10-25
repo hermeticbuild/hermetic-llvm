@@ -180,26 +180,6 @@ def config_settings():
             },
         )
 
-    # The libc that Linux targets compile against if the target platform makes both glibc and musl
-    # available via @platforms_contrib//os/linux/libc constraints. Platforms that make only one of
-    # them available always use it, so this flag can't select a libc that a platform lacks.
-    #
-    # TODO: Use scope = "platform" once Bazel supports it, so that a value set via the flags of a
-    # platform doesn't carry over to other platforms that make both available.
-    string_flag(
-        name = "preferred_libc",
-        values = ["glibc", "musl"],
-        build_setting_default = "glibc",
-        scope = "target",
-    )
-
-    native.config_setting(
-        name = "preferred_libc_musl",
-        flag_values = {
-            ":preferred_libc": "musl",
-        },
-    )
-
     # This flag controls whether we compile and link with --sysroot=/dev/null
     # to ensure hermeticity.
     #

@@ -184,10 +184,11 @@ platform(
   older glibc versions available aren't supported.
 * musl: code is fully statically linked (no dynamic linker at all) against the
   latest version of musl, which is the only supported mode for now.
-* Both: `--@llvm//config:preferred_libc` chooses between them and defaults to
-  `glibc`. A platform can choose musl with
-  `flags = ["--@llvm//config:preferred_libc=musl"]`.
-* Neither: glibc 2.28 is used.
+* Both: `--@llvm//config/linux:libc_preference` ranks them and defaults to
+  `glibc,musl`. The first listed one that the platform makes available is used,
+  so `musl` alone fails for platforms that only make glibc available. Exec
+  configurations always use the default ranking.
+* Neither: the platform is treated as making both available, with glibc 2.28.
 
 `@platforms_contrib//host:native` and `@platforms_contrib//host:generic` declare
 the libc of the host, so builds for them run on the host.
@@ -196,8 +197,8 @@ The platforms in `@llvm//platforms`, e.g.
 `--platforms @llvm//platforms:linux_x86_64_gnu.2.28` or
 `--platforms @llvm//platforms:linux_aarch64_musl`, have these constraints as
 well as a `@llvm//constraints/libc` value. Such a value takes precedence over
-the platforms_contrib constraints. It remains supported, but new platforms
-should only use the platforms_contrib constraints.
+the platforms_contrib constraints and the flag above. It remains supported, but
+new platforms should only use the platforms_contrib constraints.
 
 To make code depend on the libc it's compiled against, `select()` on
 `@rules_cc//cc/libc:glibc` and `@rules_cc//cc/libc:musl`.

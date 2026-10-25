@@ -56,10 +56,14 @@ def declare_config_settings_libc_aware():
         visibility = ["//visibility:public"],
     )
 
+    # The settings for specific libcs also check the family so that they specialize the ones above.
     for glibc in GLIBCS:
         native.config_setting(
             name = glibc,
-            flag_values = {":target_libc": glibc},
+            flag_values = {
+                ":target_libc": glibc,
+                ":target_libc_family": "gnu",
+            },
             visibility = ["//visibility:public"],
         )
 
@@ -72,7 +76,10 @@ def declare_config_settings_libc_aware():
             native.config_setting(
                 name = "{}_{}_{}".format(target_os, target_cpu, libc),
                 constraint_values = constraint_values,
-                flag_values = {":target_libc": libc},
+                flag_values = {
+                    ":target_libc": libc,
+                    ":target_libc_family": libc.partition(".")[0],
+                },
                 visibility = ["//visibility:public"],
             )
 
