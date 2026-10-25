@@ -16,7 +16,7 @@ load(
     "weak_symbol_link_flags",
     "weak_symbols_in_sync_tests",
 )
-load("@llvm//constraints/libc:libc_versions.bzl", "LIBCS")
+load("@llvm//constraints/libc:libc_versions.bzl", "LIBCS", "glibc_supported")
 load("@llvm//platforms:common.bzl", "LIBC_SUPPORTED_TARGETS")
 load("@llvm//toolchain/args:llvm_target_triple.bzl", "LLVM_TARGET_TRIPLE")
 load("@llvm//toolchain/runtimes:cc_internal_symbolizer_object.bzl", "cc_internal_symbolizer_object")
@@ -1406,6 +1406,10 @@ _INTERNAL_SYMBOLIZER_CONSTRAINTS = [
     )
     for target_os, target_cpu in LIBC_SUPPORTED_TARGETS
     for libc in LIBCS
+    if not libc.startswith("gnu.") or glibc_supported(
+        target_cpu,
+        libc[4:],
+    )
 ]
 
 [
@@ -1428,6 +1432,10 @@ _INTERNAL_SYMBOLIZER_PLATFORMS = {
     )
     for target_os, target_cpu in LIBC_SUPPORTED_TARGETS
     for libc in LIBCS
+    if not libc.startswith("gnu.") or glibc_supported(
+        target_cpu,
+        libc[4:],
+    )
 }
 
 _INTERNAL_SYMBOLIZER_PLATFORMS.update({
