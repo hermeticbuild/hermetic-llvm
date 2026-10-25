@@ -1,0 +1,3 @@
+load(":libc_test.bzl", "libc_test_suite")
+
+libc_test_suite(name = "libc")

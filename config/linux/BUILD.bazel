@@ -1,0 +1,20 @@
+load("@bazel_skylib//rules:common_settings.bzl", "string_list_flag")
+
+package(default_visibility = ["//visibility:public"])
+
+# A ranking of the libcs that Linux targets compile against if the target platform makes more than
+# one of them available via @platforms_contrib//os/linux/libc constraints. The first listed one that
+# the platform makes available wins, preferring ones with a supported version, and it's an error if
+# there is none. Platforms without such constraints are treated as making all of them available,
+# with glibc 2.28.
+#
+# Exec configurations use the default so that a ranking that leaves out glibc doesn't break tools
+# built for glibc-only exec platforms.
+string_list_flag(
+    name = "libc_preference",
+    build_setting_default = [
+        "glibc",
+        "musl",
+    ],
+    scope = "target",
+)
