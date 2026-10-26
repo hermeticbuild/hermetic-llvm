@@ -12,16 +12,7 @@ bazel_dep(name = "bazel_lib", version = "3.0.0")
 ###############################################################################
 # Bazel Dependencies # https://registry.bazel.build/
 ###############################################################################
-bazel_dep(name = "rules_rust", version = "0.73.0")
-
-# Temporary merged commit: replace with a release before merging PR #819.
-# bazelbuild/rules_rust#4321 also includes the Windows GNU staticlib fixes.
-git_override(
-    module_name = "rules_rust",
-    commit = "f69123b80dfea2559d7cfb6c85143b05c9a82627",
-    remote = "https://github.com/bazelbuild/rules_rust.git",
-)
-
+bazel_dep(name = "rules_rust", version = "0.75.0")
 bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "rules_cc", version = "0.2.25")
