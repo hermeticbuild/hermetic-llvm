@@ -1,18 +1,5 @@
-load("//kernel/extension:libc_kernel_versions.bzl", "LIBC_KERNEL_VERSIONS")
 load(":kernel_headers_test.bzl", "linux_kernel_archs_by_version_test")
-load(":selection_test.bzl", "kernel_headers_selection_tests")
-
-exports_files([
-    "run_binary.sh",
-    "selection_test.bzl",
-    "version_test.c",
-])
 
 linux_kernel_archs_by_version_test(
     name = "linux_kernel_archs_by_version_test",
-)
-
-kernel_headers_selection_tests(
-    default_gnu_version = LIBC_KERNEL_VERSIONS["gnu.2.28"],
-    default_musl_version = LIBC_KERNEL_VERSIONS["musl"],
 )

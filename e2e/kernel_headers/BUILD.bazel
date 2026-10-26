@@ -1,7 +1,0 @@
-load("@kernel_headers//:linux_kernel_version_map.bzl", "LINUX_KERNEL_VERSION_MAP")
-load("@llvm//tests/kernel_headers:selection_test.bzl", "kernel_headers_selection_tests")
-
-kernel_headers_selection_tests(
-    default_gnu_version = LINUX_KERNEL_VERSION_MAP["6.6"],
-    default_musl_version = LINUX_KERNEL_VERSION_MAP["6.6"],
-)

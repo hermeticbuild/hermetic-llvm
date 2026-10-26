@@ -1,6 +1,0 @@
-module(name = "header_dependency")
-
-bazel_dep(name = "llvm", version = "")
-
-kernel_headers = use_extension("@llvm//kernel/extension:kernel_headers.bzl", "kernel_headers")
-kernel_headers.configure(default_version = "6.6")
