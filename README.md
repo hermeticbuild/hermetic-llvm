@@ -415,10 +415,11 @@ See https://github.com/hermeticbuild/hermetic-llvm/milestone/1
 - [kepler-formal](https://github.com/keplertech/kepler-formal)
 - [Xybrid](https://github.com/xybrid-ai/xybrid)
 - [Google XLS](https://github.com/google/xls)
+- [Google HEIR](https://github.com/google/heir)
+- [Google gVisor](https://github.com/google/gvisor)
 - [Drake](https://github.com/RobotLocomotion/drake)
 - [Internet Computer](https://github.com/dfinity/ic)
 - [rules_dotnet](https://github.com/bazel-contrib/rules_dotnet)
-- [Google HEIR](https://github.com/google/heir)
 - [SoundCloud](https://soundcloud.com)
 - [Datadog](https://github.com/DataDog/datadog-agent)
 
