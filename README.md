@@ -342,6 +342,15 @@ Important: Since this module uses prebuilt compiler archives by default. If you 
 
 This builds the compiler from source with the stage0 prebuilt seed, which is required when prebuilts for your exact version are not available.
 
+When building LLVM libraries or tools from source, the module includes the
+AArch64 and X86 backends. To target another architecture, request its backend:
+
+```starlark
+llvm.configure(targets = ["RISCV"])
+```
+
+Requests from all modules are combined. Prebuilt compilers are unaffected.
+
 ### Starlark LLVM version variables
 
 The `@llvm-project` repository exposes LLVM version variables:
