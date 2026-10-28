@@ -493,6 +493,8 @@ cc_library(
             "_CRTBLD",
             "_CRT_NONSTDC_NO_WARNINGS",
             "_CRT_SECURE_NO_WARNINGS",
+            # Keep consistent with the consumer stdio policy in
+            # //toolchain/args/windows/msvc:msvc_crt_compile_defines.
             "_CRT_STDIO_ISO_WIDE_SPECIFIERS",
         ],
         # The Itanium route builds libc++ against libc++abi. Defining this on
@@ -530,6 +532,15 @@ cc_runtime_stage0_static_library(
     deps = [
         ":libcxx",
     ],
+)
+
+copy_file(
+    # lld's MinGW auto-export excludes the runtime by its archive basename.
+    name = "libcxx.static.gnu_link_name",
+    src = "libcxx.static.stage0_asan_inheriting",
+    out = "libc++.a",
+    allow_symlink = True,
+    visibility = ["//visibility:public"],
 )
 
 copy_file(

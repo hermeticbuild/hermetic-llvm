@@ -4,20 +4,26 @@ load("//:directory.bzl", "directory_info")
 
 package(default_visibility = ["//visibility:public"])
 
-_MSVC_DYNAMIC_RUNTIME_LIBRARIES = [
+# These archives do not select a CRT mode. Their directives may request other
+# support archives or SDK libraries, so expose the complete native closure.
+_MSVC_COMMON_SUPPORT_LIBRARIES = [
+    "exe_initialize_mta.lib",
     "iso_stdio_wide_specifiers.lib",
+    "legacy_stdio_definitions.lib",
+    "legacy_stdio_wide_specifiers.lib",
+    "oldnames.lib",
+]
+
+_MSVC_DYNAMIC_RUNTIME_LIBRARIES = [
     "msvcprt.lib",
     "msvcrt.lib",
-    "oldnames.lib",
     "vcruntime.lib",
 ]
 
 _MSVC_STATIC_RUNTIME_LIBRARIES = [
-    "iso_stdio_wide_specifiers.lib",
     "libcmt.lib",
     "libcpmt.lib",
     "libvcruntime.lib",
-    "oldnames.lib",
 ]
 
 # Keep LLVM's COM compiler-support dependency separate from the Microsoft STL.
@@ -30,6 +36,7 @@ _MSVC_COM_SUPPORT_HEADERS = [
 ]
 
 _MSVC_COM_SUPPORT_LIBRARIES = [
+    "comsupp.lib",
     "comsuppw.lib",
 ]
 
@@ -152,6 +159,21 @@ copy_to_directory(
     }),
     include_external_repositories = ["**"],
     include_srcs_patterns = _MSVC_COM_SUPPORT_LIBRARIES,
+    root_paths = [
+        "**/lib/arm64",
+        "**/lib/x64",
+    ],
+)
+
+copy_to_directory(
+    name = "msvc_common_support_libraries",
+    srcs = select({
+        "//platforms/config:windows_aarch64_msvc": [":msvc_lib_arm64"],
+        "//platforms/config:windows_x86_64_msvc": [":msvc_lib_x64"],
+        "//conditions:default": [],
+    }),
+    include_external_repositories = ["**"],
+    include_srcs_patterns = _MSVC_COMMON_SUPPORT_LIBRARIES,
     root_paths = [
         "**/lib/arm64",
         "**/lib/x64",

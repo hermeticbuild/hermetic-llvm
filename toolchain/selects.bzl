@@ -57,8 +57,11 @@ def platform_cc_tool_map(exec_os, exec_cpu):
     # point at further aliases that use `select`, those will resolve according to the exec platform.
     # See https://github.com/bazelbuild/bazel/issues/27623#issuecomment-3529439585 for more details.
     return select({
+        "@platforms//os:uefi": Label(tool_repo + ":uefi_tools"),
         "@llvm//platforms/config:windows_x86_64_msvc": Label(tool_repo + ":tools_for_msvc_for_runtime"),
         "@llvm//platforms/config:windows_aarch64_msvc": Label(tool_repo + ":tools_for_msvc_for_runtime"),
+        "@llvm//platforms/config:windows_x86_64_mingw_compatible": Label(tool_repo + ":tools_for_mingw_for_runtime"),
+        "@llvm//platforms/config:windows_aarch64_mingw_compatible": Label(tool_repo + ":tools_for_mingw_for_runtime"),
         "@llvm//toolchain:linux_complete": Label(tool_repo + ":tools_with_interface_libraries"),
         "@llvm//toolchain:macos_complete_with_libtool": Label(tool_repo + ":tools_with_dsym_and_libtool"),
         "@llvm//toolchain:macos_complete": Label(tool_repo + ":tools_with_dsym"),

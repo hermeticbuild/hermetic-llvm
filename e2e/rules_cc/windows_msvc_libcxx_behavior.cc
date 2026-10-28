@@ -3,6 +3,7 @@
 #include <atomic>
 #include <condition_variable>
 #include <cstdlib>
+#include <cwchar>
 #include <exception>
 #include <filesystem>
 #include <locale>
@@ -45,6 +46,14 @@ void operator delete(void* allocation, std::size_t) noexcept {
 }
 
 int main() {
+  // ISO wide %s consumes a narrow string; native MSVC mode consumes wchar_t*.
+  // Pad and align the input so a wrong mode fails without reading past it.
+  alignas(wchar_t) const char narrow[8] = "wide";
+  wchar_t formatted[16];
+  if (std::swprintf(formatted, 16, L"%s:%d", narrow, 42) != 7 ||
+      std::wstring(formatted) != L"wide:42") {
+    return 8;
+  }
   if (windows_msvc_ordinary_add(20, 22) != 42 ||
       windows_msvc_alwayslink_marker() != 1 ||
       windows_msvc_library_filesystem() != 42 ||

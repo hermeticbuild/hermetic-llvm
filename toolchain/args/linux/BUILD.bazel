@@ -69,7 +69,16 @@ cc_args(
         "-internal-externc-isystem",
         "-Xclang",
         "{libc_headers_include_search_path}",
-    ],
+    ] + select({
+        # glibc 2.17 hides the C99 integer macros in C++ unless requested.
+        # Modern libc++ expects them unconditionally, as glibc >= 2.18 does.
+        "//constraints/libc:gnu.2.17": [
+            "-D__STDC_CONSTANT_MACROS",
+            "-D__STDC_LIMIT_MACROS",
+            "-D__STDC_FORMAT_MACROS",
+        ],
+        "//conditions:default": [],
+    }),
     data = [
         "//runtimes/glibc:glibc_headers_include_search_directory",
     ],

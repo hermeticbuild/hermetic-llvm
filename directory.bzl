@@ -46,8 +46,8 @@ def _headers_directory_impl(ctx):
 _headers_directory = rule(
     implementation = _headers_directory_impl,
     attrs = {
-        "directory": attr.label(),
-        "source_directory": attr.label(),
+        "directory": attr.label(mandatory = True),
+        "source_directory": attr.label(mandatory = True),
     },
     cfg = config.none(),
 )

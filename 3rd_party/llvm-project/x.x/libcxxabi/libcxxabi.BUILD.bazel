@@ -1,5 +1,6 @@
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@bazel_skylib//lib:selects.bzl", "selects")
+load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("@llvm//toolchain/runtimes:cc_runtime_shared_library.bzl", "cc_runtime_stage0_shared_library")
 load("@llvm//toolchain/runtimes:cc_runtime_static_library.bzl", "cc_runtime_stage0_static_library")
 load("@llvm-project//:vars.bzl", "LLVM_VERSION_MAJOR")
@@ -111,8 +112,11 @@ cc_library(
     ] if int(LLVM_VERSION_MAJOR) >= 22 else []) + [
         # DHAVE___CXA_THREAD_ATEXIT_IMPL (gnu but not linux and glibc >= 2.18)
     ] + select({
+        # Matches upstream's LIBCXXABI_HERMETIC_STATIC_LIBRARY so that DLLs
+        # don't export the statically linked runtime.
         ":windows_static": [
             "_LIBCXXABI_DISABLE_VISIBILITY_ANNOTATIONS",
+            "_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS=",
         ],
         "//conditions:default": [],
     }),
@@ -167,6 +171,15 @@ cc_runtime_stage0_static_library(
     deps = [
         ":libcxxabi",
     ],
+)
+
+copy_file(
+    # lld's MinGW auto-export excludes the runtime by its archive basename.
+    name = "libcxxabi.static.gnu_link_name",
+    src = "libcxxabi.static",
+    out = "libc++abi.a",
+    allow_symlink = True,
+    visibility = ["//visibility:public"],
 )
 
 cc_runtime_stage0_shared_library(

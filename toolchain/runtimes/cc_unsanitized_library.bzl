@@ -3,9 +3,13 @@ load("@rules_cc//cc/private:graph_node_info.bzl", "GraphNodeInfo")  # buildifier
 load("@rules_cc//cc/private/rules_impl:cc_shared_library.bzl", "graph_structure_aspect")  # buildifier: disable=bzl-visibility
 
 def _reset_sanitizers_impl(settings, attr):
+    features = settings["//command_line_option:features"]
+    if attr.disable_thin_lto:
+        features = [f for f in features if f not in ["thin_lto", "-thin_lto"]] + ["-thin_lto"]
     return {
         "//command_line_option:copt": settings["//command_line_option:copt"] + attr.copts,
         "//command_line_option:cxxopt": settings["//command_line_option:cxxopt"] + attr.cxxopts,
+        "//command_line_option:features": features,
         "//command_line_option:platforms": str(attr.platform) if attr.platform else settings["//command_line_option:platforms"],
         "@llvm-project//third-party:llvm_enable_zstd": False if attr.disable_zstd else settings["@llvm-project//third-party:llvm_enable_zstd"],
         "//config:ubsan": False,
@@ -43,12 +47,14 @@ _reset_sanitizers = transition(
     inputs = [
         "//command_line_option:copt",
         "//command_line_option:cxxopt",
+        "//command_line_option:features",
         "//command_line_option:platforms",
         "@llvm-project//third-party:llvm_enable_zstd",
     ],
     outputs = [
         "//command_line_option:copt",
         "//command_line_option:cxxopt",
+        "//command_line_option:features",
         "//command_line_option:platforms",
         "@llvm-project//third-party:llvm_enable_zstd",
         "//config:ubsan",
@@ -108,6 +114,9 @@ cc_unsanitized_library = rule(
             cfg = _reset_sanitizers,
             providers = [CcInfo],
             aspects = [graph_structure_aspect],
+        ),
+        "disable_thin_lto": attr.bool(
+            doc = "Disable the inherited ThinLTO feature for dep and its transitive dependencies. Full LTO requires -flto in copts.",
         ),
         "disable_zstd": attr.bool(),
         "platform": attr.label(),

@@ -13,6 +13,7 @@ def declare_toolchains(*, execs = SUPPORTED_EXECS, targets = SUPPORTED_TARGETS):
     """
     for (exec_os, exec_cpu) in execs:
         cc_toolchain_name = exec_os + "_" + exec_cpu + "_cc_toolchain"
+        msvc_case_overlays = [] if exec_os == "windows" else ["@llvm//toolchain/args/windows/msvc:case_overlays"]
 
         # Bind the directory beside the tool map, before another rule's exec
         # transition can select a different compiler installation.
@@ -34,17 +35,22 @@ def declare_toolchains(*, execs = SUPPORTED_EXECS, targets = SUPPORTED_TARGETS):
             name = cc_toolchain_name,
             tool_map = platform_cc_tool_map(exec_os, exec_cpu),
             module_map = platform_module_map(exec_os, exec_cpu),
+            # llvm-ar's default response-file parser follows the execution OS.
+            supports_gnu_param_file_quoting = exec_os in ["linux", "macos"],
             # Paths below describe the concrete execution filesystem. Keep
             # target semantics in //toolchain's ordered argument composition.
-            extra_args = [cc_toolchain_name + "_resource_directory_args"] + select({
+            extra_args = select({
+                "@platforms//os:uefi": [],
+                "//conditions:default": [cc_toolchain_name + "_resource_directory_args"],
+            }) + select({
                 "@llvm//platforms/config:windows_x86_64_msvc": [
                     "@llvm//toolchain/args/windows/msvc:normalized_default_libs_for_runtime",
                     "@llvm//toolchain/args/windows/msvc:normalized_sdk_compile_args",
-                ],
+                ] + msvc_case_overlays,
                 "@llvm//platforms/config:windows_aarch64_msvc": [
                     "@llvm//toolchain/args/windows/msvc:normalized_default_libs_for_runtime",
                     "@llvm//toolchain/args/windows/msvc:normalized_sdk_compile_args",
-                ],
+                ] + msvc_case_overlays,
                 "//conditions:default": [],
             }),
         )

@@ -4,9 +4,16 @@ load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 
 def _internal_symbolizer_libcxx_transition_impl(settings, attr):
+    # The symbolizer link uses --lto-emit-llvm to merge its inputs into one
+    # module before compiling a native object. With ThinLTO inputs, LLD's
+    # backend workers overwrite the same bitcode file, losing modules or
+    # corrupting the output. Disable the inherited feature so it cannot
+    # override the full-LTO -flto option in copts for these private runtimes.
+    features = [f for f in settings["//command_line_option:features"] if f not in ["thin_lto", "-thin_lto"]]
     return {
         "//command_line_option:copt": settings["//command_line_option:copt"] + attr.copts,
         "//command_line_option:cxxopt": settings["//command_line_option:cxxopt"] + attr.cxxopts,
+        "//command_line_option:features": features + ["-thin_lto"],
         "//command_line_option:platforms": str(attr.platform),
     }
 
@@ -15,11 +22,13 @@ _internal_symbolizer_libcxx_transition = transition(
     inputs = [
         "//command_line_option:copt",
         "//command_line_option:cxxopt",
+        "//command_line_option:features",
         "//command_line_option:platforms",
     ],
     outputs = [
         "//command_line_option:copt",
         "//command_line_option:cxxopt",
+        "//command_line_option:features",
         "//command_line_option:platforms",
     ],
 )

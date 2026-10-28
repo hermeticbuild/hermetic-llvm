@@ -164,7 +164,7 @@ for artifact_key in ${ARTIFACTS}; do
   esac
 
   case "${basename}" in
-    windows_msvc_libcxx_behavior_md.exe)
+    windows_msvc_libcxx_behavior_md.exe|windows_msvc_com_support_*_md.exe)
       imports="$("${LLVM_READOBJ}" --coff-imports "${artifact}")"
       grep -Fq "Name: VCRUNTIME140.dll" <<<"${imports}" ||
         fail "/MD behavior binary does not import VCRuntime"
@@ -172,7 +172,12 @@ for artifact_key in ${ARTIFACTS}; do
         fail "/MD behavior binary does not import UCRT"
       found_md=1
       ;;
-    windows_msvc_libcxx_behavior_mt.exe)
+    windows_msvc_legacy_stdio_md.exe)
+      imports="$("${LLVM_READOBJ}" --coff-imports "${artifact}")"
+      grep -Fq "Name: api-ms-win-crt-" <<<"${imports}" ||
+        fail "/MD legacy stdio binary does not import UCRT"
+      ;;
+    windows_msvc_libcxx_behavior_mt.exe|windows_msvc_com_support_*_mt.exe|windows_msvc_legacy_stdio_mt.exe)
       imports="$("${LLVM_READOBJ}" --coff-imports "${artifact}")"
       if grep -Eq "Name: (MSVCP140|VCRUNTIME140|api-ms-win-crt-)" <<<"${imports}"; then
         fail "/MT behavior binary imports a dynamic Microsoft runtime"

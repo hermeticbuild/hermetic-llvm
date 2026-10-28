@@ -25,12 +25,14 @@ exec_test(
     env = {
         "BIGOBJ_FIXTURE_WRITERS": "$(rootpaths bigobj_fixture_writer)",
         "CLANG_CLS": "$(rootpaths //tools:clang-cl)",
+        "CLANGXXS": "$(rootpaths //tools:clang++)",
         "DEF_FILE_GENERATORS": "$(rootpaths def_file_generator)",
         "LLVM_NMS": "$(rootpaths //tools:llvm-nm)",
     },
     tools = [
         "bigobj_fixture_writer",
         "def_file_generator",
+        "//tools:clang++",
         "//tools:clang-cl",
         "//tools:llvm-nm",
     ],

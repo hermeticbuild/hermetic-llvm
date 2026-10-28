@@ -18,3 +18,12 @@ common --remote_download_outputs=minimal
 # Allows tests to run bazelisk-in-bazel, since this is the cache folder used
 # docs: https://bazel.build/reference/command-line-reference#flag--test_env
 test --test_env=XDG_CACHE_HOME
+
+# Without an explicit heap limit, Bazel's JVM defaults to 25% of system RAM
+# (~4GB on 16GB GitHub Actions runners). On Bazel 8.x, which has higher
+# Skyframe memory overhead than Bazel 9+, analyzing ~300k configured targets
+# across transitioned platforms (such as in //tests/...) can hit that 4GB
+# ceiling, causing multi-minute GC pauses, remote execution gRPC timeouts, and
+# Java heap OutOfMemoryErrors. Since heavy build actions execute remotely on CI,
+# we can safely allocate a larger heap to the local Bazel server.
+startup --host_jvm_args=-Xmx8g

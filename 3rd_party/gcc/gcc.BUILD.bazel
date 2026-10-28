@@ -1047,6 +1047,11 @@ cc_library(
     ],
 )
 
+cc_runtime_stage0_static_library(
+    name = "libsupcxx.static",
+    deps = [":libsupcxx"],
+)
+
 filegroup(
     name = "libstdcxx_src_internal_headers",
     srcs = glob([
@@ -1389,8 +1394,8 @@ filegroup(
     ] + (_GCC_14_CXX11_CHAR8_SOURCES if gcc_version_at_least_for(GCC_VERSION, "14.0.0") else _GCC_LT_14_CXX11_CHAR8_SOURCES),
 )
 
-# These compatibility objects are linked with _GLIBCXX_SHARED for dynamic
-# libstdc++ builds, matching the conditions in src/c++11/Makefile.am.
+# These compatibility objects are compiled with _GLIBCXX_SHARED for dynamic
+# libstdc++ linkage and without it for static linkage, following src/Makefile.am.
 filegroup(
     name = "libstdcxx_cxx11_compat_sources",
     srcs = [
@@ -1478,6 +1483,9 @@ cc_library(
     copts = LIBSTDCXX_LIBRARY_COPTS + ["-std=gnu++98"],
     implementation_deps = LIBSTDCXX_LIBRARY_DEPS,
     includes = LIBSTDCXX_LIBRARY_INCLUDES,
+    # GCC's src/c++98/Makefile.am enables this in both linkage modes.
+    # list-aux-2.cc and list_associated-2.cc need it to emit legacy ABI symbols.
+    local_defines = ["_GLIBCXX_SHARED"],
 )
 
 cc_library(
@@ -1697,6 +1705,15 @@ cc_library(
         ":libstdcxx_cxx98_strstream",
         ":libsupcxx",
     ],
+)
+
+# GCC's src/Makefile.am also archives these source partitions, including
+# libsupc++. The static runtime transition selects the compatibility objects
+# without _GLIBCXX_SHARED; the archive must remain usable in shared libraries.
+cc_runtime_stage0_static_library(
+    name = "libstdcxx.static",
+    visibility = ["//visibility:public"],
+    deps = [":libstdcxx"],
 )
 
 # The shared library version and linker flags should stay aligned with GCC's

@@ -7,7 +7,7 @@ runtime closure, CRT selection, or COFF artifact naming.
 
 hermetic-llvm composes this package only into its fixed LLVM-family Windows
 route: clang-cl compiles and drives links, lld-link links PE/COFF outputs, and
-llvm-ar creates archives. The package therefore also contains the narrow
+llvm-lib creates archives. The package therefore also contains the narrow
 clang-cl-to-lld-link bridge needed to render structured libraries and COFF
 ThinLTO options. That bridge is intentional; it is not a promise that the
 driver, linker, or target format can be selected independently in this

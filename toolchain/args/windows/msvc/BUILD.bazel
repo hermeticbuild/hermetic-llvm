@@ -46,6 +46,19 @@ cc_args(
         "/D_CRT_NONSTDC_NO_WARNINGS",
         "/D_CRT_SECURE_NO_DEPRECATE",
         "/D_CRT_SECURE_NO_WARNINGS",
+        # Match libc++'s ISO wide-stdio semantics. MSVC C++ libraries built
+        # without this define can record an incompatible mode, even when
+        # they only use narrow stdio.
+        #
+        # Rust or other C bindings can also require sscanf's implementation
+        # from legacy_stdio_definitions.lib, which requests incompatible
+        # legacy wide-stdio support. Requesting that library alone need not
+        # cause a conflict: the linker must actually use its implementations.
+        #
+        # Keep consumers and libc++ configured consistently. Compatibility
+        # with native MSVC dependencies needs an explicit policy; removing
+        # this define only from consumers is insufficient.
+        # See https://github.com/hermeticbuild/hermetic-llvm/issues/871.
         "/D_CRT_STDIO_ISO_WIDE_SPECIFIERS",
     ],
 )
@@ -181,6 +194,19 @@ cc_args(
 )
 
 cc_args(
+    name = "common_support_library_search_paths",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    args = [
+        "/clang:-Xlinker",
+        "/clang:/LIBPATH:{common_support_library_search_path}",
+    ],
+    data = ["//runtimes/msvc:msvc_common_support_libraries"],
+    format = {
+        "common_support_library_search_path": "//runtimes/msvc:msvc_common_support_libraries",
+    },
+)
+
+cc_args(
     name = "dynamic_crt_library_search_paths",
     actions = [
         "@rules_cc//cc/toolchains/actions:link_actions",
@@ -217,29 +243,48 @@ cc_args(
     ],
     args = [
         "/clang:-Xlinker",
-        "/clang:/vfsoverlay:{sdk_library_case_overlay}",
-        "/clang:-Xlinker",
         "/clang:/LIBPATH:{winsdk_ucrt_lib}",
         "/clang:-Xlinker",
         "/clang:/LIBPATH:{winsdk_um_lib}",
     ],
     data = [
-        "//runtimes/msvc:msvc_sdk_library_case_overlay",
         "//runtimes/msvc:winsdk_ucrt_lib",
         "//runtimes/msvc:winsdk_um_lib",
     ],
     format = {
-        "sdk_library_case_overlay": "//runtimes/msvc:msvc_sdk_library_case_overlay",
         "winsdk_ucrt_lib": "//runtimes/msvc:winsdk_ucrt_lib",
         "winsdk_um_lib": "//runtimes/msvc:winsdk_um_lib",
     },
+)
+
+cc_args(
+    name = "sdk_library_case_overlay",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    args = [
+        "/clang:-Xlinker",
+        "/clang:/vfsoverlay:{sdk_library_case_overlay}",
+    ],
+    data = ["//runtimes/msvc:msvc_sdk_library_case_overlay"],
+    format = {
+        "sdk_library_case_overlay": "//runtimes/msvc:msvc_sdk_library_case_overlay",
+    },
+)
+
+# Only case-sensitive execution hosts need these views. Windows toolchains
+# must not depend on the generator they would use to build their own overlays.
+cc_args_list(
+    name = "case_overlays",
+    args = ["sdk_header_case_overlay"] + select({
+        "//toolchain:runtimes_none": [],
+        "//conditions:default": ["sdk_library_case_overlay"],
+    }),
+    visibility = ["//visibility:public"],
 )
 
 cc_args_list(
     name = "normalized_sdk_compile_args",
     args = [
         "windows_sdk_compile_defines",
-        "sdk_header_case_overlay",
         "sdk_includes",
     ],
     visibility = ["//visibility:public"],
@@ -249,6 +294,7 @@ cc_args_list(
     name = "normalized_default_libs",
     args = [
         "sdk_library_search_paths",
+        "common_support_library_search_paths",
         "com_support_library_search_paths",
     ] + select({
         "//toolchain/features/msvc:static_crt_config": ["static_crt_library_search_paths"],

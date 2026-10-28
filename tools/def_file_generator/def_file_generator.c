@@ -36,6 +36,15 @@ struct symbol_sets {
   struct string_list data_symbols;
 };
 
+/* Which linker's export-all rules to follow, selected via
+ * DEF_FILE_GENERATOR_ABI. */
+enum abi {
+  /* CMake's bindexplib, as used by link.exe and lld-link. */
+  ABI_MSVC,
+  /* lld's MinGW auto-export. */
+  ABI_GNU,
+};
+
 static void *xrealloc(void *pointer, size_t size) {
   void *result = realloc(pointer, size == 0 ? 1 : size);
   if (result == NULL) {
@@ -77,6 +86,31 @@ static void string_set_insert(struct string_list *set, const char *value) {
           (set->count - position) * sizeof(*set->values));
   set->values[position] = xstrdup(value);
   set->count++;
+}
+
+static int string_set_contains(const struct string_list *set,
+                               const char *value) {
+  size_t low = 0;
+  size_t high = set->count;
+  while (low < high) {
+    size_t middle = low + (high - low) / 2;
+    int comparison = strcmp(set->values[middle], value);
+    if (comparison == 0)
+      return 1;
+    if (comparison < 0) {
+      low = middle + 1;
+    } else {
+      high = middle;
+    }
+  }
+  return 0;
+}
+
+static void string_set_remove_at(struct string_list *set, size_t position) {
+  free(set->values[position]);
+  memmove(set->values + position, set->values + position + 1,
+          (set->count - position - 1) * sizeof(*set->values));
+  set->count--;
 }
 
 static void string_list_destroy(struct string_list *list) {
@@ -394,6 +428,119 @@ static void normalize_stdcall(char *symbol) {
   memmove(symbol, symbol + 1, strlen(symbol));
 }
 
+static int has_prefix(const char *value, const char *prefix) {
+  return strncmp(value, prefix, strlen(prefix)) == 0;
+}
+
+static int has_suffix(const char *value, const char *suffix) {
+  size_t value_length = strlen(value);
+  size_t suffix_length = strlen(suffix);
+  return value_length >= suffix_length &&
+         strcmp(value + value_length - suffix_length, suffix) == 0;
+}
+
+/* lld's excludeSymbols for targets other than i386, plus the ARM64EC ones, see
+ * https://github.com/llvm/llvm-project/blob/llvmorg-23.1.2/lld/COFF/MinGW.cpp#L110-L131
+ */
+static const char *const gnu_excluded_symbols[] = {
+    "__NULL_IMPORT_DESCRIPTOR",
+    "_pei386_runtime_relocator",
+    "do_pseudo_reloc",
+    "impure_ptr",
+    "_impure_ptr",
+    "_fmode",
+    "environ",
+    "__dso_handle",
+    "_load_config_used",
+    "DllMain",
+    "DllEntryPoint",
+    "DllMainCRTStartup",
+    "__chpe_metadata",
+};
+
+/* lld's excludeSymbolPrefixes, plus the ones for targets other than i386 and
+ * for ARM64EC, see
+ * https://github.com/llvm/llvm-project/blob/llvmorg-23.1.2/lld/COFF/MinGW.cpp#L69-L84
+ * and
+ * https://github.com/llvm/llvm-project/blob/llvmorg-23.1.2/lld/COFF/MinGW.cpp#L126-L130
+ */
+static const char *const gnu_excluded_prefixes[] = {
+    "__imp_",       "__IMPORT_DESCRIPTOR_",
+    "__nm_",        "__rtti_",
+    "__builtin_",   ".",
+    "__profc_",     "__profd_",
+    "__profvp_",    "_head_",
+    "__os_arm64x_",
+};
+
+/* lld's excludeSymbolSuffixes, see
+ * https://github.com/llvm/llvm-project/blob/llvmorg-23.1.2/lld/COFF/MinGW.cpp#L86-L89
+ */
+static const char *const gnu_excluded_suffixes[] = {
+    "_iname",
+    "_NULL_THUNK_DATA",
+};
+
+#define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
+
+static int gnu_excluded_symbol(const char *symbol) {
+  size_t index;
+  for (index = 0; index < ARRAY_SIZE(gnu_excluded_symbols); ++index) {
+    if (strcmp(symbol, gnu_excluded_symbols[index]) == 0)
+      return 1;
+  }
+  for (index = 0; index < ARRAY_SIZE(gnu_excluded_prefixes); ++index) {
+    if (has_prefix(symbol, gnu_excluded_prefixes[index]))
+      return 1;
+  }
+  for (index = 0; index < ARRAY_SIZE(gnu_excluded_suffixes); ++index) {
+    if (has_suffix(symbol, gnu_excluded_suffixes[index]))
+      return 1;
+  }
+  return 0;
+}
+
+/* Unlike bindexplib, lld's MinGW auto-export includes read-only data such as
+ * vtables and typeinfo, see
+ * https://github.com/llvm/llvm-project/blob/llvmorg-23.1.2/lld/COFF/MinGW.cpp#L145-L166
+ */
+static int add_gnu_nm_symbol(struct symbol_sets *sets, const char *symbol,
+                             char type) {
+  if (symbol[0] == '\0' || !isupper((unsigned char)type) || type == 'U' ||
+      type == 'V' || type == 'W' || type == 'I' || type == 'N' ||
+      gnu_excluded_symbol(symbol)) {
+    return 1;
+  }
+  if (type == 'T') {
+    string_set_insert(&sets->symbols, symbol);
+  } else {
+    string_set_insert(&sets->data_symbols, symbol);
+  }
+  return 1;
+}
+
+/* lld doesn't auto-export symbols whose __imp_ pointer is defined, see
+ * https://github.com/llvm/llvm-project/blob/llvmorg-23.1.2/lld/COFF/MinGW.cpp#L164-L166
+ */
+static void remove_imported_symbols(struct symbol_sets *sets,
+                                    const struct string_list *import_pointers) {
+  struct string_list *lists[2];
+  size_t list_index;
+  lists[0] = &sets->symbols;
+  lists[1] = &sets->data_symbols;
+  for (list_index = 0; list_index < 2; ++list_index) {
+    struct string_list *list = lists[list_index];
+    size_t index = 0;
+    while (index < list->count) {
+      if (string_set_contains(import_pointers, list->values[index])) {
+        string_set_remove_at(list, index);
+      } else {
+        ++index;
+      }
+    }
+  }
+}
+
 static int add_nm_symbol(struct symbol_sets *sets, char *symbol, char type) {
   normalize_stdcall(symbol);
   if (symbol[0] == '\0' || !isupper((unsigned char)type) || type == 'U' ||
@@ -413,7 +560,8 @@ static int add_nm_symbol(struct symbol_sets *sets, char *symbol, char type) {
   return 1;
 }
 
-static int parse_nm_output(struct symbol_sets *sets, FILE *output) {
+static int parse_nm_output(struct symbol_sets *sets, FILE *output, enum abi abi,
+                           struct string_list *import_pointers) {
   char *line;
   rewind(output);
   while ((line = read_line(output)) != NULL) {
@@ -450,7 +598,15 @@ static int parse_nm_output(struct symbol_sets *sets, FILE *output) {
     while (isspace((unsigned char)*space))
       ++space;
     type = *space;
-    add_nm_symbol(sets, symbol, type);
+    if (abi == ABI_GNU) {
+      if (isupper((unsigned char)type) && type != 'U' &&
+          has_prefix(symbol, "__imp_")) {
+        string_set_insert(import_pointers, symbol + strlen("__imp_"));
+      }
+      add_gnu_nm_symbol(sets, symbol, type);
+    } else {
+      add_nm_symbol(sets, symbol, type);
+    }
     free(line);
   }
   return !ferror(output);
@@ -458,7 +614,8 @@ static int parse_nm_output(struct symbol_sets *sets, FILE *output) {
 
 static int discover_object_symbols(struct symbol_sets *sets,
                                    const struct string_list *objects,
-                                   const char *response_path) {
+                                   const char *response_path, enum abi abi) {
+  struct string_list import_pointers = {0};
   FILE *response;
   FILE *output;
   char *response_argument;
@@ -508,7 +665,11 @@ static int discover_object_symbols(struct symbol_sets *sets,
     remove_file(response_path);
     return 0;
   }
-  success = run(arguments, output) && parse_nm_output(sets, output);
+  success = run(arguments, output) &&
+            parse_nm_output(sets, output, abi, &import_pointers);
+  if (success)
+    remove_imported_symbols(sets, &import_pointers);
+  string_list_destroy(&import_pointers);
   fclose(output);
   free(response_argument);
   if (remove_file(response_path) != 0) {
@@ -582,6 +743,22 @@ static int write_def_file(const struct symbol_sets *sets, const char *path,
   return 1;
 }
 
+static int parse_abi(enum abi *abi) {
+  const char *value = getenv("DEF_FILE_GENERATOR_ABI");
+  if (value == NULL || value[0] == '\0' || strcmp(value, "msvc") == 0) {
+    *abi = ABI_MSVC;
+  } else if (strcmp(value, "gnu") == 0) {
+    *abi = ABI_GNU;
+  } else {
+    fprintf(stderr,
+            "def_file_generator: DEF_FILE_GENERATOR_ABI must be 'msvc' or "
+            "'gnu', got '%s'\n",
+            value);
+    return 0;
+  }
+  return 1;
+}
+
 static void usage(void) {
   fprintf(stderr,
           "Usage: output_def_file dllname [objfile ...] [input_deffile ...] "
@@ -592,17 +769,20 @@ int main(int argc, char **argv) {
   struct symbol_sets sets = {0};
   struct string_list objects = {0};
   char *nm_response_path;
+  enum abi abi;
   int success;
 
   if (argc < 4) {
     usage();
     return 1;
   }
+  if (!parse_abi(&abi))
+    return 1;
   success = expand_inputs(&sets, &objects, argc, argv);
   nm_response_path = xrealloc(NULL, 64);
   snprintf(nm_response_path, 64, ".def-file-generator-%lu.rsp", process_id());
   if (success) {
-    success = discover_object_symbols(&sets, &objects, nm_response_path);
+    success = discover_object_symbols(&sets, &objects, nm_response_path, abi);
   }
   if (success)
     success = write_def_file(&sets, argv[1], argv[2]);

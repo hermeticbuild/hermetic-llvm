@@ -77,6 +77,23 @@ If you need finer control, register individual toolchain targets. You can list t
 bazel query 'kind(toolchain, @llvm//toolchain:all)'
 ```
 
+### Linux UAPI header defaults
+
+Linux headers default to a version compatible with the target libc. A root
+module that needs newer UAPI declarations can choose a default independently
+of its libc version:
+
+```starlark
+kernel_headers = use_extension("@llvm//kernel/extension:kernel_headers.bzl", "kernel_headers")
+kernel_headers.configure(default_version = "6.6")
+use_repo(kernel_headers, "kernel_headers")
+```
+
+The version must be an indexed major.minor release. A target platform's
+explicit `@llvm//constraints/kernel/linux:<version>` constraint takes
+precedence. Without a `configure` tag, libc-derived defaults are unchanged.
+Only the root module may configure this default, and only once.
+
 ### Cgo compatibility
 To make the vanilla Go compiler work with a fully hermetic toolchain, we had to send some patches upstream. Only versions of Go >= 1.27 are supported out of the box.
 
@@ -169,10 +186,11 @@ To target musl:
 ### GNU C Library (glibc) versions
 
 Compiling and linking dynamically against specific glibc versions is supported.
-By default, the earliest glibc version that supports your target is used (2.28 in most cases).
+The earliest supported version is 2.17 for x86_64, AArch64, ARMv7, and s390x,
+and 2.27 for RISC-V. The default is 2.28, except for RISC-V, which defaults to 2.33.
 
-To target a specific version, use:
-`--platforms @llvm//platforms:linux_x86_64_gnu.2.28`
+To select an older supported version explicitly, use:
+`--platforms=@llvm//platforms:linux_x86_64_gnu.2.17`
 
 Behind the scenes, code is compiled with headers for the selected glibc and linked against compatible stubs.
 
@@ -206,8 +224,9 @@ Then build with that platform:
 bazel build --platforms=//:linux_x86_64_gnu_2_28_libstdcxx_17_0_0 //:app
 ```
 
-libstdc++ is currently supported as a dynamic C++ runtime, so C++ binaries
-using it must set `linkstatic = False`:
+libstdc++ supports both static and dynamic C++ runtime linkage. With Bazel's
+default dynamic mode, `cc_binary` defaults `linkstatic` to `True`, which selects
+static libstdc++. To use the shared C++ runtime, set `linkstatic = False`:
 
 ```starlark
 cc_binary(
@@ -217,12 +236,11 @@ cc_binary(
 )
 ```
 
-With Bazel's default dynamic mode, `cc_binary` defaults `linkstatic` to `True`,
-which selects the toolchain's static C++ runtime path. For libstdc++ that would
-make static libstdc++ the default, which is not what most Linux users expect,
-and this toolchain intentionally supports libstdc++ through the dynamic runtime
-path. `--dynamic_mode=off` also forces the static runtime path, even when
-`linkstatic = False`, so it cannot be combined with libstdc++ support.
+`--dynamic_mode=off` forces the static runtime path, even when
+`linkstatic = False`. Static C++ runtime linkage does not require static libc
+linkage. The static archive includes the C++ ABI support from libsupc++ and uses
+rules_cc's PIC configuration. The default toolchain configuration produces
+position-independent code suitable for shared libraries.
 
 At the moment, libstdc++ support is limited to Linux glibc targets. Additional
 targets can be added based on demand; musl + libstdc++ is feasible too, even if
@@ -414,10 +432,13 @@ See https://github.com/hermeticbuild/hermetic-llvm/milestone/1
 - [kepler-formal](https://github.com/keplertech/kepler-formal)
 - [Xybrid](https://github.com/xybrid-ai/xybrid)
 - [Google XLS](https://github.com/google/xls)
+- [Google HEIR](https://github.com/google/heir)
+- [Google gVisor](https://github.com/google/gvisor)
 - [Drake](https://github.com/RobotLocomotion/drake)
 - [Internet Computer](https://github.com/dfinity/ic)
 - [rules_dotnet](https://github.com/bazel-contrib/rules_dotnet)
-- [Google HEIR](https://github.com/google/heir)
+- [SoundCloud](https://soundcloud.com)
+- [Datadog](https://github.com/DataDog/datadog-agent)
 
 ## Prior art
 

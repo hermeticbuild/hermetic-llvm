@@ -7,8 +7,15 @@ def cc_toolchain(
         name,
         tool_map,
         module_map = None,
-        extra_args = None):
+        extra_args = None,
+        supports_gnu_param_file_quoting = False):
     extra_args = extra_args or []
+
+    # Link and archive response files share a quoting feature. Enable the GNU
+    # protocol only when the execution tool map's archiver also accepts it.
+    gnu_quoting_features = [
+        "@llvm//toolchain/features:gcc_quoting_for_param_files",
+    ] if supports_gnu_param_file_quoting else []
     cc_feature_set(
         name = name + "_msvc_known_features",
         all_of = [
@@ -16,6 +23,8 @@ def cc_toolchain(
             "@llvm//toolchain/features:opt_stub",
             "@llvm//toolchain/features:dbg",
             "@llvm//toolchain/features:dbg_stub",
+            "@llvm//toolchain/features:fastbuild",
+            "@llvm//toolchain/features:fastbuild_stub",
             "@llvm//toolchain/features:archive_param_file",
             "@llvm//toolchain/features:copy_dynamic_libraries_to_binary",
             # The semantic feature is valid: clang-cl renders external include
@@ -52,6 +61,7 @@ def cc_toolchain(
         all_of = [
             "@llvm//toolchain/features:opt",
             "@llvm//toolchain/features:dbg",
+            "@llvm//toolchain/features:fastbuild",
             "@llvm//toolchain/features:archive_param_file",
             "@llvm//toolchain/features:static_link_cpp_runtimes",
             "@llvm//toolchain/features:targets_windows",
@@ -104,7 +114,10 @@ def cc_toolchain(
             "@llvm//toolchain/features/header_modules:all_header_module_features",
             "@llvm//toolchain/features:external_include_paths",
             "@llvm//toolchain/features:generate_pdb_file",
+            "@llvm//toolchain/features:fdo_instrument",
+            "@llvm//toolchain/features:cs_fdo_instrument",
             "@llvm//toolchain/features:fdo_optimize",
+            "@llvm//toolchain/features:cs_fdo_optimize",
             "@llvm//toolchain/features:skip_virtual_includes",
             "@rules_cc//cc/toolchains/args/thin_lto:feature",
             "@llvm//toolchain/features:thin_lto_linkstatic_tests_use_shared_nonlto_backends",
@@ -158,8 +171,10 @@ def cc_toolchain(
                 "@rules_cc//cc/toolchains/args/def_file:def_file",
                 "@llvm//toolchain/features:targets_windows",
             ],
+            "@platforms//os:uefi": [],
             "@platforms//os:none": [],
         }) + [
+            "@llvm//toolchain/features:hosted_dynamic_linker",
             "@llvm//toolchain/features:prefer_pic_for_opt_binaries",
             "@llvm//toolchain/features:sanitize_pwd",
             "@rules_cc//cc/toolchains/args/layering_check:module_maps",
@@ -170,6 +185,7 @@ def cc_toolchain(
             # This lets us properly order them before user_compile_flags and user_link_flags below.
             "@llvm//toolchain/features:opt",
             "@llvm//toolchain/features:dbg",
+            "@llvm//toolchain/features:fastbuild",
             "@llvm//toolchain/features:archive_param_file",
             "@llvm//toolchain/features:parse_headers_wrapper",
             "@llvm//toolchain/features/legacy:all_legacy_builtin_features",
@@ -195,7 +211,7 @@ def cc_toolchain(
 
     cc_feature_set(
         name = name + "_generic_selected_known_features",
-        all_of = select({
+        all_of = gnu_quoting_features + select({
             "@llvm//toolchain:runtimes_none": [
                 "@llvm//toolchain/features:external_include_paths",
                 "@llvm//toolchain/features:fdo_optimize",
@@ -217,7 +233,7 @@ def cc_toolchain(
 
     cc_feature_set(
         name = name + "_generic_selected_enabled_features",
-        all_of = select({
+        all_of = gnu_quoting_features + select({
             "@llvm//toolchain:runtimes_none": [name + "_generic_runtimes_only_enabled_features"],
             "@llvm//toolchain:runtimes_stage1": [name + "_generic_runtimes_only_enabled_features"],
             "@llvm//toolchain:runtimes_stage1_hosted": [name + "_generic_runtimes_only_enabled_features"],
@@ -228,6 +244,7 @@ def cc_toolchain(
     cc_feature_set(
         name = name + "_selected_known_features",
         all_of = select({
+            "@platforms//os:uefi": ["@llvm//toolchain/features/legacy:uefi_legacy_replacements"],
             "@llvm//constraints/windows/abi:msvc": [name + "_msvc_known_features"],
             "//conditions:default": [name + "_generic_selected_known_features"],
         }),
@@ -236,6 +253,7 @@ def cc_toolchain(
     cc_feature_set(
         name = name + "_selected_enabled_features",
         all_of = select({
+            "@platforms//os:uefi": ["@llvm//toolchain/features/legacy:uefi_legacy_replacements"],
             "@llvm//constraints/windows/abi:msvc": [name + "_msvc_selected_enabled_features"],
             "//conditions:default": [name + "_generic_selected_enabled_features"],
         }),
@@ -254,6 +272,7 @@ def cc_toolchain(
     native.alias(
         name = name + "_static_runtime_lib",
         actual = select({
+            "@platforms//os:uefi": "@llvm//runtimes:none",
             "@llvm//constraints/windows/abi:msvc": "@llvm//runtimes:none",
             "//conditions:default": name + "_generic_static_runtime_lib",
         }),
@@ -272,6 +291,7 @@ def cc_toolchain(
     native.alias(
         name = name + "_dynamic_runtime_lib",
         actual = select({
+            "@platforms//os:uefi": "@llvm//runtimes:none",
             "@llvm//constraints/windows/abi:msvc": "@llvm//runtimes:none",
             "//conditions:default": name + "_generic_dynamic_runtime_lib",
         }),
@@ -316,6 +336,7 @@ def cc_toolchain(
             ],
             "@platforms//os:windows": [
                 "@llvm//toolchain:windows_executable_pattern",
+                "@llvm//toolchain:windows_mingw_dynamic_library_pattern",
             ],
             "//conditions:default": [],
         }),
@@ -335,6 +356,7 @@ def cc_toolchain(
             "@llvm//platforms/config:windows_crt_msvcrt": "msvcrt",
             "@llvm//platforms/config:windows_crt_ucrt": "ucrt",
             "@platforms//os:macos": "macosx",
+            "@platforms//os:uefi": "none",
             "@platforms//os:none": "none",
         }, no_match_error = "Unsupported target libc"),
     )

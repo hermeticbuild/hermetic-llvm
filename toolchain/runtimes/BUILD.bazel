@@ -172,7 +172,7 @@ cc_args_list(
         ":hermetic_link_flags",
 
         # User paths retain their driver-defined position relative to builtins.
-        "@rules_cc//cc/toolchains/args/external_include_paths:external_include_paths",
+        "//toolchain:windows_external_include_paths",
 
         # Windows compiler, ABI, CRT, object-format, and C++ runtime semantics.
         "//toolchain/args/windows:crt_compile_defines",
@@ -210,6 +210,7 @@ cc_args_list(
 cc_args_list(
     name = "toolchain_args",
     args = select({
+        "@platforms//os:uefi": ["//toolchain:uefi_toolchain_args"],
         "@platforms//os:windows": [":windows_toolchain_args"],
         "//conditions:default": [":generic_toolchain_args"],
     }),

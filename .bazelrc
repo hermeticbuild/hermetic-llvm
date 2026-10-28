@@ -57,11 +57,18 @@ common:rust    --@rules_rust//rust/settings:experimental_use_sh_toolchain_for_bo
 
 common --bes_results_url=https://app.buildbuddy.io/invocation/
 common --bes_backend=grpcs://remote.buildbuddy.io
+# Local BuildBuddy API key: public, used for local development and by CI for
+# pull requests from forks. It is CAS-only: it may upload to the CAS (needed for
+# remote execution and the remote downloader) but not write to the action
+# cache, so builds using it only consume cached results. CI and release builds
+# override it with their own secret key via .github/actions/buildbuddy-api-key.
 common --remote_header=x-buildbuddy-api-key=4jtaxdhxtyu4ylxdEwI7
 common --bes_header=x-buildbuddy-api-key=4jtaxdhxtyu4ylxdEwI7
+common --noremote_upload_local_results
 common --experimental_remote_downloader=grpcs://remote.buildbuddy.io
 common --grpc_keepalive_time=30s
 common --remote_cache=grpcs://remote.buildbuddy.io
+common --remote_instance_name=5f6bca88-02e6-49de-8279-068ee7e27029
 common --remote_cache_compression
 common --remote_download_toplevel
 common --nobuild_runfile_links

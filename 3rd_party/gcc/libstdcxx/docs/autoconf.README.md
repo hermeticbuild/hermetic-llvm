@@ -134,7 +134,7 @@ they follow the staged header context used by this Bazel port.
 `GLIBCXX_CHECK_EXCEPTION_PTR_SYMVER`, `GLIBCXX_DEFAULT_ABI`,
 `GLIBCXX_ENABLE_LIBSTDCXX_DUAL_ABI`, and
 `GLIBCXX_ENABLE_LIBSTDCXX_VISIBILITY` cover ABI and shared-library policy.
-The Bazel port models the Linux GNU dynamic libstdc++ path.
+The Bazel port supports both static and dynamic libstdc++ linkage for Linux GNU.
 
 `GLIBCXX_CHECK_MATH_SUPPORT`, `GLIBCXX_CHECK_STDLIB_SUPPORT`,
 `GLIBCXX_CHECK_MATH_DECL`, `GLIBCXX_CHECK_MATH_DECLS`,

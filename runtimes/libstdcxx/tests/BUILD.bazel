@@ -1,11 +1,67 @@
 load("@bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
-load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
-load("//3rd_party/gcc:version.bzl", "GCC_VERSIONS", "gcc_repository_label", "gcc_target_suffix", "libstdcxx_constraint_value")
+load("//3rd_party/gcc:version.bzl", "GCC_VERSIONS", "gcc_repository_label", "gcc_target_suffix", "libstdcxx_constraint_value", "select_gcc_version_at_least")
 load("//constraints/libc:libc_versions.bzl", "default_libc")
 
 package(default_visibility = ["//visibility:public"])
+
+[
+    cc_library(
+        name = "filesystem_{}_abi{}".format(api, abi),
+        srcs = ["filesystem_test.cc"],
+        copts = [
+            "-std=c++17",
+            "-D_GLIBCXX_USE_CXX11_ABI={}".format(abi),
+            "-DFS_TEST_FUNCTION=filesystem_abi{}".format(abi),
+        ] + (["-DFS_TEST_EXPERIMENTAL"] if api == "ts" else []),
+        target_compatible_with = select({
+            "//constraints/cxxstdlib:libstdcxx": [],
+            "//conditions:default": ["@platforms//:incompatible"],
+        }) + [
+            "@platforms//os:linux",
+        ],
+    )
+    for api in [
+        "std",
+        "ts",
+    ]
+    for abi in [
+        0,
+        1,
+    ]
+]
+
+[
+    cc_test(
+        name = "filesystem_{}_test".format(api),
+        srcs = ["filesystem_test_main.cc"],
+        linkopts = ["-lstdc++fs"] if api == "ts" else select_gcc_version_at_least(
+            "9.0.0",
+            [],
+            ["-lstdc++fs"],
+        ),
+        linkstatic = False,
+        target_compatible_with = select({
+            "//constraints/cxxstdlib:libstdcxx": [],
+            "//conditions:default": ["@platforms//:incompatible"],
+        }) + [
+            "@platforms//os:linux",
+        ],
+        # GCC 8 and the TS use a static libstdc++fs archive. Pull in both ABI
+        # objects, old first, so duplicate _Dir definitions cannot hide.
+        deps = [":filesystem_{}_abi{}".format(api, abi) for abi in [
+            0,
+            1,
+        ]],
+    )
+    for api in [
+        "std",
+        "ts",
+    ]
+]
 
 sh_test(
     name = "shared_elf_test",
@@ -28,34 +84,31 @@ sh_test(
     }),
 )
 
-write_file(
-    name = "libstdcxx_link_smoke_src",
-    out = "libstdcxx_link_smoke.cc",
-    content = [
-        "#include <stdexcept>",
-        "#include <string>",
-        "#include <vector>",
-        "",
-        "int main() {",
-        "  std::vector<std::string> values;",
-        "  values.emplace_back(\"libstdc++\");",
-        "  if (values.front().size() != 9) throw std::runtime_error(\"bad string\");",
-        "  return 0;",
-        "}",
+filegroup(
+    name = "link_smoke_sources",
+    srcs = [
+        "libstdcxx_legacy_list.cc",
+        "libstdcxx_runtime.cc",
     ],
 )
 
-cc_binary(
-    name = "toolchain_dynamic_link_smoke",
-    srcs = [":libstdcxx_link_smoke_src"],
-    linkstatic = False,
-    target_compatible_with = select({
-        "//constraints/cxxstdlib:libstdcxx": [],
-        "//conditions:default": ["@platforms//:incompatible"],
-    }) + [
-        "@platforms//os:linux",
-    ],
-)
+[
+    cc_binary(
+        name = "toolchain_{}_link_smoke".format(linkage),
+        srcs = [":link_smoke_sources"],
+        linkstatic = linkage == "static",
+        target_compatible_with = select({
+            "//constraints/cxxstdlib:libstdcxx": [],
+            "//conditions:default": ["@platforms//:incompatible"],
+        }) + [
+            "@platforms//os:linux",
+        ],
+    )
+    for linkage in [
+        "static",
+        "dynamic",
+    ]
+]
 
 [
     platform(
@@ -79,16 +132,21 @@ cc_binary(
 
 [
     platform_transition_filegroup(
-        name = "toolchain_dynamic_link_smoke_linux_{}_{}".format(
+        name = "toolchain_{}_link_smoke_linux_{}_{}".format(
+            linkage,
             arch,
             gcc_target_suffix(version),
         ),
-        srcs = [":toolchain_dynamic_link_smoke"],
+        srcs = [":toolchain_{}_link_smoke".format(linkage)],
         target_platform = ":linux_{}_{}".format(
             arch,
             libstdcxx_constraint_value(version),
         ),
     )
+    for linkage in [
+        "static",
+        "dynamic",
+    ]
     for arch in [
         "x86_64",
         "aarch64",
@@ -98,28 +156,42 @@ cc_binary(
 
 [
     filegroup(
-        name = "toolchain_dynamic_link_smoke_linux_{}_all_versions".format(arch),
+        name = "toolchain_{}_link_smoke_linux_{}_all_versions".format(linkage, arch),
         srcs = [
-            ":toolchain_dynamic_link_smoke_linux_{}_{}".format(
+            ":toolchain_{}_link_smoke_linux_{}_{}".format(
+                linkage,
                 arch,
                 gcc_target_suffix(version),
             )
             for version in GCC_VERSIONS
         ],
     )
+    for linkage in [
+        "static",
+        "dynamic",
+    ]
     for arch in [
         "x86_64",
         "aarch64",
     ]
 ]
 
-filegroup(
-    name = "toolchain_dynamic_link_smoke_linux_all_versions",
-    srcs = [
-        ":toolchain_dynamic_link_smoke_linux_aarch64_all_versions",
-        ":toolchain_dynamic_link_smoke_linux_x86_64_all_versions",
-    ],
-)
+[
+    filegroup(
+        name = "toolchain_{}_link_smoke_linux_all_versions".format(linkage),
+        srcs = [
+            ":toolchain_{}_link_smoke_linux_{}_all_versions".format(linkage, arch)
+            for arch in [
+                "x86_64",
+                "aarch64",
+            ]
+        ],
+    )
+    for linkage in [
+        "static",
+        "dynamic",
+    ]
+]
 
 [
     platform_transition_filegroup(
@@ -163,4 +235,15 @@ filegroup(
         ":libstdcxx_cxx26_compile_linux_aarch64_all_versions",
         ":libstdcxx_cxx26_compile_linux_x86_64_all_versions",
     ],
+)
+
+cc_binary(
+    name = "libsupcxx_link_smoke",
+    srcs = ["libsupcxx_link_smoke.cc"],
+    linkopts = ["-lsupc++"],
+    linkstatic = False,
+    target_compatible_with = select({
+        "//constraints/cxxstdlib:libstdcxx": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }) + ["@platforms//os:linux"],
 )

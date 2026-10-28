@@ -249,6 +249,19 @@ profile_cc_binary, _profile_cc_binary_internal = with_cfg(cc_binary).set(
     }),
 ).build()
 
+fdo_instrument_cc_binary, _fdo_instrument_cc_binary_internal = with_cfg(cc_binary).set(
+    "fdo_instrument",
+    ".",
+).build()
+
+cs_fdo_instrument_cc_binary, _cs_fdo_instrument_cc_binary_internal = with_cfg(cc_binary).set(
+    "cs_fdo_instrument",
+    ".",
+).set(
+    "compilation_mode",
+    "opt",
+).build()
+
 opt_binary, _opt_binary_internal = with_cfg(cc_binary).set(
     "compilation_mode",
     "opt",

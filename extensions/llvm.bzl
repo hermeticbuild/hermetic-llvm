@@ -184,9 +184,9 @@ _llvm_version_repository = repository_rule(
 
 def _root_direct_deps(mctx):
     for module in mctx.modules:
-        if module.is_root and module.name == "llvm":
-            return ["llvm-project", "llvm_version"]
-    return ["llvm-project"]
+        if module.is_root:
+            return ["llvm-project", "llvm_version"] if module.name == "llvm" else ["llvm-project"]
+    return []
 
 def _get_llvm_version(mctx):
     module_selected_version = None
@@ -233,10 +233,11 @@ def _llvm_impl(mctx):
     )
     _create_llvm_project_repository(mctx, llvm_version, llvm_version_index, _get_llvm_targets(mctx))
 
+    root_deps = _root_direct_deps(mctx)
     return mctx.extension_metadata(
         reproducible = True,
-        root_module_direct_deps = _root_direct_deps(mctx),
-        root_module_direct_dev_deps = [],
+        root_module_direct_deps = root_deps if mctx.root_module_has_non_dev_dependency else [],
+        root_module_direct_dev_deps = [] if mctx.root_module_has_non_dev_dependency else root_deps,
     )
 
 _version_tag = tag_class(

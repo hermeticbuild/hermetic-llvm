@@ -82,10 +82,9 @@ alias(
     actual = "//runtimes/libstdcxx:libstdcxx_shared_soname",
 )
 
-genrule(
+alias(
     name = "libstdcxx_static_runtime_lib",
-    outs = ["unsupported/libstdc++.a"],
-    cmd = "echo 'libstdc++ is only supported as a dynamic C++ runtime; static libstdc++ is intentionally unsupported.' >&2; exit 1",
+    actual = "//runtimes/libstdcxx:libstdcxx.static",
 )
 
 genrule(
@@ -99,18 +98,21 @@ genrule(
 filegroup(
     name = "static_runtime_lib",
     srcs = select({
-        ":libstdcxx_linux": [":libstdcxx_static_runtime_lib"],
+        ":libstdcxx_linux": [
+            ":libstdcxx_static_runtime_lib",
+            "@llvm-project//libunwind:libunwind.static.gnu_link_name",
+        ],
         ":libstdcxx_windows": [":libstdcxx_windows_unsupported"],
         ":libcxx_windows_msvc_vcruntime": ["//runtimes/libcxx:libcxx.static"],
         ":libcxx_linux": [
-            "@llvm-project//libcxx:libcxx.static",
-            "@llvm-project//libcxxabi:libcxxabi.static",
-            "@llvm-project//libunwind:libunwind.static",
+            "@llvm-project//libcxx:libcxx.static.gnu_link_name",
+            "@llvm-project//libcxxabi:libcxxabi.static.gnu_link_name",
+            "@llvm-project//libunwind:libunwind.static.gnu_link_name",
         ],
         ":libcxx_windows": [
-            "@llvm-project//libcxx:libcxx.static",
-            "@llvm-project//libcxxabi:libcxxabi.static",
-            "@llvm-project//libunwind:libunwind.static",
+            "@llvm-project//libcxx:libcxx.static.gnu_link_name",
+            "@llvm-project//libcxxabi:libcxxabi.static.gnu_link_name",
+            "@llvm-project//libunwind:libunwind.static.gnu_link_name",
         ],
         "//conditions:default": [],
     }),

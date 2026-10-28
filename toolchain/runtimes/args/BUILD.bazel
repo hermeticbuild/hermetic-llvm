@@ -221,6 +221,8 @@ cc_args_list(
 
 cc_args_list(
     name = "profile_flags",
+    # Runtime construction uses only the compile half of the custom frontend
+    # profiling path, retaining its existing bootstrap link boundaries.
     args = select({
         "//config:profile_enabled": [
             "//toolchain/args:profile_compiler_flags",

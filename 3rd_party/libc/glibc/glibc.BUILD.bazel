@@ -41,22 +41,20 @@ HDRS = glob(
         "bits/link.h",
         "bits/wordsize.h",
     ],
+) + glob(
+    ["ports/sysdeps/**/*.h"],
+    allow_empty = True,
 )
 
 cc_runtime_stage0_library(
     name = "glibc_init",
     srcs = ["csu/init.c"],
     copts = [
-        # Normally, we would pass -nostdinc, but since we pass -nostdlibinc
-        # from the stage0 toolchain args regarless, having them both cause a
-        # warning about -nostdlibinc being ignored, so we duplicate the
-        # -nostdlibinc and add -nobuiltininc to avoid the warning.
-        #
-        # -nostdinc = -nostdlibinc -nobuiltininc
+        # Older releases need Clang's builtin headers for stddef.h.
         "-nostdlibinc",
-        "-nobuiltininc",
         "-fno-addrsig",
     ],
+    implementation_deps = [":gnu_libc_headers"],
     visibility = ["//visibility:public"],
 )
 
@@ -100,13 +98,29 @@ cc_runtime_stage0_library(
     srcs = select(
         {
             "@platforms//cpu:x86_64": ["sysdeps/x86_64/start.S"],
-            "@platforms//cpu:aarch64": ["sysdeps/aarch64/start.S"],
+            # ARM/AArch64 use ports/sysdeps/.../start.S for glibc 2.17-2.19;
+            # sysdeps/.../start.S applies from glibc 2.20 onward.
+            # buildifier: disable=constant-glob
+            "@platforms//cpu:aarch64": glob(
+                [
+                    "sysdeps/aarch64/start.S",
+                    "ports/sysdeps/aarch64/start.S",
+                ],
+                allow_empty = True,
+            ),
             "@platforms//cpu:riscv64": ["sysdeps/riscv/start.S"],
             "@platforms//cpu:s390x": glob(
                 ["sysdeps/s390/**/start.S"],
                 exclude = ["sysdeps/s390/s390-32/start.S"],
             ),
-            "@platforms//cpu:armv7": ["sysdeps/arm/start.S"],
+            # buildifier: disable=constant-glob
+            "@platforms//cpu:armv7": glob(
+                [
+                    "sysdeps/arm/start.S",
+                    "ports/sysdeps/arm/start.S",
+                ],
+                allow_empty = True,
+            ),
         },
         no_match_error = "Unsupported platform",
     ),
@@ -150,6 +164,9 @@ cc_runtime_stage0_library(
         "SHARED",
         "TOP_NAMESPACE=glibc",
         "ASSEMBLER",
+        # Configure probes removed in 2.23 and 2.20, respectively.
+        "HAVE_ASM_WEAK_DIRECTIVE=1",
+        "HAVE_ASM_CFI_DIRECTIVES=1",
     ],
     visibility = ["//visibility:public"],
 )
@@ -221,11 +238,20 @@ cc_runtime_stage0_library(
         "debug/stack_chk_fail_local.c",
     ] + selects.with_or({
         (
-            # For now the minimum version of all supported platforms is glibc 2.28
-            #
             # unconstrained defaults to 2.28
             # TODO(cerisier): Make a is_at_least_gnu_version macro helper.
             "@llvm//constraints/libc:unconstrained",
+            "@llvm//constraints/libc:gnu.2.17",
+            "@llvm//constraints/libc:gnu.2.18",
+            "@llvm//constraints/libc:gnu.2.19",
+            "@llvm//constraints/libc:gnu.2.20",
+            "@llvm//constraints/libc:gnu.2.21",
+            "@llvm//constraints/libc:gnu.2.22",
+            "@llvm//constraints/libc:gnu.2.23",
+            "@llvm//constraints/libc:gnu.2.24",
+            "@llvm//constraints/libc:gnu.2.25",
+            "@llvm//constraints/libc:gnu.2.26",
+            "@llvm//constraints/libc:gnu.2.27",
             "@llvm//constraints/libc:gnu.2.28",
             "@llvm//constraints/libc:gnu.2.29",
             "@llvm//constraints/libc:gnu.2.30",
@@ -308,6 +334,7 @@ cc_runtime_stage0_library(
         "PIC",
         "LIBC_NONSHARED=1",
         "TOP_NAMESPACE=glibc",
+        "HAVE_ASM_WEAK_DIRECTIVE=1",
     ] + select({
         "@platforms//cpu:x86_64": [
             "CAN_USE_REGISTER_ASM_EBP",

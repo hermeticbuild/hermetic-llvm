@@ -8,9 +8,11 @@ load("@platforms//host:constraints.bzl", "HOST_CONSTRAINTS")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_import.bzl", "cc_import")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_shared_library.bzl", "cc_shared_library")
 load("@rules_cc//cc:cc_static_library.bzl", "cc_static_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_cc//cc:objc_library.bzl", "objc_library")
+load("@rules_cc//cc/toolchains:fdo_profile.bzl", "fdo_profile")
 load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load(
@@ -18,9 +20,11 @@ load(
     "asan_cc_binary",
     "asan_cc_test",
     "cfi_cc_binary",
+    "cs_fdo_instrument_cc_binary",
     "dfsan_cc_binary",
     "external_include_paths_glibc_alias",
     "external_include_paths_glibc_headers_test",
+    "fdo_instrument_cc_binary",
     "fission_cc_binary",
     "fuzzer_asan_cc_binary",
     "fuzzer_cc_binary",
@@ -39,6 +43,7 @@ load(
     "xray_cc_binary",
 )
 load(":bazel_version.bzl", "validate_static_library_compatible")
+load(":fdo_optimize_test.bzl", "cs_fdo_optimize_test", "fdo_optimize_test")
 load(":header_search.bzl", "HEADER_PROBE_PYTHON_SETTINGS", "header_search")
 load(":musl_header_generation_tests.bzl", "musl_header_generation_tests")
 load(":thin_lto_features_test.bzl", "thin_lto_features_test")
@@ -78,6 +83,11 @@ config_setting(
     constraint_values = ["@llvm//constraints/windows/abi:msvc"],
 )
 
+_FDO_OPTIMIZE_COMPATIBLE = select({
+    "windows_msvc_abi": ["@platforms//:incompatible"],
+    "//conditions:default": [],
+})
+
 _WINDOWS_MSVC_RAW_ASSEMBLY_SRCS = select({
     "@llvm//platforms/config:windows_aarch64_msvc": ["windows_msvc_raw_assembly_aarch64.s"],
     "@llvm//platforms/config:windows_x86_64_msvc": ["windows_msvc_raw_assembly_x86_64.s"],
@@ -98,6 +108,55 @@ _EXTERNAL_INCLUDE_PATHS_TEST_COMPATIBLE = (
 
 musl_header_generation_tests(name = "musl_header_generation_tests")
 
+# Analysis-only fixtures: their contents are never consumed by profile tools.
+write_file(
+    name = "fdo_optimize_profile_data",
+    out = "fdo_optimize.profdata",
+    content = [],
+)
+
+write_file(
+    name = "cs_fdo_optimize_profile_data",
+    out = "cs_fdo_optimize.profdata",
+    content = [],
+)
+
+fdo_profile(
+    name = "fdo_optimize_profile",
+    profile = "fdo_optimize_profile_data",
+)
+
+fdo_profile(
+    name = "cs_fdo_optimize_profile",
+    profile = "cs_fdo_optimize_profile_data",
+)
+
+cc_binary(
+    name = "fdo_optimize_probe",
+    testonly = True,
+    srcs = ["profile_main.cc"],
+    features = ["thin_lto"],
+    tags = ["manual"],
+    target_compatible_with = _FDO_OPTIMIZE_COMPATIBLE,
+)
+
+# Like the ThinLTO feature tests below, Windows CI builds these analysis tests.
+fdo_optimize_test(
+    name = "fdo_optimize_test",
+    tags = ["analysis"],
+    target_compatible_with = _FDO_OPTIMIZE_COMPATIBLE,
+    target_under_test = "fdo_optimize_probe",
+)
+
+cs_fdo_optimize_test(
+    name = "cs_fdo_optimize_test",
+    tags = ["analysis"],
+    # Bazel 8's native profile merger requires legacy llvm-profdata tool-path
+    # wiring; this toolchain provides the action-based mapping used by Bazel 9+.
+    target_compatible_with = _FDO_OPTIMIZE_COMPATIBLE if bazel_features.cc.supports_starlarkified_toolchains else ["@platforms//:incompatible"],
+    target_under_test = "fdo_optimize_probe",
+)
+
 # The toolchain and this dependency both provide sanitizer headers. Sandboxed
 # compilation must not receive both compiler-rt/include and files beneath it.
 cc_library(
@@ -106,23 +165,23 @@ cc_library(
     deps = ["@llvm-project//compiler-rt:sanitizers_interface_headers"],
 )
 
-# Windows CI checks these features with bazel build because the Windows test
-# wrapper cannot execute the analysis test's generated shell script.
+# Windows CI builds these analysis tests until result-stub execution uses the
+# same execution platform as stub generation.
 thin_lto_features_test(
     name = "thin_lto_shared_backends_disabled_test",
-    tags = ["thin_lto_feature"],
+    tags = ["analysis"],
 )
 
 thin_lto_features_test(
     name = "thin_lto_linkstatic_tests_shared_backends_test",
     shared_backend_features = ["thin_lto_linkstatic_tests_use_shared_nonlto_backends"],
-    tags = ["thin_lto_feature"],
+    tags = ["analysis"],
 )
 
 thin_lto_features_test(
     name = "thin_lto_all_linkstatic_shared_backends_test",
     shared_backend_features = ["thin_lto_all_linkstatic_use_shared_nonlto_backends"],
-    tags = ["thin_lto_feature"],
+    tags = ["analysis"],
 )
 
 cc_library(
@@ -289,6 +348,67 @@ _DEFAULT_LIBSTDCXX_CONSTRAINT = "@llvm//constraints/cxxstdlib:" + libstdcxx_cons
     for name, cpu, libc in LIBSTDCXX_PLATFORMS
 ]
 
+# Keep these linkage checks opt-in until they are enabled in CI. Reuse the
+# runtime's ABI/exception fixture without duplicating the GCC version matrix.
+[
+    cc_binary(
+        name = "libstdcxx_runtime_{}".format(linkage),
+        testonly = True,
+        srcs = ["@llvm//runtimes/libstdcxx/tests:link_smoke_sources"],
+        linkstatic = linkage == "static",
+        tags = ["manual"],
+        target_compatible_with = select({
+            "@llvm//constraints/cxxstdlib:libstdcxx": [],
+            "//conditions:default": ["@platforms//:incompatible"],
+        }) + ["@platforms//os:linux"],
+    )
+    for linkage in [
+        "static",
+        "dynamic",
+    ]
+]
+
+[
+    platform_transition_filegroup(
+        name = "libstdcxx_runtime_{}_linux_x86_64".format(linkage),
+        testonly = True,
+        srcs = [":libstdcxx_runtime_{}".format(linkage)],
+        tags = ["manual"],
+        target_compatible_with = _LIBSTDCXX_E2E_TARGET_COMPATIBLE_WITH,
+        target_platform = ":linux_x86_64_libstdcxx",
+    )
+    for linkage in [
+        "static",
+        "dynamic",
+    ]
+]
+
+[
+    exec_test(
+        sh_test,
+        name = "libstdcxx_runtime_{}_test".format(linkage),
+        srcs = ["libstdcxx_runtime_test.sh"],
+        data = [
+            ":libstdcxx_runtime_{}_linux_x86_64".format(linkage),
+            "@llvm//tools:llvm-readelf",
+        ],
+        env = {
+            "BINARY": "$(rootpath :libstdcxx_runtime_{}_linux_x86_64)".format(linkage),
+            "LINKAGE": linkage,
+            "READELF": "$(rootpath @llvm//tools:llvm-readelf)",
+        },
+        tags = ["manual"],
+        target_compatible_with = [
+            "@platforms//cpu:x86_64",
+            "@platforms//os:linux",
+        ],
+    )
+    for linkage in [
+        "static",
+        "dynamic",
+    ]
+]
+
 platform_transition_filegroup(
     name = "libstdcxx_main_dynamic_linux_x86_64",
     srcs = [":libstdcxx_main_dynamic"],
@@ -419,6 +539,44 @@ cc_library(
         "md",
         "mt",
         "debug",
+    ]
+]
+
+[
+    cc_test(
+        name = "windows_msvc_com_support_" + charset + "_" + crt,
+        srcs = ["windows_msvc_com_support.cc"],
+        local_defines = [
+            "UNICODE",
+            "_UNICODE",
+        ] if charset == "unicode" else [],
+        target_compatible_with = [
+            "@llvm//constraints/windows/abi:msvc",
+            "@platforms//os:windows",
+        ],
+    )
+    for charset in [
+        "ansi",
+        "unicode",
+    ]
+    for crt in [
+        "md",
+        "mt",
+    ]
+]
+
+[
+    cc_test(
+        name = "windows_msvc_legacy_stdio_" + crt,
+        srcs = ["windows_msvc_legacy_stdio.c"],
+        target_compatible_with = [
+            "@llvm//constraints/windows/abi:msvc",
+            "@platforms//os:windows",
+        ],
+    )
+    for crt in [
+        "md",
+        "mt",
     ]
 ]
 
@@ -793,10 +951,7 @@ sh_test(
 external_include_paths_glibc_alias(
     name = "external_include_paths_glibc_start",
     # buildifier: disable=canonical-repository
-    actual = select({
-        "@platforms//cpu:aarch64": "@@llvm++glibc+glibc_aarch64-linux-gnu.2.34//:glibc_start",
-        "@platforms//cpu:x86_64": "@@llvm++glibc+glibc_x86_64-linux-gnu.2.34//:glibc_start",
-    }),
+    actual = "@@llvm++glibc+glibc_2.34//:glibc_start",
     # buildifier: enable=canonical-repository
     tags = ["manual"],
     target_compatible_with = _EXTERNAL_INCLUDE_PATHS_TEST_COMPATIBLE,
@@ -1404,6 +1559,64 @@ exec_test(
     }),
 )
 
+fdo_instrument_cc_binary(
+    name = "fdo_instrument_main",
+    srcs = ["profile_main.cc"],
+    target_compatible_with = select({
+        "@platforms//os:linux": [],
+        "@platforms//os:macos": [],
+        "@platforms//os:windows": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)
+
+sh_test(
+    name = "fdo_instrument_output_test",
+    srcs = ["profile_output_test.sh"],
+    data = [":fdo_instrument_main"],
+    env = {
+        "BINARY": "$(rootpath :fdo_instrument_main)",
+    },
+    env_inherit = ["PATH"],
+    exec_compatible_with = HOST_CONSTRAINTS,
+    tags = ["no-remote"],
+    target_compatible_with = select({
+        "@platforms//os:linux": [],
+        "@platforms//os:macos": [],
+        "@platforms//os:windows": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)
+
+cs_fdo_instrument_cc_binary(
+    name = "cs_fdo_instrument_main",
+    srcs = ["profile_main.cc"],
+    target_compatible_with = select({
+        "@platforms//os:linux": [],
+        "@platforms//os:macos": [],
+        "@platforms//os:windows": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)
+
+sh_test(
+    name = "cs_fdo_instrument_output_test",
+    srcs = ["profile_output_test.sh"],
+    data = [":cs_fdo_instrument_main"],
+    env = {
+        "BINARY": "$(rootpath :cs_fdo_instrument_main)",
+    },
+    env_inherit = ["PATH"],
+    exec_compatible_with = HOST_CONSTRAINTS,
+    tags = ["no-remote"],
+    target_compatible_with = select({
+        "@platforms//os:linux": [],
+        "@platforms//os:macos": [],
+        "@platforms//os:windows": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)
+
 sh_test(
     name = "profile_output_test",
     srcs = ["profile_output_test.sh"],
@@ -1429,6 +1642,105 @@ cc_library(
     name = "coverage_lib",
     srcs = ["coverage_lib.cc"],
     hdrs = ["coverage_lib.h"],
+)
+
+cc_library(
+    name = "shared_library_probe",
+    srcs = ["shared_library_probe.c"],
+    hdrs = ["shared_library_probe.h"],
+    local_defines = ["SHARED_LIBRARY_BUILD"],
+)
+
+filegroup(
+    name = "shared_library_dynamic_outputs",
+    srcs = ["shared_library_probe"],
+    output_group = "dynamic_library",
+)
+
+filegroup(
+    name = "shared_library_outputs",
+    # Windows cc_library default outputs omit DLLs; use the native output group.
+    srcs = ["shared_library_probe"] + select({
+        "@platforms//os:windows": ["shared_library_dynamic_outputs"],
+        "//conditions:default": [],
+    }),
+)
+
+# Inspect real link artifacts without executing foreign target code. Musl is
+# omitted until its shared libc and loader are wired into the consumer path;
+# archive-only output is an implementation gap, not a permanent musl contract.
+# MSVC retains its existing support and separately opted-in CI coverage.
+_SHARED_LIBRARY_PLATFORMS = [
+    "{}_{}".format(os, arch)
+    for os in [
+        "linux",
+        "macos",
+        "windows",
+    ]
+    for arch in [
+        "x86_64",
+        "aarch64",
+    ]
+]
+
+[
+    platform_transition_filegroup(
+        name = "shared_library_outputs_" + platform,
+        srcs = ["shared_library_outputs"],
+        target_platform = "@llvm//platforms:" + platform,
+    )
+    for platform in _SHARED_LIBRARY_PLATFORMS
+]
+
+[
+    sh_test(
+        name = "cc_library_{}_outputs_test".format(platform),
+        srcs = ["cc_library_outputs_test.sh"],
+        data = ["shared_library_outputs_" + platform],
+        env = {
+            "EXPECT_SHARED": "no" if platform.startswith("macos_") and not bazel_features.cc.supports_starlarkified_toolchains else "yes",
+            "LIBRARY_OUTPUTS": "$(rootpaths :shared_library_outputs_{})".format(platform),
+        },
+        target_compatible_with = ["@platforms//os:linux"],
+    )
+    for platform in _SHARED_LIBRARY_PLATFORMS
+]
+
+cc_test(
+    name = "shared_library_consumer_test",
+    srcs = ["shared_library_consumer.c"],
+    exec_properties = select({
+        "@platforms//os:windows": {"test.no-remote": "1"},
+        "//conditions:default": {},
+    }),
+    linkstatic = False,
+    target_compatible_with = select({
+        "@llvm//platforms/config:musl": ["@platforms//:incompatible"],
+        "@platforms//os:macos": [] if bazel_features.cc.supports_starlarkified_toolchains else ["@platforms//:incompatible"],
+        "@platforms//os:uefi": ["@platforms//:incompatible"],
+        "@platforms//os:none": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+    deps = ["shared_library_probe"],
+)
+
+cc_library(
+    name = "static_library_probe",
+    srcs = ["shared_library_probe.c"],
+    hdrs = ["shared_library_probe.h"],
+    linkstatic = True,
+    local_defines = ["SHARED_LIBRARY_BUILD"],
+)
+
+sh_test(
+    name = "cc_library_linkstatic_outputs_test",
+    srcs = ["cc_library_outputs_test.sh"],
+    data = ["static_library_probe"],
+    env = {
+        "EXPECT_SHARED": "no",
+        "LIBRARY_OUTPUTS": "$(rootpaths :static_library_probe)",
+    },
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 cc_test(
@@ -1494,7 +1806,10 @@ platform(
 )
 
 _WINDOWS_MSVC_MD_ARTIFACTS = [
+    "windows_msvc_com_support_ansi_md",
+    "windows_msvc_com_support_unicode_md",
     "windows_msvc_libcxx_behavior_md",
+    "windows_msvc_legacy_stdio_md",
     "windows_msvc_libcxx_behavior_thinlto",
     "windows_msvc_libcxx_behavior_debug",
     "windows_msvc_libcxx_behavior_debug_pdb",
@@ -1512,7 +1827,10 @@ _WINDOWS_MSVC_MD_ARTIFACTS = [
 ]
 
 _WINDOWS_MSVC_MT_ARTIFACTS = [
+    "windows_msvc_com_support_ansi_mt",
+    "windows_msvc_com_support_unicode_mt",
     "windows_msvc_libcxx_behavior_mt",
+    "windows_msvc_legacy_stdio_mt",
 ]
 
 [
@@ -1699,3 +2017,57 @@ header_search(
         "none_wasm64",
     ]
 ]
+
+[
+    platform_transition_filegroup(
+        name = "glibc_2_39_" + lib + "_compat_stubs",
+        srcs = ["@llvm//runtimes/glibc:lib" + lib + ".s"],
+        target_platform = "@llvm//platforms:linux_x86_64_gnu.2.39",
+    )
+    for lib in [
+        "pthread",
+        "dl",
+        "c",
+    ]
+]
+
+exec_test(
+    sh_test,
+    name = "glibc_merged_libraries_compat_test",
+    srcs = ["glibc_merged_libraries_compat_test.sh"],
+    args = [
+        "$(rootpath :glibc_2_39_pthread_compat_stubs)",
+        "$(rootpath :glibc_2_39_dl_compat_stubs)",
+        "$(rootpath :glibc_2_39_c_compat_stubs)",
+    ],
+    data = [
+        ":glibc_2_39_c_compat_stubs",
+        ":glibc_2_39_dl_compat_stubs",
+        ":glibc_2_39_pthread_compat_stubs",
+    ],
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+)
+
+cc_library(
+    name = "cxx_shared_library_lib",
+    srcs = ["cxx_shared_library.cc"],
+    hdrs = ["cxx_shared_library.h"],
+    local_defines = ["CXX_SHARED_LIBRARY_IMPLEMENTATION"],
+)
+
+cc_shared_library(
+    name = "cxx_shared_library",
+    deps = [":cxx_shared_library_lib"],
+)
+
+cc_test(
+    name = "cxx_shared_library_test",
+    srcs = ["cxx_shared_library_test.cc"],
+    dynamic_deps = [":cxx_shared_library"],
+    # The remote executors only run Linux.
+    exec_properties = {"test.no-remote": "1"},
+    deps = [":cxx_shared_library_lib"],
+)

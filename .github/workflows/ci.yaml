@@ -14,6 +14,12 @@ concurrency:
   # See https://docs.github.com/en/actions/using-jobs/using-concurrency and https://docs.github.com/en/actions/learn-github-actions/contexts for more info.
   group: concurrency-group::${{ github.workflow }}::${{ github.event.pull_request.number > 0 && format('pr-{0}', github.event.pull_request.number) || github.ref_name }}${{ github.ref_name == 'main' && format('::{0}', github.run_id) || ''}}
   cancel-in-progress: ${{ github.ref_name != 'main' }}
+# Jobs run in the `ci` environment only on main. BUILDBUDDY_CI_API_KEY is a
+# secret of that environment, whose deployment branch policy only allows main,
+# so only reviewed and merged code can write to the remote cache that local
+# builds read. Everything else uses the local key from .bazelrc. The api-key
+# inputs repeat the condition so that a repository or organization secret of
+# the same name is never used outside of main.
 jobs:
   test:
     strategy:
@@ -28,13 +34,15 @@ jobs:
           - "e2e/rules_rust"
           - "e2e/rules_rs"
           - "e2e/cross_compilation"
+          - "e2e/uefi"
           - "examples/custom_targets"
         include:
           # Path mapping requires Bazel 9+.
           - bazel_version: last_rc
             folder: "e2e/rules_cc"
-            extra_flags: "--experimental_output_paths=strip"
+            extra_flags: "--experimental_output_paths=strip --config=cpp_path_mapping"
     runs-on: ${{ matrix.os }}
+    environment: ${{ github.ref == 'refs/heads/main' && 'ci' || '' }}
 
     # Configure a human readable name for each job
     name: Test ${{ matrix.folder }} with Bazel ${{ matrix.bazel_version }} on ${{ matrix.os }}
@@ -42,12 +50,16 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - uses: ./.github/actions/buildbuddy-api-key
+        with:
+          api-key: ${{ github.ref == 'refs/heads/main' && secrets.BUILDBUDDY_CI_API_KEY || '' }}
+
       # Pull requests restore dependency caches published by main. PR-scoped caches can
       # only be reused by reruns of the same PR, so they are not saved here.
       - name: Restore Bazel repository cache
         if: matrix.folder != 'e2e/cross_compilation'
         id: bazel-repository-cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cache/bazel-repo
@@ -76,8 +88,8 @@ jobs:
             ${{ matrix.extra_flags }} \
             //...
 
-          # The transitioned cross-compilation binaries are not tests, so
-          # `bazel test //...` does not build them. Exercise both MSVC target
+          # The MSVC cross-compilation binaries are tagged manual, so
+          # `bazel test //...` excludes them. Exercise both MSVC target
           # architectures in the existing cross-compilation jobs without
           # adding a dedicated lane or executing the resulting PE files.
           if [[ "${{ matrix.folder }}" == "e2e/cross_compilation" && "${{ matrix.bazel_version }}" == "last_rc" ]]; then
@@ -89,8 +101,26 @@ jobs:
               --repo_env=BAZEL_MSVC_RUNTIME_VISUAL_STUDIO_EULA=1 \
               --repo_env=BAZEL_WINDOWS_SDK_EULA=1 \
               //:main_windows_x86_64_msvc \
-              //:main_windows_aarch64_msvc
+              //:main_windows_aarch64_msvc \
+              //:main_windows_x86_64_msvc_external_include_paths \
+              //:main_windows_aarch64_msvc_external_include_paths
           fi
+
+      # The tests above opt C++ actions into path mapping. Without that opt-in,
+      # the toolchain module map must keep the paths the compiles use.
+      - name: bazel build //... with path mapping, C++ actions not opted in
+        if: matrix.folder == 'e2e/rules_cc' && matrix.bazel_version == 'last_rc'
+        env:
+          USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
+        working-directory: ${{ matrix.folder }}
+        shell: bash
+        run: |
+          bazel \
+            --bazelrc=$GITHUB_WORKSPACE/.github/workflows/ci.bazelrc \
+            --bazelrc=.bazelrc \
+            build \
+            --experimental_output_paths=strip \
+            //...
 
       - name: bazel coverage e2e (lcov)
         if: matrix.folder == 'e2e/rules_cc' && matrix.bazel_version == 'last_rc'
@@ -110,7 +140,7 @@ jobs:
 
       - name: Save Bazel repository cache
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && matrix.folder != 'e2e/cross_compilation' && steps.bazel-repository-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cache/bazel-repo
@@ -128,12 +158,17 @@ jobs:
           # - "e2e/rules_rust" - Need a bazel nightly with https://github.com/bazelbuild/bazel/pull/28038
           - "e2e/cross_compilation"
     runs-on: ${{ matrix.os }}
+    environment: ${{ github.ref == 'refs/heads/main' && 'ci' || '' }}
 
     # Configure a human readable name for each job
     name: Test ${{ matrix.folder }} with Bazel ${{ matrix.bazel_version }} on ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v6
+
+      - uses: ./.github/actions/buildbuddy-api-key
+        with:
+          api-key: ${{ github.ref == 'refs/heads/main' && secrets.BUILDBUDDY_CI_API_KEY || '' }}
 
       - name: bazel test //...
         id: bazel_test
@@ -155,7 +190,7 @@ jobs:
             --repository_cache= \
             --repo_contents_cache= \
             --jobs=100 \
-            --test_tag_filters=-thin_lto_feature \
+            --test_tag_filters=-analysis \
             $EXTRA_ARGS \
             //...
 
@@ -170,7 +205,9 @@ jobs:
               --jobs=100 \
               //:thin_lto_shared_backends_disabled_test \
               //:thin_lto_linkstatic_tests_shared_backends_test \
-              //:thin_lto_all_linkstatic_shared_backends_test
+              //:thin_lto_all_linkstatic_shared_backends_test \
+              //:fdo_optimize_test \
+              //:cs_fdo_optimize_test
           fi
 
   # macOS: smoke build (//:main_default) plus the supported sanitizer e2e tests.
@@ -186,12 +223,17 @@ jobs:
           # - "e2e/rules_rust" - Need a bazel nightly with https://github.com/bazelbuild/bazel/pull/28038
           # - "e2e/cross_compilation"
     runs-on: ${{ matrix.os }}
+    environment: ${{ github.ref == 'refs/heads/main' && 'ci' || '' }}
 
     # Configure a human readable name for each job
     name: Test smoke ${{ matrix.folder }} with Bazel ${{ matrix.bazel_version }} on ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v6
+
+      - uses: ./.github/actions/buildbuddy-api-key
+        with:
+          api-key: ${{ github.ref == 'refs/heads/main' && secrets.BUILDBUDDY_CI_API_KEY || '' }}
 
       - name: bazel build //:main_default
         id: bazel_test
@@ -240,9 +282,14 @@ jobs:
 
   test_macos_host_sdk:
     runs-on: macos-15
+    environment: ${{ github.ref == 'refs/heads/main' && 'ci' || '' }}
     name: Test host macOS SDK
     steps:
       - uses: actions/checkout@v6
+
+      - uses: ./.github/actions/buildbuddy-api-key
+        with:
+          api-key: ${{ github.ref == 'refs/heads/main' && secrets.BUILDBUDDY_CI_API_KEY || '' }}
 
       - name: Test with host macOS SDK
         env:
@@ -253,7 +300,6 @@ jobs:
           bazel \
             --bazelrc=.bazelrc \
             test \
-            --remote_header=x-buildbuddy-api-key=4jtaxdhxtyu4ylxdEwI7 \
             --repo_env=BAZEL_MACOS_USE_HOST_SDK=1 \
             //:objc_cc_test
 
@@ -267,10 +313,15 @@ jobs:
         # other supported LLVM major here.
         llvm_version: ["21.1.8", "22.1.8"]
     runs-on: ubuntu-latest
+    environment: ${{ github.ref == 'refs/heads/main' && 'ci' || '' }}
     name: Analyze LLVM ${{ matrix.llvm_version }}
 
     steps:
       - uses: actions/checkout@v6
+
+      - uses: ./.github/actions/buildbuddy-api-key
+        with:
+          api-key: ${{ github.ref == 'refs/heads/main' && secrets.BUILDBUDDY_CI_API_KEY || '' }}
 
       - name: Select LLVM ${{ matrix.llvm_version }}
         env:
@@ -325,14 +376,19 @@ jobs:
         os: [ubuntu-latest, ubuntu-24.04-arm]
         bazel_version: [8.x, last_rc]
     runs-on: ${{ matrix.os }}
+    environment: ${{ github.ref == 'refs/heads/main' && 'ci' || '' }}
     name: Test //tests/... with Bazel ${{ matrix.bazel_version }} on ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v6
 
+      - uses: ./.github/actions/buildbuddy-api-key
+        with:
+          api-key: ${{ github.ref == 'refs/heads/main' && secrets.BUILDBUDDY_CI_API_KEY || '' }}
+
       - name: Restore Bazel repository cache
         id: bazel-repository-cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cache/bazel-repo
@@ -380,7 +436,7 @@ jobs:
 
       - name: Save Bazel repository cache
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.bazel-repository-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cache/bazel-repo
@@ -388,9 +444,14 @@ jobs:
 
   docs:
     runs-on: macos-15-intel
+    environment: ${{ github.ref == 'refs/heads/main' && 'ci' || '' }}
     name: Verify public docs generation
     steps:
       - uses: actions/checkout@v6
+
+      - uses: ./.github/actions/buildbuddy-api-key
+        with:
+          api-key: ${{ github.ref == 'refs/heads/main' && secrets.BUILDBUDDY_CI_API_KEY || '' }}
 
       - name: Ensure Gazelle updated
         shell: bash
@@ -408,9 +469,13 @@ jobs:
 
   buildifier:
     runs-on: ubuntu-latest
+    environment: ${{ github.ref == 'refs/heads/main' && 'ci' || '' }}
     name: Verify buildifier formatting
     steps:
       - uses: actions/checkout@v6
+      - uses: ./.github/actions/buildbuddy-api-key
+        with:
+          api-key: ${{ github.ref == 'refs/heads/main' && secrets.BUILDBUDDY_CI_API_KEY || '' }}
       - name: Verify buildifier formatting
         shell: bash
         run: |

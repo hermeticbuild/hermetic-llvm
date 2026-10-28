@@ -1,3 +1,4 @@
+load("@bazel_features//:features.bzl", "bazel_features")
 load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 load("@rules_cc//cc/toolchains:feature.bzl", "cc_feature")
@@ -5,6 +6,13 @@ load("@rules_cc//cc/toolchains:feature_set.bzl", "cc_feature_set")
 load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
 
 package(default_visibility = ["//visibility:public"])
+
+# GNU-driver response-file syntax is independent of target OS and runtime stage.
+# clang-cl's separate protocol composition selects Windows quoting instead.
+cc_feature(
+    name = "gcc_quoting_for_param_files",
+    feature_name = "gcc_quoting_for_param_files",
+)
 
 _DEBUG_INFO_COMPILE_ACTIONS = [
     "@rules_cc//cc/toolchains/actions:c_compile",
@@ -38,7 +46,7 @@ _FINAL_LINK_ACTIONS = [
 
 # [x] opt
 # [x] dbg
-# [] fastbuild
+# [x] fastbuild
 # [] static_linking_mode - does this do anything? Seems obsolete
 # [] dynamic_linking_mode
 # [x] per_object_debug_info
@@ -47,6 +55,28 @@ _FINAL_LINK_ACTIONS = [
 cc_feature(
     name = "static_link_cpp_runtimes",
     overrides = "@rules_cc//cc/toolchains/features:static_link_cpp_runtimes",
+)
+
+# Bazel requires this feature to create shared cc_library outputs.
+cc_feature(
+    name = "supports_dynamic_linker",
+    feature_name = "supports_dynamic_linker",
+)
+
+# Temporary implementation boundary: musl has shared libc/loader targets, but
+# the consumer path still exposes only libc.a and forces static executables.
+# Enable musl here when that integration is complete; libc choice itself does
+# not determine whether a target supports dynamic linking.
+cc_feature_set(
+    name = "hosted_dynamic_linker",
+    all_of = select({
+        "//constraints/libc:musl": [],
+        # Native Bazel adds an ELF -soname flag to macOS shared-library links.
+        "@platforms//os:macos": [":supports_dynamic_linker"] if bazel_features.cc.supports_starlarkified_toolchains else [],
+        "@platforms//os:uefi": [],
+        "@platforms//os:none": [],
+        "//conditions:default": [":supports_dynamic_linker"],
+    }),
 )
 
 cc_args(
@@ -191,7 +221,9 @@ cc_args(
             #TODO: should be on a config that match ld64 specifically
             "-Wl,-dead_strip",
         ],
-        "@platforms//os:windows": [],
+        # lld-link enables /OPT:REF unless /DEBUG is passed. MinGW-mode LLD, like GNU ld, only
+        # garbage collects sections with --gc-sections.
+        "//constraints/windows/abi:msvc": [],
         "//conditions:default": [
             #TODO: should be somehow done only if the choosen linker supports it
             "-Wl,--gc-sections",
@@ -391,6 +423,88 @@ cc_feature(
     overrides = "@rules_cc//cc/toolchains/features:dbg",
 )
 
+cc_args(
+    name = "fastbuild_optimization_level_o1",
+    actions = _CONFIGURATION_COMPILE_ACTIONS,
+    args = select({
+        "//constraints/windows/abi:msvc": ["/clang:-O1"],
+        "//conditions:default": ["-O1"],
+    }),
+)
+
+cc_args(
+    name = "fastbuild_optimization_level_o2",
+    actions = _CONFIGURATION_COMPILE_ACTIONS,
+    args = select({
+        "//constraints/windows/abi:msvc": ["/O2"],
+        "//conditions:default": ["-O2"],
+    }),
+)
+
+cc_args(
+    name = "fastbuild_optimization_level_o3",
+    actions = _CONFIGURATION_COMPILE_ACTIONS,
+    args = select({
+        "//constraints/windows/abi:msvc": ["/clang:-O3"],
+        "//conditions:default": ["-O3"],
+    }),
+)
+
+cc_args(
+    name = "fastbuild_optimization_level_og",
+    actions = _CONFIGURATION_COMPILE_ACTIONS,
+    args = select({
+        "//constraints/windows/abi:msvc": ["/clang:-Og"],
+        "//conditions:default": ["-Og"],
+    }),
+)
+
+cc_args(
+    name = "fastbuild_optimization_level_os",
+    actions = _CONFIGURATION_COMPILE_ACTIONS,
+    args = select({
+        "//constraints/windows/abi:msvc": ["/O1"],
+        "//conditions:default": ["-Os"],
+    }),
+)
+
+cc_args(
+    name = "fastbuild_optimization_level_oz",
+    actions = _CONFIGURATION_COMPILE_ACTIONS,
+    args = select({
+        "//constraints/windows/abi:msvc": ["/clang:-Oz"],
+        "//conditions:default": ["-Oz"],
+    }),
+)
+
+cc_args_list(
+    name = "fastbuild_compile_flags",
+    args = select({
+        "//config:fastbuild_optimization_mode_O1": [":fastbuild_optimization_level_o1"],
+        "//config:fastbuild_optimization_mode_O2": [":fastbuild_optimization_level_o2"],
+        "//config:fastbuild_optimization_mode_O3": [":fastbuild_optimization_level_o3"],
+        "//config:fastbuild_optimization_mode_Og": [":fastbuild_optimization_level_og"],
+        "//config:fastbuild_optimization_mode_Os": [":fastbuild_optimization_level_os"],
+        "//config:fastbuild_optimization_mode_Oz": [":fastbuild_optimization_level_oz"],
+        "//conditions:default": [],
+    }),
+)
+
+# Use a stub feature so we can properly control flag ordering.
+cc_feature(
+    name = "fastbuild",
+    args = [
+        ":fastbuild_compile_flags",
+    ],
+    feature_name = "_underlying_fastbuild",
+    requires_any_of = [":fastbuild_stub"],
+)
+
+cc_feature(
+    name = "fastbuild_stub",
+    overrides = "@rules_cc//cc/toolchains/features:fastbuild",
+)
+
 cc_feature(
     name = "archive_param_file",
     feature_name = "archive_param_file",
@@ -472,32 +586,11 @@ cc_feature(
 cc_feature(
     name = "llvm_coverage_map_format",
     args = [
-        ":llvm_coverage_map_format_compile_args",
-        ":llvm_coverage_map_format_link_args",
+        "//toolchain/args:llvm_coverage_map_format_compile_args",
+        "//toolchain/args:llvm_coverage_map_format_link_args",
     ],
     overrides = "@rules_cc//cc/toolchains/features/legacy:llvm_coverage_map_format",
     requires_any_of = [":coverage_stub"],
-)
-
-cc_args(
-    name = "llvm_coverage_map_format_compile_args",
-    actions = ["@rules_cc//cc/toolchains/actions:compile_actions"],
-    args = [
-        "-fprofile-instr-generate",
-        "-fcoverage-mapping",
-    ],
-)
-
-cc_args(
-    name = "llvm_coverage_map_format_link_args",
-    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
-    args = ["-fprofile-instr-generate"] + select({
-        "@platforms//os:windows": [
-            "-Wl,-u,__llvm_profile_runtime",
-            "-Wl,/include:__llvm_profile_runtime",
-        ],
-        "//conditions:default": [],
-    }),
 )
 
 cc_feature(
@@ -538,25 +631,36 @@ cc_args(
 )
 
 cc_feature(
+    name = "fdo_instrument",
+    args = [
+        "//toolchain/args:fdo_instrument_args",
+        "//toolchain/args:profile_runtime_windows_linker_flags",
+    ],
+    overrides = "@rules_cc//cc/toolchains/features/legacy:fdo_instrument",
+)
+
+cc_feature(
+    name = "cs_fdo_instrument",
+    args = [
+        "//toolchain/args:cs_fdo_instrument_args",
+        "//toolchain/args:cs_fdo_instrument_macos_linker_flags",
+        "//toolchain/args:profile_runtime_windows_linker_flags",
+    ],
+    overrides = "@rules_cc//cc/toolchains/features/legacy:cs_fdo_instrument",
+)
+
+cc_feature(
     name = "fdo_optimize",
-    args = [":fdo_optimize_compile_args"],
+    args = ["//toolchain/args:fdo_optimize_compile_args"],
     overrides = "@rules_cc//cc/toolchains/features/legacy:fdo_optimize",
 )
 
-cc_args(
-    name = "fdo_optimize_compile_args",
-    actions = [
-        "@rules_cc//cc/toolchains/actions:compile_actions",
-    ],
-    args = [
-        "-fprofile-use={fdo_profile_path}",
-        "-Wno-profile-instr-unprofiled",
-        "-Wno-profile-instr-out-of-date",
-    ],
-    format = {
-        "fdo_profile_path": "@rules_cc//cc/toolchains/variables:fdo_profile_path",
-    },
-    requires_not_none = "@rules_cc//cc/toolchains/variables:fdo_profile_path",
+# rules_cc gates the merged profile input and fdo_profile_path for ThinLTO
+# backends on this feature. fdo_optimize already emits the argument for
+# compile_actions, which includes lto_backend.
+cc_feature(
+    name = "cs_fdo_optimize",
+    overrides = "@rules_cc//cc/toolchains/features/legacy:cs_fdo_optimize",
 )
 
 cc_args(
@@ -610,6 +714,8 @@ cc_feature_set(
         ":opt_stub",
         ":dbg",
         ":dbg_stub",
+        ":fastbuild",
+        ":fastbuild_stub",
         ":static_link_cpp_runtimes",
         ":parse_headers",
         ":coverage_stub",

@@ -25,7 +25,7 @@ bootstrap_binaries(
 [
     llvm_fdo_profile_workload(
         name = "llvm_fdo_profile_workload_%s_to_%s_%s" % (executor, target_os, target_cpu),
-        srcs = ":fdo_freestanding.c" if target_os == "none" else "@llvm_fdo_zstd//:zstd_compress_files",
+        srcs = ":fdo_freestanding.c" if target_os in ("none", "uefi") else "@llvm_fdo_zstd//:zstd_compress_files",
         exec_compatible_with = [
             "@platforms//cpu:" + executor_config["cpu"],
             "@platforms//os:linux",
@@ -34,7 +34,7 @@ bootstrap_binaries(
             "Arch": executor_config["buildbuddy_arch"],
         },
         target_platform = "//platforms:%s_%s" % (target_os, target_cpu),
-        workload_kind = "freestanding" if target_os == "none" else "hosted",
+        workload_kind = "freestanding" if target_os in ("none", "uefi") else "hosted",
     )
     for executor, executor_config in _LLVM_FDO_EXECUTORS.items()
     for target_os, target_cpu in SUPPORTED_TARGETS

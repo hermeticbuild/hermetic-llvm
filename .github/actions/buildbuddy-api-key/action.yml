@@ -1,0 +1,45 @@
+name: Configure BuildBuddy API key
+description: >
+  Overrides the local BuildBuddy API key from .bazelrc with the CI or release
+  key, which are secret and allowed to write to the remote cache.
+
+  Bazel reads ~/.bazelrc after the workspace .bazelrc, and BuildBuddy uses the
+  last x-buildbuddy-api-key header it receives, so the key configured here
+  takes precedence for every Bazel invocation in the job.
+
+inputs:
+  api-key:
+    description: >
+      Secret BuildBuddy API key. When empty (e.g. on pull requests, which
+      cannot use the environments holding the keys), the local key from
+      .bazelrc is used.
+    required: false
+    default: ""
+  required:
+    description: Fail instead of falling back to the local key when api-key is empty.
+    required: false
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - name: Configure BuildBuddy API key
+      shell: bash
+      env:
+        BUILDBUDDY_API_KEY: ${{ inputs.api-key }}
+        BUILDBUDDY_API_KEY_REQUIRED: ${{ inputs.required }}
+      run: |
+        if [[ -z "${BUILDBUDDY_API_KEY}" ]]; then
+          if [[ "${BUILDBUDDY_API_KEY_REQUIRED}" == "true" ]]; then
+            echo "::error::No BuildBuddy API key with cache write access is available to this job."
+            exit 1
+          fi
+          echo "No BuildBuddy API key with cache write access is available; using the CAS-only key from .bazelrc."
+          exit 0
+        fi
+
+        cat >> "${HOME}/.bazelrc" <<EOF
+        common --remote_header=x-buildbuddy-api-key=${BUILDBUDDY_API_KEY}
+        common --bes_header=x-buildbuddy-api-key=${BUILDBUDDY_API_KEY}
+        common --remote_upload_local_results
+        EOF
