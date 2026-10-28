@@ -85,6 +85,11 @@ GLIBC_RELEASE_INTEGRITY = {
     "2.44": "37f600f2bef3c5e8300147059568b2a2e40a7ad6ccc65ce942556d49429cc667",
 }
 
+# Upstream fixes backported to the prebuilt headers of a glibc release.
+GLIBC_HEADERS_PATCHES = {
+    "2.17": ["//3rd_party/libc/glibc:headers-2.17-clang-gnu-inline.patch"],
+}
+
 def _glibc_release_urls(version):
     urls = GLIBC_RELEASE_URLS.get(version)
     if urls:
@@ -174,6 +179,8 @@ def _glibc_impl(module_ctx):
                 sha256 = index_entry.get("sha256"),
                 strip_prefix = target,
                 build_file = ":glibc-headers.BUILD.bazel",
+                patches = GLIBC_HEADERS_PATCHES.get(version, []),
+                patch_args = ["-p1"],
             )
 
     _glibc_trampoline_repository(

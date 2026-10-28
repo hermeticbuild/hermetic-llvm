@@ -28,6 +28,7 @@ load(
     "fission_cc_binary",
     "fuzzer_asan_cc_binary",
     "fuzzer_cc_binary",
+    "glibc_2_17_opt_cc_test",
     "lsan_cc_binary",
     "lsan_cc_test",
     "msan_cc_binary",
@@ -2048,6 +2049,20 @@ exec_test(
     target_compatible_with = select({
         "@platforms//os:windows": ["@platforms//:incompatible"],
         "//conditions:default": [],
+    }),
+)
+
+glibc_2_17_opt_cc_test(
+    name = "glibc_2_17_fortify_cxx_test",
+    size = "small",
+    srcs = ["glibc_2_17_fortify_cxx_test.cc"],
+    target_compatible_with = select({
+        "@platforms//cpu:aarch64": [],
+        "@platforms//cpu:x86_64": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }) + select({
+        "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
     }),
 )
 

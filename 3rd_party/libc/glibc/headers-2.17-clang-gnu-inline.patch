@@ -1,0 +1,28 @@
+Backport of glibc 602f80ec8b96 ("Make __extern_always_inline usable on
+clang++ again", BZ #17266), first released in glibc 2.20.
+
+clang++ reports GCC 4.2, so glibc 2.17 defines __extern_always_inline
+without __gnu_inline__ in C++. The FORTIFY wrappers then become real
+definitions whose __*_alias call resolves to the wrapper itself (e.g.
+readlink), and clang miscompiles the resulting self-recursion.
+
+--- a/include/sys/cdefs.h
++++ b/include/sys/cdefs.h
+@@ -319,8 +319,15 @@
+ #endif
+ 
+ /* GCC 4.3 and above with -std=c99 or -std=gnu99 implements ISO C99
+-   inline semantics, unless -fgnu89-inline is used.  */
+-#if (!defined __cplusplus || __GNUC_PREREQ (4,3)) && defined __GNUC__
++   inline semantics, unless -fgnu89-inline is used.
++
++   clang++ identifies itself as gcc-4.2, but has support for GNU inlining
++   semantics, that can be checked for by using the __GNUC_STDC_INLINE__ and
++   __GNUC_GNU_INLINE__ macro definitions.  */
++#if (!defined __cplusplus || __GNUC_PREREQ (4,3) \
++     || (defined __clang__ && (defined __GNUC_STDC_INLINE__ \
++			       || defined __GNUC_GNU_INLINE__))) \
++    && defined __GNUC__
+ # if defined __GNUC_STDC_INLINE__ || defined __cplusplus
+ #  define __extern_inline extern __inline __attribute__ ((__gnu_inline__))
+ #  define __extern_always_inline \

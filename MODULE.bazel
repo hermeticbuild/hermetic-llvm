@@ -40,19 +40,10 @@ LLVM_VERSION = "23.1.2"
 
 llvm = use_extension("//extensions:llvm.bzl", "llvm")
 llvm.version(llvm_version = LLVM_VERSION)
-llvm.configure(
-    targets = [
-        "AArch64",
-        "AMDGPU",
-        "ARM",
-        "BPF",
-        "NVPTX",
-        "RISCV",
-        "SystemZ",
-        "WebAssembly",
-        "X86",
-    ],
-)
+llvm.configure(targets = [
+    "AArch64",
+    "X86",
+])
 use_repo(llvm, "llvm-project", "llvm_version")
 
 llvm_toolchain_minimal = use_extension("//extensions:llvm_toolchain_minimal.bzl", "llvm_toolchain_minimal")
@@ -163,6 +154,19 @@ kernel_headers.index(file = "//kernel/extension:kernel_headers_index.json")
 use_repo(kernel_headers, "kernel_headers")
 
 ######################### DEV DEPENDENCIES ###################################
+
+# Exercise these backends here without building them into every
+# downstream tool that links against LLVM.
+llvm_dev = use_extension("//extensions:llvm.bzl", "llvm", dev_dependency = True)
+llvm_dev.configure(targets = [
+    "AMDGPU",
+    "ARM",
+    "BPF",
+    "NVPTX",
+    "RISCV",
+    "SystemZ",
+    "WebAssembly",
+])
 
 bazel_dep(name = "gazelle", version = "0.47.0", dev_dependency = True)
 bazel_dep(name = "bazel_skylib_gazelle_plugin", version = "1.9.0", dev_dependency = True)

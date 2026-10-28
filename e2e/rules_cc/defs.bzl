@@ -9,6 +9,12 @@ _EXTERNAL_INCLUDE_PATHS_GLIBC_PLATFORM = select({
     "//conditions:default": [],
 })
 
+_GLIBC_2_17_PLATFORM = select({
+    "@platforms//cpu:aarch64": [Label("@llvm//platforms:linux_aarch64_gnu.2.17")],
+    "@platforms//cpu:x86_64": [Label("@llvm//platforms:linux_x86_64_gnu.2.17")],
+    "//conditions:default": [],
+})
+
 def _external_include_paths_glibc_headers_test_impl(ctx):
     for header in ctx.attr.glibc_start[CcInfo].compilation_context.direct_headers:
         if header.owner.name == "bits/errno.h":
@@ -263,6 +269,15 @@ cs_fdo_instrument_cc_binary, _cs_fdo_instrument_cc_binary_internal = with_cfg(cc
 ).build()
 
 opt_binary, _opt_binary_internal = with_cfg(cc_binary).set(
+    "compilation_mode",
+    "opt",
+).build()
+
+# opt enables _FORTIFY_SOURCE, whose glibc wrappers are under test.
+glibc_2_17_opt_cc_test, _glibc_2_17_opt_cc_test_internal = with_cfg(cc_test).set(
+    "platforms",
+    _GLIBC_2_17_PLATFORM,
+).set(
     "compilation_mode",
     "opt",
 ).build()
