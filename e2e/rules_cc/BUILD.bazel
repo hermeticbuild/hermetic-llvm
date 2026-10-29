@@ -18,6 +18,7 @@ load(
     "//:defs.bzl",
     "asan_cc_binary",
     "asan_cc_test",
+    "assert_msvc_tuple_features",
     "cfi_cc_binary",
     "cs_fdo_instrument_cc_binary",
     "dfsan_cc_binary",
@@ -1754,6 +1755,8 @@ cc_test(
     }),
     deps = [":coverage_lib"],
 )
+
+assert_msvc_tuple_features()
 
 _WINDOWS_MSVC_ARTIFACT_PLATFORMS = [
     ("x86_64", "@llvm//platforms:windows_x86_64_msvc", "AMD64"),

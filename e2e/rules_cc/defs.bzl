@@ -1,7 +1,21 @@
+load("@llvm//toolchain/features/msvc:validation.bzl", "validate_msvc_configuration")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("@with_cfg.bzl", "with_cfg")
+
+def assert_msvc_tuple_features():
+    error = validate_msvc_configuration(
+        disabled_features = [],
+        enabled_features = ("tsan", "asan", "tsan"),
+        is_legacy_msvcrt = False,
+        is_libcxx = True,
+        is_msvc_abi = True,
+        unsupported_features = ["asan", "tsan"],
+    )
+    expected = "MSVC ABI Layer 1 does not support feature(s): asan, tsan"
+    if error != expected:
+        fail("expected %r, got %r" % (expected, error))
 
 _EXTERNAL_INCLUDE_PATHS_GLIBC_PLATFORM = select({
     "@platforms//cpu:aarch64": [Label("@llvm//platforms:linux_aarch64_gnu.2.34")],
