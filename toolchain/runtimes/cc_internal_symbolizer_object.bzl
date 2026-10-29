@@ -102,6 +102,7 @@ def _cc_internal_symbolizer_object_impl(ctx):
         toolchain = CC_TOOLCHAIN_TYPE,
     )
 
+    object_file = ctx.actions.declare_file(ctx.label.name + ".unisolated.o")
     compile_args = ctx.actions.args()
     compile_args.add_all([
         "-target",
@@ -115,15 +116,37 @@ def _cc_internal_symbolizer_object_impl(ctx):
         "-fPIC",
         bitcode,
         "-o",
-        ctx.outputs.out,
+        object_file,
     ])
     ctx.actions.run(
         executable = compiler,
         arguments = [compile_args],
         inputs = [bitcode],
-        outputs = [ctx.outputs.out],
+        outputs = [object_file],
         execution_requirements = {"supports-path-mapping": "1"},
         mnemonic = "CompileInternalSymbolizerObject",
+        tools = cc_toolchain.all_files,
+        toolchain = CC_TOOLCHAIN_TYPE,
+    )
+
+    # The private libc++abi personality must not capture the application's ELF COMDAT.
+    objcopy = cc_common.get_tool_for_action(
+        feature_configuration = feature_configuration,
+        action_name = ACTION_NAMES.objcopy_embed_data,
+    )
+    isolate_args = ctx.actions.args()
+    isolate_args.add_all([
+        "--redefine-sym=DW.ref.__gxx_personality_v0=DW.ref.__sanitizer_internal_gxx_personality_v0",
+        object_file,
+        ctx.outputs.out,
+    ])
+    ctx.actions.run(
+        executable = objcopy,
+        arguments = [isolate_args],
+        inputs = [object_file],
+        outputs = [ctx.outputs.out],
+        execution_requirements = {"supports-path-mapping": "1"},
+        mnemonic = "IsolateInternalSymbolizerPersonality",
         tools = cc_toolchain.all_files,
         toolchain = CC_TOOLCHAIN_TYPE,
     )
