@@ -114,15 +114,5 @@ cc_args(
     actions = [
         "@rules_cc//cc/toolchains/actions:link_actions",
     ],
-    # -l: is not supported by lld64
-    args = [
-        "-lSystem",
-        "{libclang_rt.builtins.a}",
-    ],
-    data = [
-        "//runtimes/compiler-rt:clang_rt.builtins.static",
-    ],
-    format = {
-        "libclang_rt.builtins.a": "//runtimes/compiler-rt:clang_rt.builtins.static",
-    },
+    args = [],
 )
