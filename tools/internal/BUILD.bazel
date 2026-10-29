@@ -21,7 +21,10 @@ _LINUX_CPUS = [cpu for os, cpu in SUPPORTED_EXECS if os == "linux"]
     platform_transition_binary(
         name = "module-map-generator-" + cpu,
         binary = ":native/module-map-generator",
-        target_compatible_with = ["@platforms//os:linux", "@platforms//cpu:" + cpu],
+        target_compatible_with = [
+            "@platforms//os:linux",
+            "@platforms//cpu:" + cpu,
+        ],
         target_platform = "//platforms:linux_{}_musl".format(cpu),
     )
     for cpu in _LINUX_CPUS
