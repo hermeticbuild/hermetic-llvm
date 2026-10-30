@@ -262,9 +262,14 @@ cc_args_list(
 # and paths when resolving compiler runtime libraries from the resource-dir.
 cc_args_list(
     name = "rtlib",
-    args = [
-        "//toolchain/args:rtlib_compiler_rt",
-    ],
+    args = select({
+        # macOS defaults to compiler-rt; explicitly selecting it warns with
+        # -nodefaultlibs (used by Rust) or -nostdlib.
+        "@platforms//os:macos": [],
+        "//conditions:default": [
+            "//toolchain/args:rtlib_compiler_rt",
+        ],
+    }),
 )
 
 cc_args_list(
