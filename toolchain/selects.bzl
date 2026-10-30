@@ -49,6 +49,9 @@ def platform_module_map(exec_os, exec_cpu):
 def platform_resource_dir(exec_os, exec_cpu):
     return Label(_tool_repo(exec_os, exec_cpu) + ":builtin_resource_dir")
 
+def platform_resource_include_dir(exec_os, exec_cpu):
+    return Label(_tool_repo(exec_os, exec_cpu) + ":builtin_resource_include_dir")
+
 def platform_cc_tool_map(exec_os, exec_cpu):
     tool_repo = _tool_repo(exec_os, exec_cpu)
 
