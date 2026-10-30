@@ -143,6 +143,28 @@ def _declare_sanitizer_config_setting(sanitizer):
     )
 
 def config_settings():
+    # Compiler semantics: suppress implicit C++ headers and implicit C++
+    # libraries independently. Explicit consumer dependencies remain valid.
+    # Target policy must not leak into unrelated execution tools.
+    bool_flag(
+        name = "nostdincxx",
+        build_setting_default = False,
+        scope = "target",
+    )
+    native.config_setting(
+        name = "nostdincxx_enabled",
+        flag_values = {"nostdincxx": "true"},
+    )
+    bool_flag(
+        name = "nostdlibxx",
+        build_setting_default = False,
+        scope = "target",
+    )
+    native.config_setting(
+        name = "nostdlibxx_enabled",
+        flag_values = {"nostdlibxx": "true"},
+    )
+
     # This flag controls the optimization mode for the compilation of the target
     # prequisites like the standard C library, the C++ standard library,
     # the unwinder, etc.

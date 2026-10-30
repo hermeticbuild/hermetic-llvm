@@ -51,6 +51,26 @@ This ecosystem simplifies the process by cross-compiling all target-specific com
 
 ## Advanced Usage
 
+### Suppressing the default C++ standard library
+
+Two independent boolean build settings follow Clang/GCC semantics:
+
+- `--@llvm//config:nostdincxx`: omit default C++ standard-library headers,
+  like `-nostdinc++`. Explicit header dependencies and include paths still work.
+- `--@llvm//config:nostdlibxx`: omit implicit C++ standard-library linkage,
+  like `-nostdlib++`. Explicit library dependencies and link options still work.
+
+Both default to `false` and declare `scope = "target"`: execution tools retain
+their default libraries unless explicitly configured by a transition. Set both
+when supplying a replacement C++ library, such as a privately built libc++.
+Keep replacement headers, libraries, and ABI configuration consistent.
+
+These settings do not suppress C/SDK or compiler builtin headers, the C runtime,
+startup objects, compiler-rt, or the separately selected unwinder. They do not
+change optimization policy or MSVC CRT selection (`/MT` versus `/MD`).
+On MSVC targets the library opt-out removes the toolchain's libc++ default
+library; it does not use the broader `/NODEFAULTLIB` or `/Zl` options.
+
 ### Registering a subset of all toolchains
 
 Use the toolchain module extension:
