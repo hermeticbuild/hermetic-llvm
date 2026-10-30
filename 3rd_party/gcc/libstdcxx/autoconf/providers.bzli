@@ -1,0 +1,16 @@
+def AutoconfResultInfo(
+    *,
+    defines_on_success: list[str],
+    kind: str,
+    name: str,
+    result: File | None,
+    value: str,
+) -> record[{
+    "defines_on_success": list[str],
+    "kind": str,
+    "name": str,
+    "result": File | None,
+    "value": str,
+}]: ...
+
+def AutoconfConfigInfo(*, results: list[AutoconfResultInfo]) -> record[{"results": list[AutoconfResultInfo]}]: ...

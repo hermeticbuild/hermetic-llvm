@@ -6,11 +6,12 @@
 
 load(":providers.bzl", "AutoconfConfigInfo")
 
-def _write_config_output(ctx, config_h, results):
+def _write_config_output(actions, config_h, results, *, include_guard, header_comment):
+    # type: (actions, File, list[AutoconfResultInfo], str, str) -> None
     arguments = [
         config_h.path,
-        ctx.attr.include_guard,
-        ctx.attr.header_comment,
+        include_guard,
+        header_comment,
     ]
     inputs = []
 
@@ -28,12 +29,12 @@ def _write_config_output(ctx, config_h, results):
             ",".join(result.defines_on_success),
         ])
 
-    ops_file = ctx.actions.declare_file("result_ops")
-    ctx.actions.write(ops_file, "\n".join([":".join(op) for op in result_ops]))
+    ops_file = actions.declare_file("result_ops")
+    actions.write(ops_file, "\n".join([":".join(op) for op in result_ops]))
     inputs.append(ops_file)
     arguments.append(ops_file.path)
 
-    ctx.actions.run_shell(
+    actions.run_shell(
         inputs = inputs,
         outputs = [config_h],
         arguments = arguments,
@@ -83,7 +84,14 @@ args="$4"
     )
 
 def _autoconf_hdr_impl(ctx):
-    _write_config_output(ctx, ctx.outputs.out, ctx.attr.dep[AutoconfConfigInfo].results)
+    # type: (...) -> list[DefaultInfo | OutputGroupInfo]
+    _write_config_output(
+        ctx.actions,
+        ctx.outputs.out,
+        ctx.attr.dep[AutoconfConfigInfo].results,
+        include_guard = ctx.attr.include_guard,
+        header_comment = ctx.attr.header_comment,
+    )
     return [
         DefaultInfo(files = depset([ctx.outputs.out])),
         OutputGroupInfo(config_h = depset([ctx.outputs.out])),

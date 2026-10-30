@@ -115,6 +115,7 @@ _HEADER_CHECKS = [
 ]
 
 def config_entries(gcc_version):
+    # type: (str) -> list[str]
     # This function mirrors libstdc++-v3/configure.ac order for the supported
     # hosted Linux GNU configuration. Unsupported configure branches are kept
     # below as comments so future target work has an obvious source anchor.
