@@ -42,8 +42,10 @@ DEFAULT_LIBCS = {
 }
 
 def default_libc(target_os, target_cpu):
+    # type: (str, str) -> str
     return DEFAULT_LIBCS.get((target_os, target_cpu), DEFAULT_LIBC)
 
 def glibc_supported(target_cpu, version):
+    # type: (str, str) -> bool
     """Whether this architecture exists in the requested glibc release."""
     return target_cpu != "riscv64" or tuple([int(part) for part in version.split(".")]) >= (2, 27)

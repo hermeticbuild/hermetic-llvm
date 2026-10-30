@@ -87,6 +87,8 @@ def _update_integrity_attrs(rctx, attrs, archive_info, remote_files_info, remote
 # TODO(cerisier): Remove when we no longer support bazel < 8.5.0
 def symlink_files(ctx):
     # type: (repository_ctx) -> None
+    # TODO(https://github.com/bazelbuild/bazel/issues/32020): make this an
+    # annotation when supported Bazel versions expose a repository context type.
     """Utility function for symlinking local files.
 
     This is intended to be used in the implementation function of a repository rule. It assumes the

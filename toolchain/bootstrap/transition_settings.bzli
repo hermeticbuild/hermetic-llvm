@@ -1,0 +1,3 @@
+# TODO(https://github.com/bazelbuild/starlark/pull/362): Move type parameters
+# into source when the supported Bazel versions can parse them.
+def disable_sanitizers[V = Never](settings: dict[str, bool | V]) -> None: ...

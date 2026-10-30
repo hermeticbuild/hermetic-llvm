@@ -9,9 +9,11 @@ exports_files(
     [
         "autoconf_config.bzl",
         "autoconf_hdr.bzl",
+        "autoconf_hdr.bzli",
         "cc_configure_probe.bzl",
         "checks.bzl",
         "providers.bzl",
+        "providers.bzli",
     ],
     visibility = [
         "//3rd_party/gcc/libstdcxx:__pkg__",

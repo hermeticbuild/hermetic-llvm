@@ -1,6 +1,7 @@
 load("//constraints/libc:libc_versions.bzl", "glibc_supported")
 
 def _generate_glibc_stubs(ctx, target, directory):
+    # type: (_StubContext, str, str) -> tuple[File, dict[str, File]]
     version_script = ctx.actions.declare_file(directory + "/all.map")
 
     assembly_outputs = {
@@ -32,6 +33,7 @@ def _generate_glibc_stubs(ctx, target, directory):
     return version_script, assembly_outputs
 
 def _glibc_stubs_impl(ctx):
+    # type: (...) -> list[DefaultInfo | OutputGroupInfo]
     target = ctx.attr.target
     arch = target.split("-")[0]
     _, major, minor = target.rsplit(".", 2)

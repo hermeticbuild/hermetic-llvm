@@ -1,0 +1,1 @@
+load(":providers.bzl", "AutoconfResultInfo")

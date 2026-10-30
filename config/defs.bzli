@@ -1,0 +1,3 @@
+# TODO(https://github.com/bazelbuild/starlark/pull/362): Move type parameters
+# into source when the supported Bazel versions can parse them.
+def _is_exec_configuration[V, A](ctx: ctx[V, A]) -> bool: ...

@@ -1,4 +1,5 @@
 def _libstdcxx_gthr_headers_impl(ctx):
+    # type: (...) -> DefaultInfo
     gthr_h = ctx.actions.declare_file(ctx.attr.name + "/bits/gthr.h")
     gthr_single_h = ctx.actions.declare_file(ctx.attr.name + "/bits/gthr-single.h")
     gthr_posix_h = ctx.actions.declare_file(ctx.attr.name + "/bits/gthr-posix.h")

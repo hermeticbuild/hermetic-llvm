@@ -1,4 +1,5 @@
 def _libstdcxx_largefile_config_header_impl(ctx):
+    # type: (...) -> DefaultInfo
     out = ctx.actions.declare_file(ctx.attr.name + "/bits/largefile-config.h")
     ctx.actions.run_shell(
         inputs = [ctx.file.config_h],

@@ -6,14 +6,17 @@
 # generic and free of libstdc++ policy.
 
 def _make_check(fields):
+    # type: (object) -> str
     return json.encode(fields)
 
 def _language(language):
+    # type: (str) -> str
     if language == "cpp":
         return "c++"
     return language
 
 def compile_check(name, source, language = "c", flags = [], defines_on_success = None, probe_contexts = []):
+    # type: (str, str, str, Sequence[str], Collection[str] | None, Collection[str]) -> str
     if defines_on_success == None:
         defines_on_success = [name]
     return _make_check({
@@ -27,6 +30,7 @@ def compile_check(name, source, language = "c", flags = [], defines_on_success =
     })
 
 def link_check(name, source, language = "c++", compile_flags = [], link_flags = [], defines_on_success = None, probe_contexts = []):
+    # type: (str, str, str, Sequence[str], Sequence[str], Collection[str] | None, Collection[str]) -> str
     if defines_on_success == None:
         defines_on_success = [name]
     return _make_check({
@@ -41,6 +45,7 @@ def link_check(name, source, language = "c++", compile_flags = [], link_flags = 
     })
 
 def policy_define(name, value = "1", defines_on_success = None):
+    # type: (str, object, Collection[str] | None) -> str
     if defines_on_success == None:
         defines_on_success = [name]
     return _make_check({
@@ -51,12 +56,14 @@ def policy_define(name, value = "1", defines_on_success = None):
     })
 
 def policy_undef(name):
+    # type: (str) -> str
     return _make_check({
         "name": name,
         "type": "undef",
     })
 
 def policy_string_define(name, value):
+    # type: (str, str) -> str
     return _make_check({
         "name": name,
         "type": "string_define",
@@ -64,6 +71,7 @@ def policy_string_define(name, value):
     })
 
 def header_check(header):
+    # type: (str) -> str
     return compile_check(
         name = "HAVE_" + header.upper().replace("/", "_").replace(".", "_"),
         source = """
@@ -73,9 +81,11 @@ int main(void) {{ return 0; }}
     )
 
 def ac_check_headers(headers):
+    # type: (Collection[str]) -> list[str]
     return [header_check(header) for header in headers]
 
 def function_link_check(name, header, expression, language = "c++", compile_flags = [], link_flags = [], probe_contexts = []):
+    # type: (str, object, object, str, Sequence[str], Sequence[str], Collection[str]) -> str
     return link_check(
         name = name,
         language = language,
@@ -92,6 +102,7 @@ int main() {{
     )
 
 def AC_TRY_COMPILE(name, code, language = "c", CFLAGS = [], CXXFLAGS = [], define = None, probe_contexts = []):
+    # type: (str, str, str, Sequence[str], Sequence[str], str | None, Collection[str]) -> str
     return compile_check(
         name = name,
         source = code,
@@ -102,6 +113,7 @@ def AC_TRY_COMPILE(name, code, language = "c", CFLAGS = [], CXXFLAGS = [], defin
     )
 
 def AC_TRY_LINK(name, code, language = "c++", CFLAGS = [], CXXFLAGS = [], LIBS = [], define = None, probe_contexts = []):
+    # type: (str, str, str, Sequence[str], Sequence[str], Sequence[str], str | None, Collection[str]) -> str
     return link_check(
         name = name,
         source = code,
@@ -113,12 +125,15 @@ def AC_TRY_LINK(name, code, language = "c++", CFLAGS = [], CXXFLAGS = [], LIBS =
     )
 
 def AC_DEFINE(name, value = "1"):
+    # type: (str, object) -> str
     return policy_define(name, value)
 
 def AC_FAIL(name):
+    # type: (str) -> str
     return policy_undef(name)
 
 def AC_CHECK_HEADERS(headers):
+    # type: (Collection[str]) -> list[str]
     return ac_check_headers(headers)
 
 checks = struct(

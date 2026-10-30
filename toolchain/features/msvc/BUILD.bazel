@@ -10,6 +10,8 @@ load(":validation.bzl", "msvc_configuration_validation")
 
 package(default_visibility = ["//visibility:public"])
 
+exports_files(["validation.bzli"])
+
 _COMPILE_ACTIONS = [
     "@rules_cc//cc/toolchains/actions:c_compile",
     "@rules_cc//cc/toolchains/actions:cpp_compile",

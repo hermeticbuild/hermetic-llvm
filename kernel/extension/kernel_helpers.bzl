@@ -1,4 +1,5 @@
 def arch_to_kernel_arch(arch):
+    # type: (str) -> str
     """Convert the architecture name used in the glibc to the one used in the kernel.
 
     Args:

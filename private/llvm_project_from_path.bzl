@@ -16,6 +16,7 @@ def _materialize_third_party_build(rctx, source_root):
             rctx.symlink(entry, target.get_child(entry.basename))
 
 def _llvm_project_from_path_impl(rctx):
+    # type: (...) -> repo_metadata
     source_root = rctx.workspace_root.get_child(rctx.attr.path)
     overlay_root = source_root.get_child(LLVM_PROJECT_OVERLAY)
     if not overlay_root.exists:

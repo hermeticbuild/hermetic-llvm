@@ -1,0 +1,22 @@
+[analysis]
+require-valid-suppressions = true
+strict-generic-narrowing = true
+
+[rules]
+missing-parameter-annotation = "error"
+missing-return-annotation = "error"
+missing-type-argument = "error"
+unsound-assignment = "error"
+unsound-return-statement = "error"
+explicit-any = "error"
+non-static-type = "error"
+blanket-ignore-comment = "error"
+possibly-unresolved-reference = "error"
+possibly-missing-attribute = "error"
+division-by-zero = "error"
+
+[[stub-packages]]
+manifest = "@bazel_skylib//:stubs.toml"
+
+[[stub-packages]]
+manifest = "@rules_cc//:stubs.toml"

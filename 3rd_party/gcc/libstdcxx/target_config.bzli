@@ -1,0 +1,63 @@
+# TODO(https://github.com/bazelbuild/bazel/issues/31770): Declare these fields
+# in source when Bazel supports typed dictionary keys.
+type _Target = dict[{
+    "abi_baseline_pair": str,
+    "abi_tweaks_dir": str,
+    "atomic_lock_policy": bool,
+    "atomic_word_dir": str,
+    "atomicity_dir": str,
+    "cpu_defines_dir": str,
+    "cpu_include_dir": str,
+    "cpu_opt_dir": NotRequired[str],
+    "enable_float128": NotRequired[bool],
+    "error_constants_dir": str,
+    "extern_template": NotRequired[int],
+    "have_attribute_visibility": NotRequired[int],
+    "host_triple": str,
+    "inline_version": NotRequired[int],
+    "locale_dir": str,
+    "os_include_dir": str,
+    "port_symver_files": NotRequired[list[str]],
+    "ptrdiff_t_is_int": NotRequired[bool],
+    "size_t_is_uint": NotRequired[bool],
+    "size_t_mangling": NotRequired[str],
+    "symver_file": NotRequired[str],
+    "symver_style": NotRequired[str],
+    "thread_header": str,
+    "use_allocator_new": NotRequired[int],
+    "use_cxx11_abi": NotRequired[int],
+    "use_dual_abi": NotRequired[int],
+}]
+
+_DEFAULT_POLICY_FIELDS: dict[{
+    "enable_float128": bool,
+    "extern_template": int,
+    "have_attribute_visibility": int,
+    "inline_version": int,
+    "port_symver_files": list[str],
+    "ptrdiff_t_is_int": bool,
+    "size_t_is_uint": bool,
+    "size_t_mangling": str,
+    "symver_file": str,
+    "symver_style": str,
+    "use_allocator_new": int,
+    "use_cxx11_abi": int,
+    "use_dual_abi": int,
+}]
+
+_SUPPORTED_TARGETS: dict[str, _Target]
+
+type _DirectoryField = Literal[
+    "abi_tweaks_dir",
+    "atomic_word_dir",
+    "atomicity_dir",
+    "cpu_defines_dir",
+    "cpu_opt_dir",
+    "error_constants_dir",
+    "locale_dir",
+    "os_include_dir",
+]
+
+# TODO(https://github.com/bazelbuild/starlark/pull/362): Move type parameters
+# into source when the supported Bazel versions can parse them.
+def _select_for_targets[T](project: Callable[[_Target], T]) -> select[T]: ...

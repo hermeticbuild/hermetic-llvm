@@ -1,6 +1,7 @@
 load("@bazel_features//:features.bzl", "bazel_features")
 
 def validate_static_library_compatible():
+    # type: () -> list[str]
     if bazel_features.cc.supports_starlarkified_toolchains:
         return []
 

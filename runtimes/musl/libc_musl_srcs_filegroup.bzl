@@ -23,6 +23,7 @@ _MUSL_SUPPORTED_ARCH = [
 ]
 
 def _libc_musl_srcs_filegroup_impl(ctx):
+    # type: (...) -> list[DefaultInfo | OutputGroupInfo]
     input_files = ctx.files.srcs
     file_map = {f.path: f for f in input_files}
 

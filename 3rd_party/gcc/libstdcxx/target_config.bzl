@@ -225,217 +225,238 @@ _DEFAULT_POLICY_FIELDS = {
 
 _NO_MATCH_ERROR = "Unsupported libstdc++ target platform"
 
-def _field_value(values, field):
-    if field in values:
-        return values[field]
-    if field == "cpu_opt_dir":
-        return "{}/opt".format(values["cpu_include_dir"])
-    if field in _DEFAULT_POLICY_FIELDS:
-        return _DEFAULT_POLICY_FIELDS[field]
-    fail("Unknown libstdc++ target field: {}".format(field))
-
-def _select_field(field):
+def _select_for_targets(project):
     return select({
-        Label(config): _field_value(values, field)
+        Label(config): project(values)
         for config, values in _SUPPORTED_TARGETS.items()
     }, no_match_error = _NO_MATCH_ERROR)
 
 def libstdcxx_host_triple():
-    return _select_field("host_triple")
+    # type: () -> select[str]
+    return _select_for_targets(lambda values: values["host_triple"])
 
 def libstdcxx_cpu_include_dir():
-    return _select_field("cpu_include_dir")
+    # type: () -> select[str]
+    return _select_for_targets(lambda values: values["cpu_include_dir"])
 
 def libstdcxx_os_include_dir():
-    return _select_field("os_include_dir")
+    # type: () -> select[str]
+    return _select_for_targets(lambda values: values["os_include_dir"])
 
 def libstdcxx_abi_baseline_pair():
-    return _select_field("abi_baseline_pair")
+    # type: () -> select[str]
+    return _select_for_targets(lambda values: values["abi_baseline_pair"])
 
 def libstdcxx_abi_tweaks_dir():
-    return _select_field("abi_tweaks_dir")
+    # type: () -> select[str]
+    return _select_for_targets(lambda values: values["abi_tweaks_dir"])
 
 def libstdcxx_atomicity_dir():
-    return _select_field("atomicity_dir")
+    # type: () -> select[str]
+    return _select_for_targets(lambda values: values["atomicity_dir"])
 
 def libstdcxx_atomic_word_dir():
-    return _select_field("atomic_word_dir")
+    # type: () -> select[str]
+    return _select_for_targets(lambda values: values["atomic_word_dir"])
 
 def libstdcxx_atomic_lock_policy():
-    return _select_field("atomic_lock_policy")
+    # type: () -> select[bool]
+    return _select_for_targets(lambda values: values["atomic_lock_policy"])
 
 def libstdcxx_cpu_defines_dir():
-    return _select_field("cpu_defines_dir")
+    # type: () -> select[str]
+    return _select_for_targets(lambda values: values["cpu_defines_dir"])
 
 def libstdcxx_error_constants_dir():
-    return _select_field("error_constants_dir")
+    # type: () -> select[str]
+    return _select_for_targets(lambda values: values["error_constants_dir"])
 
 def libstdcxx_locale_dir():
-    return _select_field("locale_dir")
+    # type: () -> select[str]
+    return _select_for_targets(lambda values: values["locale_dir"])
 
 def libstdcxx_thread_header():
-    return _select_field("thread_header")
+    # type: () -> select[str]
+    return _select_for_targets(lambda values: values["thread_header"])
 
 def libstdcxx_enable_float128():
-    return _select_field("enable_float128")
+    # type: () -> select[bool]
+    return _select_for_targets(lambda values: values.get("enable_float128", _DEFAULT_POLICY_FIELDS["enable_float128"]))
 
 def libstdcxx_extern_template():
-    return _select_field("extern_template")
+    # type: () -> select[int]
+    return _select_for_targets(lambda values: values.get("extern_template", _DEFAULT_POLICY_FIELDS["extern_template"]))
 
 def libstdcxx_have_attribute_visibility():
-    return _select_field("have_attribute_visibility")
+    # type: () -> select[int]
+    return _select_for_targets(lambda values: values.get("have_attribute_visibility", _DEFAULT_POLICY_FIELDS["have_attribute_visibility"]))
 
 def libstdcxx_inline_version():
-    return _select_field("inline_version")
+    # type: () -> select[int]
+    return _select_for_targets(lambda values: values.get("inline_version", _DEFAULT_POLICY_FIELDS["inline_version"]))
 
 def libstdcxx_use_allocator_new():
-    return _select_field("use_allocator_new")
+    # type: () -> select[int]
+    return _select_for_targets(lambda values: values.get("use_allocator_new", _DEFAULT_POLICY_FIELDS["use_allocator_new"]))
 
 def libstdcxx_use_cxx11_abi():
-    return _select_field("use_cxx11_abi")
+    # type: () -> select[int]
+    return _select_for_targets(lambda values: values.get("use_cxx11_abi", _DEFAULT_POLICY_FIELDS["use_cxx11_abi"]))
 
 def libstdcxx_use_dual_abi():
-    return _select_field("use_dual_abi")
+    # type: () -> select[int]
+    return _select_for_targets(lambda values: values.get("use_dual_abi", _DEFAULT_POLICY_FIELDS["use_dual_abi"]))
 
 def libstdcxx_symver_style():
-    return _select_field("symver_style")
+    # type: () -> select[str]
+    return _select_for_targets(lambda values: values.get("symver_style", _DEFAULT_POLICY_FIELDS["symver_style"]))
+
+def _config_h_policy_defines(values, gcc_version):
+    # type: (_Target, str) -> list[str]
+    return (
+        ([
+            policy_define("_GLIBCXX_SYMVER"),
+            policy_define("_GLIBCXX_SYMVER_GNU"),
+            policy_define("HAVE_AS_SYMVER_DIRECTIVE"),
+            policy_define("HAVE_SYMVER_SYMBOL_RENAMING_RUNTIME_SUPPORT"),
+            policy_define("HAVE_EXCEPTION_PTR_SINCE_GCC46"),
+        ] if values.get("symver_style", _DEFAULT_POLICY_FIELDS["symver_style"]) == "gnu" else []) +
+        ([policy_define("HAVE_ATOMIC_LOCK_POLICY")] if libstdcxx_has_atomic_lock_policy_define(gcc_version) and values["atomic_lock_policy"] else []) +
+        [policy_define("_GLIBCXX_MANGLE_SIZE_T", values.get("size_t_mangling", _DEFAULT_POLICY_FIELDS["size_t_mangling"]))] +
+        ([
+            policy_define("_GLIBCXX_PTRDIFF_T_IS_INT"),
+        ] if values.get("ptrdiff_t_is_int", _DEFAULT_POLICY_FIELDS["ptrdiff_t_is_int"]) else [
+            policy_undef("_GLIBCXX_PTRDIFF_T_IS_INT"),
+        ]) +
+        ([
+            policy_define("_GLIBCXX_SIZE_T_IS_UINT"),
+        ] if values.get("size_t_is_uint", _DEFAULT_POLICY_FIELDS["size_t_is_uint"]) else [
+            policy_undef("_GLIBCXX_SIZE_T_IS_UINT"),
+        ])
+    )
 
 def libstdcxx_config_h_policy_defines(gcc_version):
-    return select({
-        Label(config): (
-            ([
-                policy_define("_GLIBCXX_SYMVER"),
-                policy_define("_GLIBCXX_SYMVER_GNU"),
-                policy_define("HAVE_AS_SYMVER_DIRECTIVE"),
-                policy_define("HAVE_SYMVER_SYMBOL_RENAMING_RUNTIME_SUPPORT"),
-                policy_define("HAVE_EXCEPTION_PTR_SINCE_GCC46"),
-            ] if _field_value(values, "symver_style") == "gnu" else []) +
-            ([policy_define("HAVE_ATOMIC_LOCK_POLICY")] if libstdcxx_has_atomic_lock_policy_define(gcc_version) and values["atomic_lock_policy"] else []) +
-            [policy_define("_GLIBCXX_MANGLE_SIZE_T", _field_value(values, "size_t_mangling"))] +
-            ([
-                policy_define("_GLIBCXX_PTRDIFF_T_IS_INT"),
-            ] if _field_value(values, "ptrdiff_t_is_int") else [
-                policy_undef("_GLIBCXX_PTRDIFF_T_IS_INT"),
-            ]) +
-            ([
-                policy_define("_GLIBCXX_SIZE_T_IS_UINT"),
-            ] if _field_value(values, "size_t_is_uint") else [
-                policy_undef("_GLIBCXX_SIZE_T_IS_UINT"),
-            ])
-        )
-        for config, values in _SUPPORTED_TARGETS.items()
-    }, no_match_error = _NO_MATCH_ERROR)
+    # type: (str) -> select[list[str]]
+    return _select_for_targets(lambda values: _config_h_policy_defines(values, gcc_version))
 
 # These adapters turn configure.host-style directory fields into the exact
 # config headers and sources consumed by libstdc++-v3/include/Makefile.am and
 # libstdc++-v3/src/*/Makefile.am.
-def _gcc_config_header_label(field, basename):
-    return select({
-        Label(config): "libstdc++-v3/config/{}/{}".format(_field_value(values, field), basename)
-        for config, values in _SUPPORTED_TARGETS.items()
-    }, no_match_error = _NO_MATCH_ERROR)
+def _gcc_config_file(values, field, basename):
+    # type: (_Target, _DirectoryField, str) -> str
+    if field == "cpu_opt_dir":
+        directory = values.get(field, "{}/opt".format(values["cpu_include_dir"]))
+    else:
+        directory = values[field]
+    return "libstdc++-v3/config/{}/{}".format(directory, basename)
 
-def _gcc_config_source_label(field, basename):
-    return select({
-        Label(config): "libstdc++-v3/config/{}/{}".format(_field_value(values, field), basename)
-        for config, values in _SUPPORTED_TARGETS.items()
-    }, no_match_error = _NO_MATCH_ERROR)
-
-def _gcc_config_path_label(field):
-    return select({
-        Label(config): "libstdc++-v3/config/{}".format(_field_value(values, field))
-        for config, values in _SUPPORTED_TARGETS.items()
-    }, no_match_error = _NO_MATCH_ERROR)
-
-def _gcc_config_path_labels(field):
-    return select({
-        Label(config): [
-            "libstdc++-v3/config/{}".format(path)
-            for path in _field_value(values, field)
-        ]
-        for config, values in _SUPPORTED_TARGETS.items()
-    }, no_match_error = _NO_MATCH_ERROR)
-
-def _gcc_libgcc_header_label(field):
-    return select({
-        Label(config): "libgcc/{}".format(values[field])
-        for config, values in _SUPPORTED_TARGETS.items()
-    }, no_match_error = _NO_MATCH_ERROR)
+def _gcc_config_file_label(field, basename):
+    # type: (_DirectoryField, str) -> select[str]
+    return _select_for_targets(lambda values: _gcc_config_file(values, field, basename))
 
 def libstdcxx_ctype_base_h():
-    return _gcc_config_header_label("os_include_dir", "ctype_base.h")
+    # type: () -> select[str]
+    return _gcc_config_file_label("os_include_dir", "ctype_base.h")
 
 def libstdcxx_ctype_inline_h():
-    return _gcc_config_header_label("os_include_dir", "ctype_inline.h")
+    # type: () -> select[str]
+    return _gcc_config_file_label("os_include_dir", "ctype_inline.h")
 
 def libstdcxx_os_defines_h():
-    return _gcc_config_header_label("os_include_dir", "os_defines.h")
+    # type: () -> select[str]
+    return _gcc_config_file_label("os_include_dir", "os_defines.h")
 
 def libstdcxx_atomic_word_h():
-    return _gcc_config_header_label("atomic_word_dir", "atomic_word.h")
+    # type: () -> select[str]
+    return _gcc_config_file_label("atomic_word_dir", "atomic_word.h")
 
 def libstdcxx_atomicity_h():
-    return _gcc_config_header_label("atomicity_dir", "atomicity.h")
+    # type: () -> select[str]
+    return _gcc_config_file_label("atomicity_dir", "atomicity.h")
 
 def libstdcxx_cxxabi_tweaks_h():
-    return _gcc_config_header_label("abi_tweaks_dir", "cxxabi_tweaks.h")
+    # type: () -> select[str]
+    return _gcc_config_file_label("abi_tweaks_dir", "cxxabi_tweaks.h")
 
 def libstdcxx_cpu_defines_h():
-    return _gcc_config_header_label("cpu_defines_dir", "cpu_defines.h")
+    # type: () -> select[str]
+    return _gcc_config_file_label("cpu_defines_dir", "cpu_defines.h")
 
 def libstdcxx_error_constants_h():
-    return _gcc_config_header_label("error_constants_dir", "error_constants.h")
+    # type: () -> select[str]
+    return _gcc_config_file_label("error_constants_dir", "error_constants.h")
 
 def libstdcxx_bits_opt_random_h():
-    return _gcc_config_header_label("cpu_opt_dir", "bits/opt_random.h")
+    # type: () -> select[str]
+    return _gcc_config_file_label("cpu_opt_dir", "bits/opt_random.h")
 
 def libstdcxx_ext_opt_random_h():
-    return _gcc_config_header_label("cpu_opt_dir", "ext/opt_random.h")
+    # type: () -> select[str]
+    return _gcc_config_file_label("cpu_opt_dir", "ext/opt_random.h")
 
 def libstdcxx_c_locale_h():
-    return _gcc_config_header_label("locale_dir", "c_locale.h")
+    # type: () -> select[str]
+    return _gcc_config_file_label("locale_dir", "c_locale.h")
 
 def libstdcxx_c_locale_internal_h():
-    return _gcc_config_header_label("locale_dir", "c++locale_internal.h")
+    # type: () -> select[str]
+    return _gcc_config_file_label("locale_dir", "c++locale_internal.h")
 
 def libstdcxx_messages_members_h():
-    return _gcc_config_header_label("locale_dir", "messages_members.h")
+    # type: () -> select[str]
+    return _gcc_config_file_label("locale_dir", "messages_members.h")
 
 def libstdcxx_time_members_h():
-    return _gcc_config_header_label("locale_dir", "time_members.h")
+    # type: () -> select[str]
+    return _gcc_config_file_label("locale_dir", "time_members.h")
 
 def libstdcxx_ctype_configure_char_cc():
-    return _gcc_config_source_label("os_include_dir", "ctype_configure_char.cc")
+    # type: () -> select[str]
+    return _gcc_config_file_label("os_include_dir", "ctype_configure_char.cc")
 
 def libstdcxx_c_locale_cc():
-    return _gcc_config_source_label("locale_dir", "c_locale.cc")
+    # type: () -> select[str]
+    return _gcc_config_file_label("locale_dir", "c_locale.cc")
 
 def libstdcxx_codecvt_members_cc():
-    return _gcc_config_source_label("locale_dir", "codecvt_members.cc")
+    # type: () -> select[str]
+    return _gcc_config_file_label("locale_dir", "codecvt_members.cc")
 
 def libstdcxx_collate_members_cc():
-    return _gcc_config_source_label("locale_dir", "collate_members.cc")
+    # type: () -> select[str]
+    return _gcc_config_file_label("locale_dir", "collate_members.cc")
 
 def libstdcxx_ctype_members_cc():
-    return _gcc_config_source_label("locale_dir", "ctype_members.cc")
+    # type: () -> select[str]
+    return _gcc_config_file_label("locale_dir", "ctype_members.cc")
 
 def libstdcxx_messages_members_cc():
-    return _gcc_config_source_label("locale_dir", "messages_members.cc")
+    # type: () -> select[str]
+    return _gcc_config_file_label("locale_dir", "messages_members.cc")
 
 def libstdcxx_monetary_members_cc():
-    return _gcc_config_source_label("locale_dir", "monetary_members.cc")
+    # type: () -> select[str]
+    return _gcc_config_file_label("locale_dir", "monetary_members.cc")
 
 def libstdcxx_numeric_members_cc():
-    return _gcc_config_source_label("locale_dir", "numeric_members.cc")
+    # type: () -> select[str]
+    return _gcc_config_file_label("locale_dir", "numeric_members.cc")
 
 def libstdcxx_time_members_cc():
-    return _gcc_config_source_label("locale_dir", "time_members.cc")
+    # type: () -> select[str]
+    return _gcc_config_file_label("locale_dir", "time_members.cc")
 
 def libstdcxx_thread_header_h():
-    return _gcc_libgcc_header_label("thread_header")
+    # type: () -> select[str]
+    return _select_for_targets(lambda values: "libgcc/{}".format(values["thread_header"]))
 
 def libstdcxx_symver_file():
-    return _gcc_config_path_label("symver_file")
+    # type: () -> select[str]
+    return _select_for_targets(lambda values: "libstdc++-v3/config/{}".format(values.get("symver_file", _DEFAULT_POLICY_FIELDS["symver_file"])))
 
 def libstdcxx_port_symver_files():
-    return _gcc_config_path_labels("port_symver_files")
+    # type: () -> select[list[str]]
+    return _select_for_targets(lambda values: [
+        "libstdc++-v3/config/{}".format(path)
+        for path in values.get("port_symver_files", _DEFAULT_POLICY_FIELDS["port_symver_files"])
+    ])

@@ -3,6 +3,7 @@
 load("@bazel_skylib//lib:unittest.bzl", "analysistest")
 
 def _fdo_optimize_test_impl(ctx):
+    # type: (ctx[object, _Attrs]) -> list[AnalysisTestResultInfo]
     env = analysistest.begin(ctx)
     compiles = []
     backends = []

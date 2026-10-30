@@ -1,0 +1,1 @@
+type _Attrs = struct[{"context_sensitive": bool}, ...]

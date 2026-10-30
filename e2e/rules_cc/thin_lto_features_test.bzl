@@ -10,6 +10,7 @@ _SHARED_BACKEND_FEATURES = [
 ]
 
 def _thin_lto_features_test_impl(ctx):
+    # type: (...) -> list[AnalysisTestResultInfo]
     env = analysistest.begin(ctx)
     feature_configuration = cc_common.configure_features(
         ctx = ctx,
