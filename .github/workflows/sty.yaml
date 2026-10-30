@@ -1,0 +1,141 @@
+name: Starlark types
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sty:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Select implementations
+        id: files
+        shell: bash
+        run: |
+          {
+            echo 'root<<EOF'
+            git ls-files -- \
+              'case_insensitive_vfs.bzl' \
+              'directory.bzl' \
+              'extensions/toolchain.bzl' \
+              'kernel/extension/kernel_helpers.bzl' \
+              'prebuilt/mtree.bzl' \
+              'toolchain/llvm/llvm.bzl' \
+              'config/defs.bzl' \
+              'extensions/gcc.bzl' \
+              'rbe.bzl' \
+              'constraints/*.bzl' \
+              'platforms/*.bzl' \
+              'prebuilt/platforms.bzl' \
+              'private/llvm_project_common.bzl' \
+              'private/llvm_project_from_path.bzl' \
+              '3rd_party/gcc/extension/make_select_gcc_repository_target.bzl' \
+              '3rd_party/gcc/version.bzl' \
+              '3rd_party/gcc/libstdcxx/*.m4.bzl' \
+              '3rd_party/gcc/libstdcxx/configure.ac.bzl' \
+              '3rd_party/gcc/libstdcxx/gcc_config_checks.bzl' \
+              '3rd_party/gcc/libstdcxx/libstdcxx_*_header*.bzl' \
+              '3rd_party/gcc/libstdcxx/target_config.bzl' \
+              '3rd_party/gcc/libstdcxx/autoconf/checks.bzl' \
+              '3rd_party/llvm-project/*/libcxx/*.bzl' \
+              '3rd_party/llvm-project/x.x/compiler-rt/filter_builtin_sources.bzl' \
+              '3rd_party/llvm-project/x.x/compiler-rt/weak_symbols.bzl' \
+              'kernel/extension/libc_kernel_versions.bzl' \
+              'kernel/extension/make_select_kernel_headers_repository_target.bzl' \
+              'tools/*.bzl' \
+              'toolchain/bootstrap/transition_settings.bzl' \
+              'toolchain/bootstrap_stages.bzl' \
+              'toolchain/args/llvm_target_triple.bzl' \
+              'toolchain/selects.bzl' \
+              '3rd_party/libc/*.bzl' \
+              'runtimes/musl/libc_musl_srcs_filegroup.bzl' \
+              'runtimes/mingw/crt_sources.bzl' \
+              'runtimes/glibc/glibc_dynamic_linker.bzl' \
+              'runtimes/glibc/glibc_linker_script.bzl' \
+              'runtimes/glibc/libc_aware_target_triple.bzl'
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+          inventories="$RUNNER_TEMP/sty-files"
+          mkdir "$inventories"
+          git ls-files -- '*.bzl' ':(exclude)e2e/**' > "$inventories/root"
+          {
+            cat "$inventories/root"
+            for workspace in cross_compilation rules_cc rules_rs rules_rust uefi; do
+              git -C "e2e/$workspace" ls-files -- '*.bzl' > "$inventories/$workspace"
+              sed "s|^|e2e/$workspace/|" "$inventories/$workspace"
+            done
+          } | LC_ALL=C sort > "$inventories/covered"
+          git ls-files -- '*.bzl' | LC_ALL=C sort | diff - "$inventories/covered"
+          echo "root_bazel_version=$(<.bazelversion)" >> "$GITHUB_OUTPUT"
+      - name: Check root workspace
+        uses: tamird/sty@2ab74c830937d3ca85165ca0e9a02a42400ad9e5
+        with:
+          audit-loads: true
+          files: ${{ steps.files.outputs.root }}
+          advisory-files-from: ${{ runner.temp }}/sty-files/root
+      - name: Check rules_cc example workspace
+        if: ${{ !cancelled() && steps.files.outcome == 'success' }}
+        uses: tamird/sty@2ab74c830937d3ca85165ca0e9a02a42400ad9e5
+        with:
+          working-directory: e2e/rules_cc
+          audit-loads: true
+          files: .
+          advisory-files-from: ${{ runner.temp }}/sty-files/rules_cc
+          advisory-config: ../sty-advisory.toml
+          advisory-bazel-load-context: '@external_include_paths_test//:error_header_binary'
+          advisory-require-bazel-load-context: external_include_paths_test/defs.bzl
+          artifact-name: sty-rules-cc
+      - name: Check cross_compilation example workspace
+        if: ${{ !cancelled() && steps.files.outcome == 'success' }}
+        uses: tamird/sty@2ab74c830937d3ca85165ca0e9a02a42400ad9e5
+        with:
+          working-directory: e2e/cross_compilation
+          advisory-only: true
+          advisory-files-from: ${{ runner.temp }}/sty-files/cross_compilation
+          advisory-config: ../sty-advisory.toml
+          audit-loads: true
+          artifact-name: sty-cross-compilation
+      - name: Check rules_rs example workspace
+        if: ${{ !cancelled() && steps.files.outcome == 'success' }}
+        uses: tamird/sty@2ab74c830937d3ca85165ca0e9a02a42400ad9e5
+        with:
+          working-directory: e2e/rules_rs
+          advisory-only: true
+          advisory-files-from: ${{ runner.temp }}/sty-files/rules_rs
+          advisory-config: ../sty-advisory.toml
+          audit-loads: true
+          artifact-name: sty-rules-rs
+      - name: Check rules_rust example workspace
+        if: ${{ !cancelled() && steps.files.outcome == 'success' }}
+        uses: tamird/sty@2ab74c830937d3ca85165ca0e9a02a42400ad9e5
+        with:
+          working-directory: e2e/rules_rust
+          advisory-only: true
+          advisory-files-from: ${{ runner.temp }}/sty-files/rules_rust
+          advisory-config: ../sty-advisory.toml
+          audit-loads: true
+          artifact-name: sty-rules-rust
+      - name: Check uefi example workspace
+        if: ${{ !cancelled() && steps.files.outcome == 'success' }}
+        uses: tamird/sty@2ab74c830937d3ca85165ca0e9a02a42400ad9e5
+        with:
+          working-directory: e2e/uefi
+          advisory-only: true
+          advisory-files-from: ${{ runner.temp }}/sty-files/uefi
+          advisory-config: ../sty-advisory.toml
+          audit-loads: true
+          bazel-version: ${{ steps.files.outputs.root_bazel_version }}
+          artifact-name: sty-uefi
