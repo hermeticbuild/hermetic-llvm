@@ -1,4 +1,5 @@
 load("@bazel_skylib//lib:structs.bzl", "structs")
+load("//platforms:common.bzl", "SOURCE_ONLY_LINUX_TARGETS")
 load("//private:llvm_project_archive.bzl", "llvm_project_archive")
 load("//private:llvm_project_from_git.bzl", "llvm_project_from_git")
 load("//private:llvm_project_from_path.bzl", "llvm_project_from_path")
@@ -216,7 +217,7 @@ def _get_llvm_version_index(mctx):
     return decoded
 
 def _get_llvm_targets(mctx):
-    targets = {}
+    targets = {backend: None for backend in SOURCE_ONLY_LINUX_TARGETS.values()}
     for module in mctx.modules:
         for configure in module.tags.configure:
             for target in configure.targets:

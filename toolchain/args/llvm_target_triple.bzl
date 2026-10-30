@@ -1,6 +1,17 @@
 load("//constraints/windows/abi:abis.bzl", "WINDOWS_TARGET_TRIPLES_BY_CONFIG")
 
 LLVM_TARGET_TRIPLE = select({
+    "@llvm//platforms/config:linux_x86_64_none": ["x86_64-linux-gnu"],
+    "@llvm//platforms/config:linux_aarch64_none": ["aarch64-linux-gnu"],
+    "@llvm//platforms/config:linux_armv7_none": ["armv7-linux-gnueabi"],
+    "@llvm//platforms/config:linux_x86_32_none": ["i386-linux-gnu"],
+    "@llvm//platforms/config:linux_mips64_none": ["mips64-linux-gnuabi64"],
+    "@llvm//platforms/config:linux_ppc32_none": ["powerpc-linux-gnu"],
+    "@llvm//platforms/config:linux_ppc64le_none": ["powerpc64le-linux-gnu"],
+    "@llvm//platforms/config:linux_riscv32_none": ["riscv32-linux-gnu"],
+    "@llvm//platforms/config:linux_riscv64_none": ["riscv64-linux-gnu"],
+    "@llvm//platforms/config:linux_s390x_none": ["s390x-linux-gnu"],
+
     # TODO: Generate this automatically.
     "@llvm//platforms/config:linux_x86_64_gnu": ["x86_64-linux-gnu"],
     "@llvm//platforms/config:linux_aarch64_gnu": ["aarch64-linux-gnu"],

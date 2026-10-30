@@ -1,6 +1,7 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 load("@bazel_skylib//rules:common_settings.bzl", "string_flag", "string_setting")
 load("@rules_cc//cc/toolchains:actions.bzl", "cc_action_type_set")
+load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 load("@rules_cc//cc/toolchains:artifacts.bzl", "cc_artifact_name_pattern")
 load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
 load("//toolchain/bootstrap:declare_toolchains.bzl", declare_bootstrap_toolchains = "declare_toolchains")
@@ -637,4 +638,37 @@ bzl_library(
     name = "bootstrap_stages",
     srcs = ["bootstrap_stages.bzl"],
     visibility = ["//visibility:public"],
+)
+
+# Freestanding Linux targets have no hosted headers, libraries, or CRTs.
+cc_args_list(
+    name = "freestanding_toolchain_args",
+    args = [
+        "//toolchain/args:target_flags",
+        "//toolchain/args:no_absolute_paths_for_builtins",
+        "//toolchain/args:deterministic_compile_flags",
+        ":freestanding_link_flags",
+        ":sysroot_flags",
+        ":hermetic_compile_flags",
+        "//toolchain/args:fuse_ld",
+        "@rules_cc//cc/toolchains/args/external_include_paths:external_include_paths",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+cc_args_list(
+    name = "hosted_toolchain_args",
+    args = select({
+        ":runtimes_none": ["//toolchain/runtimes:toolchain_args"],
+        ":runtimes_stage1": ["//toolchain/runtimes:toolchain_args"],
+        ":runtimes_stage1_hosted": ["//toolchain/runtimes:toolchain_args"],
+        "//conditions:default": [":toolchain_args"],
+    }),
+    visibility = ["//visibility:public"],
+)
+
+cc_args(
+    name = "freestanding_link_flags",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    args = ["-nostdlib"],
 )

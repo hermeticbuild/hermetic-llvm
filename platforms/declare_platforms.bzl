@@ -22,7 +22,7 @@ def declare_platforms():
             #
             # Users can still create their own platforms without a libc
             # constraint if they want to.
-            constraints.append("//constraints/libc:{}".format(default_libc(target_os, target_cpu)))
+            constraints.append("//constraints/libc:{}".format(default_libc(target_os, target_cpu) if (target_os, target_cpu) in LIBC_SUPPORTED_TARGETS else "none"))
 
         if target_os == "windows":
             # Repository-owned Windows platforms state their existing GNU ABI
