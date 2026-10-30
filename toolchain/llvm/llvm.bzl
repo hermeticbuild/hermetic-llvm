@@ -9,6 +9,7 @@ _VALIDATE_STATIC_LIBRARY_TOOL = {
 } if bazel_features.cc.supports_starlarkified_toolchains else {}
 
 def declare_llvm_targets(*, suffix = ""):
+    # type: (str) -> None
     """Declares the Bazel interface of one installed LLVM distribution.
 
     The bin/* tools and lib/clang/* resource headers below come from the same
