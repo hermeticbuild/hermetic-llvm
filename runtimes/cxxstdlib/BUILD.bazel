@@ -98,21 +98,39 @@ genrule(
 filegroup(
     name = "static_runtime_lib",
     srcs = select({
+        "//config:nostdlibxx_enabled": [],
+        "//conditions:default": ["static_stdlib_runtime_lib"],
+    }) + ["static_unwind_runtime_lib"],
+)
+
+# C++ library suppression must not remove the independently selected unwinder.
+# Keep explicit runtime targets usable as ordinary consumer dependencies.
+filegroup(
+    name = "static_unwind_runtime_lib",
+    srcs = select({
+        ":libstdcxx_linux": ["@llvm-project//libunwind:libunwind.static.gnu_link_name"],
+        ":libcxx_windows_msvc_vcruntime": [],
+        ":libcxx_linux": ["@llvm-project//libunwind:libunwind.static.gnu_link_name"],
+        ":libcxx_windows": ["@llvm-project//libunwind:libunwind.static.gnu_link_name"],
+        "//conditions:default": [],
+    }),
+)
+
+filegroup(
+    name = "static_stdlib_runtime_lib",
+    srcs = select({
         ":libstdcxx_linux": [
             ":libstdcxx_static_runtime_lib",
-            "@llvm-project//libunwind:libunwind.static.gnu_link_name",
         ],
         ":libstdcxx_windows": [":libstdcxx_windows_unsupported"],
         ":libcxx_windows_msvc_vcruntime": ["//runtimes/libcxx:libcxx.static"],
         ":libcxx_linux": [
             "@llvm-project//libcxx:libcxx.static.gnu_link_name",
             "@llvm-project//libcxxabi:libcxxabi.static.gnu_link_name",
-            "@llvm-project//libunwind:libunwind.static.gnu_link_name",
         ],
         ":libcxx_windows": [
             "@llvm-project//libcxx:libcxx.static.gnu_link_name",
             "@llvm-project//libcxxabi:libcxxabi.static.gnu_link_name",
-            "@llvm-project//libunwind:libunwind.static.gnu_link_name",
         ],
         "//conditions:default": [],
     }),
@@ -121,9 +139,25 @@ filegroup(
 filegroup(
     name = "dynamic_runtime_lib",
     srcs = select({
+        "//config:nostdlibxx_enabled": [],
+        "//conditions:default": ["dynamic_stdlib_runtime_lib"],
+    }) + ["dynamic_unwind_runtime_lib"],
+)
+
+filegroup(
+    name = "dynamic_unwind_runtime_lib",
+    srcs = select({
+        ":libstdcxx_linux": ["//runtimes/libunwind:libunwind.shared"],
+        ":libcxx_linux": ["@llvm-project//libunwind:libunwind.shared"],
+        "//conditions:default": [],
+    }),
+)
+
+filegroup(
+    name = "dynamic_stdlib_runtime_lib",
+    srcs = select({
         ":libstdcxx_linux": [
             ":libstdcxx_dynamic_runtime_lib",
-            "//runtimes/libunwind:libunwind.shared",
         ],
         ":libstdcxx_windows": [":libstdcxx_windows_unsupported"],
         # Windows MSVC libc++ is configuration-wide static even when ordinary
@@ -132,7 +166,6 @@ filegroup(
         ":libcxx_linux": [
             "@llvm-project//libcxx:libcxx.shared",
             "@llvm-project//libcxxabi:libcxxabi.shared",
-            "@llvm-project//libunwind:libunwind.shared",
         ],
         # TODO(zbarsky): windows?
         "//conditions:default": [],

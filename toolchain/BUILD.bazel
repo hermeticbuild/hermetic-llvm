@@ -66,6 +66,15 @@ config_setting(
 )
 
 config_setting(
+    name = "runtimes_all_with_cxxstdlib_headers",
+    flag_values = {
+        "runtime_stage": "complete",
+        "//config:nostdincxx": "false",
+    },
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
     name = "runtimes_stage1",
     flag_values = {
         ":runtime_stage": "stage1",
@@ -168,6 +177,14 @@ cc_args_list(
     args = select({
         "@platforms//os:linux": ["//toolchain/args:cxxstdlib_headers_include_search_paths"],
         "@platforms//os:windows": ["//toolchain/args/windows:cxxstdlib_headers_include_search_paths"],
+        "//conditions:default": ["macos_nostdincxx"],
+    }),
+)
+
+cc_args_list(
+    name = "macos_nostdincxx",
+    args = select({
+        "//config:nostdincxx_enabled": ["//toolchain/args:nostdincxx"],
         "//conditions:default": [],
     }),
 )
@@ -189,6 +206,14 @@ cc_args_list(
 # Those are stubs since we link against static_runtime_libs / dynamic_runtime_libs.
 cc_args_list(
     name = "cxxstdlib_library_search_paths",
+    args = select({
+        "//config:nostdlibxx_enabled": [],
+        "//conditions:default": ["default_cxxstdlib_library_search_paths"],
+    }),
+)
+
+cc_args_list(
+    name = "default_cxxstdlib_library_search_paths",
     args = select({
         # libc++ is provided by the macOS SDK.
         "@platforms//os:macos": [],

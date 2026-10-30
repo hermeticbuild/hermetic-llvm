@@ -486,7 +486,7 @@ def declare_llvm_targets(*, suffix = ""):
         srcs = [
             ":builtin_resource_include_dir",
         ] + select({
-            "@llvm//toolchain:runtimes_all": [
+            "@llvm//toolchain:runtimes_all_with_cxxstdlib_headers": [
                 "@llvm//runtimes/cxxstdlib:headers_include_search_directory",
                 "@llvm//runtimes/cxxstdlib:abi_headers_include_search_directory",
             ],
@@ -510,7 +510,7 @@ def declare_llvm_targets(*, suffix = ""):
         srcs = [
             ":builtin_resource_include_dir",
         ] + select({
-            "@llvm//toolchain:runtimes_all": [
+            "@llvm//toolchain:runtimes_all_with_cxxstdlib_headers": [
                 "@llvm//runtimes/cxxstdlib:headers_include_search_directory",
                 "@llvm//runtimes/cxxstdlib:abi_headers_include_search_directory",
             ],
@@ -528,7 +528,7 @@ def declare_llvm_targets(*, suffix = ""):
         srcs = [
             ":builtin_resource_dir",
         ] + select({
-            "@llvm//toolchain:runtimes_all": [
+            "@llvm//toolchain:runtimes_all_with_cxxstdlib_headers": [
                 "@llvm//runtimes/cxxstdlib:headers_include_search_directory",
                 "@llvm//runtimes/cxxstdlib:abi_headers_include_search_directory",
             ],
