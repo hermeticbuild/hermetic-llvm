@@ -152,8 +152,9 @@ cc_args_list(
     }),
 )
 
-# MinGW target headers already precede the compiler resource directory. The
-# MSVC SDK headers remain in cc_toolchain's deferred post-resource append.
+# These arguments precede resource-dir on the command line, but -Xclang places
+# the headers after driver-generated builtins. MSVC SDK arguments are appended
+# by cc_toolchain separately and use the same internal include category.
 cc_args_list(
     name = "headers_before_compiler_resource",
     args = select({
