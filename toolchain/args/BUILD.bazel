@@ -165,14 +165,19 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:clif_match",
         "@rules_cc//cc/toolchains/actions:objcpp_compile",
     ],
-    # Preserve musl's existing C++ -> C -> builtin ordering. Its C headers
-    # still use -isystem, so moving only C++ to the driver-owned category would
-    # incorrectly put C headers first. Musl user-header precedence is separate.
+    # Musl needs C++ and C components before driver-generated builtin headers.
+    # -Xpreprocessor is emitted before the driver's C++ and builtin paths;
+    # -Xclang is emitted afterwards. Raw musl paths intentionally survive
+    # -nostdinc++: only the driver's -stdlib++-isystem handler honors that flag.
     args = select({
         "//platforms/config:musl": [
-            "-isystem",
+            "-Xpreprocessor",
+            "-internal-isystem",
+            "-Xpreprocessor",
             "{cxxstdlib_headers_include_search_path}",
-            "-isystem",
+            "-Xpreprocessor",
+            "-internal-isystem",
+            "-Xpreprocessor",
             "{cxxstdlib_abi_headers_include_search_path}",
         ],
         # Joined spelling survives Go's trimLinkerArgv (-stdlib prefix).
