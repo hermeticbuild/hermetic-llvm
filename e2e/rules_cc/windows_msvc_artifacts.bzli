@@ -1,0 +1,8 @@
+# TODO(https://github.com/bazelbuild/bazel/issues/31770): Declare these fields
+# in source when Bazel supports typed dictionary keys.
+type _CrtInputs = dict[{"//command_line_option:features": list[str]}]
+type _CrtAttrs = struct[{"static_crt": bool, "target_platform": Label}, ...]
+type _CrtOutputs = dict[{
+    "//command_line_option:features": list[str],
+    "//command_line_option:platforms": str,
+}]

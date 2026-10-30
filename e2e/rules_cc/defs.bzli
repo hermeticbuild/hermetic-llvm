@@ -1,0 +1,13 @@
+# Bazel groups lists and tuples into the same selector concatenation kind.
+type _SelectedDynamicDeps = select[Sequence[str | Label] | None, Literal["list"]]
+type _DynamicDeps = Sequence[str | Label] | _SelectedDynamicDeps
+
+# TODO(https://github.com/bazelbuild/starlark/pull/362): Move type parameters
+# into source when the supported Bazel versions can parse them.
+class _InnerBinary[**P](Protocol):
+    def __call__(self, *, name: str, dynamic_deps: _SelectedDynamicDeps, **kwargs: KeywordArgs[P]) -> None: ...
+
+class _SanitizerBinary[**P](Protocol):
+    def __call__(self, name: str, dynamic_deps: _DynamicDeps | None = ..., **kwargs: KeywordArgs[P]) -> None: ...
+
+def _with_macos_sanitizer_runtime[**P](inner_binary: _InnerBinary[P], macos_runtime: str) -> _SanitizerBinary[P]: ...
