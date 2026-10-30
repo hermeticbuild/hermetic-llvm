@@ -7,7 +7,9 @@ LLVM_TOOLS = ([
     "clang-format",
     "clang-tidy",
     "clangd",
-] if int(LLVM_VERSION_MAJOR) >= 22 else []) + [
+] if int(LLVM_VERSION_MAJOR) >= 22 else []) + ([
+    "flang",
+] if int(LLVM_VERSION_MAJOR) >= 23 else []) + [
     "clang",
     "clang-scan-deps",
     "dsymutil",
