@@ -1,4 +1,5 @@
 load("@bazel_lib//lib:transitions.bzl", "platform_transition_binary")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@llvm//:defs.bzl", "exec_test")
 load("@llvm//toolchain:selects.bzl", "platform_llvm_binary")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
@@ -12,6 +13,36 @@ alias(
 cc_binary(
     name = "hello",
     srcs = ["main.c"],
+)
+
+# lld rejects symbols that a DSO strongly references but the executable keeps local,
+# e.g. _IO_stdin_used from crt1.o.
+cc_binary(
+    name = "hello_local_symbols",
+    srcs = ["main.c"],
+    additional_linker_inputs = ["local_symbols.map"],
+    linkopts = ["-Wl,--version-script,$(execpath local_symbols.map)"],
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+platform_transition_binary(
+    name = "hello_local_symbols_x86_64_gnu",
+    binary = ":hello_local_symbols",
+    target_platform = "@llvm//platforms:linux_x86_64",
+)
+
+platform_transition_binary(
+    name = "hello_local_symbols_aarch64_gnu",
+    binary = ":hello_local_symbols",
+    target_platform = "@llvm//platforms:linux_aarch64",
+)
+
+build_test(
+    name = "glibc_local_symbols_test",
+    targets = [
+        ":hello_local_symbols_aarch64_gnu",
+        ":hello_local_symbols_x86_64_gnu",
+    ],
 )
 
 platform(

@@ -59,15 +59,15 @@ use_repo(
 )
 
 TOOLCHAIN_EXTRAS_SHA256 = {
-    "darwin-amd64": "7f982146b033650295a568e2db2795753d6610919c4d0e90bc4baf53dfb88d04",
-    "darwin-arm64": "4244309df7e1cb3c602597dc30b2cf25064960b877e8087dfaaa2c3f57580588",
-    "linux-amd64-musl": "418a27a0ab8ecf46e2e00bd4381efc0bcb54c28312261c4f36114842e5ecb20e",
-    "linux-arm64-musl": "5f6bcc5a806902de3e6564675bb9a75cdcbc6167af05e0c888b9930b8890b2e1",
-    "windows-amd64-gnu": "a4d8f7893d3d373a928fe4d7be3fb113d3c73101f967718973518acb2a43544e",
-    "windows-arm64-gnu": "4a3835588fe46a5d48424d57e8a1c2743215143100bb4fe10b918374787b3505",
+    "darwin-amd64": "896012903967bb0e9993ce9348e2f18dae67149bd673a186cf89ece9f64bd060",
+    "darwin-arm64": "7df5f768ec8e82cd9847df90dac9b9cb1bc2a6628669487475adf341b58854eb",
+    "linux-amd64-musl": "00bffd76731a34465064a3fe3dc2f11ebd51be09b659002c6b570e7cd202a882",
+    "linux-arm64-musl": "be93b5abbef9e7380024ebdbb547a5e48b034ae205e26ccf000a8a99a945d37e",
+    "windows-amd64-gnu": "98ee08155617b96c2fc5295af2c3f22e04d1fad86df1040e581d6f5f41a5ddb5",
+    "windows-arm64-gnu": "79ebe46aadad7528d40926e9780dd29f0c07f47856a234550519e6879690264b",
 }
 
-TOOLCHAIN_EXTRAS_VERSION = "20260429"
+TOOLCHAIN_EXTRAS_VERSION = "20261030"
 
 [
     http_archive(
