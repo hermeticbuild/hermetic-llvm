@@ -1,4 +1,5 @@
 load("@bazel_skylib//lib:selects.bzl", "selects")
+load("//runtimes:module_map.bzl", "include_path")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -74,6 +75,18 @@ alias(
         ":libstdcxx_windows": ":libstdcxx_windows_unsupported",
         ":libcxx_windows_msvc_vcruntime": "//runtimes/libcxx:libcxx_msvc_library_search_directory",
         "//conditions:default": "//runtimes/libcxx:libcxx_library_search_directory",
+    }),
+)
+
+include_path(
+    name = "default_headers",
+    srcs = select({
+        "//config:nostdincxx_enabled": [],
+        "//conditions:default": [
+            # do not sort: preserve the existing module-map header order.
+            "headers_include_search_directory",
+            "abi_headers_include_search_directory",
+        ],
     }),
 )
 
