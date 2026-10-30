@@ -8,6 +8,7 @@ _ZIG_CPU_OVERRIDES = {
 
 # Zig target triples only, not LLVM.
 def libc_aware_target_triple():
+    # type: () -> select[str]
     prefixes = {
         "//platforms/config:{}_{}".format(target_os, target_cpu): "{}-{}-".format(_ZIG_CPU_OVERRIDES.get(target_cpu, target_cpu), target_os)
         for (target_os, target_cpu) in LIBC_SUPPORTED_TARGETS

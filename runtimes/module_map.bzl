@@ -9,6 +9,7 @@ IncludePathInfo = provider(
 )
 
 def _module_map_impl(ctx):
+    # type: (...) -> DefaultInfo
     module_map = ctx.actions.declare_file(ctx.attr.name + ".modulemap")
 
     include_path_info = ctx.attr.include_path[IncludePathInfo]
@@ -85,6 +86,7 @@ module_map = rule(
 )
 
 def _include_path_impl(ctx):
+    # type: (...) -> list[IncludePathInfo]
     textual_headers = []
 
     for src in ctx.attr.srcs:

@@ -87,6 +87,7 @@ _STRUCTS = [
 ]
 
 def _typedef_replacement(declaration, name):
+    # type: (object, object) -> str
     return "\n".join([
         "#if defined(__NEED_{name}) && !defined(__DEFINED_{name})".format(name = name),
         "typedef {declaration};".format(declaration = declaration),
@@ -96,6 +97,7 @@ def _typedef_replacement(declaration, name):
     ])
 
 def _struct_replacement(name, body):
+    # type: (object, object) -> str
     return "\n".join([
         "#if defined(__NEED_struct_{name}) && !defined(__DEFINED_struct_{name})".format(name = name),
         "struct {name} {body};".format(name = name, body = body),
@@ -105,6 +107,7 @@ def _struct_replacement(name, body):
     ])
 
 def _alltypes_substitutions():
+    # type: () -> dict[str, str]
     substitutions = {}
     for declaration, name in _TYPEDEFS:
         substitutions["TYPEDEF {declaration};".format(declaration = declaration)] = _typedef_replacement(declaration, name)
@@ -113,6 +116,7 @@ def _alltypes_substitutions():
     return substitutions
 
 def musl_alltypes_headers(name, arch, visibility = None):
+    # type: (str, str, Collection[str | Label] | depset[str | Label] | None) -> list[str]
     arch_name = name + "_arch"
     common_name = name + "_common"
     wrapper_name = name + "_wrapper"

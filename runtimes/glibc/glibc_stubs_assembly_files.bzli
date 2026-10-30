@@ -1,0 +1,11 @@
+type _Actions = actions
+
+class _StubContext(Protocol):
+    @property
+    def actions(self) -> _Actions: ...
+
+    @property
+    def executable(self) -> struct[{"_generator": File}, ...]: ...
+
+    @property
+    def files(self) -> struct[{"abilist": list[File]}, ...]: ...

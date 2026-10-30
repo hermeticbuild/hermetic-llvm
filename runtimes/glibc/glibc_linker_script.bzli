@@ -1,0 +1,3 @@
+# TODO(https://github.com/bazelbuild/starlark/pull/362): Move type parameters
+# into source when the supported Bazel versions can parse them.
+def make_glibc_linker_script[T: str](name: str, lib_name: str, lib_version: str | int, additional_linker_inputs: list[T] | select[list[T] | None, Literal["list"]] = ...) -> str: ...
