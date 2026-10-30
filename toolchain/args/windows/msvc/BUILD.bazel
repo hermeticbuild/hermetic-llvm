@@ -278,10 +278,12 @@ cc_args_list(
         "sdk_library_search_paths",
         "common_support_library_search_paths",
         "com_support_library_search_paths",
+        # rustc selects libcmt or msvcrt independently of Bazel's C++ features.
+        # Both directories contain only retail CRT libraries; /DEFAULTLIB from
+        # rustc or clang-cl's /MT and /MD objects still selects the CRT.
+        "dynamic_crt_library_search_paths",
+        "static_crt_library_search_paths",
     ] + select({
-        "//toolchain/features/msvc:static_crt_config": ["static_crt_library_search_paths"],
-        "//conditions:default": ["dynamic_crt_library_search_paths"],
-    }) + select({
         # Hosted C construction tools need the target CRT and SDK, but do not
         # consume the C++ standard library.
         "//toolchain:runtimes_stage1_hosted": [],
