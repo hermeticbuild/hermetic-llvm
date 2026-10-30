@@ -3,6 +3,7 @@
 load("@bazel_skylib//rules/directory:providers.bzl", "DirectoryInfo")
 
 def _case_insensitive_vfs_overlay_impl(ctx):
+    # type: (...) -> list[DefaultInfo]
     output = ctx.actions.declare_file(ctx.label.name + ".yaml")
     args = ctx.actions.args()
     args.add("-output", output)

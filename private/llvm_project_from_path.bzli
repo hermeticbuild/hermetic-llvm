@@ -1,0 +1,5 @@
+# TODO(https://github.com/bazelbuild/starlark/pull/362): Move type parameters
+# into source when the supported Bazel versions can parse them.
+# TODO(https://github.com/bazelbuild/bazel/issues/32020): Use a source annotation
+# when Bazel exposes this context type.
+def _materialize_third_party_build[A](rctx: repository_ctx[A], source_root: path) -> None: ...

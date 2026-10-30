@@ -51,7 +51,10 @@ def _write_llvm_vars(rctx):
         dictionary += '    "{}": "{}",\n'.format(key, value)
     rctx.file("vars.bzl", content + dictionary + "}\n", executable = False)
 
+# TODO(https://github.com/bazelbuild/bazel/issues/32020): Use a source annotation
+# when Bazel exposes this context type.
 def _write_llvm_targets(rctx):
+    # type: (repository_ctx[_TargetAttrs]) -> None
     rctx.file(
         "llvm/targets.bzl",
         "llvm_targets = {}\n".format(rctx.attr.targets),
@@ -85,6 +88,7 @@ def _expose_third_party_build_files(rctx):
     rctx.file("utils/bazel/third_party_build/BUILD.bazel", """exports_files(["pfm.BUILD"])\n""", executable = False)
 
 def write_llvm_project_files(rctx):
+    # type: (repository_ctx[_TargetAttrs]) -> None
     _expose_third_party_build_files(rctx)
     rctx.file("BUILD.bazel", """\
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
@@ -99,6 +103,7 @@ bzl_library(
     _write_llvm_targets(rctx)
 
 def _relative_path(relative_dir, basename):
+    # type: (str, str) -> str
     if relative_dir == ".":
         return basename
     return relative_dir + "/" + basename
@@ -125,7 +130,7 @@ def symlink_source_and_overlay(rctx, source_root):
 
     for _ in range(_MAX_OVERLAY_DIRECTORIES):
         relative_dir = stack.pop()
-        overlay_dirs = {}
+        overlay_dirs = {}  # type: dict[str, None]
 
         for entry in overlay_root.get_child(relative_dir).readdir():
             relative_path = _relative_path(relative_dir, entry.basename)
