@@ -146,6 +146,7 @@ def config_settings():
     # Compiler semantics: suppress implicit C++ headers and implicit C++
     # libraries independently. Explicit consumer dependencies remain valid.
     # Target policy must not leak into unrelated execution tools.
+    # Supported on Bazel 9+ only.
     bool_flag(
         name = "nostdincxx",
         build_setting_default = False,
@@ -155,6 +156,8 @@ def config_settings():
         name = "nostdincxx_enabled",
         flag_values = {"nostdincxx": "true"},
     )
+
+    # Supported on Bazel 9+ only.
     bool_flag(
         name = "nostdlibxx",
         build_setting_default = False,

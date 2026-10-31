@@ -53,7 +53,7 @@ This ecosystem simplifies the process by cross-compiling all target-specific com
 
 ### Suppressing the default C++ standard library
 
-Two independent boolean build settings follow Clang/GCC semantics:
+Two independent boolean build settings (Bazel 9+ only) follow Clang/GCC semantics:
 
 - `--@llvm//config:nostdincxx`: omit default C++ standard-library headers,
   like `-nostdinc++`. Explicit header dependencies and include paths still work.
