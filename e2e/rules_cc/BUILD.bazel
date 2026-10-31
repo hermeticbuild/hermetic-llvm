@@ -2003,6 +2003,22 @@ cc_shared_library(
 )
 
 cc_test(
+    name = "freestanding_link_test",
+    size = "small",
+    srcs = ["freestanding_x86_64.S"],
+    features = ["-static_link_cpp_runtimes"],
+    linkopts = [
+        "-nostdlib",
+        "-static",
+    ],
+    linkstatic = True,
+    target_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ],
+)
+
+cc_test(
     name = "cxx_shared_library_test",
     srcs = ["cxx_shared_library_test.cc"],
     dynamic_deps = [":cxx_shared_library"],
