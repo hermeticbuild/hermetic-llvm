@@ -264,17 +264,8 @@ cc_args(
     actions = [
         "@rules_cc//cc/toolchains/actions:link_actions",
     ],
-    args = select({
-        "//constraints/windows/abi:msvc": [
-            "/clang:-fuse-ld=lld",
-        ],
-        "//conditions:default": [
-            "-fuse-ld=lld",
-            # lld will be used if it's next to clang.
-            # It would have been great to set the path explicitly.
-            # "--ld-path={lld_path}",
-        ],
-    }),
+    # Both clang and clang-cl accept this directly and find the adjacent lld.
+    args = ["-fuse-ld=lld"],
 )
 
 cc_args(
@@ -295,10 +286,7 @@ cc_args(
         "//constraints/windows/abi:msvc": _CLANG_CL_FRONTEND_ACTIONS,
         "//conditions:default": ["@rules_cc//cc/toolchains/actions:source_compile_actions"],
     }),
-    args = select({
-        "//constraints/windows/abi:msvc": ["/clang:-Wno-builtin-macro-redefined"],
-        "//conditions:default": ["-Wno-builtin-macro-redefined"],
-    }) + select({
+    args = ["-Wno-builtin-macro-redefined"] + select({
         # Make C++ compilation deterministic. Use linkstamping instead of these
         # compiler symbols.
         "//constraints/windows/abi:msvc": [
@@ -311,10 +299,7 @@ cc_args(
             "-D__TIMESTAMP__=\"redacted\"",
             "-D__TIME__=\"redacted\"",
         ],
-    }) + select({
-        "//constraints/windows/abi:msvc": ["/clang:-ffile-compilation-dir=."],
-        "//conditions:default": ["-ffile-compilation-dir=."],  # Avoid absolute paths in binaries
-    }),
+    }) + ["-ffile-compilation-dir=."],  # Avoid absolute paths in binaries.
 )
 
 #######
@@ -1002,7 +987,7 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:objc_compile",
     ],
     args = [
-        "/clang:-nostdlibinc",
+        "/X",
     ],
 )
 

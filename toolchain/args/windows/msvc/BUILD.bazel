@@ -21,7 +21,7 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:lto_backend",
     ] + _FRONTEND_ACTIONS,
     args = [
-        "/clang:-fms-compatibility-version={}".format(_MSVC_COMPATIBILITY_VERSION),
+        "-fms-compatibility-version={}".format(_MSVC_COMPATIBILITY_VERSION),
     ],
 )
 
@@ -66,7 +66,7 @@ cc_args(
 cc_args(
     name = "deterministic_codeview_flags",
     actions = _FRONTEND_ACTIONS,
-    args = ["/clang:-gno-codeview-command-line"],
+    args = ["-gno-codeview-command-line"],
 )
 
 cc_args(
