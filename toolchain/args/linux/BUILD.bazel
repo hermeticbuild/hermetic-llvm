@@ -1,4 +1,5 @@
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
+load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -105,31 +106,43 @@ cc_args(
     },
 )
 
+# Explicit linkopts such as -lc or -ldl still need the libc search path
+# when the target disables the C++ runtimes. This applies to both glibc and musl.
 cc_args(
-    name = "default_libs_gnu",
-    actions = [
-        "@rules_cc//cc/toolchains/actions:link_actions",
-    ],
-    args = [
-        # We need to support copts like -lc -ldl etc...
-        "-L{libc_library_search_path}",
+    name = "glibc_library_search_path",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    args = ["-L{libc_library_search_path}"],
+    data = ["//runtimes/glibc:glibc_library_search_directory"],
+    format = {"libc_library_search_path": "//runtimes/glibc:glibc_library_search_directory"},
+)
 
-        # In prevention of when all of those can be shared libraries.
+# When libunwind is linked statically, the final link must supply its pthread
+# and dl dependencies. A target that opts out of the C++ runtimes omits libunwind.
+cc_args(
+    name = "libunwind_system_libraries",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    args = [
+        # If pthread or dl is shared, omit its DT_NEEDED entry when it is unused.
+        # Restore the previous --as-needed setting for subsequent libraries.
         "-Wl,--push-state",
         "-Wl,--as-needed",
-
-        # Since libunwind is linked statically, we need to link pthread as well.
         "-lpthread",
-        # Since libunwind is linked statically, we need to link dl as well.
         "-ldl",
         "-Wl,--pop-state",
     ],
-    data = [
-        "//runtimes/glibc:glibc_library_search_directory",
+    # The runtime bootstrap toolchains do not define this feature.
+    requires_any_of = select({
+        "//toolchain:runtimes_all": ["//toolchain/features:static_link_cpp_runtimes"],
+        "//conditions:default": [],
+    }),
+)
+
+cc_args_list(
+    name = "default_libs_gnu",
+    args = [
+        ":glibc_library_search_path",
+        ":libunwind_system_libraries",
     ],
-    format = {
-        "libc_library_search_path": "//runtimes/glibc:glibc_library_search_directory",
-    },
 )
 
 ###
@@ -151,32 +164,20 @@ cc_args(
     },
 )
 
-#TODO: Factorize this and gnu
 cc_args(
+    name = "musl_library_search_path",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    args = ["-L{libc_library_search_path}"],
+    data = ["//runtimes/musl:musl_library_search_directory"],
+    format = {"libc_library_search_path": "//runtimes/musl:musl_library_search_directory"},
+)
+
+cc_args_list(
     name = "default_libs_musl",
-    actions = [
-        "@rules_cc//cc/toolchains/actions:link_actions",
-    ],
     args = [
-        # We need to support copts like -lc -ldl etc...
-        "-L{libc_library_search_path}",
-
-        # In prevention of when all of those can be shared libraries.
-        "-Wl,--push-state",
-        "-Wl,--as-needed",
-
-        # Since libunwind is linked statically, we need to link pthread as well.
-        "-lpthread",
-        # Since libunwind is linked statically, we need to link dl as well.
-        "-ldl",
-        "-Wl,--pop-state",
+        ":musl_library_search_path",
+        ":libunwind_system_libraries",
     ],
-    data = [
-        "//runtimes/musl:musl_library_search_directory",
-    ],
-    format = {
-        "libc_library_search_path": "//runtimes/musl:musl_library_search_directory",
-    },
     target_compatible_with = ["@platforms//os:linux"],
 )
 
