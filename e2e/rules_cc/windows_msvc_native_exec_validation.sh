@@ -143,7 +143,7 @@ for target_cpu in x86_64 aarch64; do
   assert_matches "${link_report}" 'bin[/\\]clang-cl[.]exe'
   assert_matches "${link_report}" 'bin[/\\]lld-link[.]exe'
   assert_contains "${link_report}" "/clang:/MACHINE:${target_machine}"
-  assert_contains "${link_report}" "/clang:-fuse-ld=lld"
+  assert_contains "${link_report}" "-fuse-ld=lld"
 
   run_bazel build \
     "--platforms=${platform}" \

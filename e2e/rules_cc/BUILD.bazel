@@ -1841,7 +1841,52 @@ platform(
     tags = ["manual"],
 )
 
+cc_binary(
+    name = "windows_msvc_warning_override",
+    srcs = ["windows_msvc_warning_override.c"],
+    copts = [
+        "/WX",
+        "-Wno-unused-but-set-parameter",
+    ],
+    target_compatible_with = ["@llvm//constraints/windows/abi:msvc"],
+)
+
+cc_library(
+    name = "windows_msvc_lazy_early",
+    srcs = [
+        "windows_msvc_lazy_selected.c",
+        "windows_msvc_lazy_unused.c",
+    ],
+    target_compatible_with = ["@llvm//constraints/windows/abi:msvc"],
+)
+
+cc_binary(
+    name = "windows_msvc_thinlto_lazy_members",
+    srcs = ["windows_msvc_lazy_main.c"],
+    features = ["thin_lto"],
+    target_compatible_with = ["@llvm//constraints/windows/abi:msvc"],
+    deps = [
+        "windows_msvc_lazy_early",
+        "windows_msvc_lazy_later_import",
+    ],
+)
+
+cc_library(
+    name = "windows_msvc_lazy_later",
+    srcs = ["windows_msvc_lazy_later.c"],
+    linkstatic = True,
+    target_compatible_with = ["@llvm//constraints/windows/abi:msvc"],
+)
+
+cc_import(
+    name = "windows_msvc_lazy_later_import",
+    static_library = "windows_msvc_lazy_later",
+    target_compatible_with = ["@llvm//constraints/windows/abi:msvc"],
+)
+
 _WINDOWS_MSVC_MD_ARTIFACTS = [
+    "windows_msvc_warning_override",
+    "windows_msvc_thinlto_lazy_members",
     "windows_msvc_com_support_ansi_md",
     "windows_msvc_com_support_unicode_md",
     "windows_msvc_libcxx_behavior_md",

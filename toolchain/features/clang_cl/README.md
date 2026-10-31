@@ -13,6 +13,39 @@ ThinLTO options. That bridge is intentional; it is not a promise that the
 driver, linker, or target format can be selected independently in this
 repository.
 
+Prefer CL options when they express the intended policy exactly, then Clang
+extensions accepted directly by clang-cl. Use `/clang:` only when CL parsing
+would reject the option or give it a different meaning. clang-cl appends all
+`/clang:` arguments after the ordinary arguments: it is not position-preserving.
+Use direct warning options so later target-local suppressions can override
+defaults. See the
+[clang-cl manual](https://clang.llvm.org/docs/UsersManual.html#the-clang-option).
+
+Bazel response files put each argument on a separate line. clang-cl cannot
+consume a separate `-Xclang` or `-Xlinker` value across those line boundaries.
+Use joined `-Xclang=...` for frontend options. There is no corresponding
+clang-cl `-Xlinker=...` option, so COFF options still require `/clang:-Xlinker`.
+Forward the entire library input sequence through `/clang:`, including
+`/start-lib`, its object paths, `/end-lib`, and ordinary archives. This preserves
+both lazy library membership and symbol selection between libraries.
+`/link` is not a replacement:
+it consumes subsequent arguments and the driver emits its values before inputs.
+
+Some spellings that look interchangeable are not:
+
+- `/W3` maps to Clang's `-Wall`; bare `-Wall` means `/Wall` (`-Weverything`).
+- `/X` aliases `-nostdlibinc`, retaining builtin and explicit `/imsvc` headers.
+- `/Ot` and `/Os` select LLVM O3 and size optimization. `/O2` also selects O3,
+  while `/O1` selects size optimization and both add other CL policy. Exact
+  LLVM O1, O2, Og, and Oz levels still need `/clang:`. To override those levels,
+  a user must also use `/clang:` (for example `/clang:-O0`, not `/Od`).
+- `/GR-` disables RTTI data only; `no_rtti` requires `/clang:-fno-rtti`.
+- `/Oy` and `/Oy-` cannot implement our frame-pointer policy on x64.
+- `/MD` selects the CRT; `/clang:-MD` and `/clang:-MF` generate dependency files.
+- libc++ wrappers must precede builtin headers, so their `-isystem` cannot be
+  replaced with `/imsvc`. Keep the frontend-only `-ivfsoverlay` separate from
+  linker overlays, too.
+
 Treat target OS, target ABI/object format, runtime, and compiler personality as
 distinct semantic axes, even where the supported route makes them one-to-one.
 The OS owns Windows platform conventions shared by its toolchain routes; the
