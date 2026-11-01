@@ -1,4 +1,3 @@
-load("@bazel_features//:features.bzl", "bazel_features")
 load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 load("@rules_cc//cc/toolchains:feature.bzl", "cc_feature")
@@ -71,8 +70,9 @@ cc_feature_set(
     name = "hosted_dynamic_linker",
     all_of = select({
         "//constraints/libc:musl": [],
-        # Native Bazel adds an ELF -soname flag to macOS shared-library links.
-        "@platforms//os:macos": [":supports_dynamic_linker"] if bazel_features.cc.supports_starlarkified_toolchains else [],
+        # Nodeps dylibs omit dependencies, leaving unresolved symbols on macOS.
+        # https://github.com/hermeticbuild/hermetic-llvm/issues/893
+        "@platforms//os:macos": [],
         "@platforms//os:uefi": [],
         "@platforms//os:none": [],
         "//conditions:default": [":supports_dynamic_linker"],
