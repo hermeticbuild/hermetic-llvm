@@ -87,6 +87,7 @@ _LLVM_23_SOURCE_PATCHES = [
     "//3rd_party/llvm-project/x.x/patches:clangd-multicall.patch",
     "//3rd_party/llvm-project/22.x/patches:bundle_resources_no_python.patch",
     "//3rd_party/llvm-project/x.x/patches:no_rules_python.patch",
+    "//3rd_party/llvm-project/23.x/patches:instrumentor-template.patch",
     "//3rd_party/llvm-project/x.x/patches:llvm-extra.patch",
     "//3rd_party/llvm-project/x.x/patches:llvm-cov-multicall.patch",
     "//3rd_party/llvm-project/x.x/patches:thinlto-roundtrip-before-codegen.patch",

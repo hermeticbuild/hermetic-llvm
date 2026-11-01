@@ -98,6 +98,16 @@ bzl_library(
     _write_llvm_vars(rctx)
     _write_llvm_targets(rctx)
 
+    helper = rctx.path("llvm/include/llvm/Transforms/IPO/InstrumentorRuntimeHelper.h")
+    if helper.exists:
+        # Read the source path so edits in a local LLVM checkout invalidate
+        # the repository even when the overlay exposes the header via a symlink.
+        rctx.file(
+            "llvm/instrumentor.bzl",
+            "INSTRUMENTOR_RUNTIME_HELPER = {}\n".format(repr(rctx.read(helper.realpath))),
+            executable = False,
+        )
+
 def _relative_path(relative_dir, basename):
     if relative_dir == ".":
         return basename

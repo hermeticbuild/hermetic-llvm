@@ -1,0 +1,26 @@
+LLVM embeds InstrumentorRuntimeHelper.h in a C++ raw string [1]. Expand
+the template with the header read by the repository rule so generating
+InstrumentorVariables.inc requires neither a shell nor cat on the worker.
+
+[1] https://github.com/llvm/llvm-project/commit/7964b66bf
+
+diff --git a/llvm/BUILD.bazel b/llvm/BUILD.bazel
+--- a/llvm/BUILD.bazel
++++ b/llvm/BUILD.bazel
+@@ -16,2 +16,3 @@
+ load(":enum_targets_gen.bzl", "enum_targets_gen")
++load(":instrumentor.bzl", "INSTRUMENTOR_RUNTIME_HELPER")
+ load(":targets.bzl", "llvm_targets")
+@@ -2136,6 +2137,8 @@
+-genrule(
++expand_template(
+     name = "instrumentor_variables_gen",
+-    srcs = ["include/llvm/Transforms/IPO/InstrumentorRuntimeHelper.h"],
+-    outs = ["include/llvm/Transforms/IPO/InstrumentorVariables.inc"],
+-    cmd = "printf 'constexpr char InstrumentorRuntimeHelper[] = R\"(' > $@ && cat $(SRCS) >> $@ && echo ')\";' >> $@",
++    out = "include/llvm/Transforms/IPO/InstrumentorVariables.inc",
++    substitutions = {
++        "@LLVM_INSTRUMENTOR_RUNTIME_HELPER@": INSTRUMENTOR_RUNTIME_HELPER,
++    },
++    template = "include/llvm/Transforms/IPO/InstrumentorVariables.inc.in",
+ )
