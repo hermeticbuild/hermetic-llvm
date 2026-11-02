@@ -18,6 +18,8 @@ _linux_musl_platforms = {
 cc_runtime_stage1_hosted_binary, _cc_runtime_stage1_hosted_binary_internal = _stage1_hosted.clone().build()
 
 # Set the platform on the same binary rule so callers still get one default file.
+# Bazel requires the second rule returned by build() to have a top-level name.
+# buildifier: disable=unused-variable
 _linux_musl_binary, _linux_musl_binary_internal = _stage1_hosted.set(
     "platforms",
     select(_linux_musl_platforms | {"//conditions:default": []}),
