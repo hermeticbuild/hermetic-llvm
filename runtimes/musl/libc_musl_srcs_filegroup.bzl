@@ -62,6 +62,14 @@ def _libc_musl_srcs_filegroup_impl(ctx):
         if not found:
             filtered.append(f)
 
+    # Leave out musl's implementations of functions that other sources provide.
+    replaced = [paths.split_extension(f.basename)[0] for f in ctx.files.replacements]
+    filtered = [
+        f
+        for f in filtered
+        if not ("/src/string/" in f.path and paths.split_extension(f.basename)[0] in replaced)
+    ]
+
     malloc_files = []
     internal_files = []
     string_files = []
@@ -95,5 +103,9 @@ libc_musl_srcs_filegroup = rule(
     attrs = {
         "srcs": attr.label_list(allow_files = [".c", ".S", ".s"]),
         "arch": attr.string(mandatory = True, values = _MUSL_SUPPORTED_ARCH),
+        "replacements": attr.label_list(
+            allow_files = True,
+            doc = "Sources of functions that replace musl's string functions of the same name.",
+        ),
     },
 )

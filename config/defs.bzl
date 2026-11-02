@@ -212,6 +212,21 @@ def config_settings():
         build_setting_default = True,
     )
 
+    # This flag replaces musl's implementations of memcmp, bcmp and strlen with
+    # the vectorized ones of LLVM libc. musl implements them in portable C, with
+    # memcmp and bcmp comparing one byte at a time.
+    bool_flag(
+        name = "musl_llvm_libc_string_functions",
+        build_setting_default = False,
+    )
+
+    native.config_setting(
+        name = "musl_llvm_libc_string_functions_enabled",
+        flag_values = {
+            ":musl_llvm_libc_string_functions": "true",
+        },
+    )
+
     for sanitizer in SANITIZERS:
         bool_flag(
             name = sanitizer,

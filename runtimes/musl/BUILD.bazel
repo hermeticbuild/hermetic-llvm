@@ -22,6 +22,10 @@ libc_musl_srcs_filegroup(
         },
         no_match_error = "Unsupported platform",
     ),
+    replacements = select({
+        "@llvm//config:musl_llvm_libc_string_functions_enabled": ["@llvm-project//libc:musl_string_functions_srcs"],
+        "//conditions:default": [],
+    }),
     visibility = ["//visibility:public"],
 )
 
@@ -76,6 +80,10 @@ cc_library(
     # their generic .c counterpart.
     textual_hdrs = ["@musl_libc//:compile_srcs"],
     visibility = ["//visibility:public"],
+    deps = select({
+        "@llvm//config:musl_llvm_libc_string_functions_enabled": ["@llvm-project//libc:musl_string_functions"],
+        "//conditions:default": [],
+    }),
 )
 
 cc_runtime_stage0_static_library(
