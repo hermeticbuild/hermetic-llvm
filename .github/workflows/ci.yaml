@@ -414,6 +414,8 @@ jobs:
           excluded_tests=()
           if [[ "${{ matrix.bazel_version }}" == "8.x" ]]; then
             excluded_tests+=(-//tests/header_modules/...)
+            # The target-scoped C++ stdlib settings are supported on Bazel 9+ only.
+            excluded_tests+=(-//tests/cxxstdlib_settings/...)
           fi
 
           bazel \

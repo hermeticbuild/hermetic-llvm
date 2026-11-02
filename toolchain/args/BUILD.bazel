@@ -154,7 +154,7 @@ cc_args(
 )
 
 cc_args(
-    name = "cxxstdlib_headers_include_search_paths",
+    name = "default_cxxstdlib_headers_include_search_paths",
     actions = [
         # cpp_compile_actions - lto_backend - cpp_module_codegen
         # Omitted to avoid unused arg warning for -I paths.
@@ -183,7 +183,7 @@ cc_args(
 )
 
 cc_args(
-    name = "clang_cl_cxxstdlib_headers_include_search_paths",
+    name = "default_clang_cl_cxxstdlib_headers_include_search_paths",
     actions = _CLANG_CL_CXX_FRONTEND_ACTIONS,
     args = select({
         # /imsvc comes after implicit builtins. libc++ wrappers must precede
@@ -201,6 +201,38 @@ cc_args(
     format = {
         "cxxstdlib_headers_include_search_path": "//runtimes/cxxstdlib:headers_include_search_directory",
     },
+)
+
+cc_args(
+    name = "nostdincxx",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:linkstamp_compile",
+        "@rules_cc//cc/toolchains/actions:cpp_compile",
+        "@rules_cc//cc/toolchains/actions:cpp_header_parsing",
+        "@rules_cc//cc/toolchains/actions:cpp_module_compile",
+        "@rules_cc//cc/toolchains/actions:clif_match",
+        "@rules_cc//cc/toolchains/actions:objcpp_compile",
+    ],
+    args = select({
+        "//constraints/windows/abi:msvc": ["/clang:-nostdinc++"],
+        "//conditions:default": ["-nostdinc++"],
+    }),
+)
+
+cc_args_list(
+    name = "cxxstdlib_headers_include_search_paths",
+    args = select({
+        "//config:nostdincxx_enabled": ["nostdincxx"],
+        "//conditions:default": ["default_cxxstdlib_headers_include_search_paths"],
+    }),
+)
+
+cc_args_list(
+    name = "clang_cl_cxxstdlib_headers_include_search_paths",
+    args = select({
+        "//config:nostdincxx_enabled": ["nostdincxx"],
+        "//conditions:default": ["default_clang_cl_cxxstdlib_headers_include_search_paths"],
+    }),
 )
 
 alias(
@@ -1110,10 +1142,13 @@ cc_args(
     # The currently supported native Windows tuple selects static libc++. Name
     # it in the Bazel-owned default-library composition instead of relying on
     # a COFF .drectve section emitted by each consumer object.
-    args = [
-        "/clang:-Xlinker",
-        "/clang:/DEFAULTLIB:libc++.lib",
-    ],
+    args = select({
+        "//config:nostdlibxx_enabled": [],
+        "//conditions:default": [
+            "/clang:-Xlinker",
+            "/clang:/DEFAULTLIB:libc++.lib",
+        ],
+    }),
 )
 
 # Those are stubs since we link against static_runtime_libs / dynamic_runtime_libs.
