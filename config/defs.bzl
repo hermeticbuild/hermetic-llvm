@@ -147,7 +147,9 @@ def config_settings():
     # libraries independently. Explicit consumer dependencies remain valid.
     # Target policy must not leak into unrelated execution tools.
     # Supported on Bazel 9+ only.
-    # README.md documents a consumer-specific Bazel 8 exec-propagation workaround.
+    # Bazel 8: --experimental_exclude_starlark_flags_from_exec_config resets
+    # all Starlark flags; allowlist other required exec flags with
+    # --experimental_propagate_custom_flag, excluding these two settings.
     bool_flag(
         name = "nostdincxx",
         build_setting_default = False,
