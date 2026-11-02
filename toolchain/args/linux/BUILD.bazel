@@ -1,3 +1,4 @@
+load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 
 package(default_visibility = ["//visibility:public"])
@@ -15,15 +16,29 @@ cc_args(
     ],
 )
 
+config_setting(
+    name = "_tsan_disabled",
+    flag_values = {"//config:tsan_selected_config": "false"},
+)
+
+selects.config_setting_group(
+    name = "_non_pie_gnu",
+    match_all = [
+        "//platforms/config:gnu",
+        ":_tsan_disabled",
+    ],
+)
+
 cc_args(
     name = "non_pie_executable_link_flags",
     actions = [
         "@rules_cc//cc/toolchains/actions:link_executable_actions",
     ],
     # Clang 22 defaults Linux links to PIE. Preserve Bazel's non-force_pic
-    # executable semantics for GNU targets.
+    # executable semantics for GNU targets, except TSan, whose driver-selected
+    # PIE must survive: https://clang.llvm.org/docs/ThreadSanitizer.html#limitations
     args = select({
-        "//platforms/config:gnu": ["-no-pie"],
+        ":_non_pie_gnu": ["-no-pie"],
         "//conditions:default": [],
     }),
     requires_none = "@rules_cc//cc/toolchains/variables:force_pic",
