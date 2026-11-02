@@ -1,6 +1,8 @@
 # C++ standard-library setting contract
 
 Requires Bazel 9+. This package is excluded from the Bazel 8 CI lane.
+These tests require automatic target-only propagation, without the
+consumer-specific Bazel 8 workaround described in the root README.
 
 Build `defaults`, `headers_only`, `libraries_only`, and `both` to exercise all
 four combinations of `//config:nostdincxx` and `//config:nostdlibxx`:

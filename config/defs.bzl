@@ -147,6 +147,7 @@ def config_settings():
     # libraries independently. Explicit consumer dependencies remain valid.
     # Target policy must not leak into unrelated execution tools.
     # Supported on Bazel 9+ only.
+    # README.md documents a consumer-specific Bazel 8 exec-propagation workaround.
     bool_flag(
         name = "nostdincxx",
         build_setting_default = False,

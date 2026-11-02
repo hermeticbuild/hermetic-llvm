@@ -65,6 +65,23 @@ their default libraries unless explicitly configured by a transition. Set both
 when supplying a replacement C++ library, such as a privately built libc++.
 Keep replacement headers, libraries, and ABI configuration consistent.
 
+Automatic target-only propagation requires Bazel 9+. Bazel 8 consumers can
+obtain equivalent isolation for these settings with:
+
+```bazelrc
+build:bazel8 --experimental_exclude_starlark_flags_from_exec_config
+# Repeat for other settings that execution tools need, for example V8's:
+build:bazel8 --experimental_propagate_custom_flag=@v8//...
+```
+
+Use `--config=bazel8` to enable this workaround. It resets **all** Starlark
+settings at exec transitions unless explicitly allowlisted, so the allowlist
+is consumer-specific; the V8 example is not a complete configuration. Do not
+allowlist `nostdincxx`, `nostdlibxx`, or all of `@llvm//...`. Generators that
+also need a private C++ library must reapply the opt-outs after their exec
+transition. Bazel 8 use requires consumer validation; the default-scope
+contract tests remain excluded from the Bazel 8 CI lane.
+
 These settings do not suppress C/SDK or compiler builtin headers, the C runtime,
 startup objects, compiler-rt, or the separately selected unwinder. They do not
 change optimization policy or MSVC CRT selection (`/MT` versus `/MD`).
