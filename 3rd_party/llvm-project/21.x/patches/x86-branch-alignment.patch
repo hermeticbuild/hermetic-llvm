@@ -1,0 +1,40 @@
+diff --git a/llvm/lib/MC/MCAssembler.cpp b/llvm/lib/MC/MCAssembler.cpp
+--- a/llvm/lib/MC/MCAssembler.cpp
++++ b/llvm/lib/MC/MCAssembler.cpp
+@@ -977,11 +977,35 @@ void MCAssembler::relaxBoundaryAlign(MCBoundaryAlignFragment &BF) {
+ 
+   uint64_t AlignedOffset = getFragmentOffset(BF);
+   uint64_t AlignedSize = 0;
++  uint64_t UnpaddedSize = 0;
++  bool CanPredictAlignment = true;
+   for (const MCFragment *F = BF.getNext();; F = F->getNext()) {
+-    AlignedSize += computeFragmentSize(*F);
++    uint64_t FragmentSize = computeFragmentSize(*F);
++    AlignedSize += FragmentSize;
++    if (CanPredictAlignment) {
++      if (F->getKind() == MCFragment::FT_Align) {
++        const MCAlignFragment &AF = cast<MCAlignFragment>(*F);
++        unsigned Padding =
++            offsetToAlignment(AlignedOffset + UnpaddedSize, AF.getAlignment());
++        if (AF.hasEmitNops())
++          while (Padding % getBackend().getMinimumNopSize())
++            Padding += AF.getAlignment().value();
++        if (Padding <= AF.getMaxBytesToEmit())
++          UnpaddedSize += Padding;
++      } else if (F->getKind() == MCFragment::FT_Data ||
++                 F->getKind() == MCFragment::FT_Relaxable) {
++        UnpaddedSize += FragmentSize;
++      } else {
++        CanPredictAlignment = false;
++      }
++    }
+     if (F == BF.getLastFragment())
+       break;
+   }
++  // Intervening alignment must not depend on this fragment's current padding.
++  // Other fragment kinds use their layout sizes.
++  if (CanPredictAlignment)
++    AlignedSize = UnpaddedSize;
+ 
+   Align BoundaryAlignment = BF.getAlignment();
+   uint64_t NewSize = needPadding(AlignedOffset, AlignedSize, BoundaryAlignment)
