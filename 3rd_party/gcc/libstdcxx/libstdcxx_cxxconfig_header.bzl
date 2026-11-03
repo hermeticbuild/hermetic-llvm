@@ -1,4 +1,5 @@
 def _libstdcxx_cxxconfig_header_impl(ctx):
+    # type: (...) -> DefaultInfo
     out = ctx.actions.declare_file(ctx.attr.name + "/bits/c++config.h")
     float128 = "define _GLIBCXX_USE_FLOAT128 1" if ctx.attr.enable_float128 else "undef _GLIBCXX_USE_FLOAT128"
     ctx.actions.run_shell(

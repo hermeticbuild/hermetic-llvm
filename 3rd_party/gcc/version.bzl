@@ -186,26 +186,33 @@ GCC_COMMIT = GCC_RELEASES[DEFAULT_GCC_VERSION]["commit"]
 GCC_SHA256 = GCC_RELEASES[DEFAULT_GCC_VERSION]["sha256"]
 
 def gcc_repo_name(version):
+    # type: (str) -> str
     return "gcc_" + version.replace(".", "_")
 
 def gcc_repository_label(version, target):
+    # type: (str, object) -> str
     return "@gcc//:{}/{}".format(gcc_repo_name(version), target)
 
 def gcc_config_toolexeclibdir_target(version):
+    # type: (str) -> str
     if gcc_version_at_least_for(version, "10.0.0"):
         return "config/toolexeclibdir.m4"
     return "gcc_config_toolexeclibdir_m4"
 
 def libstdcxx_constraint_value(version):
+    # type: (str) -> str
     return "libstdcxx." + version
 
 def libstdcxx_constraint_label(version):
+    # type: (str) -> str
     return "@llvm//constraints/cxxstdlib:" + libstdcxx_constraint_value(version)
 
 def gcc_target_suffix(version):
+    # type: (str) -> str
     return "gcc_" + version.replace(".", "_")
 
 def _version_tuple(version):
+    # type: (str) -> list[int]
     parts = version.split(".")
     values = [int(part) for part in parts]
     if len(values) == 1:
@@ -215,6 +222,7 @@ def _version_tuple(version):
     return values
 
 def _compare_versions(lhs, rhs):
+    # type: (str, str) -> int
     lhs_values = _version_tuple(lhs)
     rhs_values = _version_tuple(rhs)
     for i in range(3):
@@ -225,12 +233,15 @@ def _compare_versions(lhs, rhs):
     return 0
 
 def gcc_version_at_least_for(gcc_version, version):
+    # type: (str, str) -> bool
     return _compare_versions(gcc_version, version) >= 0
 
 def gcc_version_less_than_for(gcc_version, version):
+    # type: (str, str) -> bool
     return _compare_versions(gcc_version, version) < 0
 
 def _libstdcxx_patch(path):
+    # type: (str) -> str
     return "//3rd_party/gcc/patches:" + path
 
 GCC_PATCHES = {
@@ -283,6 +294,7 @@ GCC_PATCHES = {
 }
 
 def gcc_patches(version):
+    # type: (str) -> list[str]
     # The proper fix belongs in Clang (llvm/llvm-project#95154), but retain
     # these libstdc++ workarounds nonetheless.
     # Upstream fix: llvm/llvm-project#233862.
@@ -297,9 +309,11 @@ def gcc_patches(version):
     ]
 
 def gcc_version_at_least(version):
+    # type: (str) -> bool
     return gcc_version_at_least_for(GCC_VERSION, version)
 
 def gcc_version_less_than(version):
+    # type: (str) -> bool
     return gcc_version_less_than_for(GCC_VERSION, version)
 
 def select_for_gcc_version(values):
@@ -317,100 +331,133 @@ def select_gcc_version_at_least(version, then, otherwise):
     })
 
 def gcc_has_config_toolexeclibdir_m4(version):
+    # type: (str) -> bool
     return gcc_version_at_least_for(version, "10.0.0")
 
 def libstdcxx_has_atomic_builtins_define(version):
+    # type: (str) -> bool
     return gcc_version_less_than_for(version, "16.0.0")
 
 def libstdcxx_has_posix_semaphore_check(version):
+    # type: (str) -> bool
     return gcc_version_at_least_for(version, "11.0.0") and gcc_version_less_than_for(version, "16.0.0")
 
 def libstdcxx_has_debugging_checks(version):
+    # type: (str) -> bool
     return gcc_version_at_least_for(version, "16.0.0")
 
 def libstdcxx_has_stdio_locking_checks(version):
+    # type: (str) -> bool
     return gcc_version_at_least_for(version, "16.0.0")
 
 def libstdcxx_has_networking_o_nonblock_check(version):
+    # type: (str) -> bool
     return (gcc_version_at_least_for(version, "12.5.0") and gcc_version_less_than_for(version, "13.0.0")) or (gcc_version_at_least_for(version, "13.4.0") and gcc_version_less_than_for(version, "14.0.0")) or gcc_version_at_least_for(version, "14.3.0")
 
 def libstdcxx_has_struct_tm_tm_zone_check(version):
+    # type: (str) -> bool
     return gcc_version_at_least_for(version, "15.0.0")
 
 def libstdcxx_has_c99_cxx11_detail_checks(version):
+    # type: (str) -> bool
     return gcc_version_at_least_for(version, "14.0.0")
 
 def libstdcxx_has_fseeko_ftello_check(version):
+    # type: (str) -> bool
     return gcc_version_at_least_for(version, "13.2.0")
 
 def libstdcxx_has_filesystem_chdir_chmod_getcwd_mkdir_checks(version):
+    # type: (str) -> bool
     return (gcc_version_at_least_for(version, "12.4.0") and gcc_version_less_than_for(version, "13.0.0")) or gcc_version_at_least_for(version, "13.3.0")
 
 def libstdcxx_has_filesystem_openat_check(version):
+    # type: (str) -> bool
     return (gcc_version_at_least_for(version, "11.5.0") and gcc_version_less_than_for(version, "12.0.0")) or gcc_version_at_least_for(version, "12.2.0")
 
 def libstdcxx_has_filesystem_copy_file_range_check(version):
+    # type: (str) -> bool
     return gcc_version_at_least_for(version, "14.0.0")
 
 def libstdcxx_has_text_encoding_checks(version):
+    # type: (str) -> bool
     return gcc_version_at_least_for(version, "14.0.0")
 
 def libstdcxx_has_alignas_init_priority_checks(version):
+    # type: (str) -> bool
     return gcc_version_at_least_for(version, "13.2.0")
 
 def libstdcxx_has_zoneinfo_policy(version):
+    # type: (str) -> bool
     return gcc_version_at_least_for(version, "13.0.0")
 
 def libstdcxx_has_int128_float128_checks(version):
+    # type: (str) -> bool
     return gcc_version_less_than_for(version, "12.0.0")
 
 def libstdcxx_has_uchar_char8_checks(version):
+    # type: (str) -> bool
     return gcc_version_at_least_for(version, "12.0.0")
 
 def libstdcxx_has_int64_t_checks(version):
+    # type: (str) -> bool
     return gcc_version_less_than_for(version, "12.0.0")
 
 def libstdcxx_has_cxx11_no_sleep_define(version):
+    # type: (str) -> bool
     return gcc_version_at_least_for(version, "11.3.0")
 
 def libstdcxx_has_filesystem_dirfd_checks(version):
+    # type: (str) -> bool
     return gcc_version_at_least_for(version, "11.5.0")
 
 def libstdcxx_has_decl_strnlen_check(version):
+    # type: (str) -> bool
     return gcc_version_at_least_for(version, "12.0.0")
 
 def libstdcxx_has_arc4random_getentropy_checks(version):
+    # type: (str) -> bool
     return gcc_version_at_least_for(version, "12.0.0")
 
 def libstdcxx_has_stdlib_secure_getenv_check(version):
+    # type: (str) -> bool
     return gcc_version_at_least_for(version, "11.4.0")
 
 def libstdcxx_has_no_sleep_policy(version):
+    # type: (str) -> bool
     return gcc_version_at_least_for(version, "11.0.0")
 
 def libstdcxx_has_uselocale_check(version):
+    # type: (str) -> bool
     return gcc_version_at_least_for(version, "11.0.0")
 
 def libstdcxx_has_system_error_check(version):
+    # type: (str) -> bool
     return gcc_version_less_than_for(version, "9.5.0") or (gcc_version_at_least_for(version, "10.1.0") and gcc_version_less_than_for(version, "10.3.0"))
 
 def libstdcxx_has_pthread_clock_checks(version):
+    # type: (str) -> bool
     return gcc_version_at_least_for(version, "10.0.0")
 
 def libstdcxx_has_x86_rdseed_check(version):
+    # type: (str) -> bool
     return gcc_version_at_least_for(version, "10.0.0")
 
 def libstdcxx_has_dev_random_policy(version):
+    # type: (str) -> bool
     return gcc_version_at_least_for(version, "9.0.0")
 
 def libstdcxx_has_filesystem_extra_posix_checks(version):
+    # type: (str) -> bool
     return gcc_version_at_least_for(version, "9.0.0")
 
 def libstdcxx_has_sockatmark_wfopen_checks(version):
+    # type: (str) -> bool
     return gcc_version_at_least_for(version, "9.0.0")
 
 def libstdcxx_has_stdlib_timespec_get_check(version):
+    # type: (str) -> bool
     return gcc_version_at_least_for(version, "9.0.0")
 
 def libstdcxx_has_atomic_lock_policy_define(version):
+    # type: (str) -> bool
     return gcc_version_at_least_for(version, "9.0.0")

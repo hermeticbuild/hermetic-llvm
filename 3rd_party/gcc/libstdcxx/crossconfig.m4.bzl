@@ -17,6 +17,7 @@ load(
 )
 
 def glibcxx_crossconfig_linux_gnu(gcc_version):
+    # type: (str) -> list[str]
     # libstdc++-v3/crossconfig.m4 uses this branch for *-linux*, *-uclinux*,
     # *-gnu*, *-kfreebsd*-gnu, *-cygwin*, and *-solaris*. Only Linux GNU is
     # active in this Bazel port; cygwin/solaris and non-glibc targets are out
