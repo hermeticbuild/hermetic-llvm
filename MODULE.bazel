@@ -170,6 +170,18 @@ llvm_dev.configure(targets = [
     "WebAssembly",
 ])
 
+# rules_cc checks these contracts against the Skylib 1.9.0 implementations.
+SKYLIB_STUBS_COMMIT = "d59fe05713540581d30020697a91f0c7850d2ace"
+
+http_archive(
+    name = "bazel_skylib_stubs",
+    build_file_content = 'exports_files(["stubs.toml"])',
+    dev_dependency = True,
+    sha256 = "b09e17231210f90057e049b3b2c2ddba30682cc5d57825ca0481258ead0f8353",
+    strip_prefix = "rules_cc-{}/stubs/bazel_skylib".format(SKYLIB_STUBS_COMMIT),
+    urls = ["https://github.com/bazelbuild/rules_cc/archive/{}.tar.gz".format(SKYLIB_STUBS_COMMIT)],
+)
+
 bazel_dep(name = "gazelle", version = "0.47.0", dev_dependency = True)
 bazel_dep(name = "bazel_skylib_gazelle_plugin", version = "1.9.0", dev_dependency = True)
 bazel_dep(name = "buildifier_prebuilt", version = "8.5.1.2", dev_dependency = True)

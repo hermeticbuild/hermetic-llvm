@@ -20,25 +20,6 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
-      # The releases used by LLVM do not yet publish these Starlark types.
-      # Apply these draft revisions only to the root checker workspace.
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-        with:
-          repository: bazelbuild/bazel-skylib
-          ref: 98d84dda6a754a8ee2fb99397cbdb690f98f56a0 # bazelbuild/bazel-skylib#641
-          path: .sty/bazel_skylib
-          persist-credentials: false
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-        with:
-          repository: bazelbuild/rules_cc
-          ref: 7345d5bc9f4fccb505ec52c810d857e4c2e1831c # bazelbuild/rules_cc#940
-          path: .sty/rules_cc
-          persist-credentials: false
-      - name: Use annotated dependencies in the root check
-        run: |
-          for module in bazel_skylib rules_cc; do
-            echo "common --override_module=$module=$GITHUB_WORKSPACE/.sty/$module"
-          done > .bazelrc.user
       - name: Select implementations
         id: files
         shell: bash
@@ -103,11 +84,14 @@ jobs:
             exit 1
           fi
           echo "root_bazel_version=$(<.bazelversion)" >> "$GITHUB_OUTPUT"
-      - name: Check root workspace
+      - name: Check root workspace with released rulesets
         uses: tamird/sty@feff1211ea31b9d9f22fd6a02e10db6136e47f6b
         with:
           audit-loads: true
-          files: ${{ steps.files.outputs.root }}
+          files: |
+            ${{ steps.files.outputs.root }}
+            @bazel_skylib//rules/private:write_file_private.bzl
+          advisory-config: .github/sty-strict.toml
           advisory-pathspecs: |
             *.bzl
             :(exclude)e2e/**
@@ -121,7 +105,7 @@ jobs:
           advisory-pathspecs: |
             *.bzl
             BUILD.bazel
-          advisory-config: ../../sty.toml
+          advisory-config: ../../.github/sty-strict.toml
           advisory-bazel-load-context: '@external_include_paths_test//:error_header_binary'
           advisory-require-bazel-load-context: external_include_paths_test/defs.bzl
           artifact-name: sty-rules-cc
@@ -132,7 +116,7 @@ jobs:
           working-directory: e2e/cross_compilation
           advisory-only: true
           advisory-pathspecs: '*.bzl'
-          advisory-config: ../../sty.toml
+          advisory-config: ../../.github/sty-strict.toml
           audit-loads: true
           artifact-name: sty-cross-compilation
       - name: Check rules_rs example workspace
@@ -142,7 +126,7 @@ jobs:
           working-directory: e2e/rules_rs
           advisory-only: true
           advisory-pathspecs: '*.bzl'
-          advisory-config: ../../sty.toml
+          advisory-config: ../../.github/sty-strict.toml
           audit-loads: true
           artifact-name: sty-rules-rs
       - name: Check rules_rust example workspace
@@ -152,7 +136,7 @@ jobs:
           working-directory: e2e/rules_rust
           advisory-only: true
           advisory-pathspecs: '*.bzl'
-          advisory-config: ../../sty.toml
+          advisory-config: ../../.github/sty-strict.toml
           audit-loads: true
           artifact-name: sty-rules-rust
       - name: Check uefi example workspace
@@ -162,7 +146,35 @@ jobs:
           working-directory: e2e/uefi
           advisory-only: true
           advisory-pathspecs: '*.bzl'
-          advisory-config: ../../sty.toml
+          advisory-config: ../../.github/sty-strict.toml
           audit-loads: true
           bazel-version: ${{ steps.files.outputs.root_bazel_version }}
           artifact-name: sty-uefi
+
+      # Exercise the proposed types separately so all preceding checks use
+      # the releases in MODULE.bazel. Only the enrolled root files need a
+      # second pass.
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          repository: bazelbuild/bazel-skylib
+          ref: 54352fa517a400e6c55b1496806d1483450697f2 # bazelbuild/bazel-skylib#641
+          path: .sty/bazel_skylib
+          persist-credentials: false
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          repository: bazelbuild/rules_cc
+          ref: d59fe05713540581d30020697a91f0c7850d2ace # bazelbuild/rules_cc#940
+          path: .sty/rules_cc
+          persist-credentials: false
+      - name: Select proposed rulesets and require fully static types
+        run: |
+          cp .github/sty-strict.toml sty.toml
+          for module in bazel_skylib rules_cc; do
+            echo "common --override_module=$module=$GITHUB_WORKSPACE/.sty/$module"
+          done > .bazelrc.user
+      - name: Check root sources with proposed ruleset contracts
+        uses: tamird/sty@feff1211ea31b9d9f22fd6a02e10db6136e47f6b
+        with:
+          audit-loads: true
+          files: ${{ steps.files.outputs.root }}
+          artifact-name: sty-proposed-contracts
