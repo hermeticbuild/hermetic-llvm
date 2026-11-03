@@ -13,6 +13,7 @@ _SED_COMPATIBLE_WITH = select({
 })
 
 def _musl_alltypes_generation_test(arch):
+    # type: (str) -> None
     native.genrule(
         name = "musl_alltypes_{arch}_arch_old".format(arch = arch),
         testonly = True,
@@ -54,6 +55,7 @@ def _musl_alltypes_generation_test(arch):
     )
 
 def musl_header_generation_tests(name):
+    # type: (str) -> None
     for arch in _ARCHES:
         _musl_alltypes_generation_test(arch)
 

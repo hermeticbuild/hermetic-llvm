@@ -9,7 +9,9 @@ _SHARED_BACKEND_FEATURES = [
     "thin_lto_all_linkstatic_use_shared_nonlto_backends",
 ]
 
+# TODO(https://github.com/bazelbuild/bazel/issues/32086): Use a return annotation when Bazel exposes AnalysisTestResultInfo.
 def _thin_lto_features_test_impl(ctx):
+    # type: (...) -> list[AnalysisTestResultInfo]
     env = analysistest.begin(ctx)
     feature_configuration = cc_common.configure_features(
         ctx = ctx,
