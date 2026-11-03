@@ -33,10 +33,12 @@ SANITIZERS = [
 ]
 
 def _is_exec_configuration(ctx):
+    # type: (ctx[object, object]) -> bool
     # TODO(cerisier): Is there a better way to detect cfg=exec?
     return ctx.genfiles_dir.path.find("-exec") != -1
 
 def _target_bool_flag_impl(ctx):
+    # type: (...) -> list[FeatureFlagInfo]
     value = str(ctx.attr.setting[BuildSettingInfo].value).lower()
     if _is_exec_configuration(ctx):
         value = "false"
@@ -50,6 +52,7 @@ _target_bool_flag = rule(
 )
 
 def _host_bool_flag_impl(ctx):
+    # type: (...) -> list[FeatureFlagInfo]
     value = str(ctx.attr.setting[BuildSettingInfo].value).lower()
     if not _is_exec_configuration(ctx):
         value = "false"
@@ -63,6 +66,7 @@ _host_bool_flag = rule(
 )
 
 def _selected_sanitizer_bool_flag_impl(ctx):
+    # type: (...) -> list[FeatureFlagInfo]
     setting = ctx.attr.host_setting if _is_exec_configuration(ctx) else ctx.attr.target_setting
     return [config_common.FeatureFlagInfo(value = str(setting[BuildSettingInfo].value).lower())]
 
@@ -75,6 +79,7 @@ _selected_sanitizer_bool_flag = rule(
 )
 
 def _bazel_fdo_instrument_requested_transition_impl(settings, _attr):
+    # type: (Mapping[str, object], object) -> dict[str, bool]
     requested = settings["//command_line_option:fdo_instrument"] or settings["//command_line_option:cs_fdo_instrument"]
     return {"//config:bazel_fdo_instrument_requested": bool(requested)}
 
@@ -85,6 +90,7 @@ _bazel_fdo_instrument_requested_transition = transition(
 )
 
 def _bazel_fdo_instrument_requested_config_impl(ctx):
+    # type: (...) -> list[FeatureFlagInfo]
     requested = ctx.attr._requested[0][BuildSettingInfo].value
     return [config_common.FeatureFlagInfo(value = "true" if requested else "false")]
 
@@ -100,6 +106,7 @@ _bazel_fdo_instrument_requested_config = rule(
 )
 
 def _declare_sanitizer_config_setting(sanitizer):
+    # type: (str) -> None
     target_setting_name = "target_" + sanitizer
     target_feature_name = sanitizer + "_target_config"
     target_config_setting = target_setting_name + "_enabled"
@@ -143,6 +150,7 @@ def _declare_sanitizer_config_setting(sanitizer):
     )
 
 def config_settings():
+    # type: () -> None
     # Compiler semantics: suppress implicit C++ headers and implicit C++
     # libraries independently. Explicit consumer dependencies remain valid.
     # Target policy must not leak into unrelated execution tools.

@@ -17,6 +17,7 @@ declare_bootstrap_toolchains(execs = _EXECS, targets = _TARGETS)
 """
 
 def _toolchains_repository_impl(rctx):
+    # type: (...) -> repo_metadata
     rctx.file("BUILD.bazel", rctx.attr.build_file_content)
     return rctx.repo_metadata(reproducible = True)
 
@@ -28,13 +29,16 @@ _toolchains_repository = repository_rule(
 )
 
 def _format_platform_list(platforms):
+    # type: (Collection[tuple[str, str]]) -> str
     return ",\n    ".join([repr(platform) for platform in platforms])
 
 def _validate_platform_pair(kind, platform, supported):
+    # type: (str, tuple[str, str], Collection[tuple[str, str]]) -> None
     if platform not in supported:
         fail("Unsupported {} platform {}".format(kind, platform))
 
 def _toolchain_impl(mctx):
+    # type: (...) -> extension_metadata
     execs = []
     targets = []
 
