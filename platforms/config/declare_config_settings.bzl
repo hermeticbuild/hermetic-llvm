@@ -6,6 +6,7 @@ load("//platforms:common.bzl", "LIBC_SUPPORTED_TARGETS", "SUPPORTED_TARGETS", "W
 load("//toolchain:bootstrap_stages.bzl", "BOOTSTRAP_STAGES")
 
 def declare_config_settings():
+    # type: () -> None
     for (target_os, target_cpu) in SUPPORTED_TARGETS:
         native.config_setting(
             name = "{}_{}".format(target_os, target_cpu),
@@ -55,6 +56,7 @@ def declare_config_settings_wasi():
     )
 
 def declare_config_settings_libc_aware():
+    # type: () -> None
     for (target_os, target_cpu) in LIBC_SUPPORTED_TARGETS:
         for libc in LIBCS + ["unconstrained"]:
             native.config_setting(
@@ -98,6 +100,7 @@ def declare_config_settings_libc_aware():
     )
 
 def declare_config_settings_windows_abi_aware():
+    # type: () -> None
     for target_os, target_cpu in WINDOWS_TARGETS:
         for abi in WINDOWS_ABIS:
             native.config_setting(
