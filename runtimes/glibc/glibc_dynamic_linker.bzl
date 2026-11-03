@@ -13,7 +13,8 @@ def glibc_dynamic_linker():
     # type: () -> select[str]
     return select(_GLIBC_DYNAMIC_LINKERS, no_match_error = _NO_MATCH_ERROR)
 
-# TODO(https://github.com/bazelbuild/bazel/issues/32104): Express the selector's list concatenation kind in source.
+# TODO(https://github.com/tamird/sty/blob/d400a0080/docs/type-interfaces.md#selectors):
+# Use a native selector type once Bazel can express the first branch's list kind.
 def glibc_dynamic_linker_as_needed():
     # type: () -> select[list[str], Literal["list"]]
     return select({

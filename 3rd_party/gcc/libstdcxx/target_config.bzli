@@ -29,5 +29,6 @@ type _Target = dict[{
     "use_dual_abi": NotRequired[int],
 }]
 
-# TODO(https://github.com/bazelbuild/bazel/pull/30373): Use source type parameters once the minimum Bazel is 8.8.
+# TODO(https://github.com/bazelbuild/bazel/pull/30373): Use source type parameters when every
+# supported Bazel release accepts them (8.8+ on the 8.x line).
 def _select_for_targets[T](project: Callable[[_Target], T]) -> select[T]: ...
