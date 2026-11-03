@@ -104,7 +104,7 @@ jobs:
           fi
           echo "root_bazel_version=$(<.bazelversion)" >> "$GITHUB_OUTPUT"
       - name: Check root workspace
-        uses: tamird/sty@d400a00807b3c7f7b2ac82bf1e1e6a16db0290e3
+        uses: tamird/sty@feff1211ea31b9d9f22fd6a02e10db6136e47f6b
         with:
           audit-loads: true
           files: ${{ steps.files.outputs.root }}
@@ -113,54 +113,56 @@ jobs:
             :(exclude)e2e/**
       - name: Check rules_cc example workspace
         if: ${{ !cancelled() && steps.files.outcome == 'success' }}
-        uses: tamird/sty@d400a00807b3c7f7b2ac82bf1e1e6a16db0290e3
+        uses: tamird/sty@feff1211ea31b9d9f22fd6a02e10db6136e47f6b
         with:
           working-directory: e2e/rules_cc
           audit-loads: true
           files: .
-          advisory-pathspecs: '*.bzl'
-          advisory-config: ../sty-advisory.toml
+          advisory-pathspecs: |
+            *.bzl
+            BUILD.bazel
+          advisory-config: ../../sty.toml
           advisory-bazel-load-context: '@external_include_paths_test//:error_header_binary'
           advisory-require-bazel-load-context: external_include_paths_test/defs.bzl
           artifact-name: sty-rules-cc
       - name: Check cross_compilation example workspace
         if: ${{ !cancelled() && steps.files.outcome == 'success' }}
-        uses: tamird/sty@d400a00807b3c7f7b2ac82bf1e1e6a16db0290e3
+        uses: tamird/sty@feff1211ea31b9d9f22fd6a02e10db6136e47f6b
         with:
           working-directory: e2e/cross_compilation
           advisory-only: true
           advisory-pathspecs: '*.bzl'
-          advisory-config: ../sty-advisory.toml
+          advisory-config: ../../sty.toml
           audit-loads: true
           artifact-name: sty-cross-compilation
       - name: Check rules_rs example workspace
         if: ${{ !cancelled() && steps.files.outcome == 'success' }}
-        uses: tamird/sty@d400a00807b3c7f7b2ac82bf1e1e6a16db0290e3
+        uses: tamird/sty@feff1211ea31b9d9f22fd6a02e10db6136e47f6b
         with:
           working-directory: e2e/rules_rs
           advisory-only: true
           advisory-pathspecs: '*.bzl'
-          advisory-config: ../sty-advisory.toml
+          advisory-config: ../../sty.toml
           audit-loads: true
           artifact-name: sty-rules-rs
       - name: Check rules_rust example workspace
         if: ${{ !cancelled() && steps.files.outcome == 'success' }}
-        uses: tamird/sty@d400a00807b3c7f7b2ac82bf1e1e6a16db0290e3
+        uses: tamird/sty@feff1211ea31b9d9f22fd6a02e10db6136e47f6b
         with:
           working-directory: e2e/rules_rust
           advisory-only: true
           advisory-pathspecs: '*.bzl'
-          advisory-config: ../sty-advisory.toml
+          advisory-config: ../../sty.toml
           audit-loads: true
           artifact-name: sty-rules-rust
       - name: Check uefi example workspace
         if: ${{ !cancelled() && steps.files.outcome == 'success' }}
-        uses: tamird/sty@d400a00807b3c7f7b2ac82bf1e1e6a16db0290e3
+        uses: tamird/sty@feff1211ea31b9d9f22fd6a02e10db6136e47f6b
         with:
           working-directory: e2e/uefi
           advisory-only: true
           advisory-pathspecs: '*.bzl'
-          advisory-config: ../sty-advisory.toml
+          advisory-config: ../../sty.toml
           audit-loads: true
           bazel-version: ${{ steps.files.outputs.root_bazel_version }}
           artifact-name: sty-uefi
