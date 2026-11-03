@@ -1,8 +1,13 @@
+# TODO(https://github.com/bazelbuild/bazel/issues/32020): Annotate LLVM repository contexts in source.
+# TODO(https://github.com/bazelbuild/bazel/issues/32311): Annotate repository paths in source.
+# type _TargetAttrs = struct[{"targets": list[str]}, ...]
+
 LLVM_PROJECT_OVERLAY = "utils/bazel/llvm-project-overlay"
 
 _MAX_OVERLAY_DIRECTORIES = 1000000
 
 def _extract_cmake_settings(rctx, path):
+    # type: (repository_ctx[object], str | Label | path) -> dict[str, str | None]
     settings = {
         "CMAKE_CXX_STANDARD": None,
         "LLVM_VERSION_MAJOR": None,
@@ -33,6 +38,7 @@ def _extract_cmake_settings(rctx, path):
     return settings
 
 def _write_llvm_vars(rctx):
+    # type: (repository_ctx[object]) -> None
     settings = _extract_cmake_settings(rctx, "llvm/CMakeLists.txt")
     version_settings = _extract_cmake_settings(rctx, "cmake/Modules/LLVMVersion.cmake")
     settings.update({key: value for key, value in version_settings.items() if value != None})
@@ -52,6 +58,7 @@ def _write_llvm_vars(rctx):
     rctx.file("vars.bzl", content + dictionary + "}\n", executable = False)
 
 def _write_llvm_targets(rctx):
+    # type: (repository_ctx[_TargetAttrs]) -> None
     rctx.file(
         "llvm/targets.bzl",
         "llvm_targets = {}\n".format(rctx.attr.targets),
@@ -66,6 +73,7 @@ def _write_llvm_targets(rctx):
     )
 
 def _expose_third_party_build_files(rctx):
+    # type: (repository_ctx[object]) -> None
     # Older LLVM releases provide a rules_foreign_cc pfm.BUILD in
     # utils/bazel/third_party_build. Keep it visible when present.
     if not rctx.path("utils/bazel/third_party_build/pfm.BUILD").exists:
@@ -85,6 +93,7 @@ def _expose_third_party_build_files(rctx):
     rctx.file("utils/bazel/third_party_build/BUILD.bazel", """exports_files(["pfm.BUILD"])\n""", executable = False)
 
 def write_llvm_project_files(rctx):
+    # type: (repository_ctx[_TargetAttrs]) -> None
     _expose_third_party_build_files(rctx)
     rctx.file("BUILD.bazel", """\
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
@@ -99,11 +108,13 @@ bzl_library(
     _write_llvm_targets(rctx)
 
 def _relative_path(relative_dir, basename):
+    # type: (str, str) -> str
     if relative_dir == ".":
         return basename
     return relative_dir + "/" + basename
 
 def copy_overlay(rctx, source_root):
+    # type: (repository_ctx[object], path) -> None
     overlay_root = source_root.get_child(LLVM_PROJECT_OVERLAY)
     stack = ["."]
     for _ in range(_MAX_OVERLAY_DIRECTORIES):
@@ -119,13 +130,14 @@ def copy_overlay(rctx, source_root):
     fail("LLVM overlay contains more than {} directories".format(_MAX_OVERLAY_DIRECTORIES))
 
 def symlink_source_and_overlay(rctx, source_root):
+    # type: (repository_ctx[object], path) -> None
     overlay_root = source_root.get_child(LLVM_PROJECT_OVERLAY)
     target_root = rctx.path(".")
     stack = ["."]
 
     for _ in range(_MAX_OVERLAY_DIRECTORIES):
         relative_dir = stack.pop()
-        overlay_dirs = {}
+        overlay_dirs = {}  # type: dict[str, None]
 
         for entry in overlay_root.get_child(relative_dir).readdir():
             relative_path = _relative_path(relative_dir, entry.basename)
