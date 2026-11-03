@@ -2,7 +2,7 @@ diff --git a/llvm/lib/LTO/LTOBackend.cpp b/llvm/lib/LTO/LTOBackend.cpp
 index d4980278b906..b41848906f40 100644
 --- a/llvm/lib/LTO/LTOBackend.cpp
 +++ b/llvm/lib/LTO/LTOBackend.cpp
-@@ -661,2 +661,23 @@ Error lto::thinBackend(const Config &Conf, unsigned Task, AddStreamFn AddStream,
+@@ -661,2 +661,28 @@ Error lto::thinBackend(const Config &Conf, unsigned Task, AddStreamFn AddStream,
 -        codegen(Conf, TM, AddStream, Task, Mod, CombinedIndex);
 +        // The in-process ThinLTO backend can carry imported metadata in the
 +        // backend context all the way to codegen. Normalize the optimized
@@ -13,6 +13,11 @@ index d4980278b906..b41848906f40 100644
 +        WriteBitcodeToFile(Mod, BCOS);
 +
 +        LTOLLVMContext CodeGenCtx(Conf);
++        if (!CodeGenCtx.DiagHandler)
++          CodeGenCtx.DiagHandler =
++              [Ctx = &Mod.getContext()](const DiagnosticInfo &DI) {
++                Ctx->diagnose(DI);
++              };
 +        Expected<std::unique_ptr<Module>> CodeGenModOrErr =
 +            parseBitcodeFile(MemoryBufferRef(BC.str(),
 +                                             Mod.getModuleIdentifier()),
