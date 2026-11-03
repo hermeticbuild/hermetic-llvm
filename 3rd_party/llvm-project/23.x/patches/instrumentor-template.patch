@@ -1,8 +1,9 @@
-LLVM embeds InstrumentorRuntimeHelper.h in a C++ raw string [1]. Expand
-the template with the header read by the repository rule so generating
-InstrumentorVariables.inc requires neither a shell nor cat on the worker.
+LLVM embeds InstrumentorRuntimeHelper.h in a C++ raw string [1]. Backport
+the Bazel template rule [2] so generating InstrumentorVariables.inc
+requires neither a shell nor cat on the worker.
 
 [1] https://github.com/llvm/llvm-project/commit/7964b66bf
+[2] https://github.com/llvm/llvm-project/commit/8cb8b5767
 
 diff --git a/llvm/BUILD.bazel b/llvm/BUILD.bazel
 --- a/llvm/BUILD.bazel
