@@ -1,6 +1,8 @@
 module(
     name = "llvm",
     version = "0.0.0",
+    # TODO(https://github.com/bazelbuild/bazel/pull/30373): Use source annotations for ordinary
+    # signatures once all supported Bazel versions accept type syntax.
     bazel_compatibility = [">=7.7.0"],
 )
 
