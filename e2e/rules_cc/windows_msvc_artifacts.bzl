@@ -1,6 +1,16 @@
 """Configuration-wide CRT selection for MSVC artifact tests."""
 
+# TODO(https://github.com/bazelbuild/bazel/issues/31770): Annotate the transition once Bazel supports
+# dictionaries with typed keys.
+# type _CrtInputs = dict[{"//command_line_option:features": list[str]}]
+# type _CrtAttrs = struct[{"static_crt": bool, "target_platform": Label}, ...]
+# type _CrtOutputs = dict[{
+#     "//command_line_option:features": list[str],
+#     "//command_line_option:platforms": str,
+# }]
+
 def _crt_transition_impl(settings, attr):
+    # type: (_CrtInputs, _CrtAttrs) -> _CrtOutputs
     features = [
         feature
         for feature in settings["//command_line_option:features"]
@@ -29,6 +39,7 @@ _crt_transition = transition(
 )
 
 def _windows_msvc_artifacts_impl(ctx):
+    # type: (...) -> list[DefaultInfo]
     return [DefaultInfo(
         files = depset(transitive = [
             target[DefaultInfo].files

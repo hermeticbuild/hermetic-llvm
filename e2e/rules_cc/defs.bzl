@@ -5,6 +5,7 @@ load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("@with_cfg.bzl", "with_cfg")
 
 def assert_msvc_tuple_features():
+    # type: () -> None
     error = validate_msvc_configuration(
         disabled_features = [],
         enabled_features = ("tsan", "asan", "tsan"),
@@ -30,6 +31,7 @@ _GLIBC_2_17_PLATFORM = select({
 })
 
 def _external_include_paths_glibc_headers_test_impl(ctx):
+    # type: (...) -> list[DefaultInfo]
     for header in ctx.attr.glibc_start[CcInfo].compilation_context.direct_headers:
         if header.owner.name == "bits/errno.h":
             fail("{} declares bits/errno.h in hdrs".format(ctx.attr.glibc_start.label))
@@ -69,7 +71,7 @@ external_include_paths_glibc_alias, _external_include_paths_glibc_alias_internal
 # run time; Linux links the static runtime, so nothing is added there. Callers
 # never repeat the dynamic_dep per target.
 def _with_macos_sanitizer_runtime(inner_binary, macos_runtime):
-    def _macro(name, dynamic_deps = None, **kwargs):
+    def _macro(name, dynamic_deps = None, **kwargs):  # type: (str, _DynamicDeps | None, **KeywordArgs[P]) -> None
         inner_binary(
             name = name,
             dynamic_deps = (dynamic_deps or []) + select({
