@@ -2,7 +2,10 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest")
 
+# TODO(https://github.com/bazelbuild/bazel/issues/32369): Infer ctx.attr.context_sensitive from the test rule.
+# TODO(https://github.com/bazelbuild/bazel/issues/32086): Use a return annotation when Bazel exposes AnalysisTestResultInfo.
 def _fdo_optimize_test_impl(ctx):
+    # type: (ctx[object, struct[{"context_sensitive": bool}, ...]]) -> list[AnalysisTestResultInfo]
     env = analysistest.begin(ctx)
     compiles = []
     backends = []

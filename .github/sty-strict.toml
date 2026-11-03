@@ -1,0 +1,6 @@
+[analysis]
+require-valid-suppressions = true
+strict-generic-narrowing = true
+
+[rules]
+strict = "error"

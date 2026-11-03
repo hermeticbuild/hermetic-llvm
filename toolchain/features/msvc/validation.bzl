@@ -2,9 +2,10 @@
 
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 
-def _has_constraint(ctx, attr_name):
+def _has_constraint(ctx, target):
+    # type: (ctx[object, object], Target) -> bool
     return ctx.target_platform_has_constraint(
-        getattr(ctx.attr, attr_name)[platform_common.ConstraintValueInfo],
+        target[platform_common.ConstraintValueInfo],
     )
 
 def validate_msvc_configuration(
@@ -16,6 +17,7 @@ def validate_msvc_configuration(
         disabled_features,
         unsupported_features,
         enabled_build_settings = []):
+    # type: (bool, bool, bool, Collection[str], Collection[str], Collection[str], Collection[str]) -> str | None
     """Validates the frozen Layer 1 MSVC configuration.
 
     Returns:
@@ -41,10 +43,11 @@ def validate_msvc_configuration(
     return None
 
 def _msvc_configuration_validation_impl(ctx):
+    # type: (...) -> list[DefaultInfo]
     error = validate_msvc_configuration(
-        is_legacy_msvcrt = _has_constraint(ctx, "_legacy_msvcrt"),
-        is_libcxx = _has_constraint(ctx, "_libcxx"),
-        is_msvc_abi = _has_constraint(ctx, "_msvc_abi"),
+        is_legacy_msvcrt = _has_constraint(ctx, ctx.attr._legacy_msvcrt),
+        is_libcxx = _has_constraint(ctx, ctx.attr._libcxx),
+        is_msvc_abi = _has_constraint(ctx, ctx.attr._msvc_abi),
         enabled_features = ctx.features,
         disabled_features = ctx.disabled_features,
         enabled_build_settings = [

@@ -1,14 +1,17 @@
 load("//platforms:common.bzl", "SUPPORTED_EXECS")
 
 def _tool_repo(exec_os, exec_cpu):
+    # type: (str, str) -> str
     os_part = "darwin" if exec_os == "macos" else exec_os
     cpu_part = "amd64" if exec_cpu == "x86_64" else "arm64"
     return "@llvm-toolchain-minimal-%s-%s//" % (os_part, cpu_part)
 
 def _platform_bootstrap_stage(exec_os, exec_cpu, bootstrap_stage):
+    # type: (str, str, str) -> str
     return "@llvm//platforms/config:%s_%s_%s" % (exec_os, exec_cpu, bootstrap_stage)
 
 def platform_llvm_binary(binary):
+    # type: (str) -> select[Label]
     # Select the compiler generation requested by the bootstrap transition.
     # Stage 0 tools and resource headers come from one downloaded installation;
     # Stage 1/2/3 labels refer to source-built binaries whose matching resource
@@ -33,6 +36,7 @@ def platform_llvm_binary(binary):
     return select(binaries)
 
 def platform_extra_binary(binary):
+    # type: (str) -> select[Label]
     return select({
         "@llvm//platforms/config:macos_x86_64": Label("@toolchain-extra-prebuilts-darwin-amd64//:%s" % binary),
         "@llvm//platforms/config:macos_aarch64": Label("@toolchain-extra-prebuilts-darwin-arm64//:%s" % binary),
@@ -44,12 +48,15 @@ def platform_extra_binary(binary):
     })
 
 def platform_module_map(exec_os, exec_cpu):
+    # type: (str, str) -> Label
     return Label(_tool_repo(exec_os, exec_cpu) + ":module_map")
 
 def platform_resource_dir(exec_os, exec_cpu):
+    # type: (str, str) -> Label
     return Label(_tool_repo(exec_os, exec_cpu) + ":builtin_resource_dir")
 
 def platform_cc_tool_map(exec_os, exec_cpu):
+    # type: (str, str) -> select[Label]
     tool_repo = _tool_repo(exec_os, exec_cpu)
 
     # Even though `tool_map` is exec-configured, this `select` happens under the target configuration.

@@ -1,14 +1,17 @@
 load("@bazel_features//:features.bzl", "bazel_features")
 load("@bazel_skylib//rules/directory:providers.bzl", "DirectoryInfo")
 
+# TODO(https://github.com/bazelbuild/bazel/issues/32207): Declare the provider field type in fields.
+# TODO(https://github.com/bazelbuild/bazel/issues/32021): Annotate the depset element type there.
 IncludePathInfo = provider(
     "IncludePathInfo",
     fields = {
-        "textual_headers": "A depset of File objects representing headers to be declared as textual headers.",
+        "textual_headers": "A depset of File objects representing headers to be declared as textual headers.",  # type: depset[File]
     },
 )
 
 def _module_map_impl(ctx):
+    # type: (...) -> DefaultInfo
     module_map = ctx.actions.declare_file(ctx.attr.name + ".modulemap")
 
     include_path_info = ctx.attr.include_path[IncludePathInfo]
@@ -85,6 +88,7 @@ module_map = rule(
 )
 
 def _include_path_impl(ctx):
+    # type: (...) -> list[IncludePathInfo]
     textual_headers = []
 
     for src in ctx.attr.srcs:

@@ -1,4 +1,15 @@
-def exec_test(rule, *, name, tags = [], args = [], env = {}, data = [], inner_data = [], tools = [], **kwargs):
+def exec_test(
+        rule,
+        *,
+        name,  # type: str
+        tags = [],  # type: list[str]
+        args = [],  # type: Sequence[str] | select[Sequence[str]]
+        env = {},  # type: dict[str, str] | select[dict[str, str]]
+        data = [],  # type: Sequence[str | Label] | select[Sequence[str | Label]]
+        inner_data = [],  # type: Sequence[str | Label] | select[Sequence[str | Label]]
+        tools = [],  # type: Sequence[str | Label] | select[Sequence[str | Label]]
+        **kwargs):
+    # type: (...) -> None
     # The inner executable is built in the exec configuration. Keep target
     # artifacts on the outer test unless an inner rule attribute itself uses a
     # location expansion for one of them (for example go_test.x_defs), in which
@@ -22,6 +33,7 @@ def exec_test(rule, *, name, tags = [], args = [], env = {}, data = [], inner_da
     )
 
 def _exec_test_impl(ctx):
+    # type: (...) -> list[DefaultInfo | RunEnvironmentInfo]
     inner = ctx.attr.inner[DefaultInfo]
     inner_executable = inner.files_to_run.executable
     out = ctx.actions.declare_file(ctx.label.name + ".exe") if inner_executable.extension == "exe" else ctx.outputs.executable
