@@ -5,7 +5,10 @@ load(
     "write_llvm_project_files",
 )
 
+# TODO(https://github.com/bazelbuild/bazel/issues/32020): Annotate this context when Bazel exposes its type.
+# TODO(https://github.com/bazelbuild/bazel/issues/32311): Annotate the repository path.
 def _materialize_third_party_build(rctx, source_root):
+    # type: (repository_ctx[object], path) -> None
     # symlink_source_and_overlay creates utils as a symlink to source_root/utils.
     # Replace utils, utils/bazel, and utils/bazel/third_party_build with directories
     # of symlinks before overwriting BUILD.bazel, so source_root remains unchanged.
@@ -16,6 +19,7 @@ def _materialize_third_party_build(rctx, source_root):
             rctx.symlink(entry, target.get_child(entry.basename))
 
 def _llvm_project_from_path_impl(rctx):
+    # type: (...) -> repo_metadata
     source_root = rctx.workspace_root.get_child(rctx.attr.path)
     overlay_root = source_root.get_child(LLVM_PROJECT_OVERLAY)
     if not overlay_root.exists:
