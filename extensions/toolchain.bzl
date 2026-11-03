@@ -18,6 +18,8 @@ declare_bootstrap_toolchains(execs = _EXECS, targets = _TARGETS)
 
 def _toolchains_repository_impl(rctx):
     # type: (...) -> repo_metadata
+    # TODO(https://github.com/bazelbuild/bazel/issues/32020): Use native return annotations
+    # when Bazel exposes repo_metadata and extension_metadata.
     rctx.file("BUILD.bazel", rctx.attr.build_file_content)
     return rctx.repo_metadata(reproducible = True)
 
