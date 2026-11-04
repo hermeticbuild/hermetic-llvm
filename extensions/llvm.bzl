@@ -87,6 +87,7 @@ _LLVM_23_SOURCE_PATCHES = [
     "//3rd_party/llvm-project/x.x/patches:clangd-multicall.patch",
     "//3rd_party/llvm-project/22.x/patches:bundle_resources_no_python.patch",
     "//3rd_party/llvm-project/x.x/patches:no_rules_python.patch",
+    "//3rd_party/llvm-project/23.x/patches:instrumentor-template.patch",
     "//3rd_party/llvm-project/x.x/patches:llvm-extra.patch",
     "//3rd_party/llvm-project/x.x/patches:llvm-cov-multicall.patch",
     "//3rd_party/llvm-project/x.x/patches:thinlto-roundtrip-before-codegen.patch",
@@ -98,11 +99,14 @@ _LLVM_PATCHES_BY_MAJOR = {
     22: _LLVM_22_SOURCE_PATCHES,
     23: _LLVM_23_SOURCE_PATCHES,
     # So that anyone can test with the next LLVM major easily.
-    # LLVM 24 already includes upstream arm64e.x1 support.
+    # LLVM 24 includes arm64e.x1 support and the instrumentor template rule.
     24: [
         patch
         for patch in _LLVM_23_SOURCE_PATCHES
-        if patch != "//3rd_party/llvm-project/x.x/patches:llvm-macho-arm64e-x1.patch"
+        if patch not in (
+            "//3rd_party/llvm-project/x.x/patches:llvm-macho-arm64e-x1.patch",
+            "//3rd_party/llvm-project/23.x/patches:instrumentor-template.patch",
+        )
     ],
 }
 
