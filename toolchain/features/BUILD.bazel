@@ -253,8 +253,9 @@ cc_args(
 cc_args(
     name = "opt_optimization_level",
     actions = _CONFIGURATION_COMPILE_ACTIONS,
+    # clang-cl's /O2 expands to LLVM -O3, not the conservative -O2 policy.
     args = select({
-        "//constraints/windows/abi:msvc": ["/O2"],
+        "//constraints/windows/abi:msvc": ["/clang:-O2"],
         "//conditions:default": [
             # Conservative choice for -O
             # -O3 can increase binary size and even slow down the resulting binaries.
@@ -436,7 +437,7 @@ cc_args(
     name = "fastbuild_optimization_level_o2",
     actions = _CONFIGURATION_COMPILE_ACTIONS,
     args = select({
-        "//constraints/windows/abi:msvc": ["/O2"],
+        "//constraints/windows/abi:msvc": ["/clang:-O2"],
         "//conditions:default": ["-O2"],
     }),
 )
@@ -444,8 +445,9 @@ cc_args(
 cc_args(
     name = "fastbuild_optimization_level_o3",
     actions = _CONFIGURATION_COMPILE_ACTIONS,
+    # /Ot selects LLVM -O3 without /O2's additional CL optimization policy.
     args = select({
-        "//constraints/windows/abi:msvc": ["/clang:-O3"],
+        "//constraints/windows/abi:msvc": ["/Ot"],
         "//conditions:default": ["-O3"],
     }),
 )
@@ -462,8 +464,9 @@ cc_args(
 cc_args(
     name = "fastbuild_optimization_level_os",
     actions = _CONFIGURATION_COMPILE_ACTIONS,
+    # /Os selects LLVM -Os without /O1's additional CL optimization policy.
     args = select({
-        "//constraints/windows/abi:msvc": ["/O1"],
+        "//constraints/windows/abi:msvc": ["/Os"],
         "//conditions:default": ["-Os"],
     }),
 )

@@ -102,15 +102,14 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:c_compile",
         "@rules_cc//cc/toolchains/actions:cpp_compile",
     ] + _LTO_INDEX_ACTIONS + _LINK_ACTIONS,
-    args = ["/clang:-flto=thin"],
+    args = ["-flto=thin"],
 )
 
 cc_args(
     name = "thin_lto_indexing_bitcode_args",
     actions = ["@rules_cc//cc/toolchains/actions:compile_actions"],
     args = [
-        "/clang:-Xclang",
-        "/clang:-fthin-link-bitcode={lto_indexing_bitcode_file}",
+        "-Xclang=-fthin-link-bitcode={lto_indexing_bitcode_file}",
     ],
     format = {
         "lto_indexing_bitcode_file": "@rules_cc//cc/toolchains/variables:lto_indexing_bitcode_file",
@@ -188,7 +187,7 @@ cc_args(
 cc_args(
     name = "thin_lto_backend_index_args",
     actions = ["@rules_cc//cc/toolchains/actions:lto_backend"],
-    args = ["/clang:-fthinlto-index={thinlto_index}"],
+    args = ["-fthinlto-index={thinlto_index}"],
     format = {"thinlto_index": "@rules_cc//cc/toolchains/variables:thinlto_index"},
     requires_not_none = "@rules_cc//cc/toolchains/variables:thinlto_index",
 )
@@ -364,10 +363,13 @@ cc_feature(
 
 # This is the narrow driver/linker bridge: rules_cc exposes libraries as one
 # structured variable, while clang-cl must forward lld-link/COFF options
-# through /clang:-Xlinker.
+# through /clang:-Xlinker. Direct -Xlinker cannot consume its value across
+# newlines in Bazel response files. Forward the entire library input sequence,
+# including objects, so both group membership and archive ordering survive
+# clang-cl appending all /clang: arguments after the ordinary arguments.
 cc_nested_args(
     name = "link_object_group",
-    args = ["{object_file}"],
+    args = ["/clang:{object_file}"],
     format = {"object_file": "@rules_cc//cc/toolchains/variables:libraries_to_link.object_files"},
     iterate_over = "@rules_cc//cc/toolchains/variables:libraries_to_link.object_files",
     requires_equal = "@rules_cc//cc/toolchains/variables:libraries_to_link.type",
@@ -385,7 +387,7 @@ cc_nested_args(
 
 cc_nested_args(
     name = "thin_link_object_group_members",
-    args = ["{object_file}"],
+    args = ["/clang:{object_file}"],
     format = {"object_file": "@rules_cc//cc/toolchains/variables:libraries_to_link.object_files"},
     iterate_over = "@rules_cc//cc/toolchains/variables:libraries_to_link.object_files",
 )
@@ -412,7 +414,7 @@ cc_nested_args(
 
 cc_nested_args(
     name = "link_object",
-    args = ["{library}"],
+    args = ["/clang:{library}"],
     format = {"library": "@rules_cc//cc/toolchains/variables:libraries_to_link.name"},
     requires_equal = "@rules_cc//cc/toolchains/variables:libraries_to_link.type",
     requires_equal_value = "object_file",
@@ -420,7 +422,7 @@ cc_nested_args(
 
 cc_nested_args(
     name = "link_interface_library",
-    args = ["{library}"],
+    args = ["/clang:{library}"],
     format = {"library": "@rules_cc//cc/toolchains/variables:libraries_to_link.name"},
     requires_equal = "@rules_cc//cc/toolchains/variables:libraries_to_link.type",
     requires_equal_value = "interface_library",
@@ -428,7 +430,7 @@ cc_nested_args(
 
 cc_nested_args(
     name = "link_static_library_plain",
-    args = ["{library}"],
+    args = ["/clang:{library}"],
     format = {"library": "@rules_cc//cc/toolchains/variables:libraries_to_link.name"},
     requires_false = "@rules_cc//cc/toolchains/variables:libraries_to_link.is_whole_archive",
 )
@@ -455,7 +457,7 @@ cc_nested_args(
 
 cc_nested_args(
     name = "link_dynamic_library",
-    args = ["{library}"],
+    args = ["/clang:{library}"],
     format = {"library": "@rules_cc//cc/toolchains/variables:libraries_to_link.name"},
     requires_equal = "@rules_cc//cc/toolchains/variables:libraries_to_link.type",
     requires_equal_value = "dynamic_library",

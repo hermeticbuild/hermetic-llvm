@@ -101,21 +101,21 @@ cc_args(
 cc_args(
     name = "clang_cl_legacy_default_warning_flags",
     actions = _CLANG_CL_FRONTEND_ACTIONS,
-    # Preserve the generic Clang diagnostic policy through explicit Clang
-    # passthrough instead of approximating it with a /W level.
+    # clang-cl maps /W3 to Clang -Wall; bare -Wall means /Wall (-Weverything).
+    # Keep warnings native so later user suppressions retain their precedence.
     args = [
-        "/clang:-Wall",
-        "/clang:-Wthread-safety",
-        "/clang:-Wself-assign",
-        "/clang:-Wunused-but-set-parameter",
-        "/clang:-Wno-free-nonheap-object",
+        "/W3",
+        "-Wthread-safety",
+        "-Wself-assign",
+        "-Wunused-but-set-parameter",
+        "-Wno-free-nonheap-object",
     ],
 )
 
 cc_args(
     name = "clang_cl_legacy_default_color_diagnostics",
     actions = _CLANG_CL_FRONTEND_ACTIONS,
-    args = ["/clang:-fcolor-diagnostics"],
+    args = ["-fcolor-diagnostics"],
 )
 
 cc_args(
