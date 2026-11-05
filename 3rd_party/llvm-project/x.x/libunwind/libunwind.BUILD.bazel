@@ -176,7 +176,6 @@ copy_file(
     name = "libunwind.static.gnu_link_name",
     src = "libunwind.static",
     out = "libunwind.a",
-    allow_symlink = True,
     visibility = ["//visibility:public"],
 )
 
