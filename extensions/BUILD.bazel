@@ -12,6 +12,7 @@ bzl_library(
     srcs = ["llvm.bzl"],
     visibility = ["//visibility:public"],
     deps = [
+        "//platforms:common",
         "//private:llvm_project_archive",
         "//private:llvm_project_from_git",
         "//private:llvm_project_from_path",

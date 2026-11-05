@@ -387,6 +387,7 @@ resource_directory(
 alias(
     name = "resource_directory",
     actual = select({
+        "//constraints/libc:none": ":none",
         "@platforms//os:macos": ":resource_directory_macos",
         "//conditions:default": ":resource_directory_default",
     }),
