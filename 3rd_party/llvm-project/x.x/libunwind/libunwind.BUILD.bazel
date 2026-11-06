@@ -176,6 +176,8 @@ copy_file(
     name = "libunwind.static.gnu_link_name",
     src = "libunwind.static",
     out = "libunwind.a",
+    # A symlink into the -ST- config dir can dangle in a reused output base.
+    allow_symlink = False,
     visibility = ["//visibility:public"],
 )
 
