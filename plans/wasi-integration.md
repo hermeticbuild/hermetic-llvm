@@ -14,8 +14,9 @@ model and target-feature groups, and libc-owned source-language flags. The third
 checkpoint separates CRT artifacts from libc archives. The fourth corrects
 public libc-header ordering and adds the demonstrated C23 regression. The fifth
 renames the profile setting to `variant`. The sixth binds the component linker
-to the selected LLVM execution tooling. Remaining support-contract documentation
-is subsequent work.
+to the selected LLVM execution tooling. The seventh replaces the remaining
+`wasm-tools` resolver with a standard executable wrapper. Remaining
+support-contract documentation is subsequent work.
 Public API beyond the approved structure still requires Corentin's agreement.
 
 ## First review checkpoint (629e81b2)
@@ -274,6 +275,32 @@ Suggested PR description:
 > to the selected LLVM tooling, like LLD, so all linker subprocesses match the
 > owning action's executor without relying on PATH or platform preference order.
 
+## Seventh review checkpoint: native wasm-tools wrapper
+
+Replaced `resolved_wasm_tools` with `native_binary` and an OS/CPU select.
+`run_binary.tool` already transitions to the metadata action's execution
+configuration; both validation tests consume the executable through their
+execution-configured inner test. The wrapper needs no independent toolchain
+resolution. Removed the custom rules, toolchain type, six registrations, and
+module registration. Preserved `:wasm_tools`, executable filenames, pinned
+downloads, and the component linker's `exec_os`/`exec_cpu` binding.
+
+Against `d7340f14`, all 24 `RunBinary` actions beneath the ARM64-first mixed
+executor test are identical, including both P2/P3 CRT metadata actions: action
+keys, arguments, inputs, outputs, environments, and execution platforms match.
+The mixed-executor test passes with both platform preference orders and empty
+action/host PATH, using the commands recorded in checkpoint six. Existing
+Wasm/P1/variant tests and buildifier pass. The LLVM 22.1.8 downstream P2 consumer
+builds with empty PATH; `e2e/rules_cc` builds and prints `Hello, World!`.
+Focused review and reference checks pass. Evidence: `/tmp/wasi-native-tools-*`.
+Windows/macOS executable selection is implemented but not newly execution-tested.
+
+Suggested PR description:
+
+> WASI metadata actions already select an execution platform for their tool.
+> Use the standard native executable wrapper for wasm-tools and remove the
+> redundant resolver/toolchain machinery while preserving its consumers.
+
 ## Intended contract
 
 WASI is the target system interface; wasi-libc implements the C library on top
@@ -327,7 +354,7 @@ Existing public labels need an explicit compatibility decision before removal.
 | `//toolchain/args/wasi/p1_threads` | POSIX thread model, pthread mode, and local-exec TLS; separate atomics target-feature implementation. |
 | `//toolchain/args/wasi/components` | Shared P2/P3 component linker and single-thread-model implementations; explicitly limited to component variants. |
 | `//runtimes/wasi` and `@wasi_libc` | Headers, CRTs, archives, metadata generation, and libc implementation requirements. |
-| Existing WASI execution toolchain | Select native `wasm-tools`/`wasm-component-ld` binaries independently of the Wasm target profile. |
+| Native WASI tools | Select `wasm-tools` in the metadata action's execution configuration; bind `wasm-component-ld` to the selected LLVM installation. |
 
 `components` is a shared implementation scope for the existing P2/P3 group, not
 a new selectable ABI. Add separate P2/P3 argument packages only if their
@@ -374,9 +401,9 @@ One semantic name does not imply identical implementation at every stage.
    `COMMON_COPTS`. Keep the required LLVM compatibility restriction with the
    affected libc implementation. Verify that no other current consumer relies
    on that accidental propagation before removing it.
-6. Move the concrete component linker arguments and their declared executable
-   input into `wasi/components:linker`, with compatibility restricted to P2/P3.
-   Keep host-tool selection in the existing execution toolchain.
+6. Keep component linker choice in `wasi/components:linker`, restricted to P2/P3.
+   The selected LLVM linker tool owns its component executable dependency.
+   Select `wasm-tools` in the separate metadata action's execution configuration.
 7. Do not rename artifact targets such as `c` or `crt1_command` just to mirror
    argument-group names. Their semantic role is already an archive or object.
 

@@ -120,8 +120,9 @@ before the execution transition. The map binds `wasm-component-ld` to the same
 explicit execution OS/CPU as Clang and `wasm-ld`, for prebuilt and source-built
 toolchains. The selected link tool declares both executables and supplies
 `COMPILER_PATH`; the semantic argument group supplies `-fuse-ld=ld`. P1 and
-non-WASI tool maps do not acquire the component linker. `wasm-tools` remains
-execution-toolchain resolved for the separate CRT metadata action.
+non-WASI tool maps do not acquire the component linker. The separate CRT metadata
+action uses `wasm-tools` through `run_binary.tool`, whose execution transition
+lets a `native_binary` select the executable for that action's OS/CPU.
 Other platforms retain their existing compositions while their remaining
 legacy semantic groups are normalized separately.
 

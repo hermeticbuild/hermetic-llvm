@@ -1,6 +1,6 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
 load("//platforms:common.bzl", "SUPPORTED_EXECS")
-load(":toolchains.bzl", "resolved_wasm_tools", "wasi_tools_toolchain")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -10,36 +10,20 @@ bzl_library(
     deps = ["@bazel_tools//tools/build_defs/repo:http.bzl"],
 )
 
-toolchain_type(name = "toolchain_type")
-
-[
-    wasi_tools_toolchain(
-        name = "{}_{}_tools".format(os, arch),
-        wasm_tools = "@wasm_tools_{}_{}//:wasm-tools{}".format(
+# run_binary.tool transitions this target to the metadata action's execution
+# platform before selecting the executable. Tests also consume it in exec config.
+native_binary(
+    name = "wasm_tools",
+    src = select({
+        "//platforms/config:{}_{}".format(os, arch): "@wasm_tools_{}_{}//:wasm-tools{}".format(
             os,
             arch,
             ".exe" if os == "windows" else "",
-        ),
-    )
-    for os, arch in SUPPORTED_EXECS
-]
-
-[
-    toolchain(
-        name = "{}_{}_toolchain".format(os, arch),
-        exec_compatible_with = [
-            "@platforms//os:" + os,
-            "@platforms//cpu:" + arch,
-        ],
-        toolchain = ":{}_{}_tools".format(os, arch),
-        toolchain_type = ":toolchain_type",
-    )
-    for os, arch in SUPPORTED_EXECS
-]
-
-resolved_wasm_tools(name = "wasm_tools")
-
-bzl_library(
-    name = "toolchains",
-    srcs = ["toolchains.bzl"],
+        )
+        for os, arch in SUPPORTED_EXECS
+    }),
+    out = select({
+        "@platforms//os:windows": "wasm_tools.exe",
+        "//conditions:default": "wasm_tools",
+    }),
 )
