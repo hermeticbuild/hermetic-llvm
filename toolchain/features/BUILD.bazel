@@ -75,6 +75,7 @@ cc_feature_set(
         "@platforms//os:macos": [],
         "@platforms//os:uefi": [],
         "@platforms//os:none": [],
+        "@platforms//os:wasi": [],
         "//conditions:default": [":supports_dynamic_linker"],
     }),
 )

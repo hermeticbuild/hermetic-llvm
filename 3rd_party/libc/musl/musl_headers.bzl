@@ -112,7 +112,7 @@ def _alltypes_substitutions():
         substitutions["STRUCT {name} {body};".format(name = name, body = body)] = _struct_replacement(name, body)
     return substitutions
 
-def musl_alltypes_headers(name, arch, visibility = None):
+def musl_alltypes_headers(name, arch, visibility = None, source_prefix = ""):
     arch_name = name + "_arch"
     common_name = name + "_common"
     wrapper_name = name + "_wrapper"
@@ -122,7 +122,7 @@ def musl_alltypes_headers(name, arch, visibility = None):
         name = arch_name,
         out = "obj/%s/include/bits/alltypes_arch.h" % arch,
         substitutions = substitutions,
-        template = "arch/%s/bits/alltypes.h.in" % arch,
+        template = source_prefix + "arch/%s/bits/alltypes.h.in" % arch,
         visibility = visibility,
     )
 
@@ -130,7 +130,7 @@ def musl_alltypes_headers(name, arch, visibility = None):
         name = common_name,
         out = "obj/%s/include/bits/alltypes_common.h" % arch,
         substitutions = substitutions,
-        template = "include/alltypes.h.in",
+        template = source_prefix + "include/alltypes.h.in",
         visibility = visibility,
     )
 

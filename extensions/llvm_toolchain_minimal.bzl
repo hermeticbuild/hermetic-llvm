@@ -81,6 +81,8 @@ def _release_repo_specs(index):
     return {
         _repo_name(target): struct(
             build_file = _build_file(target),
+            exec_os = {"darwin": "macos"}.get(target.split("-")[0], target.split("-")[0]),
+            exec_cpu = {"amd64": "x86_64", "arm64": "aarch64"}[target.split("-")[1]],
             sha256 = archives[target]["sha256"],
             urls = [archives[target]["url"]],
         )
@@ -94,7 +96,10 @@ def _llvm_toolchain_minimal_impl(module_ctx):
     for repo_name, spec in repo_specs.items():
         http_archive(
             name = repo_name,
-            build_file = spec.build_file,
+            build_file_content = module_ctx.read(spec.build_file).format(
+                exec_os = spec.exec_os,
+                exec_cpu = spec.exec_cpu,
+            ),
             sha256 = spec.sha256,
             urls = spec.urls,
         )

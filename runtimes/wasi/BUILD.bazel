@@ -1,0 +1,57 @@
+load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load("@bazel_skylib//rules:common_settings.bzl", "string_setting")
+
+exports_files(["wasi.BUILD.bazel"])
+
+alias(
+    name = "wasi_headers_include_search_directory",
+    actual = "@wasi_libc//:headers_include_directory",
+    visibility = ["//visibility:public"],
+)
+
+string_setting(
+    name = "malloc",
+    build_setting_default = "dlmalloc",
+    values = [
+        "dlmalloc",
+        "emmalloc",
+        "none",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+[
+    config_setting(
+        name = "malloc_" + malloc,
+        flag_values = {":malloc": malloc},
+        visibility = ["//visibility:public"],
+    )
+    for malloc in [
+        "emmalloc",
+        "none",
+    ]
+]
+
+alias(
+    name = "wasi_library_search_directory",
+    actual = "@wasi_libc//:library_directory",
+    visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "wasi",
+    srcs = ["wasi.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//toolchain/runtimes:cc_runtime_library",
+        "//toolchain/runtimes:cc_runtime_static_library",
+        "@bazel_lib//lib:copy_file",
+        "@rules_cc//cc/common",
+    ],
+)
+
+bzl_library(
+    name = "sources",
+    srcs = ["sources.bzl"],
+    visibility = ["//visibility:public"],
+)

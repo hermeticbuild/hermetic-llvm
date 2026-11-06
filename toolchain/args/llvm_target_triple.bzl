@@ -1,3 +1,4 @@
+load("//constraints/wasi:variants.bzl", "WASI_TARGET_TRIPLES_BY_CONFIG")
 load("//constraints/windows/abi:abis.bzl", "WINDOWS_TARGET_TRIPLES_BY_CONFIG")
 
 LLVM_TARGET_TRIPLE = select({
@@ -22,5 +23,5 @@ LLVM_TARGET_TRIPLE = select({
     "@llvm//platforms/config:none_wasm64": ["wasm64-unknown-unknown"],
 } | {
     target_config: [target_triple]
-    for target_config, target_triple in WINDOWS_TARGET_TRIPLES_BY_CONFIG.items()
+    for target_config, target_triple in (WINDOWS_TARGET_TRIPLES_BY_CONFIG | WASI_TARGET_TRIPLES_BY_CONFIG).items()
 }, no_match_error = "Unsupported platform")
