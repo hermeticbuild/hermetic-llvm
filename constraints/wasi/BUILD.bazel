@@ -4,14 +4,14 @@ load(":variants.bzl", "WASI_TARGET_TRIPLES")
 package(default_visibility = ["//visibility:public"])
 
 constraint_setting(
-    name = "preview",
+    name = "variant",
     default_constraint_value = ":p1",
 )
 
 [
     constraint_value(
         name = variant,
-        constraint_setting = ":preview",
+        constraint_setting = ":variant",
     )
     for variant in WASI_TARGET_TRIPLES
 ]

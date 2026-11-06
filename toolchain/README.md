@@ -79,6 +79,10 @@ remain in argument implementation packages.
 
 ### WASI semantic routing
 
+`//constraints/wasi:variant` selects the coherent WASI profile: `p1` (the
+default), `p1_threads`, `p2`, or `p3`. The setting covers both API generation
+and the threaded P1 profile; it is not an independent threading setting.
+
 The complete composition selects `//toolchain:linker` by target OS. WASI then
 selects ordinary LLD or `//toolchain/args/wasi/components:linker`; the generic
 argument package does not select WASI variants. Staged runtime compositions

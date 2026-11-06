@@ -12,8 +12,9 @@ changing argument-group ownership and variant routing. The second checkpoint
 incorporates the approved critique: hosted-C header composition, explicit thread
 model and target-feature groups, and libc-owned source-language flags. The third
 checkpoint separates CRT artifacts from libc archives. The fourth corrects
-public libc-header ordering and adds the demonstrated C23 regression. The
-constraint rename and remaining support-contract checks are subsequent work.
+public libc-header ordering and adds the demonstrated C23 regression. The fifth
+renames the profile setting to `variant`. Remaining support-contract checks are
+subsequent work.
 Public API beyond the approved structure still requires Corentin's agreement.
 
 ## First review checkpoint (629e81b2)
@@ -194,6 +195,33 @@ Suggested PR description:
 > ordering within the existing WASI header group and cover the compiler/libc
 > include chain through the existing variant tests.
 
+## Fifth review checkpoint: WASI variant setting
+
+Renamed `//constraints/wasi:preview` to `//constraints/wasi:variant`: the setting
+selects a coherent profile, including threaded P1, rather than only a preview
+generation. Existing values, platform labels, triples, and default P1 remain
+unchanged. Repository reference inspection found only the setting's own values
+using the old label. PR #143 remains open at the reviewed head. No compatibility
+alias was added because no consumer requiring one was identified; an external
+consumer explicitly naming the old setting must adopt the new label.
+
+Compared against `5e8d18dd`: all 6,523 compile/link actions beneath the existing
+Wasm/WASI tests are identical, including action keys, arguments, inputs, outputs,
+environments, and execution properties. The graph covers implicit/default P1,
+explicit P1, threaded P1, P2, and P3. Bazel query confirms all four constraint
+values belong to `variant`, whose default is still `p1`.
+
+`bazel test --config=remote //tests/wasm:wasm_test //tests/wasm:wasi_p1_test
+//tests/wasm:wasi_variants_test //internal_tools:buildifier.check` passed (Wasm
+tests cached). The `e2e/rules_cc` `bazel build --config=remote //:main` check and
+focused read-only review passed. Evidence remains under `/tmp/wasi-variant-*`.
+
+Suggested PR description:
+
+> The WASI setting selects both API generation and the threaded P1 profile.
+> Name it `variant` so its public label describes that selection accurately,
+> preserving the existing values and default target behavior.
+
 ## Intended contract
 
 WASI is the target system interface; wasi-libc implements the C library on top
@@ -368,7 +396,7 @@ Do not infer WASI header precedence from Linux musl solely because wasi-libc
 contains musl sources. Do not replace exec-compiler resource headers with target
 headers. This step does not authorize a new public header API.
 
-## 3. Name the WASI profile constraint accurately
+## 3. Name the WASI profile constraint accurately (implemented)
 
 Proposed change in `constraints/wasi/BUILD.bazel`:
 
