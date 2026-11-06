@@ -169,6 +169,8 @@ Explicit variants are `wasi_wasm32_p1`, `wasi_wasm32_p1_threads`,
 WebAssembly components. WASI C++ standard-library integration is not yet
 implemented in hermetic-llvm.
 
+On WASI, `--@llvm//config:ubsan=True` traps on undefined behavior without a diagnostic runtime.
+
 ### musl
 
 Only static linking against the latest version of musl is supported for now.

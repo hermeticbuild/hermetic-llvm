@@ -54,6 +54,20 @@ selects.config_setting_group(
     ],
 )
 
+config_setting(
+    name = "_ubsan_disabled",
+    flag_values = {"//config:ubsan_selected_config": "false"},
+)
+
+# WASI uses trap instrumentation, which needs no diagnostic runtime.
+selects.config_setting_group(
+    name = "_ubsan_runtime_disabled",
+    match_any = [
+        ":_ubsan_disabled",
+        "@platforms//os:wasi",
+    ],
+)
+
 filegroup(
     name = "none",
     srcs = [],
@@ -252,13 +266,13 @@ resource_directory(
         },
         "//conditions:default": {},
     }) | select({
-        "//config:ubsan_enabled": {
+        ":_ubsan_runtime_disabled": {},
+        "//conditions:default": {
             "//runtimes/compiler-rt:clang_rt.ubsan_standalone.static": "libclang_rt.ubsan_standalone",
             "//runtimes/compiler-rt:clang_rt.ubsan_standalone_cxx.static": "libclang_rt.ubsan_standalone_cxx",
         } | ({
             "//runtimes/compiler-rt:clang_rt.ubsan_loop_detect.static": "libclang_rt.ubsan_loop_detect",
         } if int(LLVM_VERSION_MAJOR) >= 23 else {}),
-        "//conditions:default": {},
     }) | select({
         "//config:cfi_enabled": {
             "//runtimes/compiler-rt:clang_rt.cfi.static": "libclang_rt.cfi",

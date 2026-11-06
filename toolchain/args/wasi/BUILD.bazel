@@ -4,6 +4,20 @@ load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
 package(default_visibility = ["//toolchain:__subpackages__"])
 
 cc_args(
+    name = "ubsan_compiler_flags",
+    actions = ["@rules_cc//cc/toolchains/actions:compile_actions"],
+    args = ["-fsanitize-trap=undefined"],
+    target_compatible_with = ["@platforms//os:wasi"],
+)
+
+cc_args(
+    name = "ubsan_linker_flags",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    args = ["-fsanitize-trap=undefined"],
+    target_compatible_with = ["@platforms//os:wasi"],
+)
+
+cc_args(
     name = "libc_headers_include_search_paths",
     actions = ["//toolchain:source_compile_actions"],
     # Preserve native WASI order: user system paths, compiler wrappers, libc,
