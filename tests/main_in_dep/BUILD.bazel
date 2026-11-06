@@ -1,0 +1,14 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+
+cc_library(
+    name = "main_lib",
+    srcs = ["main.c"],
+)
+
+# The only definition of main lives in a dependency. On Windows MSVC targets
+# this needs the CRT import library to be named on the link line.
+cc_test(
+    name = "main_in_dep_test",
+    deps = [":main_lib"],
+)
