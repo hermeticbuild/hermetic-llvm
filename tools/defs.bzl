@@ -9,6 +9,7 @@ TOOLCHAIN_BINARIES = [
     "clangd",
     "clang-scan-deps",
     "dsymutil",
+    "flang",
     "gcov",
     "lld",
     "ld.lld",
