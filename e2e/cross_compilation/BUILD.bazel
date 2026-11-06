@@ -8,6 +8,7 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_qemu//qemu:qemu_binary.bzl", "qemu_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load(":external_include_paths.bzl", "external_include_paths_alias")
 
 string_flag(
     name = "test_glibc_versions",
@@ -115,6 +116,20 @@ PLATFORMS = [
         target_platform = platform,
     )
     for platform in PLATFORMS
+]
+
+# The runtimes include their headers from external repositories, which clang-cl
+# needs in its own spelling.
+[
+    external_include_paths_alias(
+        name = "main_{}_external_include_paths".format(platform),
+        actual = ":main_" + platform,
+        tags = ["manual"],
+    )
+    for platform in [
+        "windows_x86_64_msvc",
+        "windows_aarch64_msvc",
+    ]
 ]
 
 platform(

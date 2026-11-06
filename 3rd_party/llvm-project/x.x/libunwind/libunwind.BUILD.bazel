@@ -1,4 +1,5 @@
 load("@bazel_skylib//lib:selects.bzl", "selects")
+load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("@llvm//toolchain/runtimes:cc_runtime_shared_library.bzl", "cc_runtime_stage1_shared_library")
 load("@llvm//toolchain/runtimes:cc_runtime_static_library.bzl", "cc_runtime_stage0_static_library")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
@@ -168,6 +169,15 @@ cc_runtime_stage0_static_library(
     deps = [
         ":libunwind",
     ],
+)
+
+copy_file(
+    # lld's MinGW auto-export excludes the runtime by its archive basename.
+    name = "libunwind.static.gnu_link_name",
+    src = "libunwind.static",
+    out = "libunwind.a",
+    allow_symlink = True,
+    visibility = ["//visibility:public"],
 )
 
 # Stage1 because libunwind.so must have CRTs

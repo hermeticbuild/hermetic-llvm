@@ -40,7 +40,7 @@ jobs:
           # Path mapping requires Bazel 9+.
           - bazel_version: last_rc
             folder: "e2e/rules_cc"
-            extra_flags: "--experimental_output_paths=strip"
+            extra_flags: "--experimental_output_paths=strip --config=cpp_path_mapping"
     runs-on: ${{ matrix.os }}
     environment: ${{ github.ref == 'refs/heads/main' && 'ci' || '' }}
 
@@ -88,8 +88,8 @@ jobs:
             ${{ matrix.extra_flags }} \
             //...
 
-          # The transitioned cross-compilation binaries are not tests, so
-          # `bazel test //...` does not build them. Exercise both MSVC target
+          # The MSVC cross-compilation binaries are tagged manual, so
+          # `bazel test //...` excludes them. Exercise both MSVC target
           # architectures in the existing cross-compilation jobs without
           # adding a dedicated lane or executing the resulting PE files.
           if [[ "${{ matrix.folder }}" == "e2e/cross_compilation" && "${{ matrix.bazel_version }}" == "last_rc" ]]; then
@@ -101,8 +101,26 @@ jobs:
               --repo_env=BAZEL_MSVC_RUNTIME_VISUAL_STUDIO_EULA=1 \
               --repo_env=BAZEL_WINDOWS_SDK_EULA=1 \
               //:main_windows_x86_64_msvc \
-              //:main_windows_aarch64_msvc
+              //:main_windows_aarch64_msvc \
+              //:main_windows_x86_64_msvc_external_include_paths \
+              //:main_windows_aarch64_msvc_external_include_paths
           fi
+
+      # The tests above opt C++ actions into path mapping. Without that opt-in,
+      # the toolchain module map must keep the paths the compiles use.
+      - name: bazel build //... with path mapping, C++ actions not opted in
+        if: matrix.folder == 'e2e/rules_cc' && matrix.bazel_version == 'last_rc'
+        env:
+          USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
+        working-directory: ${{ matrix.folder }}
+        shell: bash
+        run: |
+          bazel \
+            --bazelrc=$GITHUB_WORKSPACE/.github/workflows/ci.bazelrc \
+            --bazelrc=.bazelrc \
+            build \
+            --experimental_output_paths=strip \
+            //...
 
       - name: bazel coverage e2e (lcov)
         if: matrix.folder == 'e2e/rules_cc' && matrix.bazel_version == 'last_rc'
@@ -396,6 +414,8 @@ jobs:
           excluded_tests=()
           if [[ "${{ matrix.bazel_version }}" == "8.x" ]]; then
             excluded_tests+=(-//tests/header_modules/...)
+            # The target-scoped C++ stdlib settings are supported on Bazel 9+ only.
+            excluded_tests+=(-//tests/cxxstdlib_settings/...)
           fi
 
           bazel \

@@ -1,3 +1,5 @@
+load("//constraints/libc:libc_versions.bzl", "glibc_supported")
+
 def _generate_glibc_stubs(ctx, target, directory):
     version_script = ctx.actions.declare_file(directory + "/all.map")
 
@@ -31,6 +33,10 @@ def _generate_glibc_stubs(ctx, target, directory):
 
 def _glibc_stubs_impl(ctx):
     target = ctx.attr.target
+    arch = target.split("-")[0]
+    _, major, minor = target.rsplit(".", 2)
+    if not glibc_supported(arch, major + "." + minor):
+        fail("RISC-V requires glibc >= 2.27; requested {}".format(target))
     version_script, assembly_outputs = _generate_glibc_stubs(ctx, target, "build")
 
     prefix, major, minor = target.rsplit(".", 2)

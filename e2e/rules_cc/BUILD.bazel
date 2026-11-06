@@ -7,6 +7,7 @@ load("@platforms//host:constraints.bzl", "HOST_CONSTRAINTS")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_import.bzl", "cc_import")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_shared_library.bzl", "cc_shared_library")
 load("@rules_cc//cc:cc_static_library.bzl", "cc_static_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_cc//cc:objc_library.bzl", "objc_library")
@@ -17,6 +18,8 @@ load(
     "//:defs.bzl",
     "asan_cc_binary",
     "asan_cc_test",
+    "asan_fission_cc_binary",
+    "assert_msvc_tuple_features",
     "cfi_cc_binary",
     "cs_fdo_instrument_cc_binary",
     "dfsan_cc_binary",
@@ -26,6 +29,7 @@ load(
     "fission_cc_binary",
     "fuzzer_asan_cc_binary",
     "fuzzer_cc_binary",
+    "glibc_2_17_opt_cc_test",
     "lsan_cc_binary",
     "lsan_cc_test",
     "msan_cc_binary",
@@ -912,6 +916,26 @@ sh_test(
     target_compatible_with = _FISSION_TEST_COMPATIBLE,
 )
 
+# ASan links the internal symbolizer, whose objects are LTO bitcode and so
+# never produce a .dwo. Fission must still build.
+asan_fission_cc_binary(
+    name = "asan_fission_main",
+    srcs = ["main.cc"],
+    target_compatible_with = _FISSION_TEST_COMPATIBLE,
+)
+
+sh_test(
+    name = "asan_fission_debug_package_test",
+    srcs = ["fission_debug_package_test.sh"],
+    # The binary, not just its .dwp, so the ASan runtime is linked.
+    data = [
+        ":asan_fission_main",
+        ":asan_fission_main.dwp",
+    ],
+    env = {"DWP": "$(rootpath :asan_fission_main.dwp)"},
+    target_compatible_with = _FISSION_TEST_COMPATIBLE,
+)
+
 cc_binary(
     name = "main_dsym",
     srcs = ["main.cc"],
@@ -948,10 +972,7 @@ sh_test(
 external_include_paths_glibc_alias(
     name = "external_include_paths_glibc_start",
     # buildifier: disable=canonical-repository
-    actual = select({
-        "@platforms//cpu:aarch64": "@@llvm++glibc+glibc_aarch64-linux-gnu.2.34//:glibc_start",
-        "@platforms//cpu:x86_64": "@@llvm++glibc+glibc_x86_64-linux-gnu.2.34//:glibc_start",
-    }),
+    actual = "@@llvm++glibc+glibc_2.34//:glibc_start",
     # buildifier: enable=canonical-repository
     tags = ["manual"],
     target_compatible_with = _EXTERNAL_INCLUDE_PATHS_TEST_COMPATIBLE,
@@ -1012,6 +1033,19 @@ exec_test(
     srcs = ["cfi_output_test.sh"],
     data = [":cfi_fail"],
     env = {"BINARY": "$(rootpath :cfi_fail)"},
+    target_compatible_with = select({
+        "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)
+
+# Valid standard-library operations must not produce MSan false positives.
+exec_test(
+    msan_cc_binary,
+    name = "msan_libcxx_test",
+    srcs = ["msan_libcxx_test.cc"],
+    copts = ["-O1"],
+    linkstatic = True,
     target_compatible_with = select({
         "@platforms//os:linux": [],
         "//conditions:default": ["@platforms//:incompatible"],
@@ -1644,6 +1678,105 @@ cc_library(
     hdrs = ["coverage_lib.h"],
 )
 
+cc_library(
+    name = "shared_library_probe",
+    srcs = ["shared_library_probe.c"],
+    hdrs = ["shared_library_probe.h"],
+    local_defines = ["SHARED_LIBRARY_BUILD"],
+)
+
+filegroup(
+    name = "shared_library_dynamic_outputs",
+    srcs = ["shared_library_probe"],
+    output_group = "dynamic_library",
+)
+
+filegroup(
+    name = "shared_library_outputs",
+    # Windows cc_library default outputs omit DLLs; use the native output group.
+    srcs = ["shared_library_probe"] + select({
+        "@platforms//os:windows": ["shared_library_dynamic_outputs"],
+        "//conditions:default": [],
+    }),
+)
+
+# Inspect real link artifacts without executing foreign target code. Musl is
+# omitted until its shared libc and loader are wired into the consumer path;
+# archive-only output is an implementation gap, not a permanent musl contract.
+# MSVC retains its existing support and separately opted-in CI coverage.
+_SHARED_LIBRARY_PLATFORMS = [
+    "{}_{}".format(os, arch)
+    for os in [
+        "linux",
+        "macos",
+        "windows",
+    ]
+    for arch in [
+        "x86_64",
+        "aarch64",
+    ]
+]
+
+[
+    platform_transition_filegroup(
+        name = "shared_library_outputs_" + platform,
+        srcs = ["shared_library_outputs"],
+        target_platform = "@llvm//platforms:" + platform,
+    )
+    for platform in _SHARED_LIBRARY_PLATFORMS
+]
+
+[
+    sh_test(
+        name = "cc_library_{}_outputs_test".format(platform),
+        srcs = ["cc_library_outputs_test.sh"],
+        data = ["shared_library_outputs_" + platform],
+        env = {
+            "EXPECT_SHARED": "no" if platform.startswith("macos_") else "yes",
+            "LIBRARY_OUTPUTS": "$(rootpaths :shared_library_outputs_{})".format(platform),
+        },
+        target_compatible_with = ["@platforms//os:linux"],
+    )
+    for platform in _SHARED_LIBRARY_PLATFORMS
+]
+
+cc_test(
+    name = "shared_library_consumer_test",
+    srcs = ["shared_library_consumer.c"],
+    exec_properties = select({
+        "@platforms//os:windows": {"test.no-remote": "1"},
+        "//conditions:default": {},
+    }),
+    linkstatic = False,
+    target_compatible_with = select({
+        "@llvm//platforms/config:musl": ["@platforms//:incompatible"],
+        "@platforms//os:macos": ["@platforms//:incompatible"],
+        "@platforms//os:uefi": ["@platforms//:incompatible"],
+        "@platforms//os:none": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+    deps = ["shared_library_probe"],
+)
+
+cc_library(
+    name = "static_library_probe",
+    srcs = ["shared_library_probe.c"],
+    hdrs = ["shared_library_probe.h"],
+    linkstatic = True,
+    local_defines = ["SHARED_LIBRARY_BUILD"],
+)
+
+sh_test(
+    name = "cc_library_linkstatic_outputs_test",
+    srcs = ["cc_library_outputs_test.sh"],
+    data = ["static_library_probe"],
+    env = {
+        "EXPECT_SHARED": "no",
+        "LIBRARY_OUTPUTS": "$(rootpaths :static_library_probe)",
+    },
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
 cc_test(
     name = "coverage_lib_test",
     srcs = ["coverage_lib_test.cc"],
@@ -1656,6 +1789,8 @@ cc_test(
     }),
     deps = [":coverage_lib"],
 )
+
+assert_msvc_tuple_features()
 
 _WINDOWS_MSVC_ARTIFACT_PLATFORMS = [
     ("x86_64", "@llvm//platforms:windows_x86_64_msvc", "AMD64"),
@@ -1839,4 +1974,39 @@ exec_test(
         "@platforms//os:windows": ["@platforms//:incompatible"],
         "//conditions:default": [],
     }),
+)
+
+glibc_2_17_opt_cc_test(
+    name = "glibc_2_17_fortify_cxx_test",
+    size = "small",
+    srcs = ["glibc_2_17_fortify_cxx_test.cc"],
+    target_compatible_with = select({
+        "@platforms//cpu:aarch64": [],
+        "@platforms//cpu:x86_64": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }) + select({
+        "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)
+
+cc_library(
+    name = "cxx_shared_library_lib",
+    srcs = ["cxx_shared_library.cc"],
+    hdrs = ["cxx_shared_library.h"],
+    local_defines = ["CXX_SHARED_LIBRARY_IMPLEMENTATION"],
+)
+
+cc_shared_library(
+    name = "cxx_shared_library",
+    deps = [":cxx_shared_library_lib"],
+)
+
+cc_test(
+    name = "cxx_shared_library_test",
+    srcs = ["cxx_shared_library_test.cc"],
+    dynamic_deps = [":cxx_shared_library"],
+    # The remote executors only run Linux.
+    exec_properties = {"test.no-remote": "1"},
+    deps = [":cxx_shared_library_lib"],
 )

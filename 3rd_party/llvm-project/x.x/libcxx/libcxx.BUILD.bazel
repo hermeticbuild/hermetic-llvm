@@ -535,6 +535,15 @@ cc_runtime_stage0_static_library(
 )
 
 copy_file(
+    # lld's MinGW auto-export excludes the runtime by its archive basename.
+    name = "libcxx.static.gnu_link_name",
+    src = "libcxx.static.stage0_asan_inheriting",
+    out = "libc++.a",
+    allow_symlink = True,
+    visibility = ["//visibility:public"],
+)
+
+copy_file(
     # The explicit clang-cl C++ runtime link contract names libc++.lib.
     name = "libcxx.static.msvc_link_name",
     src = ":libcxx.static.stage0_non_asan",

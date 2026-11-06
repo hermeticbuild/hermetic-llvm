@@ -1,11 +1,31 @@
+load("@llvm//toolchain/features/msvc:validation.bzl", "validate_msvc_configuration")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("@with_cfg.bzl", "with_cfg")
 
+def assert_msvc_tuple_features():
+    error = validate_msvc_configuration(
+        disabled_features = [],
+        enabled_features = ("tsan", "asan", "tsan"),
+        is_legacy_msvcrt = False,
+        is_libcxx = True,
+        is_msvc_abi = True,
+        unsupported_features = ["asan", "tsan"],
+    )
+    expected = "MSVC ABI Layer 1 does not support feature(s): asan, tsan"
+    if error != expected:
+        fail("expected %r, got %r" % (expected, error))
+
 _EXTERNAL_INCLUDE_PATHS_GLIBC_PLATFORM = select({
     "@platforms//cpu:aarch64": [Label("@llvm//platforms:linux_aarch64_gnu.2.34")],
     "@platforms//cpu:x86_64": [Label("@llvm//platforms:linux_x86_64_gnu.2.34")],
+    "//conditions:default": [],
+})
+
+_GLIBC_2_17_PLATFORM = select({
+    "@platforms//cpu:aarch64": [Label("@llvm//platforms:linux_aarch64_gnu.2.17")],
+    "@platforms//cpu:x86_64": [Label("@llvm//platforms:linux_x86_64_gnu.2.17")],
     "//conditions:default": [],
 })
 
@@ -100,6 +120,20 @@ dfsan_cc_binary, _dfsan_cc_binary_internal = with_cfg(cc_binary).set(
 ).build()
 
 fission_cc_binary, _fission_cc_binary_internal = with_cfg(cc_binary).set(
+    "compilation_mode",
+    "dbg",
+).set(
+    "fission",
+    ["dbg"],
+).build()
+
+asan_fission_cc_binary, _asan_fission_cc_binary_internal = with_cfg(cc_binary).set(
+    Label("@llvm//config:asan"),
+    True,
+).set(
+    Label("@llvm//config:host_asan"),
+    True,
+).set(
     "compilation_mode",
     "dbg",
 ).set(
@@ -263,6 +297,15 @@ cs_fdo_instrument_cc_binary, _cs_fdo_instrument_cc_binary_internal = with_cfg(cc
 ).build()
 
 opt_binary, _opt_binary_internal = with_cfg(cc_binary).set(
+    "compilation_mode",
+    "opt",
+).build()
+
+# opt enables _FORTIFY_SOURCE, whose glibc wrappers are under test.
+glibc_2_17_opt_cc_test, _glibc_2_17_opt_cc_test_internal = with_cfg(cc_test).set(
+    "platforms",
+    _GLIBC_2_17_PLATFORM,
+).set(
     "compilation_mode",
     "opt",
 ).build()

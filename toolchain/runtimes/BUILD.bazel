@@ -184,9 +184,9 @@ cc_args_list(
         "//toolchain:hermetic_compile_flags",
         ":hermetic_link_flags",
 
-        # Keep external -isystem directories before the toolchain C and C++
-        # -isystem directories below.
-        "@rules_cc//cc/toolchains/args/external_include_paths:external_include_paths",
+        # Keep external system include directories before the toolchain C and
+        # C++ system include directories below.
+        "//toolchain:windows_external_include_paths",
 
         # Windows compiler, ABI, CRT, object-format, and C++ runtime semantics.
         "//toolchain/args/windows:crt_compile_defines",

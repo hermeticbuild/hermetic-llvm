@@ -1,6 +1,6 @@
 load("@bazel_features//:features.bzl", "bazel_features")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("//constraints/libc:libc_versions.bzl", "GLIBC_VERSIONS")
+load("//constraints/libc:libc_versions.bzl", "GLIBC_VERSIONS", "glibc_supported")
 load("//platforms:common.bzl", "LIBC_SUPPORTED_TARGETS")
 
 # glibc's source/header triples do not always match our (os, arch) names.
@@ -16,6 +16,17 @@ def glibc_triple(target_os, target_arch):
     )
 
 GLIBC_RELEASE_COMMITS = {
+    "2.17": "05573613e0b4f99f2718f62957c77d5842df3592",  # release/2.17/master
+    "2.18": "715e7fe0322004fd2e3fed853e9be3c279f5015d",  # release/2.18/master
+    "2.19": "0a62a5c401cf5b4e79e8290e46ce36f4c6dd08da",  # release/2.19/master
+    "2.20": "916ef0f69613613e11123657bff127bd26104630",  # release/2.20/master
+    "2.21": "59c0f6ff86c0801fbac82a585629793a3920cc83",  # release/2.21/master
+    "2.22": "49a0c33ead1b1eea5b414e9e2574a4fd96291203",  # release/2.22/master
+    "2.23": "b039fd85db0717aca309b61925d00a5a6547a649",  # release/2.23/master
+    "2.24": "0d7f1ed30969886c8dde62fbf7d2c79967d4bace",  # release/2.24/master
+    "2.25": "a0408ec51ea862dda102482036c401d2e707e20b",  # release/2.25/master
+    "2.26": "5daf0c98152bdc54719a3ef62302204705e16fa6",  # release/2.26/master
+    "2.27": "6d69c4aad444b655b0c69251b4b8e595031cb1e8",  # release/2.27/master
     "2.28": "92d25389c255b0da9b56bc05694f0702cd22921a",  # release/2.28/master
     "2.29": "2417ddb64590b7197d6df15b9df67866561713e0",  # release/2.29/master
     "2.30": "f8db9906d759152db9977c8774470d05a80519da",  # release/2.30/master
@@ -44,6 +55,17 @@ GLIBC_RELEASE_STRIP_PREFIXES = {
 }
 
 GLIBC_RELEASE_INTEGRITY = {
+    "2.17": "05ecf32dcb2bd593c8eda49e10269731eec5ee1663e8670e85132002139dea55",
+    "2.18": "ea04929fe1fcc5f42464e034bffc0b9383ac89aa17a190969c4921f78f6a4d16",
+    "2.19": "f4a297da9a884f58c7f9e28ad3c1b009da012fa152d0f0592e2b72bc8894cf53",
+    "2.20": "2ac0e94552a076d7089e849187ab5ecc31915d2ee67e81e0ed046d2a1bbf0b09",
+    "2.21": "0503f9c6b3ec033f43f66dafb70a47c4b9e4e53565428b3d1f592d861645c70e",
+    "2.22": "937c5171cbbeb5a1951d42f652837a2c9eeb21fac48c52361e0dc39c631f9f16",
+    "2.23": "a6705e0940d17230d6a236ad149d77b1e17c361fa7a455ac319406770c1d2813",
+    "2.24": "560d586274222a47be7dbb989ee514c7d620c9eba126efc43c2508e47764753f",
+    "2.25": "c8d491a68591b5a7ad548d56068eda407ec00b77bcdb70355addf182a1b006b1",
+    "2.26": "a6f374efe60fce75bca1bf00fa45e9b9eeb3e2716b8eaf973cd251d753799873",
+    "2.27": "4145cceb3753f7e1d6611beb802c8a8aee2d7755efed305f53af11da3cfc354f",
     "2.28": "f4cf37f12e0c3a81485ea8743dc41dbcec31ae326b22d6265e724c7ee753529e",
     "2.29": "39cb3f84e92fe829f0b5d96d08437d18e90d17a23021119a7235e17d6bb25245",
     "2.30": "617511b27f473280597a1cc2828101a29b9f4c682ee99422b8c246c2f84f46e2",
@@ -61,6 +83,11 @@ GLIBC_RELEASE_INTEGRITY = {
     "2.42": "0a1427b902e6fe666508162d92d5be3eaff4d410fe66f3426ccaa9848ed90f05",
     "2.43": "d9c86c6b5dbddb43a3e08270c5844fc5177d19442cf5b8df4be7c07cd5fa3831",
     "2.44": "37f600f2bef3c5e8300147059568b2a2e40a7ad6ccc65ce942556d49429cc667",
+}
+
+# Upstream fixes backported to the prebuilt headers of a glibc release.
+GLIBC_HEADERS_PATCHES = {
+    "2.17": ["//3rd_party/libc/glibc:headers-2.17-clang-gnu-inline.patch"],
 }
 
 def _glibc_release_urls(version):
@@ -101,44 +128,45 @@ def _glibc_impl(module_ctx):
             index = json.decode(file_content, default = None)
 
     for version in GLIBC_VERSIONS:
+        http_archive(
+            name = "glibc_%s" % version,
+            urls = _glibc_release_urls(version),
+            strip_prefix = _glibc_release_strip_prefix(version),
+            sha256 = GLIBC_RELEASE_INTEGRITY[version],
+            build_file = "//3rd_party/libc/glibc:glibc.BUILD.bazel",
+            patches = [
+                # This file is generated when compiling the glibc.
+                #
+                # We add it as an empty file because all the constant it
+                # normally defines are manually passed as `defines`
+                "//3rd_party/libc/glibc:0001-Add-empty-config.h.patch",
+
+                # This file is generated when compiling the glibc.
+                #
+                # It defines the ABI tag value used in the ELF note included
+                # in the startup code linked into every program.
+                #
+                # On linux, it is the same value all the time:
+                # .*-.*-linux.* 0 2.0.0 # earliest compatible kernel version
+                "//3rd_party/libc/glibc:0002-Add-abi-tag.h.patch",
+
+                # This file is generated when compiling the glibc.
+                #
+                # It defines constants and macros used during the glibc c
+                # files compilation. We can hardcode the values safely as
+                # long as every module that existed in the range of libc
+                # we support is listed in this file with a value associated.
+                "//3rd_party/libc/glibc:0003-Adding-libc-modules.h.patch",
+            ],
+            patch_args = [
+                "-p1",
+            ],
+        )
+
         for (target_os, target_arch) in LIBC_SUPPORTED_TARGETS:
+            if not glibc_supported(target_arch, version):
+                continue
             target = glibc_triple(target_os, target_arch)
-
-            #TODO(cerisier): Share the repository between targets
-            http_archive(
-                name = "glibc_%s.%s" % (target, version),
-                urls = _glibc_release_urls(version),
-                strip_prefix = _glibc_release_strip_prefix(version),
-                sha256 = GLIBC_RELEASE_INTEGRITY[version],
-                build_file = "//3rd_party/libc/glibc:glibc.BUILD.bazel",
-                patches = [
-                    # This file is generated when compiling the glibc.
-                    #
-                    # We add it as an empty file because all the constant it
-                    # normally defines are manually passed as `defines`
-                    "//3rd_party/libc/glibc:0001-Add-empty-config.h.patch",
-
-                    # This file is generated when compiling the glibc.
-                    #
-                    # It defines the ABI tag value used in the ELF note included
-                    # in the startup code linked into every program.
-                    #
-                    # On linux, it is the same value all the time:
-                    # .*-.*-linux.* 0 2.0.0 # earliest compatible kernel version
-                    "//3rd_party/libc/glibc:0002-Add-abi-tag.h.patch",
-
-                    # This file is generated when compiling the glibc.
-                    #
-                    # It defines constants and macros used during the glibc c
-                    # files compilation. We can hardcode the values safely as
-                    # long as every module that existed in the range of libc
-                    # we support is listed in this file with a value associated.
-                    "//3rd_party/libc/glibc:0003-Adding-libc-modules.h.patch",
-                ],
-                patch_args = [
-                    "-p1",
-                ],
-            )
 
             index_entry = index.get(version, {}).get(target, None)
             if index_entry == None:
@@ -151,6 +179,8 @@ def _glibc_impl(module_ctx):
                 sha256 = index_entry.get("sha256"),
                 strip_prefix = target,
                 build_file = ":glibc-headers.BUILD.bazel",
+                patches = GLIBC_HEADERS_PATCHES.get(version, []),
+                patch_args = ["-p1"],
             )
 
     _glibc_trampoline_repository(

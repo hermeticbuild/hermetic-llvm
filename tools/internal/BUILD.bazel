@@ -1,3 +1,5 @@
+load("@bazel_lib//lib:transitions.bzl", "platform_transition_binary")
+load("//platforms:common.bzl", "SUPPORTED_EXECS")
 load("//toolchain/runtimes:cc_runtime_binary.bzl", "cc_runtime_stage1_hosted_binary")
 
 cc_runtime_stage1_hosted_binary(
@@ -7,8 +9,33 @@ cc_runtime_stage1_hosted_binary(
 )
 
 cc_runtime_stage1_hosted_binary(
-    name = "module-map-generator",
+    name = "native/module-map-generator",
     srcs = ["module_map_generator.c"],
+)
+
+# The generator runs on the execution platform before Clang can consume the
+# module map. Linux workers need not provide a glibc loader.
+_LINUX_CPUS = [cpu for os, cpu in SUPPORTED_EXECS if os == "linux"]
+
+[
+    platform_transition_binary(
+        name = "module-map-generator-" + cpu,
+        binary = ":native/module-map-generator",
+        target_compatible_with = [
+            "@platforms//os:linux",
+            "@platforms//cpu:" + cpu,
+        ],
+        target_platform = "//platforms:linux_{}_musl".format(cpu),
+    )
+    for cpu in _LINUX_CPUS
+]
+
+alias(
+    name = "module-map-generator",
+    actual = select({
+        "//platforms/config:linux_" + cpu: ":module-map-generator-" + cpu
+        for cpu in _LINUX_CPUS
+    } | {"//conditions:default": ":native/module-map-generator"}),
     visibility = ["//visibility:public"],
 )
 

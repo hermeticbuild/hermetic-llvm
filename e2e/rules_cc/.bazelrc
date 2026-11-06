@@ -3,7 +3,9 @@ import %workspace%/../../.bazelrc
 common --config=cc
 common --process_headers_in_dependencies
 common --features=layering_check
-common --modify_execution_info=CppModuleMap=+supports-path-mapping,CppArchive=+supports-path-mapping,CppCompile=+supports-path-mapping
+
+# C++ actions don't support path mapping unless opted in.
+common:cpp_path_mapping --modify_execution_info=CppModuleMap=+supports-path-mapping,CppArchive=+supports-path-mapping,CppCompile=+supports-path-mapping
 
 # Coverage needs Bazel 9
 coverage --experimental_use_llvm_covmap

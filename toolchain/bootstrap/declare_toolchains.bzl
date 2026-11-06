@@ -203,6 +203,22 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
         },
     )
 
+    cc_tool_map(
+        name = prefix + "/tools_for_mingw",
+        tools = BASE_TOOLS | COMPLETE_ONLY_TOOLS | {
+            "@rules_cc//cc/toolchains/actions:ar_actions": prefix + "/llvm-ar",
+            "@rules_cc//cc/toolchains/actions:generate_def_file": prefix + "/mingw-def-file-generator",
+        },
+    )
+
+    native.alias(
+        name = prefix + "/tools_for_mingw_for_runtime",
+        actual = select({
+            "@llvm//toolchain:runtimes_all": prefix + "/tools_for_mingw",
+            "//conditions:default": prefix + "/staged_default_tools",
+        }),
+    )
+
     native.alias(
         name = prefix + "/default_tools_for_runtime",
         actual = select({
@@ -305,6 +321,17 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
         src = "@llvm//tools/def_file_generator",
         data = [prefix + "/bin/llvm-nm"],
         env = {"LLVM_NM": "{llvm_nm}"},
+        format = {"llvm_nm": prefix + "/bin/llvm-nm"},
+    )
+
+    cc_tool(
+        name = prefix + "/mingw-def-file-generator",
+        src = "@llvm//tools/def_file_generator",
+        data = [prefix + "/bin/llvm-nm"],
+        env = {
+            "DEF_FILE_GENERATOR_ABI": "gnu",
+            "LLVM_NM": "{llvm_nm}",
+        },
         format = {"llvm_nm": prefix + "/bin/llvm-nm"},
     )
 
@@ -611,6 +638,8 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
                     "@platforms//os:uefi": ":%s/uefi_tools" % tool_prefix,
                     "@llvm//platforms/config:windows_x86_64_msvc": ":%s/tools_for_msvc_for_runtime" % tool_prefix,
                     "@llvm//platforms/config:windows_aarch64_msvc": ":%s/tools_for_msvc_for_runtime" % tool_prefix,
+                    "@llvm//platforms/config:windows_x86_64_mingw_compatible": ":%s/tools_for_mingw_for_runtime" % tool_prefix,
+                    "@llvm//platforms/config:windows_aarch64_mingw_compatible": ":%s/tools_for_mingw_for_runtime" % tool_prefix,
                     "@llvm//toolchain:linux_complete": ":%s/tools_with_interface_libraries" % tool_prefix,
                     "@llvm//toolchain:macos_complete_with_libtool": ":%s/tools_with_dsym_and_libtool" % tool_prefix,
                     "@llvm//toolchain:macos_complete": ":%s/tools_with_dsym" % tool_prefix,

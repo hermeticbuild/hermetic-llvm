@@ -1892,5 +1892,1123 @@
             "url": "https://github.com/cerisier/glibc-headers/releases/download/2.28-20250512/x86_64-linux-gnux32.2.28.tar.zst",
             "sha256": "fa1851c047d194a5cd72316e358809fc3d5b5559a628d0d25b926353cc506cc3"
         }
+    },
+    "2.27": {
+        "aarch64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.27-20261024/aarch64-linux-gnu.2.27.tar.zst",
+            "sha256": "5d2b4c51dc9f4e5d1fb5537ec780e75292c06e95265b020ea2d8ba9245323dfb"
+        },
+        "aarch64_be-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.27-20261024/aarch64_be-linux-gnu.2.27.tar.zst",
+            "sha256": "04d2408547eaf990730391960003bd33a1ffdca4596daac49e35ceacb990676f"
+        },
+        "arm-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.27-20261024/arm-linux-gnueabi.2.27.tar.zst",
+            "sha256": "53bf399c5423686a659104aa9dd7cf49fbb9573709b1c79ac0d0276c4a08ec7b"
+        },
+        "arm-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.27-20261024/arm-linux-gnueabihf.2.27.tar.zst",
+            "sha256": "79fd33382f152d8fdf8af60d2a686aea0d1e3884e3c11b7eefb06ce16e8c7a3c"
+        },
+        "armeb-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.27-20261024/armeb-linux-gnueabi.2.27.tar.zst",
+            "sha256": "007aff64716a51ffa8cffe9bf7105691f1f8230aaeff403e6862bb04e64b7de8"
+        },
+        "armeb-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.27-20261024/armeb-linux-gnueabihf.2.27.tar.zst",
+            "sha256": "836f016d017b5d75a6637385cfc530aa265a914d6f452e688488fe41ce6cd82c"
+        },
+        "i686-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.27-20261024/i686-linux-gnu.2.27.tar.zst",
+            "sha256": "9ac7aeb075526b6f982aae340fe550657b19e4789ad00655adb959d65fe796c2"
+        },
+        "m68k-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.27-20261024/m68k-linux-gnu.2.27.tar.zst",
+            "sha256": "d6890d2e5c65adedd99b0a33cdbd4f469fd271998817df80d0114ecd81ffafc6"
+        },
+        "mips-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.27-20261024/mips-linux-gnueabi.2.27.tar.zst",
+            "sha256": "af495c5a9ae92ff999eb85ab5a1d470be06310df9f21c2b8b4186e0eef61bb95"
+        },
+        "mips-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.27-20261024/mips-linux-gnueabihf.2.27.tar.zst",
+            "sha256": "d8dc8f967a874e325ab52a16abf88357ace64eed90e720b9322fbf4c8928a407"
+        },
+        "mips64-linux-gnuabi64": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.27-20261024/mips64-linux-gnuabi64.2.27.tar.zst",
+            "sha256": "fe96536834b8bb9f822e61c92626a87598a0189b2ce9408ad784566909eaadd4"
+        },
+        "mips64-linux-gnuabin32": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.27-20261024/mips64-linux-gnuabin32.2.27.tar.zst",
+            "sha256": "0279d67a728f07c219864c287c4571e07de4010d279564d53037a926159daf81"
+        },
+        "mips64el-linux-gnuabi64": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.27-20261024/mips64el-linux-gnuabi64.2.27.tar.zst",
+            "sha256": "eda5fa7f8a253473ade8e541bc692a70f7794c57e813c5e34bab318db00520fc"
+        },
+        "mips64el-linux-gnuabin32": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.27-20261024/mips64el-linux-gnuabin32.2.27.tar.zst",
+            "sha256": "bdd62143dfa3961e3119f6fe3cbcf9f64e890d5af4c563eef76fd9af121d9910"
+        },
+        "mipsel-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.27-20261024/mipsel-linux-gnueabi.2.27.tar.zst",
+            "sha256": "3de732e3d62d6b8e67a2128a838a49cd0bcce9c9d17ab583de7db0c92d08d0e0"
+        },
+        "mipsel-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.27-20261024/mipsel-linux-gnueabihf.2.27.tar.zst",
+            "sha256": "2f2319622201383b59f33df244a03c94019d58d224657e6e38aff9cb43ce86bd"
+        },
+        "powerpc-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.27-20261024/powerpc-linux-gnueabi.2.27.tar.zst",
+            "sha256": "59bb1f177bb331d4fb12894a1fcfb05520643231ef1ecdbc36425587bdc3197f"
+        },
+        "powerpc-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.27-20261024/powerpc-linux-gnueabihf.2.27.tar.zst",
+            "sha256": "9b9f77adf4bd7cac2b9d1adc3a8577a6e492746b7aaa31a28c892a490db1861f"
+        },
+        "powerpc64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.27-20261024/powerpc64-linux-gnu.2.27.tar.zst",
+            "sha256": "b7b31431be3dafb993653efa033c34576132452706257d5ad3b37d2c1ea27697"
+        },
+        "powerpc64le-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.27-20261024/powerpc64le-linux-gnu.2.27.tar.zst",
+            "sha256": "18c16e05aef0061bb896d888cbc20b7a19325eb1fa58802a8f1b3560fa45af7f"
+        },
+        "riscv64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.27-20261024/riscv64-linux-gnu.2.27.tar.zst",
+            "sha256": "9cddac7d987357e50127cc9d76aa901471b1132752ae232853e58f5cfa4f67ce"
+        },
+        "s390x-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.27-20261024/s390x-linux-gnu.2.27.tar.zst",
+            "sha256": "8f51796f169548fb27d15273e18cf44af66311f98217dbb67f454b7c63766276"
+        },
+        "sparc-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.27-20261024/sparc-linux-gnu.2.27.tar.zst",
+            "sha256": "e62734490c6c40b9cca6065cd821a92c8b80cea56646e14cfeac366d30c3fb40"
+        },
+        "sparc64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.27-20261024/sparc64-linux-gnu.2.27.tar.zst",
+            "sha256": "9755a4f4415067cc3490710ca0b5a5cdbc34077655c956c5dbf86b64b95ed88d"
+        },
+        "x86_64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.27-20261024/x86_64-linux-gnu.2.27.tar.zst",
+            "sha256": "09fd43f09dfa4a5465545effd72b2bbb9c2954fc5f514137413703995dd4f0de"
+        },
+        "x86_64-linux-gnux32": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.27-20261024/x86_64-linux-gnux32.2.27.tar.zst",
+            "sha256": "f88000e58b210f87bfc2fef14f53a1cdfe3747017e2c12bebf40d1ccd0502ec9"
+        }
+    },
+    "2.26": {
+        "aarch64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.26-20261025/aarch64-linux-gnu.2.26.tar.zst",
+            "sha256": "b86ed48858a0042bd584d3f0c649d91ce62a54c3038894dfb32fd144c088b834"
+        },
+        "aarch64_be-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.26-20261025/aarch64_be-linux-gnu.2.26.tar.zst",
+            "sha256": "81722b63ce347291181025900873b6e3e797a674c45fd55e4e05a4d921524c7e"
+        },
+        "arm-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.26-20261025/arm-linux-gnueabi.2.26.tar.zst",
+            "sha256": "f48cadac71131d91709cad37ef82d4843cf3d54ceee9991fc6e31e975c1e039d"
+        },
+        "arm-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.26-20261025/arm-linux-gnueabihf.2.26.tar.zst",
+            "sha256": "64a9f4df45c71e5e542c771fc1d1d67648bd1c280903e5b5a925b843fbc55813"
+        },
+        "armeb-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.26-20261025/armeb-linux-gnueabi.2.26.tar.zst",
+            "sha256": "26724156cda2273ecb7741e7aeaf7d978d1d43471c02e0fb0a7bf9c3194482e4"
+        },
+        "armeb-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.26-20261025/armeb-linux-gnueabihf.2.26.tar.zst",
+            "sha256": "0b141c9fbd5fdbdd6fceaf7cc4476f9dba028ec5cca3b99a4a14f7c2dd5d1463"
+        },
+        "i686-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.26-20261025/i686-linux-gnu.2.26.tar.zst",
+            "sha256": "cfa0ee1e8adf1fdc85ced3d1a7a3e192308cea5d7146c529333ed3a19427997e"
+        },
+        "m68k-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.26-20261025/m68k-linux-gnu.2.26.tar.zst",
+            "sha256": "bdef796236a0927b3b595acbf188dc988cb14d4627860f1399b31284719e480b"
+        },
+        "mips-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.26-20261025/mips-linux-gnueabi.2.26.tar.zst",
+            "sha256": "8159e6f1d16f969573e204db9b0438f687ab4455261b955e9303cd98b67ce17f"
+        },
+        "mips-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.26-20261025/mips-linux-gnueabihf.2.26.tar.zst",
+            "sha256": "6d3a07c8ce508d9068c397f445eee4579d77e4b1f88d8897a085d924e76977e5"
+        },
+        "mips64-linux-gnuabi64": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.26-20261025/mips64-linux-gnuabi64.2.26.tar.zst",
+            "sha256": "228a933d864807e35eea83509a8b709bbe4d36b88a3176c9b1671c5a10c462e0"
+        },
+        "mips64-linux-gnuabin32": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.26-20261025/mips64-linux-gnuabin32.2.26.tar.zst",
+            "sha256": "1e996c24a81155abc374a5b18331a2d7f762eb6dc595e5480d0a8346afcdfacd"
+        },
+        "mips64el-linux-gnuabi64": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.26-20261025/mips64el-linux-gnuabi64.2.26.tar.zst",
+            "sha256": "ef59b43298e67f780c8105643136f8587deb5b0563760eba852875da280075e5"
+        },
+        "mips64el-linux-gnuabin32": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.26-20261025/mips64el-linux-gnuabin32.2.26.tar.zst",
+            "sha256": "59297eacf8eb998d93cbb4871ce2dc8cce324aa20879ff04735857f11dafdfb8"
+        },
+        "mipsel-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.26-20261025/mipsel-linux-gnueabi.2.26.tar.zst",
+            "sha256": "9f604ad2a070f94b48343d56a9a5ad62685d9698a1f14792ed1f9fa7e7771a8e"
+        },
+        "mipsel-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.26-20261025/mipsel-linux-gnueabihf.2.26.tar.zst",
+            "sha256": "0ac4591019c111de8326bd52e889eb5a587d1b0a4e677370e186b15ab7670d34"
+        },
+        "powerpc-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.26-20261025/powerpc-linux-gnueabi.2.26.tar.zst",
+            "sha256": "a470ba5ffa27766458c9e9b6dd7745596ad9a868080ca0838a3dddc5e04b56e5"
+        },
+        "powerpc-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.26-20261025/powerpc-linux-gnueabihf.2.26.tar.zst",
+            "sha256": "fd64589c8fad83ceaa109d1870ac739f4c5ab15bc7ac1a9486dc976f7261a46e"
+        },
+        "powerpc64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.26-20261025/powerpc64-linux-gnu.2.26.tar.zst",
+            "sha256": "4be6a477c7c1e1e050a28c034864b7a19d595059715c3e71a0b2eb1e03f282af"
+        },
+        "powerpc64le-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.26-20261025/powerpc64le-linux-gnu.2.26.tar.zst",
+            "sha256": "691bd0322037d9eab2407b5444de79a3998f109de8e28f64a659251cb9f8190d"
+        },
+        "s390x-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.26-20261025/s390x-linux-gnu.2.26.tar.zst",
+            "sha256": "2b846b417cc3bd4074e2fe863bf7786e929b0e58de3c6ede3ce46da85ecee35a"
+        },
+        "sparc-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.26-20261025/sparc-linux-gnu.2.26.tar.zst",
+            "sha256": "f5ac57135fc96c719cd3eec08db0b08899afd31aa3766b83623b6d5e3cf6742b"
+        },
+        "sparc64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.26-20261025/sparc64-linux-gnu.2.26.tar.zst",
+            "sha256": "aff1b32bb934d687ab64a4586eaae6b1dfb1d8f671822685454abd40e433a10d"
+        },
+        "x86_64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.26-20261025/x86_64-linux-gnu.2.26.tar.zst",
+            "sha256": "49eb385e42f7639994c09a9c34d17a8d434554015117b8d8b11cd09a464993d7"
+        },
+        "x86_64-linux-gnux32": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.26-20261025/x86_64-linux-gnux32.2.26.tar.zst",
+            "sha256": "f92fc4d9e5a5a304ef3a49fcaebbcf63949c47f86c8b2311a4b5ead4708858b7"
+        }
+    },
+    "2.25": {
+        "aarch64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.25-20261025/aarch64-linux-gnu.2.25.tar.zst",
+            "sha256": "1e72add8c66f20f670b23beae94b05f9f058fe7c80890796a6ffdcfc864ff48b"
+        },
+        "aarch64_be-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.25-20261025/aarch64_be-linux-gnu.2.25.tar.zst",
+            "sha256": "1c2d6ea291de1d550b339f39837e4b16f3d139b12c40e715994023eea4d3d0ad"
+        },
+        "arm-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.25-20261025/arm-linux-gnueabi.2.25.tar.zst",
+            "sha256": "59805ff1c66231c9413f89eb54fef39884da5a57f0437762229a7711be789fc3"
+        },
+        "arm-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.25-20261025/arm-linux-gnueabihf.2.25.tar.zst",
+            "sha256": "0c6bf306d9bac4d0828619e254c277140e85f0b53dfa6f1a03500bb6153035ab"
+        },
+        "armeb-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.25-20261025/armeb-linux-gnueabi.2.25.tar.zst",
+            "sha256": "9ffc71ac0d343408a7610064353c6fcff3a69b8ae7d5891184a4cfd68bf4c767"
+        },
+        "armeb-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.25-20261025/armeb-linux-gnueabihf.2.25.tar.zst",
+            "sha256": "9fdfbb5a9c95ea31f54c698c31fed3ccb3bbba75f846d18f0b7cc69b038a207f"
+        },
+        "i686-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.25-20261025/i686-linux-gnu.2.25.tar.zst",
+            "sha256": "aa00964d5c63780cae84eefa9add11f9dff349063eeafa5df027f529a6365224"
+        },
+        "m68k-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.25-20261025/m68k-linux-gnu.2.25.tar.zst",
+            "sha256": "2a499b540d7bf0c82495b4dddae9567e00139111cb89ea2e03641da8739b0587"
+        },
+        "mips-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.25-20261025/mips-linux-gnueabi.2.25.tar.zst",
+            "sha256": "d338f892dbdc8d9c0fe15dcd9c2014da21a7437b3a0540f6e008461d9a1f9428"
+        },
+        "mips-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.25-20261025/mips-linux-gnueabihf.2.25.tar.zst",
+            "sha256": "f79f3aad955e6ad86b807dee5e2ab68c171e2518480f073e0ef97abca818343b"
+        },
+        "mips64-linux-gnuabi64": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.25-20261025/mips64-linux-gnuabi64.2.25.tar.zst",
+            "sha256": "e4b2c822a172ac39455d5ab24735c9eb321fa79bdf5d1f19cc413fe32214b4b2"
+        },
+        "mips64-linux-gnuabin32": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.25-20261025/mips64-linux-gnuabin32.2.25.tar.zst",
+            "sha256": "324ffe381c75f740714734303d117708c2c2f289a4ed25c2b8edc4ea1b4f1f64"
+        },
+        "mips64el-linux-gnuabi64": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.25-20261025/mips64el-linux-gnuabi64.2.25.tar.zst",
+            "sha256": "c3ebcae186daccc1d0589a9658143a00db0b492c49e50fa47de07bb7ade797fd"
+        },
+        "mips64el-linux-gnuabin32": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.25-20261025/mips64el-linux-gnuabin32.2.25.tar.zst",
+            "sha256": "db31b7d8330b7fafc183b393e5781091668afc9a47f3ef767b6a7f2f6c0aba92"
+        },
+        "mipsel-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.25-20261025/mipsel-linux-gnueabi.2.25.tar.zst",
+            "sha256": "00b05e63c2898e65159ef8e7695ac4d761fa4edeacf8d8523076836f9c2cae4d"
+        },
+        "mipsel-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.25-20261025/mipsel-linux-gnueabihf.2.25.tar.zst",
+            "sha256": "7e79aebec58f42dab18cb08261ce3e6b5f8683f7a8a573af29be0e7b652b3d99"
+        },
+        "powerpc-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.25-20261025/powerpc-linux-gnueabi.2.25.tar.zst",
+            "sha256": "382bae5166d1df83588cfa94672f4513109935b31a2a9abe05894611ba3b78a5"
+        },
+        "powerpc-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.25-20261025/powerpc-linux-gnueabihf.2.25.tar.zst",
+            "sha256": "5a8c55fb3923e6df97a08a67bfdf4d33cc05ba50acd986581ffc53303e0e33dd"
+        },
+        "powerpc64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.25-20261025/powerpc64-linux-gnu.2.25.tar.zst",
+            "sha256": "3fef15cb5defecd2145beb909d612f146c799c494bc741bc2761dd6a673d759f"
+        },
+        "powerpc64le-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.25-20261025/powerpc64le-linux-gnu.2.25.tar.zst",
+            "sha256": "b5671544484d26be2a69635679adcc0cfad8a3874689ca94deeb1e8f90fb209f"
+        },
+        "s390x-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.25-20261025/s390x-linux-gnu.2.25.tar.zst",
+            "sha256": "4ac2ba9226ee438a7ab492a657658331a7363a629c7c6a140edd7c19d9c8ab42"
+        },
+        "sparc-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.25-20261025/sparc-linux-gnu.2.25.tar.zst",
+            "sha256": "f519e9cd50dc3569e64bf8359bbd8711fe49fdd82658517e4bd46dba393828b7"
+        },
+        "sparc64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.25-20261025/sparc64-linux-gnu.2.25.tar.zst",
+            "sha256": "88941a31d3712129c129ab1e56845ea5d673fa585a27911bdc2aeb3ffbf4bdbd"
+        },
+        "x86_64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.25-20261025/x86_64-linux-gnu.2.25.tar.zst",
+            "sha256": "37e84da78ae64582729e041f667e5e9cdc485f3bf7a47b71d9bf38f3572f9371"
+        },
+        "x86_64-linux-gnux32": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.25-20261025/x86_64-linux-gnux32.2.25.tar.zst",
+            "sha256": "3615d975fc46f9c81b7b650bd574e7952ddab89851c07b6b1840968f76f93e91"
+        }
+    },
+    "2.24": {
+        "aarch64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.24-20261025/aarch64-linux-gnu.2.24.tar.zst",
+            "sha256": "96fa7695a444d2fd4b78eab97503c7f88b2a0f909a2c30b7159d7d35b4aff977"
+        },
+        "aarch64_be-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.24-20261025/aarch64_be-linux-gnu.2.24.tar.zst",
+            "sha256": "b523e89a67377ea7fb8d547b1f3e34a7cdb55cca24ef4b89199e1e662faf8a58"
+        },
+        "arm-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.24-20261025/arm-linux-gnueabi.2.24.tar.zst",
+            "sha256": "bdbdc2ea7d12ee3b8df50da1a41c0bbbd0b399d522d74c6cf0148976c737b8d0"
+        },
+        "arm-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.24-20261025/arm-linux-gnueabihf.2.24.tar.zst",
+            "sha256": "129a4f06ba5fadf0e799a8f60d8322f7d033aab1f8b49e019499594fba8b6409"
+        },
+        "armeb-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.24-20261025/armeb-linux-gnueabi.2.24.tar.zst",
+            "sha256": "f68281cf6062d98c9e1f2d2068244eeea67c6e97f75da5540300b8b70bfcc015"
+        },
+        "armeb-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.24-20261025/armeb-linux-gnueabihf.2.24.tar.zst",
+            "sha256": "c8b00091f6b18533ad4cccf5b3ea191d9190577206e914ac3b9c4193830cf7ed"
+        },
+        "i686-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.24-20261025/i686-linux-gnu.2.24.tar.zst",
+            "sha256": "f79f0d9b8c002e1d5707d44ad7c461ba88fae995148b5854cbf723efdf96a28d"
+        },
+        "m68k-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.24-20261025/m68k-linux-gnu.2.24.tar.zst",
+            "sha256": "4ebca2f5294f1fb107459c266d467e99b04c66d15a6cbda3e52cd1f67e71e498"
+        },
+        "mips-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.24-20261025/mips-linux-gnueabi.2.24.tar.zst",
+            "sha256": "a010bc10da9b845da865458372905fa1a88f61fa2745596f5bb1bb4a9c026f49"
+        },
+        "mips-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.24-20261025/mips-linux-gnueabihf.2.24.tar.zst",
+            "sha256": "916ec2d4c641f47ed28138f74abe7ba06ba549ec2ac5114486d8722aac11cea5"
+        },
+        "mips64-linux-gnuabi64": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.24-20261025/mips64-linux-gnuabi64.2.24.tar.zst",
+            "sha256": "fc18870eb039ed3add03e302cbaafe17655f7ff15f7a55c278061d02f6f9d1cf"
+        },
+        "mips64-linux-gnuabin32": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.24-20261025/mips64-linux-gnuabin32.2.24.tar.zst",
+            "sha256": "2e2cb50a88f6dc0ae0ecc20c168163815d0c0b2b510ed2af1f00da3e7fc01e2a"
+        },
+        "mips64el-linux-gnuabi64": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.24-20261025/mips64el-linux-gnuabi64.2.24.tar.zst",
+            "sha256": "ed393e88398e9442c67ecfdac8e24a1274bbbdf787f2c687bd0fd8eeade4bd63"
+        },
+        "mips64el-linux-gnuabin32": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.24-20261025/mips64el-linux-gnuabin32.2.24.tar.zst",
+            "sha256": "aac55a37594f7f7169cefa71e70666e0440b5525869da0024ec2258c1e19916c"
+        },
+        "mipsel-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.24-20261025/mipsel-linux-gnueabi.2.24.tar.zst",
+            "sha256": "903ac63826288d7cad9e49f69b1921943a0b373858e0b9077c3006f857d71a96"
+        },
+        "mipsel-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.24-20261025/mipsel-linux-gnueabihf.2.24.tar.zst",
+            "sha256": "9bd0d34e13c93e1f1ffafa5395b20368f9a3caab8308cdfe8087ce0f8ebe6e57"
+        },
+        "powerpc-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.24-20261025/powerpc-linux-gnueabi.2.24.tar.zst",
+            "sha256": "a308887ffcba0254d688cfa3e9ce90d2508717d57694e44541f4152fafe92629"
+        },
+        "powerpc-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.24-20261025/powerpc-linux-gnueabihf.2.24.tar.zst",
+            "sha256": "c27b053b5c3f12cd6eff39ca4da8194ae4b228e1f095d0086c1987e919754f4e"
+        },
+        "powerpc64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.24-20261025/powerpc64-linux-gnu.2.24.tar.zst",
+            "sha256": "0cedf5810601364f44ec416153330f291de21beab53c67b509f5313d213c30e9"
+        },
+        "powerpc64le-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.24-20261025/powerpc64le-linux-gnu.2.24.tar.zst",
+            "sha256": "5c2a77167d575678006637fbe38af3816ac62dd7770f3850bee30abc38b37ac0"
+        },
+        "s390x-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.24-20261025/s390x-linux-gnu.2.24.tar.zst",
+            "sha256": "2df041af46dc04292be66e619bd0dcd177aeb5ec3b817a035e821804dbe4c895"
+        },
+        "sparc-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.24-20261025/sparc-linux-gnu.2.24.tar.zst",
+            "sha256": "6f3924f166dd482278c7a9de082527220d6ad0102c78359776bfc786f488c437"
+        },
+        "sparc64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.24-20261025/sparc64-linux-gnu.2.24.tar.zst",
+            "sha256": "f906a39187153021e31863149f2ea1659ecb9b86673a57f28a4d3431cece6ccd"
+        },
+        "x86_64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.24-20261025/x86_64-linux-gnu.2.24.tar.zst",
+            "sha256": "660f2fc816074d591ce1519e3616ad39c39682d696c0bb6772afb91b9619ca44"
+        },
+        "x86_64-linux-gnux32": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.24-20261025/x86_64-linux-gnux32.2.24.tar.zst",
+            "sha256": "91f5a129d008116b765f3449ca3a0fb422030aafe111aff64eafd5ff1682a96e"
+        }
+    },
+    "2.23": {
+        "aarch64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.23-20261025/aarch64-linux-gnu.2.23.tar.zst",
+            "sha256": "0b93a240e7dd37eb8d18f519fd2a3d30cd0557a871f79df585a6116e61f6efa0"
+        },
+        "aarch64_be-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.23-20261025/aarch64_be-linux-gnu.2.23.tar.zst",
+            "sha256": "aee380a2b54bbe7576eadeb5fe6de9fd60ead5b11bc09434d0a0b4f546434e8b"
+        },
+        "arm-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.23-20261025/arm-linux-gnueabi.2.23.tar.zst",
+            "sha256": "89229a6805e88172bbafc742b0daef98a54f2cec4cb09105f71a0884f3eaef2b"
+        },
+        "arm-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.23-20261025/arm-linux-gnueabihf.2.23.tar.zst",
+            "sha256": "423566cce3fb2ba691a6309e30a4cb31e49ae0fda04262ad74a0ca76c5ababd8"
+        },
+        "armeb-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.23-20261025/armeb-linux-gnueabi.2.23.tar.zst",
+            "sha256": "b0ee178d1c2042e23063b49c83d304d6b139d1c5397683aff66ab63d501512ab"
+        },
+        "armeb-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.23-20261025/armeb-linux-gnueabihf.2.23.tar.zst",
+            "sha256": "a3c4980c6cf4b1279a067901b1b90659ce2d7c0bbde27b6008b373f800c92a64"
+        },
+        "i686-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.23-20261025/i686-linux-gnu.2.23.tar.zst",
+            "sha256": "72659c5b944c2d2a16db28c04ca57ace97527475e7df262a3b6fdf30cd088b43"
+        },
+        "m68k-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.23-20261025/m68k-linux-gnu.2.23.tar.zst",
+            "sha256": "1077469eb82720e3e6c11f3affb4f808a7dbbb5c929fcbdea4ae735d2dc3df70"
+        },
+        "mips-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.23-20261025/mips-linux-gnueabi.2.23.tar.zst",
+            "sha256": "ef35a79b3181264e637a5570ab312b260df117606647ffddff16c707cfa5e4ab"
+        },
+        "mips-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.23-20261025/mips-linux-gnueabihf.2.23.tar.zst",
+            "sha256": "21b332734a4075eddf28bd2592382d0776c156a571432b02b33f9e5d1701126e"
+        },
+        "mips64-linux-gnuabi64": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.23-20261025/mips64-linux-gnuabi64.2.23.tar.zst",
+            "sha256": "cc6d18291e30c993c1cfe83fed12bdf0c6daea3e921d4a7967e5ac985e842825"
+        },
+        "mips64-linux-gnuabin32": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.23-20261025/mips64-linux-gnuabin32.2.23.tar.zst",
+            "sha256": "8596068b47befb421d5324a0fdfdc37c2be68e910f9faab22f66e3a3831a9923"
+        },
+        "mips64el-linux-gnuabi64": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.23-20261025/mips64el-linux-gnuabi64.2.23.tar.zst",
+            "sha256": "e04cd37c7d9136f5c3100fa3879b88c93a033a40ff989094c77f1ace6d3500f5"
+        },
+        "mips64el-linux-gnuabin32": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.23-20261025/mips64el-linux-gnuabin32.2.23.tar.zst",
+            "sha256": "3a0bde2dac300726657ac2e9aa4ee6252e3750778cadc2162b7d81cd75a29d84"
+        },
+        "mipsel-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.23-20261025/mipsel-linux-gnueabi.2.23.tar.zst",
+            "sha256": "e7265b7fce92e54ec050ff2eaf307bf4c48070fb61ee0cff2b4f275caabd808e"
+        },
+        "mipsel-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.23-20261025/mipsel-linux-gnueabihf.2.23.tar.zst",
+            "sha256": "51ee99486f2176fdc4cda5f0cdb60f9ee721959e35972d2aed7844b7c694cd9a"
+        },
+        "powerpc-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.23-20261025/powerpc-linux-gnueabi.2.23.tar.zst",
+            "sha256": "4a94369259a510c282265a7328ba6ea37f271b96c4db1a1421d423317203c0a9"
+        },
+        "powerpc-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.23-20261025/powerpc-linux-gnueabihf.2.23.tar.zst",
+            "sha256": "ecbdbc3561ab66be29f6307b5064c3a9a10b71b4f9ae6abad889a426c94f202c"
+        },
+        "powerpc64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.23-20261025/powerpc64-linux-gnu.2.23.tar.zst",
+            "sha256": "005c069f460ec61d0b5ad94728bad9e18d3340f120fb38f69b8f8c3fd9c31ef1"
+        },
+        "powerpc64le-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.23-20261025/powerpc64le-linux-gnu.2.23.tar.zst",
+            "sha256": "b1f5b04df6a9aa0be03aa3044e4cdb3adf62724974bc46788a4f09ea50b8ce97"
+        },
+        "s390x-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.23-20261025/s390x-linux-gnu.2.23.tar.zst",
+            "sha256": "6d273f6a03f89b85af8cf90b684092218bef26214097aba693478486dd02734e"
+        },
+        "sparc-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.23-20261025/sparc-linux-gnu.2.23.tar.zst",
+            "sha256": "1f44a050aee02dee7900c744e2b4b0b583a1b2417fb569f0315b006b79345cff"
+        },
+        "sparc64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.23-20261025/sparc64-linux-gnu.2.23.tar.zst",
+            "sha256": "adb8298cf576e0ca29f62a9c5c2e18c9b81f31cacf35201db8814d4dd7c04939"
+        },
+        "x86_64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.23-20261025/x86_64-linux-gnu.2.23.tar.zst",
+            "sha256": "4297539870a77899a52e8732c817be5b168af2389fae4d567094f17c95998652"
+        },
+        "x86_64-linux-gnux32": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.23-20261025/x86_64-linux-gnux32.2.23.tar.zst",
+            "sha256": "cf164e0209fcf21523ff19053f4ee5791b5f09ef2c259cef9b21c4bbad61a584"
+        }
+    },
+    "2.22": {
+        "aarch64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.22-20261025/aarch64-linux-gnu.2.22.tar.zst",
+            "sha256": "ff7849b96ff94bd4b9904f725b3990c81e4d0dfad376d0d818879ee6cb804dbe"
+        },
+        "aarch64_be-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.22-20261025/aarch64_be-linux-gnu.2.22.tar.zst",
+            "sha256": "d93e8b103edf2cadfc925f5c3a58b8d1a8bdcbd7c5681c164460d5aad81b8b03"
+        },
+        "arm-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.22-20261025/arm-linux-gnueabi.2.22.tar.zst",
+            "sha256": "9f3a181dd3eeab4d538832301e186c3b1f6be2357b8ce6e43fc43b5ef4499837"
+        },
+        "arm-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.22-20261025/arm-linux-gnueabihf.2.22.tar.zst",
+            "sha256": "2b0accb446dc5d107861eb6a665a88887170671dd8f0fd5f7eb4d1219598a381"
+        },
+        "armeb-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.22-20261025/armeb-linux-gnueabi.2.22.tar.zst",
+            "sha256": "c4b565f98bfae6b214bad793c1bc1592a99a3a57295c3df57ccea848aeedc579"
+        },
+        "armeb-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.22-20261025/armeb-linux-gnueabihf.2.22.tar.zst",
+            "sha256": "0a28a5af3268bcb092f2808c2923bdd5915403165f1b97172725f6d426e967da"
+        },
+        "i686-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.22-20261025/i686-linux-gnu.2.22.tar.zst",
+            "sha256": "7a17ff3f7c69d419d1ab2c35d347051cc9e7b10976a0ebb9af948d7239c59b7d"
+        },
+        "m68k-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.22-20261025/m68k-linux-gnu.2.22.tar.zst",
+            "sha256": "d51aaf408d90b7c46770a53db6ef11ec75fcfc5ff47e78f1ded0311c347591bc"
+        },
+        "mips-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.22-20261025/mips-linux-gnueabi.2.22.tar.zst",
+            "sha256": "afabefc719d41329a73781a9fefd5604667dfa5eb7710fe431f6dd813ae9248b"
+        },
+        "mips-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.22-20261025/mips-linux-gnueabihf.2.22.tar.zst",
+            "sha256": "893b4e3c9c9b365b0a7c3c126bc8864492e2beae79f874f105f81948e929c394"
+        },
+        "mips64-linux-gnuabi64": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.22-20261025/mips64-linux-gnuabi64.2.22.tar.zst",
+            "sha256": "ad9762cce0c84952fce0669142a3e82f796456157396c3740f8a6af26b6ba01c"
+        },
+        "mips64-linux-gnuabin32": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.22-20261025/mips64-linux-gnuabin32.2.22.tar.zst",
+            "sha256": "b2eb5fa6d364e1bf6f13c770372e0ab0712676ba4843b1b801b20e633dbfc5f6"
+        },
+        "mips64el-linux-gnuabi64": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.22-20261025/mips64el-linux-gnuabi64.2.22.tar.zst",
+            "sha256": "90f5d9a2a77e99490d4eee7c45524cf4707f9747394febd87051c8be34360867"
+        },
+        "mips64el-linux-gnuabin32": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.22-20261025/mips64el-linux-gnuabin32.2.22.tar.zst",
+            "sha256": "2eca57b3a9ded6c4739cdb543d0cccab4a0e6f8f658629e0fd5bdbdb9c3fba79"
+        },
+        "mipsel-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.22-20261025/mipsel-linux-gnueabi.2.22.tar.zst",
+            "sha256": "ba50c6d85edc0b33afd2c779ac70367f302de37c605d15e9acf7774ccdde3215"
+        },
+        "mipsel-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.22-20261025/mipsel-linux-gnueabihf.2.22.tar.zst",
+            "sha256": "fb39ce22cb25dc921d02db387e37b3bda11c5f4d033edcf1820c184fafff50a9"
+        },
+        "powerpc-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.22-20261025/powerpc-linux-gnueabi.2.22.tar.zst",
+            "sha256": "41dc6e1aa83f096e0d8580401525cfd735b3ee1cbd38088571af81c099da0337"
+        },
+        "powerpc-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.22-20261025/powerpc-linux-gnueabihf.2.22.tar.zst",
+            "sha256": "ef4ff133d60b9b0adebb9c0dfb48d6fe36a7b3048b77618f0f189d3d123e3cad"
+        },
+        "powerpc64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.22-20261025/powerpc64-linux-gnu.2.22.tar.zst",
+            "sha256": "c6dbe6e6495c1c4db7844a22e7f00045e53272940b0a343c1b267f41c79ae73e"
+        },
+        "powerpc64le-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.22-20261025/powerpc64le-linux-gnu.2.22.tar.zst",
+            "sha256": "2d17bda1841883748a7ceb1cb4a44d29a198f7a8fd85c54ddacbe854db800844"
+        },
+        "s390x-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.22-20261025/s390x-linux-gnu.2.22.tar.zst",
+            "sha256": "770a9b3ed16871a415ebef64303b764d1c59d26681b8c18d65a237c891b178ed"
+        },
+        "sparc-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.22-20261025/sparc-linux-gnu.2.22.tar.zst",
+            "sha256": "2fb4a04cdc536ba271bc211eaba9fbe6852f7bb98552639c3ba68a2972e74f40"
+        },
+        "sparc64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.22-20261025/sparc64-linux-gnu.2.22.tar.zst",
+            "sha256": "415874b22e74b76a83ec1f75a264ca4e47eb75eaf2ddd0b24e2da6ff3b2cdeb1"
+        },
+        "x86_64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.22-20261025/x86_64-linux-gnu.2.22.tar.zst",
+            "sha256": "4fa81790b9999bd915d55127d067379d54177f4ae9b5596be02f3456db608aff"
+        },
+        "x86_64-linux-gnux32": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.22-20261025/x86_64-linux-gnux32.2.22.tar.zst",
+            "sha256": "35c298e73fb0d1f8fc2ad883bfa0f79dea9cabd14ddd9b5bb9e3dff17cc558c3"
+        }
+    },
+    "2.21": {
+        "aarch64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.21-20261025/aarch64-linux-gnu.2.21.tar.zst",
+            "sha256": "20feadebeaa4f01f92cae65370a5a034915aa22654c9b85962daf5fb90d954f5"
+        },
+        "aarch64_be-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.21-20261025/aarch64_be-linux-gnu.2.21.tar.zst",
+            "sha256": "3ce1e0a22d8ed198828c70718e83ffb0a1885c436c6c1faf15b8cdd72c1c6a1b"
+        },
+        "arm-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.21-20261025/arm-linux-gnueabi.2.21.tar.zst",
+            "sha256": "f052f14c86f32b28a1c6d65253deb745e210d567defa10e5bbb60440032c9276"
+        },
+        "arm-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.21-20261025/arm-linux-gnueabihf.2.21.tar.zst",
+            "sha256": "3a3d9169d80bb1ce9269b351a425186adab0789902adec915c576be155bb6081"
+        },
+        "armeb-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.21-20261025/armeb-linux-gnueabi.2.21.tar.zst",
+            "sha256": "b3bdb1be9f98f93d897aa32f02e5d15061b1e09f49b394818a6bddf860e8b5a7"
+        },
+        "armeb-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.21-20261025/armeb-linux-gnueabihf.2.21.tar.zst",
+            "sha256": "fbee6a24689da76d4292df8d9016655e953cbbf4aaea0523cb21c437de2bcb46"
+        },
+        "i686-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.21-20261025/i686-linux-gnu.2.21.tar.zst",
+            "sha256": "ff25bf4a27a5411a95b2a4a5a48a26ff306a04931fdbc626cf905e3b1f893024"
+        },
+        "m68k-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.21-20261025/m68k-linux-gnu.2.21.tar.zst",
+            "sha256": "857416c17475b5610be7ccedbf064268b4dfda55522e2f7f4e55aba3906f4192"
+        },
+        "mips-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.21-20261025/mips-linux-gnueabi.2.21.tar.zst",
+            "sha256": "ae0a8e98f9c1b457255b4540be4ad4e20553fb077713ea1b85047aa1a56df932"
+        },
+        "mips-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.21-20261025/mips-linux-gnueabihf.2.21.tar.zst",
+            "sha256": "151ad21b060ec7f4e435dc1a36bc4b65160584d4801337f0ea644abc591f5548"
+        },
+        "mips64-linux-gnuabi64": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.21-20261025/mips64-linux-gnuabi64.2.21.tar.zst",
+            "sha256": "f089499ffb7094e9d7afb44e85da606fa47954e17e3483dcdc878325fc8e6a40"
+        },
+        "mips64-linux-gnuabin32": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.21-20261025/mips64-linux-gnuabin32.2.21.tar.zst",
+            "sha256": "a5dab54cf290ee44a481767e5bc1c19fa65772afb9e2458c1b87eab8462ca1f7"
+        },
+        "mips64el-linux-gnuabi64": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.21-20261025/mips64el-linux-gnuabi64.2.21.tar.zst",
+            "sha256": "515d9c631f1efa341d77f1c550addd4e0fd93d4d37c1d0772f73541ed6226384"
+        },
+        "mips64el-linux-gnuabin32": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.21-20261025/mips64el-linux-gnuabin32.2.21.tar.zst",
+            "sha256": "23e50d70dcaa10a1e93891c12505202033a246baf13ce24e68738f957b71dbcd"
+        },
+        "mipsel-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.21-20261025/mipsel-linux-gnueabi.2.21.tar.zst",
+            "sha256": "146a08ed4ba0bbaf83313892193bb390a237717b78d3e7068260ad91f8fe1cf3"
+        },
+        "mipsel-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.21-20261025/mipsel-linux-gnueabihf.2.21.tar.zst",
+            "sha256": "99330d7702f92b50af6b39965e422829340d72e695f23e17cd879bb685ae0e7e"
+        },
+        "powerpc-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.21-20261025/powerpc-linux-gnueabi.2.21.tar.zst",
+            "sha256": "a6ab50950c28ef6089305a9369c2c894d830c11ae29f85e27e2fa53b9bce28b6"
+        },
+        "powerpc-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.21-20261025/powerpc-linux-gnueabihf.2.21.tar.zst",
+            "sha256": "8d55c351dea8b59f59d4e3d2611ed3c1d08289a45dcb2a8aa163aebd748a5aff"
+        },
+        "powerpc64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.21-20261025/powerpc64-linux-gnu.2.21.tar.zst",
+            "sha256": "9f6a9e244a3284ff4284a22ad4df15c8266de7e57fb87d48597f4ba95246dab4"
+        },
+        "powerpc64le-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.21-20261025/powerpc64le-linux-gnu.2.21.tar.zst",
+            "sha256": "6ed878fb73d7eddeaca691f4592aadaf22677eb7c08ac2970967b75724ac1d6b"
+        },
+        "s390x-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.21-20261025/s390x-linux-gnu.2.21.tar.zst",
+            "sha256": "c13e859b84e40159cbbac42d1555e499ff29474464bf84030792f3b2321da2d2"
+        },
+        "sparc-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.21-20261025/sparc-linux-gnu.2.21.tar.zst",
+            "sha256": "23a2509628b26b4cf54fd7fbd889a95e2623315ba6076fb80d6a975d16a2d8b5"
+        },
+        "sparc64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.21-20261025/sparc64-linux-gnu.2.21.tar.zst",
+            "sha256": "af21dcb20702f511a182c41abc5098712f8d3d586aa4c68ad3ff8c61f4c16ce4"
+        },
+        "x86_64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.21-20261025/x86_64-linux-gnu.2.21.tar.zst",
+            "sha256": "f3c5c35b230ba7ea27bf6070ffa32a7e2a5b3fb2143dfaac496e808a7ddacd0b"
+        },
+        "x86_64-linux-gnux32": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.21-20261025/x86_64-linux-gnux32.2.21.tar.zst",
+            "sha256": "07ebf455d2b128cca216821e628c770e936465ec84afcb296b9026317dfdb43f"
+        }
+    },
+    "2.20": {
+        "aarch64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.20-20261025/aarch64-linux-gnu.2.20.tar.zst",
+            "sha256": "b0d0877182faaae2cfda1e39b7304a5954a6910a1d1990a219bda681f666f6c8"
+        },
+        "aarch64_be-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.20-20261025/aarch64_be-linux-gnu.2.20.tar.zst",
+            "sha256": "31bc48879fc52ae15428b1684bb06f2976f5431599eb5c87ee49084f61200dcd"
+        },
+        "arm-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.20-20261025/arm-linux-gnueabi.2.20.tar.zst",
+            "sha256": "6935a9ddcb9beaaca717f0049aaa1397d6bb84bce44416ab31231255383c4890"
+        },
+        "arm-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.20-20261025/arm-linux-gnueabihf.2.20.tar.zst",
+            "sha256": "ef187d5ee676900c7c253c84e3969a4c39a75a72d0e96eb50e53dfc1985525e0"
+        },
+        "armeb-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.20-20261025/armeb-linux-gnueabi.2.20.tar.zst",
+            "sha256": "209909449db4ccee09f8de7d89b44c95d7aba17813dfc07ca459dd526b02026d"
+        },
+        "armeb-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.20-20261025/armeb-linux-gnueabihf.2.20.tar.zst",
+            "sha256": "9c8c4f5357f392e761da15cd75247af8e7ea68fb111e63bcd4d97c92945c192f"
+        },
+        "i686-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.20-20261025/i686-linux-gnu.2.20.tar.zst",
+            "sha256": "e992a2f974d9c3c42a26ba388e1673c9c3d2ce6242e74887722d8401e6594758"
+        },
+        "m68k-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.20-20261025/m68k-linux-gnu.2.20.tar.zst",
+            "sha256": "9c9a5e7ab715bca9bc4545b5a6469025d6d0eca0e45a53f467f67a9e9d41d7b2"
+        },
+        "mips-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.20-20261025/mips-linux-gnueabi.2.20.tar.zst",
+            "sha256": "0f515e0d0ece2cd1e5eb3cddf7f547111f7ddebb47ce6e5e2725d1b8ea303a67"
+        },
+        "mips-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.20-20261025/mips-linux-gnueabihf.2.20.tar.zst",
+            "sha256": "f484d5431a097c07435e07809a3d6c15274116e2b2895cfe78717fcf1329bac3"
+        },
+        "mips64-linux-gnuabi64": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.20-20261025/mips64-linux-gnuabi64.2.20.tar.zst",
+            "sha256": "7321f190d5fb3e57c362585086da11bf40323f38503933e4681956e514e461c5"
+        },
+        "mips64-linux-gnuabin32": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.20-20261025/mips64-linux-gnuabin32.2.20.tar.zst",
+            "sha256": "6aa7db3a1c21816399ada0d6fc5331d945637fd40c81b5817bf3343780ed52e0"
+        },
+        "mips64el-linux-gnuabi64": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.20-20261025/mips64el-linux-gnuabi64.2.20.tar.zst",
+            "sha256": "224d6dece5fd0d000d195d370fd868a49b8e480e7d5b0e7e506c9f15cb443faf"
+        },
+        "mips64el-linux-gnuabin32": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.20-20261025/mips64el-linux-gnuabin32.2.20.tar.zst",
+            "sha256": "465d459f71cc74b3b31419b7e74fcc863964480cb59a8a2b1877dd4afe8b3570"
+        },
+        "mipsel-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.20-20261025/mipsel-linux-gnueabi.2.20.tar.zst",
+            "sha256": "e323cd6cf8039a7f5b48b5e4e42c38874546e87cfdcaf16a63294ab7a2e4c53e"
+        },
+        "mipsel-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.20-20261025/mipsel-linux-gnueabihf.2.20.tar.zst",
+            "sha256": "26e864496caedf424c046224e594f8e121cda14b0f0c3aa10550312160cea961"
+        },
+        "powerpc-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.20-20261025/powerpc-linux-gnueabi.2.20.tar.zst",
+            "sha256": "2d33488eee80734f9b90ac49a27b62a33766bea487027799d21a874be73ce6b0"
+        },
+        "powerpc-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.20-20261025/powerpc-linux-gnueabihf.2.20.tar.zst",
+            "sha256": "a641059ac7a811b1ebd7fe8f46cf8d3b188edf99f39b78cf97d6b1aee2ebbb8b"
+        },
+        "powerpc64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.20-20261025/powerpc64-linux-gnu.2.20.tar.zst",
+            "sha256": "92b4a5b0591ecc1a35927ebe2f461a07e7a70eb09186689d8e039403f6264d76"
+        },
+        "powerpc64le-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.20-20261025/powerpc64le-linux-gnu.2.20.tar.zst",
+            "sha256": "d9d8b635e4ccb86bb76a280dd64c417d17e1baf57157ac2dece2ec0e5c6560f8"
+        },
+        "s390x-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.20-20261025/s390x-linux-gnu.2.20.tar.zst",
+            "sha256": "4873cb3bcadfabb9f7961ac70849a2a16592435bfcfeb2b980cef0b95f6959cf"
+        },
+        "sparc-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.20-20261025/sparc-linux-gnu.2.20.tar.zst",
+            "sha256": "914a65b34a46eb1e65c0226e4eda6ce1857e55edc072de6fd18dcf98274b862a"
+        },
+        "sparc64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.20-20261025/sparc64-linux-gnu.2.20.tar.zst",
+            "sha256": "c3dc6db5f24b0251ebf8262f9b445594d93d97e79c1ffcbe70b042b9c3cb496e"
+        },
+        "x86_64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.20-20261025/x86_64-linux-gnu.2.20.tar.zst",
+            "sha256": "cd97f3c90e7670ac99dfd40dd2659857cef69eafc281b2d06bc8a80d2a353a03"
+        },
+        "x86_64-linux-gnux32": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.20-20261025/x86_64-linux-gnux32.2.20.tar.zst",
+            "sha256": "da7b11273e9dcb213bbc40f7655d474a9956bd7204eb5049a3a7e9dfdb2bbd42"
+        }
+    },
+    "2.19": {
+        "aarch64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.19-20261025/aarch64-linux-gnu.2.19.tar.zst",
+            "sha256": "f84f1e51f0f0e5c58d710a9747439930b0e16f438a15ec35790d2b5dead57775"
+        },
+        "aarch64_be-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.19-20261025/aarch64_be-linux-gnu.2.19.tar.zst",
+            "sha256": "eecc3976cb5d7edaf001d8437809813580a33eb1904aad5c4fbf4a960235595d"
+        },
+        "arm-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.19-20261025/arm-linux-gnueabi.2.19.tar.zst",
+            "sha256": "a4783537e061094a182c92bd53283c5017790d2c8bf2b1d3b10802f885562aeb"
+        },
+        "arm-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.19-20261025/arm-linux-gnueabihf.2.19.tar.zst",
+            "sha256": "712dffc7b98bce46084dd2f84eba1559ac0605b53d14cea03dcc7f77642a8752"
+        },
+        "armeb-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.19-20261025/armeb-linux-gnueabi.2.19.tar.zst",
+            "sha256": "2822cd6ba7eeb74aa4ee9d426560e551012f2cff24d688b9f204fedfe71cffff"
+        },
+        "armeb-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.19-20261025/armeb-linux-gnueabihf.2.19.tar.zst",
+            "sha256": "c0ad1cd4a9007eac11749bb0f5cc8f25bb958c86a9729280aef757c8683035a0"
+        },
+        "i686-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.19-20261025/i686-linux-gnu.2.19.tar.zst",
+            "sha256": "317cdd9000576b97fe7e33fdadb99ba2cf30964cb1a0c09731885fee3b6c8a24"
+        },
+        "m68k-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.19-20261025/m68k-linux-gnu.2.19.tar.zst",
+            "sha256": "79463e85c5fac15ad5b713743948be2739d6b9b3d6e2f2078765c3763db05763"
+        },
+        "mips-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.19-20261025/mips-linux-gnueabi.2.19.tar.zst",
+            "sha256": "011601276067d4cfe4b389e43ded84caa22ce6471f97d0197417de2b4738c1a9"
+        },
+        "mips-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.19-20261025/mips-linux-gnueabihf.2.19.tar.zst",
+            "sha256": "dd73ddc596274ca9c775b05d3462f5b58de728ecbf982d54369a1ec90691acf7"
+        },
+        "mips64-linux-gnuabi64": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.19-20261025/mips64-linux-gnuabi64.2.19.tar.zst",
+            "sha256": "b06ca26b2e9466e3f36279332d8745b35d25fff84fa3f34e5dcea9e95a58b3ce"
+        },
+        "mips64-linux-gnuabin32": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.19-20261025/mips64-linux-gnuabin32.2.19.tar.zst",
+            "sha256": "f5cb5cb3e8536ec22a46498c38cf3ecbf3b8791411841fa936e85cae64ae28ca"
+        },
+        "mips64el-linux-gnuabi64": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.19-20261025/mips64el-linux-gnuabi64.2.19.tar.zst",
+            "sha256": "07cf034f7106420ffa1929a41ea472e78188a2664cec18662167bbf172e31003"
+        },
+        "mips64el-linux-gnuabin32": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.19-20261025/mips64el-linux-gnuabin32.2.19.tar.zst",
+            "sha256": "05a6b2d70827af652b66c9553f9a4f59402226f0956ed4de2f512223cd6c2108"
+        },
+        "mipsel-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.19-20261025/mipsel-linux-gnueabi.2.19.tar.zst",
+            "sha256": "74e8d7010645f249b1a45eaeeaec45d927f347fa6c54a9e413b619c2e5b9bfd2"
+        },
+        "mipsel-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.19-20261025/mipsel-linux-gnueabihf.2.19.tar.zst",
+            "sha256": "b4ef2a953743c02763eaa81e0d675f2bf5d5e645bdbc734ccdbadd98cfbdec13"
+        },
+        "powerpc-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.19-20261025/powerpc-linux-gnueabi.2.19.tar.zst",
+            "sha256": "ebfd46c493093108ce0091f1cd63477e9b4f9ac7849fca21a713c769773d26cd"
+        },
+        "powerpc-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.19-20261025/powerpc-linux-gnueabihf.2.19.tar.zst",
+            "sha256": "bb9ddc32c5e728bd2f702f79b9985100478716bad4d02cc03c6976253dcf6406"
+        },
+        "powerpc64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.19-20261025/powerpc64-linux-gnu.2.19.tar.zst",
+            "sha256": "d31cefaa972da43f63a87760eff4a0b689285d35589b7c966ba34f0291b73b5b"
+        },
+        "powerpc64le-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.19-20261025/powerpc64le-linux-gnu.2.19.tar.zst",
+            "sha256": "72958c4fc6ddd3652d71f8bacf3b9184a4c0bc833b409eb0f660627ecd88e83e"
+        },
+        "s390x-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.19-20261025/s390x-linux-gnu.2.19.tar.zst",
+            "sha256": "2fcb04a885c922989d2405b25763ebd1eda171b487c5bb23f670b66d9f146ec9"
+        },
+        "sparc-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.19-20261025/sparc-linux-gnu.2.19.tar.zst",
+            "sha256": "220316011b4546b76cce104c139328b79838fa2a413d8290e2f70c56b9d35a9f"
+        },
+        "sparc64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.19-20261025/sparc64-linux-gnu.2.19.tar.zst",
+            "sha256": "2b9d274ba0a33f94301aed6243abec1d1d76a2012b4ba8395f00be2cf9dba420"
+        },
+        "x86_64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.19-20261025/x86_64-linux-gnu.2.19.tar.zst",
+            "sha256": "4c8a8d773fee644e913941ebd279a099571f950f28621955b938be9eb6c1083b"
+        },
+        "x86_64-linux-gnux32": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.19-20261025/x86_64-linux-gnux32.2.19.tar.zst",
+            "sha256": "4d61f006b7963da3be65d41c253103656b94555d7148304ff44b3f1cfa6b8a7a"
+        }
+    },
+    "2.18": {
+        "aarch64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.18-20261025/aarch64-linux-gnu.2.18.tar.zst",
+            "sha256": "1381fcf783a6e63baeb540ba17255fa4caadbb6c8a6a25884f947ca63291dcec"
+        },
+        "aarch64_be-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.18-20261025/aarch64_be-linux-gnu.2.18.tar.zst",
+            "sha256": "0a486427406fa64968e09ea9c2561262f544eca1d422c90d269815068fc1acc1"
+        },
+        "arm-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.18-20261025/arm-linux-gnueabi.2.18.tar.zst",
+            "sha256": "79470c8e98dc6dcd9c8d8eef1658f1bd51d64551b9062ac5c8c6652f044ffb54"
+        },
+        "arm-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.18-20261025/arm-linux-gnueabihf.2.18.tar.zst",
+            "sha256": "e0fe679034b26e212074f31179fbf9c7eee2087e23ad7d7ac5e14dacbdaa1957"
+        },
+        "armeb-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.18-20261025/armeb-linux-gnueabi.2.18.tar.zst",
+            "sha256": "ac1b50cfaf39d8aefe8bce41a8f31377f00418a5c8f40ab05c0a1ff6df6b0a5a"
+        },
+        "armeb-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.18-20261025/armeb-linux-gnueabihf.2.18.tar.zst",
+            "sha256": "4ff46565198dfaef973d6cc5859c1cbd34e677495fc3bcfe7ecc2a15fe29f730"
+        },
+        "i686-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.18-20261025/i686-linux-gnu.2.18.tar.zst",
+            "sha256": "96c6bda6163295c5ae8ec1f3bc59fadfd840d0ba0a7fd4e41d2d484e1d4305c6"
+        },
+        "m68k-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.18-20261025/m68k-linux-gnu.2.18.tar.zst",
+            "sha256": "14b47d5810466740b1cbed491db635059c4034048a26a618c6e5b910c26173fd"
+        },
+        "mips-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.18-20261025/mips-linux-gnueabi.2.18.tar.zst",
+            "sha256": "63e2c064eaf92dceda9aceedb8ae041b841068329ee071b706efa7fc7424859b"
+        },
+        "mips-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.18-20261025/mips-linux-gnueabihf.2.18.tar.zst",
+            "sha256": "f6cab7325fa99a3ed26fd5d081a6a5203951e7e88eeae08cce19e0793d292d65"
+        },
+        "mips64-linux-gnuabi64": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.18-20261025/mips64-linux-gnuabi64.2.18.tar.zst",
+            "sha256": "6c1c1a25d6864ea249e5ec5badca5bef631d09a5f72f7778507680db361db5fd"
+        },
+        "mips64-linux-gnuabin32": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.18-20261025/mips64-linux-gnuabin32.2.18.tar.zst",
+            "sha256": "432adbd5f017fc6b45ba4ce3008c41f43d172b4c14c8083e1d38da7e72ecf06e"
+        },
+        "mips64el-linux-gnuabi64": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.18-20261025/mips64el-linux-gnuabi64.2.18.tar.zst",
+            "sha256": "aeb0c226cd3703cf0e79744e1de19ff3d453de6b93940f1309fb1bf5a1aec308"
+        },
+        "mips64el-linux-gnuabin32": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.18-20261025/mips64el-linux-gnuabin32.2.18.tar.zst",
+            "sha256": "d474c308265f174d9e68b6da78356209499938e04c5f7b0062a06412e40c9a7f"
+        },
+        "mipsel-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.18-20261025/mipsel-linux-gnueabi.2.18.tar.zst",
+            "sha256": "edd771c4bc7cab8823720beba2cac0e989fb3a23b53714ba6d343d011e9176a2"
+        },
+        "mipsel-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.18-20261025/mipsel-linux-gnueabihf.2.18.tar.zst",
+            "sha256": "ffe3ccc36e088e7547b8ed05b159f8856343dd0201e1e6a949cf3dbe59d95e93"
+        },
+        "powerpc-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.18-20261025/powerpc-linux-gnueabi.2.18.tar.zst",
+            "sha256": "f173792e2b1d5ae9ef301142bdbb0208a696ee740bd76eda0f46cdeb33860736"
+        },
+        "powerpc-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.18-20261025/powerpc-linux-gnueabihf.2.18.tar.zst",
+            "sha256": "677fc406461dcb0ea84fa46120ff81348e80b64c6e7eefb4f4daddcf29d7034e"
+        },
+        "powerpc64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.18-20261025/powerpc64-linux-gnu.2.18.tar.zst",
+            "sha256": "3a936f63d1a838565404b449cae7f5a56a00fb0df8b8d1081b791bccc1e5ebd2"
+        },
+        "s390x-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.18-20261025/s390x-linux-gnu.2.18.tar.zst",
+            "sha256": "fc65339e0d3c588c92224aac89700d3db7c2f132b0231f69e098b04bd9b23a3f"
+        },
+        "sparc-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.18-20261025/sparc-linux-gnu.2.18.tar.zst",
+            "sha256": "5c702ede4d0d55aac3d7dcbba3ac14db6265a4f7cc3819ce4faa6b077e8e61cf"
+        },
+        "sparc64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.18-20261025/sparc64-linux-gnu.2.18.tar.zst",
+            "sha256": "e29ee2896e89454307c494b40d2f1ae780a0d1da95ea8d72641fb0454aab693a"
+        },
+        "x86_64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.18-20261025/x86_64-linux-gnu.2.18.tar.zst",
+            "sha256": "580d6219c1bc98ed5219cda0393a12561152963bb26f209b0171d8c4e40ababf"
+        },
+        "x86_64-linux-gnux32": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.18-20261025/x86_64-linux-gnux32.2.18.tar.zst",
+            "sha256": "71aef3e741c70d4b5c4c6855529b6731296854b16987973a1355256c405d54e9"
+        }
+    },
+    "2.17": {
+        "aarch64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.17-20261025/aarch64-linux-gnu.2.17.tar.zst",
+            "sha256": "9db2f6a09bbad871aaa01df16de638bd05b11c96a5c451d714db98edf6e0cef2"
+        },
+        "aarch64_be-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.17-20261025/aarch64_be-linux-gnu.2.17.tar.zst",
+            "sha256": "488bdefc95a41d07bd219069e65a718b4c7c6121a96bc071bb54c998afe56c8b"
+        },
+        "arm-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.17-20261025/arm-linux-gnueabi.2.17.tar.zst",
+            "sha256": "136c7556d613a1c414e862cae3ef68537fd981b69c28c4350030e6648a54c734"
+        },
+        "arm-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.17-20261025/arm-linux-gnueabihf.2.17.tar.zst",
+            "sha256": "a0a35e3b5f497e44c7197205966ca095e7576565dcd796cb4ebda2facd2ff829"
+        },
+        "armeb-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.17-20261025/armeb-linux-gnueabi.2.17.tar.zst",
+            "sha256": "27a7ecf92a564cf20cb96136185f180955a3253d050cae5a6419d978828ede4d"
+        },
+        "armeb-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.17-20261025/armeb-linux-gnueabihf.2.17.tar.zst",
+            "sha256": "9b9c38651070f7bb10894f0cd51829a41798bdc776538ed8dc13a520156dbc12"
+        },
+        "i686-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.17-20261025/i686-linux-gnu.2.17.tar.zst",
+            "sha256": "630e87e7ccfef6344208fab7b9fc10793fd39b89bb3d0e68aec68a7a58279c29"
+        },
+        "m68k-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.17-20261025/m68k-linux-gnu.2.17.tar.zst",
+            "sha256": "e3ad75bf40366dc157b21bb7d005ba578da3f313bec570fd767f5fd69762c630"
+        },
+        "mips-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.17-20261025/mips-linux-gnueabi.2.17.tar.zst",
+            "sha256": "77a18eee8abdf5ae7863a2a1e278c4356a57cb58956cfbfe9faa32eff4b80af4"
+        },
+        "mips-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.17-20261025/mips-linux-gnueabihf.2.17.tar.zst",
+            "sha256": "8d97422fef452aed9fe49b80edb37efb91e549b2f6c8aa9ec0b7bfe3866d0849"
+        },
+        "mips64-linux-gnuabi64": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.17-20261025/mips64-linux-gnuabi64.2.17.tar.zst",
+            "sha256": "d01aaf0593b9f9e8f05f11a7ddfe1d8a8e84aa9b73073066b76b30b000442e31"
+        },
+        "mips64-linux-gnuabin32": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.17-20261025/mips64-linux-gnuabin32.2.17.tar.zst",
+            "sha256": "047dd9fffab9aef4b0087e2c19e5f492f909d916e1c5005f0296af056e47effb"
+        },
+        "mips64el-linux-gnuabi64": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.17-20261025/mips64el-linux-gnuabi64.2.17.tar.zst",
+            "sha256": "a314ba979b5e0a68d63244b86d743e01b33e4e5195aff45f81e7f6fc17e5bb38"
+        },
+        "mips64el-linux-gnuabin32": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.17-20261025/mips64el-linux-gnuabin32.2.17.tar.zst",
+            "sha256": "6bf12fa2df7cedecb0c56817915fa954be18a292ba6dcad1eb6fa46f8906ddca"
+        },
+        "mipsel-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.17-20261025/mipsel-linux-gnueabi.2.17.tar.zst",
+            "sha256": "b834bf9719304724f087f99c18688d95342c9aaf3fbafd196c70987ab52b2ac5"
+        },
+        "mipsel-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.17-20261025/mipsel-linux-gnueabihf.2.17.tar.zst",
+            "sha256": "39d5e36da73dd5ed34b0c8e7a3686972b95a68cf4f97a63857344d4d66289bdf"
+        },
+        "powerpc-linux-gnueabi": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.17-20261025/powerpc-linux-gnueabi.2.17.tar.zst",
+            "sha256": "aa6eac42609e9fb94fd2a6b727778a15cba81ded565a097e4ea731b5e58aa17b"
+        },
+        "powerpc-linux-gnueabihf": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.17-20261025/powerpc-linux-gnueabihf.2.17.tar.zst",
+            "sha256": "2cf4285766f5329174bad5f5f4353576b357b49c0c96bb0329023b7b1d1ec972"
+        },
+        "powerpc64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.17-20261025/powerpc64-linux-gnu.2.17.tar.zst",
+            "sha256": "a44c85f0489d321faa98d34d73b552724706889110fb10a715a803f20276db7e"
+        },
+        "s390x-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.17-20261025/s390x-linux-gnu.2.17.tar.zst",
+            "sha256": "1f8363091f1644905314fe822fe12cb21e489ee60aa22256e86b84e61e298b15"
+        },
+        "sparc-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.17-20261025/sparc-linux-gnu.2.17.tar.zst",
+            "sha256": "5c9745d48c9236de9a9b86b3577a69ff4a4343828a5d7c4401cce07e2a3fcac3"
+        },
+        "sparc64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.17-20261025/sparc64-linux-gnu.2.17.tar.zst",
+            "sha256": "d33eb34007d69cb0595b23cdc3080f3cd18941f15465a6ce54ae759ff5e5a74c"
+        },
+        "x86_64-linux-gnu": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.17-20261025/x86_64-linux-gnu.2.17.tar.zst",
+            "sha256": "cff56dfa0e87eb4db2b57d0898b842ab67b9cbf7e5a71df9e5cf3f065c4b60b7"
+        },
+        "x86_64-linux-gnux32": {
+            "url": "https://github.com/cerisier/glibc-headers/releases/download/2.17-20261025/x86_64-linux-gnux32.2.17.tar.zst",
+            "sha256": "869c39a549febd4e8fa7ff2e3f70df6fca19c3f12d24434948c0fd6a2bd9a603"
+        }
     }
 }

@@ -194,6 +194,14 @@ cc_args_list(
     args = select({
         "@platforms//os:linux": ["//toolchain/args:cxxstdlib_headers_include_search_paths"],
         "@platforms//os:windows": ["//toolchain/args/windows:cxxstdlib_headers_include_search_paths"],
+        "//conditions:default": ["macos_nostdincxx"],
+    }),
+)
+
+cc_args_list(
+    name = "macos_nostdincxx",
+    args = select({
+        "//config:nostdincxx_enabled": ["//toolchain/args:nostdincxx"],
         "//conditions:default": [],
     }),
 )
@@ -216,6 +224,14 @@ cc_args_list(
 # Those are stubs since we link against static_runtime_libs / dynamic_runtime_libs.
 cc_args_list(
     name = "cxxstdlib_library_search_paths",
+    args = select({
+        "//config:nostdlibxx_enabled": [],
+        "//conditions:default": ["default_cxxstdlib_library_search_paths"],
+    }),
+)
+
+cc_args_list(
+    name = "default_cxxstdlib_library_search_paths",
     args = select({
         # libc++ is provided by the macOS SDK.
         "@platforms//os:macos": [],
@@ -291,9 +307,14 @@ cc_args_list(
 # and paths when resolving compiler runtime libraries from the resource-dir.
 cc_args_list(
     name = "rtlib",
-    args = [
-        "//toolchain/args:rtlib_compiler_rt",
-    ],
+    args = select({
+        # macOS defaults to compiler-rt; explicitly selecting it warns with
+        # -nodefaultlibs (used by Rust) or -nostdlib.
+        "@platforms//os:macos": [],
+        "//conditions:default": [
+            "//toolchain/args:rtlib_compiler_rt",
+        ],
+    }),
 )
 
 cc_args_list(
@@ -437,9 +458,9 @@ cc_args_list(
         ":sysroot_flags",
         ":hermetic_compile_flags",
 
-        # Keep external -isystem directories before the toolchain C and C++
-        # -isystem directories below.
-        "@rules_cc//cc/toolchains/args/external_include_paths:external_include_paths",
+        # Keep external system include directories before the toolchain C and
+        # C++ system include directories below.
+        ":windows_external_include_paths",
 
         # Windows compiler, ABI, CRT, object-format, and C++ runtime semantics.
         "//toolchain/args/windows:crt_compile_defines",
@@ -480,6 +501,15 @@ cc_args_list(
         "//toolchain/args/windows:crt_linkage_args",
         "//toolchain/args/windows:ignore_unused_command_line_argument",
     ],
+)
+
+cc_args_list(
+    name = "windows_external_include_paths",
+    args = select({
+        "//constraints/windows/abi:msvc": ["//toolchain/features/clang_cl:external_include_paths_args"],
+        "//conditions:default": ["@rules_cc//cc/toolchains/args/external_include_paths:external_include_paths"],
+    }),
+    visibility = ["//toolchain/runtimes:__pkg__"],
 )
 
 cc_args_list(

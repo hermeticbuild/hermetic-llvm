@@ -5,6 +5,7 @@ set -euo pipefail
 DEF_FILE_GENERATOR="${DEF_FILE_GENERATORS%% *}"
 BIGOBJ_FIXTURE_WRITER="${BIGOBJ_FIXTURE_WRITERS%% *}"
 CLANG_CL="${CLANG_CLS%% *}"
+CLANGXX="${CLANGXXS%% *}"
 export LLVM_NM="${LLVM_NMS%% *}"
 
 test_tmp="$(mktemp -d "${TMPDIR:-/tmp}/def-file-generator.XXXXXX")"
@@ -81,3 +82,58 @@ printf 'not an object\n' >"${test_tmp}/malformed.obj"
 expect_failure "llvm-nm exited with status" \
   "${DEF_FILE_GENERATOR}" "${test_tmp}/rejected.def" sample.dll \
   "${test_tmp}/malformed.obj"
+
+expect_failure "DEF_FILE_GENERATOR_ABI must be 'msvc' or 'gnu'" \
+  env DEF_FILE_GENERATOR_ABI=itanium \
+  "${DEF_FILE_GENERATOR}" "${test_tmp}/rejected.def" sample.dll \
+  "${test_tmp}/quoted inputs/symbols.obj"
+
+mkdir "${test_tmp}/mingw"
+cat >"${test_tmp}/mingw/classes.cpp" <<'EOF'
+struct Base {
+  virtual ~Base();
+  virtual int f() const;
+  static int counter;
+};
+Base::~Base() {}
+int Base::f() const { return counter; }
+int Base::counter = 3;
+extern const int table[3] = {1, 2, 3};
+template <typename T> T twice(T t) { return t + t; }
+template int twice<int>(int);
+extern "C" int DllMain(void *, unsigned, void *) { return 1; }
+static int local_helper() { return 2; }
+int call_local() { return local_helper(); }
+EOF
+cat >"${test_tmp}/mingw/runtime.c" <<'EOF'
+int common_var;
+int imported_elsewhere(void) { return 0; }
+void *__imp_imported_elsewhere = (void *)&imported_elsewhere;
+__attribute__((weak)) int weak_function(void) { return 5; }
+int DllMainCRTStartup(void *a, unsigned b, void *c) { return 1; }
+EOF
+"${CLANGXX}" --target=x86_64-w64-windows-gnu -fno-exceptions -c \
+  -o "${test_tmp}/mingw/classes.o" "${test_tmp}/mingw/classes.cpp"
+"${CLANGXX}" --target=x86_64-w64-windows-gnu -x c -fcommon -c \
+  -o "${test_tmp}/mingw/runtime.o" "${test_tmp}/mingw/runtime.c"
+
+DEF_FILE_GENERATOR_ABI=gnu "${DEF_FILE_GENERATOR}" "${test_tmp}/mingw.def" \
+  libsample.dll "${test_tmp}/mingw/classes.o" "${test_tmp}/mingw/runtime.o"
+
+cat >"${test_tmp}/expected_mingw.def" <<'EOF'
+LIBRARY libsample.dll
+EXPORTS 
+	_ZN4Base7counterE 	 DATA
+	_ZTI4Base 	 DATA
+	_ZTS4Base 	 DATA
+	_ZTV4Base 	 DATA
+	common_var 	 DATA
+	table 	 DATA
+	_Z10call_localv
+	_Z5twiceIiET_S0_
+	_ZN4BaseD0Ev
+	_ZN4BaseD1Ev
+	_ZN4BaseD2Ev
+	_ZNK4Base1fEv
+EOF
+diff -u "${test_tmp}/expected_mingw.def" "${test_tmp}/mingw.def"

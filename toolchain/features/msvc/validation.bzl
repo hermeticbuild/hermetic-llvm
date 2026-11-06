@@ -33,11 +33,9 @@ def validate_msvc_configuration(
     if "dynamic_link_msvcrt" in disabled and "static_link_msvcrt" not in enabled:
         return "MSVC ABI requires exactly one retail CRT mode: enable dynamic_link_msvcrt or static_link_msvcrt"
 
-    unsupported = sorted({
-        feature: True
-        for feature in enabled_features + enabled_build_settings
-        if feature in unsupported_features
-    }.keys())
+    for setting in enabled_build_settings:
+        enabled[setting] = True
+    unsupported = sorted([feature for feature in enabled if feature in unsupported_features])
     if unsupported:
         return "MSVC ABI Layer 1 does not support feature(s): {}".format(", ".join(unsupported))
     return None

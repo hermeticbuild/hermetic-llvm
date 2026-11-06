@@ -51,6 +51,26 @@ This ecosystem simplifies the process by cross-compiling all target-specific com
 
 ## Advanced Usage
 
+### Suppressing the default C++ standard library
+
+Two independent boolean build settings (Bazel 9+ only) follow Clang/GCC semantics:
+
+- `--@llvm//config:nostdincxx`: omit default C++ standard-library headers,
+  like `-nostdinc++`. Explicit header dependencies and include paths still work.
+- `--@llvm//config:nostdlibxx`: omit implicit C++ standard-library linkage,
+  like `-nostdlib++`. Explicit library dependencies and link options still work.
+
+Both default to `false` and declare `scope = "target"`: execution tools retain
+their default libraries unless explicitly configured by a transition. Set both
+when supplying a replacement C++ library, such as a privately built libc++.
+Keep replacement headers, libraries, and ABI configuration consistent.
+
+These settings do not suppress C/SDK or compiler builtin headers, the C runtime,
+startup objects, compiler-rt, or the separately selected unwinder. They do not
+change optimization policy or MSVC CRT selection (`/MT` versus `/MD`).
+On MSVC targets the library opt-out removes the toolchain's libc++ default
+library; it does not use the broader `/NODEFAULTLIB` or `/Zl` options.
+
 ### Registering a subset of all toolchains
 
 Use the toolchain module extension:
@@ -76,6 +96,23 @@ If you need finer control, register individual toolchain targets. You can list t
 ```sh
 bazel query 'kind(toolchain, @llvm//toolchain:all)'
 ```
+
+### Linux UAPI header defaults
+
+Linux headers default to a version compatible with the target libc. A root
+module that needs newer UAPI declarations can choose a default independently
+of its libc version:
+
+```starlark
+kernel_headers = use_extension("@llvm//kernel/extension:kernel_headers.bzl", "kernel_headers")
+kernel_headers.configure(default_version = "6.6")
+use_repo(kernel_headers, "kernel_headers")
+```
+
+The version must be an indexed major.minor release. A target platform's
+explicit `@llvm//constraints/kernel/linux:<version>` constraint takes
+precedence. Without a `configure` tag, libc-derived defaults are unchanged.
+Only the root module may configure this default, and only once.
 
 ### Cgo compatibility
 To make the vanilla Go compiler work with a fully hermetic toolchain, we had to send some patches upstream. Only versions of Go >= 1.27 are supported out of the box.
@@ -183,10 +220,11 @@ To target musl:
 ### GNU C Library (glibc) versions
 
 Compiling and linking dynamically against specific glibc versions is supported.
-By default, the earliest glibc version that supports your target is used (2.28 in most cases).
+The earliest supported version is 2.17 for x86_64, AArch64, ARMv7, and s390x,
+and 2.27 for RISC-V. The default is 2.28, except for RISC-V, which defaults to 2.33.
 
-To target a specific version, use:
-`--platforms @llvm//platforms:linux_x86_64_gnu.2.28`
+To select an older supported version explicitly, use:
+`--platforms=@llvm//platforms:linux_x86_64_gnu.2.17`
 
 Behind the scenes, code is compiled with headers for the selected glibc and linked against compatible stubs.
 
@@ -338,6 +376,15 @@ Important: Since this module uses prebuilt compiler archives by default. If you 
 
 This builds the compiler from source with the stage0 prebuilt seed, which is required when prebuilts for your exact version are not available.
 
+When building LLVM libraries or tools from source, the module includes the
+AArch64 and X86 backends. To target another architecture, request its backend:
+
+```starlark
+llvm.configure(targets = ["RISCV"])
+```
+
+Requests from all modules are combined. Prebuilt compilers are unaffected.
+
 ### Starlark LLVM version variables
 
 The `@llvm-project` repository exposes LLVM version variables:
@@ -428,10 +475,11 @@ See https://github.com/hermeticbuild/hermetic-llvm/milestone/1
 - [kepler-formal](https://github.com/keplertech/kepler-formal)
 - [Xybrid](https://github.com/xybrid-ai/xybrid)
 - [Google XLS](https://github.com/google/xls)
+- [Google HEIR](https://github.com/google/heir)
+- [Google gVisor](https://github.com/google/gvisor)
 - [Drake](https://github.com/RobotLocomotion/drake)
 - [Internet Computer](https://github.com/dfinity/ic)
 - [rules_dotnet](https://github.com/bazel-contrib/rules_dotnet)
-- [Google HEIR](https://github.com/google/heir)
 - [SoundCloud](https://soundcloud.com)
 - [Datadog](https://github.com/DataDog/datadog-agent)
 

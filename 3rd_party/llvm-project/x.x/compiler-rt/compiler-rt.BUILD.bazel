@@ -16,7 +16,7 @@ load(
     "weak_symbol_link_flags",
     "weak_symbols_in_sync_tests",
 )
-load("@llvm//constraints/libc:libc_versions.bzl", "LIBCS")
+load("@llvm//constraints/libc:libc_versions.bzl", "LIBCS", "glibc_supported")
 load("@llvm//platforms:common.bzl", "LIBC_SUPPORTED_TARGETS")
 load("@llvm//toolchain/args:llvm_target_triple.bzl", "LLVM_TARGET_TRIPLE")
 load("@llvm//toolchain/runtimes:cc_internal_symbolizer_object.bzl", "cc_internal_symbolizer_object")
@@ -1409,6 +1409,10 @@ _INTERNAL_SYMBOLIZER_CONSTRAINTS = [
     )
     for target_os, target_cpu in LIBC_SUPPORTED_TARGETS
     for libc in LIBCS
+    if not libc.startswith("gnu.") or glibc_supported(
+        target_cpu,
+        libc[4:],
+    )
 ]
 
 [
@@ -1431,6 +1435,10 @@ _INTERNAL_SYMBOLIZER_PLATFORMS = {
     )
     for target_os, target_cpu in LIBC_SUPPORTED_TARGETS
     for libc in LIBCS
+    if not libc.startswith("gnu.") or glibc_supported(
+        target_cpu,
+        libc[4:],
+    )
 }
 
 _INTERNAL_SYMBOLIZER_PLATFORMS.update({
@@ -1487,6 +1495,11 @@ cc_unsanitized_library(
     copts = _INTERNAL_SYMBOLIZER_COPTS,
     cxxopts = _INTERNAL_SYMBOLIZER_CXXOPTS,
     dep = ":sanitizer_common_symbolizer_internal_impl",
+    disable_fission = True,
+    # The symbolizer and its LLVM dependencies must produce full-LTO bitcode
+    # for cc_internal_symbolizer_object's single-module link. Disable ThinLTO
+    # on this dependency graph so application code can keep using ThinLTO.
+    disable_thin_lto = True,
     disable_zstd = True,
     platform = select(_INTERNAL_SYMBOLIZER_PLATFORMS),
 )

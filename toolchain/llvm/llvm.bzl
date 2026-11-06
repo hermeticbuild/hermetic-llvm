@@ -106,6 +106,17 @@ def declare_llvm_targets(*, exec_os, exec_cpu, suffix = ""):
         format = {"llvm_nm": "bin/llvm-nm" + suffix},
     )
 
+    cc_tool(
+        name = "mingw_def_file_generator",
+        src = "@llvm//tools/def_file_generator",
+        data = ["bin/llvm-nm" + suffix],
+        env = {
+            "DEF_FILE_GENERATOR_ABI": "gnu",
+            "LLVM_NM": "{llvm_nm}",
+        },
+        format = {"llvm_nm": "bin/llvm-nm" + suffix},
+    )
+
     TOOLS_WITHOUT_LINKER = {
         "@rules_cc//cc/toolchains/actions:assembly_actions": ":clang",
         "@rules_cc//cc/toolchains/actions:c_compile": ":clang",
@@ -237,6 +248,24 @@ def declare_llvm_targets(*, exec_os, exec_cpu, suffix = ""):
         name = "default_tools_for_runtime",
         actual = select({
             "@llvm//toolchain:runtimes_all": ":default_tools",
+            "//conditions:default": ":staged_default_tools",
+        }),
+        visibility = ["//visibility:public"],
+    )
+
+    cc_tool_map(
+        name = "tools_for_mingw",
+        tools = BASE_TOOLS | COMPLETE_ONLY_TOOLS | {
+            "@rules_cc//cc/toolchains/actions:ar_actions": ":llvm-ar",
+            "@rules_cc//cc/toolchains/actions:generate_def_file": ":mingw_def_file_generator",
+        },
+        visibility = ["//visibility:public"],
+    )
+
+    native.alias(
+        name = "tools_for_mingw_for_runtime",
+        actual = select({
+            "@llvm//toolchain:runtimes_all": ":tools_for_mingw",
             "//conditions:default": ":staged_default_tools",
         }),
         visibility = ["//visibility:public"],
@@ -471,8 +500,7 @@ def declare_llvm_targets(*, exec_os, exec_cpu, suffix = ""):
             ":builtin_resource_include_dir",
         ] + select({
             "@llvm//toolchain:runtimes_all": [
-                "@llvm//runtimes/cxxstdlib:headers_include_search_directory",
-                "@llvm//runtimes/cxxstdlib:abi_headers_include_search_directory",
+                "@llvm//runtimes/cxxstdlib:default_headers",
             ],
             "//conditions:default": [],
         }) + [
@@ -495,8 +523,7 @@ def declare_llvm_targets(*, exec_os, exec_cpu, suffix = ""):
             ":builtin_resource_include_dir",
         ] + select({
             "@llvm//toolchain:runtimes_all": [
-                "@llvm//runtimes/cxxstdlib:headers_include_search_directory",
-                "@llvm//runtimes/cxxstdlib:abi_headers_include_search_directory",
+                "@llvm//runtimes/cxxstdlib:default_headers",
             ],
             "//conditions:default": [],
         }) + [
@@ -513,8 +540,7 @@ def declare_llvm_targets(*, exec_os, exec_cpu, suffix = ""):
             ":builtin_resource_dir",
         ] + select({
             "@llvm//toolchain:runtimes_all": [
-                "@llvm//runtimes/cxxstdlib:headers_include_search_directory",
-                "@llvm//runtimes/cxxstdlib:abi_headers_include_search_directory",
+                "@llvm//runtimes/cxxstdlib:default_headers",
             ],
             "//conditions:default": [],
         }),

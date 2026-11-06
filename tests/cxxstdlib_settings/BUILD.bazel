@@ -1,0 +1,46 @@
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load(":contract.bzl", "both", "defaults", "headers_only", "libraries_only", "scope_probe", "stdlib_contract")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "explicit_runtime",
+    srcs = ["replacement.cc"],
+    hdrs = ["replacement.h"],
+    strip_include_prefix = ".",
+)
+
+cc_binary(
+    name = "binary",
+    srcs = ["main.cc"],
+    defines = select({
+        "//config:nostdincxx_enabled": ["EXPECT_NO_CXX_HEADERS"],
+        "//conditions:default": [],
+    }),
+    deps = ["explicit_runtime"],
+)
+
+scope_probe(name = "exec_scope")
+
+stdlib_contract(name = "contract")
+
+defaults(
+    name = "defaults",
+    srcs = ["contract"],
+)
+
+headers_only(
+    name = "headers_only",
+    srcs = ["contract"],
+)
+
+libraries_only(
+    name = "libraries_only",
+    srcs = ["contract"],
+)
+
+both(
+    name = "both",
+    srcs = ["contract"],
+)

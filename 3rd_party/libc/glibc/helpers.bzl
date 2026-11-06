@@ -34,7 +34,7 @@ def glibc_includes(cpu):
         wordsize = "wordsize-32"
         cpu = "arm"
 
-    return [
+    paths = [
         "include",
     ] + os_abi_variant + abi_variant + [
         "sysdeps/unix/sysv/linux/{}".format(cpu),
@@ -53,6 +53,12 @@ def glibc_includes(cpu):
         "sysdeps/generic",
         ".",
     ]
+
+    # ARM and AArch64 lived in the separate ports tree through glibc 2.19.
+    # Missing include directories are harmless for newer releases.
+    if cpu in ["arm", "aarch64"]:
+        paths = paths[:1] + ["ports/" + path for path in paths if path.startswith("sysdeps/")] + paths[1:]
+    return paths
 
 # hdrs = glob([
 #     "lib/libc/glibc/**/*.h",
