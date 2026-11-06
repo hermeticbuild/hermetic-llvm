@@ -412,16 +412,20 @@ jobs:
           # Header modules require the Starlark implementation of the C++
           # rules (Bazel 9+).
           excluded_tests=()
+          test_flags=()
           if [[ "${{ matrix.bazel_version }}" == "8.x" ]]; then
             excluded_tests+=(-//tests/header_modules/...)
             # The target-scoped C++ stdlib settings are supported on Bazel 9+ only.
             excluded_tests+=(-//tests/cxxstdlib_settings/...)
+            # Mixed-executor constraints require Bazel 9+.
+            test_flags+=(--deleted_packages=tests/wasm/mixed_executors)
           fi
 
           bazel \
             --bazelrc=$GITHUB_WORKSPACE/.github/workflows/ci.bazelrc \
             --bazelrc=.bazelrc \
             test \
+            "${test_flags[@]}" \
             -- \
             //tests/... \
             "${excluded_tests[@]}" \
@@ -446,7 +450,7 @@ jobs:
               --action_env=PATH=/nonexistent \
               --host_action_env=PATH=/nonexistent \
               --test_env=PATH=/usr/bin:/bin \
-              //tests/wasm:wasi_mixed_executors_test
+              //tests/wasm/mixed_executors:wasi_mixed_executors_test
           done
 
       - name: Stop Bazel before saving repository cache
