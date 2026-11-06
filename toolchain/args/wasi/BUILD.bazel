@@ -6,8 +6,12 @@ package(default_visibility = ["//toolchain:__subpackages__"])
 cc_args(
     name = "libc_headers_include_search_paths",
     actions = ["//toolchain:source_compile_actions"],
+    # Preserve native WASI order: user system paths, compiler wrappers, libc,
+    # then user -idirafter paths. The wrappers use include_next to reach libc.
     args = [
-        "-isystem",
+        "-Xclang",
+        "-internal-isystem",
+        "-Xclang",
         "{wasi_headers}",
     ],
     data = ["//runtimes/wasi:wasi_headers_include_search_directory"],

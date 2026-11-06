@@ -68,6 +68,15 @@ cc_library(
     local_defines = ["_ALL_SOURCE"],
     tags = ["manual"],
     target_compatible_with = ["@platforms//os:wasi"],
+    deps = ["wasi_c23_limits"],
+)
+
+cc_library(
+    name = "wasi_c23_limits",
+    srcs = ["wasi_c23_limits.c"],
+    copts = ["-std=c23"],
+    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:wasi"],
 )
 
 cc_binary(

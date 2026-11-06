@@ -11,9 +11,10 @@ The first implementation commit preserved generated compile/link behavior while
 changing argument-group ownership and variant routing. The second checkpoint
 incorporates the approved critique: hosted-C header composition, explicit thread
 model and target-feature groups, and libc-owned source-language flags. The third
-checkpoint separates CRT artifacts from libc archives. Header-order changes and
-the constraint rename remain subsequent work. Public API beyond the approved
-structure still requires Corentin's explicit agreement.
+checkpoint separates CRT artifacts from libc archives. The fourth corrects
+public libc-header ordering and adds the demonstrated C23 regression. The
+constraint rename and remaining support-contract checks are subsequent work.
+Public API beyond the approved structure still requires Corentin's agreement.
 
 ## First review checkpoint (629e81b2)
 
@@ -144,6 +145,54 @@ Suggested PR description:
 > having its own semantic group. Stage CRT objects separately and select them
 > through the existing runtime CRT directory contract, preserving Clang's
 > command/reactor selection and the generated binaries.
+
+## Fourth review checkpoint: public libc-header ordering
+
+Clang's native WASI driver searches compiler resource headers before libc.
+The explicit libc `-isystem` entry reversed that order, bypassing Clang's
+`limits.h` wrapper and its C23 width definitions. The existing WASI header
+argument now uses `-Xclang -internal-isystem`, following the repository's
+sanitizer-header pattern. Its action scope, declared input, hosted composition,
+and compiler resource directory are unchanged. No new public API was added.
+
+`wasi_c23_limits.c` checks `INT_WIDTH`, `BITINT_MAXWIDTH`, and wasi-libc's
+`MB_LEN_MAX` together: compiler-only or libc-only lookup cannot satisfy it.
+It is compiled through the existing public-header test dependency, covering
+default P1, explicit P1, threaded P1, P2, and P3.
+
+Evidence against `a89257bb`, with pinned LLVM 23.1.2:
+
+- Added the regression before changing the toolchain. `bazel test
+  --config=remote --keep_going //tests/wasm:wasi_p1_test
+  //tests/wasm:wasi_variants_test` failed to build on every variant because
+  `INT_WIDTH` and `BITINT_MAXWIDTH` were undeclared. The same tests passed after
+  the correction, alongside `//tests/wasm:wasm_test`. Regression compilations
+  ran remotely; existing execution tests were cache hits.
+- With the regression present on both sides, compared 6,523 compile/link
+  actions: 6,507 unchanged, 16 changed only the WASI include argument spelling.
+  Inputs, outputs, environments, and execution properties match. This includes
+  unchanged stage-0 libc compilation and compiler resource inputs.
+- Separate action comparisons for all four variants leave stage 1 unchanged;
+  hosted stage 1 changes only its compile include spelling. Complete Linux
+  glibc/musl and freestanding wasm64 comparisons are unchanged. Temporary
+  stage fixtures were removed before commit.
+- Native-driver dependency output for the regression includes both compiler
+  and wasi-libc `limits.h` for all four variants. The preceding review's
+  user-include and `include_next` comparisons established the selected ordering.
+- `bazel test --config=remote //internal_tools:buildifier.check` and
+  `bazel build --config=remote //:main` in `e2e/rules_cc` passed. Focused review
+  found no actionable issues. Evidence remains under `/tmp/wasi-header-fix-*`.
+
+Explicit libc paths still survive `-nostdinc` and `-nostdlibinc`, preserving
+existing policy. Other LLVM versions, PCH/modules, and bindgen are not newly
+validated by this checkpoint.
+
+Suggested PR description:
+
+> WASI's explicit libc include path shadows Clang's standard-header wrappers,
+> losing C23 integer-width definitions. Restore native compiler-before-libc
+> ordering within the existing WASI header group and cover the compiler/libc
+> include chain through the existing variant tests.
 
 ## Intended contract
 
@@ -295,12 +344,12 @@ Acceptance:
 - Staged runtime toolchains preserve their existing dependency boundaries.
 - Ordinary `-l...` lookup continues to work.
 
-## 2. Establish native WASI header semantics before changing flags
+## 2. Establish native WASI header semantics (implemented for LLVM 23.1.2)
 
-The PR uses explicit `-isystem`, as existing libc paths on main do. That is
-not sufficient evidence of matching the native WASI driver search order.
-PR #819's manual header-component work is relevant but remains a separate
-change; inspect its current state rather than assuming it is merged.
+The original PR used explicit `-isystem`, as existing Linux libc paths do.
+The native-driver comparison demonstrated a consequential mismatch; the fourth
+checkpoint corrects it using the existing internal-system-include pattern.
+Broader header APIs and unrelated platforms remain outside this change.
 
 Proposed sequence:
 

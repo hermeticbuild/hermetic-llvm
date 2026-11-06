@@ -89,6 +89,12 @@ retain their own `linker` slot using LLD for intermediate links.
 `stage1_hosted`, following the existing platform-specific hosted-C composition.
 There is no WASI-only global libc-header slot. Stage 0 builds wasi-libc with its
 own explicit header dependencies; it does not obtain them from the hosted group.
+Public WASI libc headers use Clang's internal system include category, after
+user system paths and compiler resource headers, before user `-idirafter`
+paths. This preserves compiler wrappers such as `limits.h` and their
+`include_next` lookup into libc. Explicit libc paths retain the existing
+behavior under `-nostdinc` and `-nostdlibinc`; those flags do not suppress them.
+
 `default_startfiles` owns CRT lookup and `default_libs` owns library lookup.
 WASI uses the shared `crt_search_directory` implementation and
 `//runtimes:crt_objects_directory` selection for its separate CRT directory.
