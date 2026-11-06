@@ -1,5 +1,5 @@
 load("@llvm//:defs.bzl", "exec_test")
-load("@llvm//toolchain/runtimes:cc_runtime_binary.bzl", "cc_runtime_stage1_hosted_binary")
+load("@llvm//toolchain/runtimes:cc_runtime_binary.bzl", "cc_runtime_stage1_hosted_tool")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 
@@ -7,7 +7,7 @@ package(default_visibility = ["//visibility:public"])
 
 # Keep generated-DEF support available while constructing the C++ runtime:
 # this adapter uses only the hosted C runtime and a declared llvm-nm binary.
-cc_runtime_stage1_hosted_binary(
+cc_runtime_stage1_hosted_tool(
     name = "def_file_generator",
     srcs = ["def_file_generator.c"],
 )

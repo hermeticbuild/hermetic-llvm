@@ -290,6 +290,7 @@ bzl_library(
     srcs = ["cc_runtime_binary.bzl"],
     visibility = ["//visibility:public"],
     deps = [
+        "@llvm//platforms:common",
         "@llvm//toolchain/runtimes:with_cfg_runtimes_common",
         "@rules_cc//cc:core_rules",
         "@with_cfg.bzl//:with_cfg",
