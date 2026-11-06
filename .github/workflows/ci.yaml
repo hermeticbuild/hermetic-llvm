@@ -103,7 +103,11 @@ jobs:
               //:main_windows_x86_64_msvc \
               //:main_windows_aarch64_msvc \
               //:main_windows_x86_64_msvc_external_include_paths \
-              //:main_windows_aarch64_msvc_external_include_paths
+              //:main_windows_aarch64_msvc_external_include_paths \
+              //:main_in_dep_windows_x86_64_msvc \
+              //:main_in_dep_windows_aarch64_msvc \
+              //:main_in_dep_windows_x86_64_msvc_static_crt \
+              //:main_in_dep_windows_aarch64_msvc_static_crt
           fi
 
       # The tests above opt C++ actions into path mapping. Without that opt-in,

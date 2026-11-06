@@ -8,6 +8,7 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_qemu//qemu:qemu_binary.bzl", "qemu_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load(":crt.bzl", "static_crt_alias")
 load(":external_include_paths.bzl", "external_include_paths_alias")
 
 string_flag(
@@ -37,6 +38,18 @@ cc_binary(
     name = "main",
     srcs = ["test.cc"],
     deps = [":add"],
+)
+
+cc_library(
+    name = "main_in_dep_lib",
+    srcs = ["main_in_dep.c"],
+)
+
+# Keep every application object in an ordinary archive so that no eagerly
+# loaded object can supply the CRT startup library's default-library directive.
+cc_binary(
+    name = "main_in_dep",
+    deps = ["main_in_dep_lib"],
 )
 
 cc_binary(
@@ -116,6 +129,31 @@ PLATFORMS = [
         target_platform = platform,
     )
     for platform in PLATFORMS
+]
+
+[
+    platform_transition_binary(
+        name = "main_in_dep_" + platform,
+        binary = "main_in_dep",
+        tags = ["manual"],
+        target_platform = "@llvm//platforms:" + platform,
+    )
+    for platform in [
+        "windows_x86_64_msvc",
+        "windows_aarch64_msvc",
+    ]
+]
+
+[
+    static_crt_alias(
+        name = "main_in_dep_{}_static_crt".format(platform),
+        actual = "main_in_dep_" + platform,
+        tags = ["manual"],
+    )
+    for platform in [
+        "windows_x86_64_msvc",
+        "windows_aarch64_msvc",
+    ]
 ]
 
 # The runtimes include their headers from external repositories, which clang-cl
