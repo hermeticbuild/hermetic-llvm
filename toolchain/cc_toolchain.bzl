@@ -119,10 +119,13 @@ def cc_toolchain(
             "@llvm//toolchain/features:fdo_optimize",
             "@llvm//toolchain/features:cs_fdo_optimize",
             "@llvm//toolchain/features:skip_virtual_includes",
-            "@rules_cc//cc/toolchains/args/thin_lto:feature",
             "@llvm//toolchain/features:thin_lto_linkstatic_tests_use_shared_nonlto_backends",
             "@llvm//toolchain/features:thin_lto_all_linkstatic_use_shared_nonlto_backends",
         ] + select({
+            "@platforms//cpu:wasm32": ["@llvm//toolchain/features/wasm:feature"],
+            "@platforms//cpu:wasm64": ["@llvm//toolchain/features/wasm:feature"],
+            "//conditions:default": ["@rules_cc//cc/toolchains/args/thin_lto:feature"],
+        }) + select({
             "@platforms//os:linux": [
                 "@llvm//toolchain/features/interface_libraries:feature",
             ],
