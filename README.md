@@ -157,6 +157,18 @@ If you wish to setup things manually, you will likely require a few flags:
 prebuilt; clang-cl still emits the MSVC target ABI. Source-built bootstrap
 stages also support native Windows execution. See "Windows" section.
 
+### WASI
+
+Wasm32 C programs are supported with statically linked wasi-libc.
+
+To target WASI Preview 1:
+`--platforms=@llvm//platforms:wasi_wasm32`
+
+Explicit variants are `wasi_wasm32_p1`, `wasi_wasm32_p1_threads`,
+`wasi_wasm32_p2`, and `wasi_wasm32_p3`. P2/P3 require LLVM 22+ and produce
+WebAssembly components. WASI C++ standard-library integration is not yet
+implemented in hermetic-llvm.
+
 ### musl
 
 Only static linking against the latest version of musl is supported for now.
