@@ -21,12 +21,7 @@ cc_args(
     name = "linker",
     actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
     # -fuse-ld=lld would force wasm-ld for WASIp2 and WASIp3. Keep Clang's
-    # default component linker and give Clang its execution-platform directory.
-    args = [
-        "-B{component_ld}",
-        "-fuse-ld=ld",
-    ],
-    data = ["//runtimes/wasi/tools:component_ld_directory"],
-    format = {"component_ld": "//runtimes/wasi/tools:component_ld_directory"},
+    # default component linker. Its executable is bound by the selected tool map.
+    args = ["-fuse-ld=ld"],
     target_compatible_with = _COMPONENT_COMPATIBILITY,
 )

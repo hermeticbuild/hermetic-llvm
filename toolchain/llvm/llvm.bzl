@@ -3,12 +3,13 @@ load("@llvm//runtimes:module_map.bzl", "include_path", "module_map")
 load("@rules_cc//cc/toolchains:tool.bzl", "cc_tool")
 load("@rules_cc//cc/toolchains:tool_map.bzl", "cc_tool_map")
 load("//:directory.bzl", "headers_directory")
+load(":component_tools.bzl", "component_tools")
 
 _VALIDATE_STATIC_LIBRARY_TOOL = {
     "@rules_cc//cc/toolchains/actions:validate_static_library": ":static_library_validator",
 } if bazel_features.cc.supports_starlarkified_toolchains else {}
 
-def declare_llvm_targets(*, suffix = ""):
+def declare_llvm_targets(*, exec_os, exec_cpu, suffix = ""):
     """Declares the Bazel interface of one installed LLVM distribution.
 
     The bin/* tools and lib/clang/* resource headers below come from the same
@@ -130,6 +131,18 @@ def declare_llvm_targets(*, suffix = ""):
     COMPLETE_ONLY_TOOLS = {
         "@rules_cc//cc/toolchains/actions:cpp_header_parsing": ":header_parser",
     } | _VALIDATE_STATIC_LIBRARY_TOOL
+
+    component_tools(
+        name = "wasi_component_tools_for_runtime",
+        exec_os = exec_os,
+        exec_cpu = exec_cpu,
+        clang = "bin/clang++" + suffix,
+        wasm_ld = "bin/wasm-ld" + suffix,
+        base_tools = BASE_TOOLS | {
+            "@rules_cc//cc/toolchains/actions:ar_actions": ":llvm-ar",
+        },
+        complete_only_tools = COMPLETE_ONLY_TOOLS,
+    )
 
     cc_tool_map(
         name = "default_tools",

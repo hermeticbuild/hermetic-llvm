@@ -115,9 +115,15 @@ explicit runtime flags. Libc source-language requirements such as `-fdefer-ts`
 and their compiler-version restrictions belong to the libc build.
 
 The `components` package is a shared implementation for P2/P3, not another
-selectable ABI. Native component tools remain selected independently through
-their execution toolchain. Other platforms retain their existing compositions
-while their remaining legacy semantic groups are normalized separately.
+selectable ABI. Its linker tool map is selected in the target configuration,
+before the execution transition. The map binds `wasm-component-ld` to the same
+explicit execution OS/CPU as Clang and `wasm-ld`, for prebuilt and source-built
+toolchains. The selected link tool declares both executables and supplies
+`COMPILER_PATH`; the semantic argument group supplies `-fuse-ld=ld`. P1 and
+non-WASI tool maps do not acquire the component linker. `wasm-tools` remains
+execution-toolchain resolved for the separate CRT metadata action.
+Other platforms retain their existing compositions while their remaining
+legacy semantic groups are normalized separately.
 
 TODO(cerisier): Support macOS specific flags (objc and frameworks). Still needed ?
 

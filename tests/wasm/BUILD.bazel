@@ -95,6 +95,81 @@ cc_binary(
     target_compatible_with = ["@platforms//os:wasi"],
 )
 
+# Register both Linux execution platforms, with the other CPU first, to catch
+# linker dependencies that resolve independently of the C++ link action.
+[
+    cc_binary(
+        name = "wasi_command_" + cpu,
+        srcs = ["wasi_command.c"],
+        exec_compatible_with = [
+            "@platforms//os:linux",
+            "@platforms//cpu:" + cpu,
+        ],
+        exec_group_compatible_with = {
+            "cpp_link": [
+                "@platforms//os:linux",
+                "@platforms//cpu:" + cpu,
+            ],
+        },
+        tags = ["manual"],
+        target_compatible_with = ["@platforms//os:wasi"],
+    )
+    for cpu in [
+        "aarch64",
+        "x86_64",
+    ]
+]
+
+[
+    platform_data(
+        name = "wasi_{}_{}_command_blob".format(variant, cpu),
+        platform = "@llvm//platforms:wasi_wasm32_" + variant,
+        tags = ["manual"],
+        target = "wasi_command_" + cpu,
+    )
+    for variant in [
+        "p2",
+        "p3",
+    ]
+    for cpu in [
+        "aarch64",
+        "x86_64",
+    ]
+]
+
+exec_test(
+    go_test,
+    name = "wasi_mixed_executors_test",
+    srcs = ["wasi_mixed_executors_test.go"],
+    inner_data = [
+        "wasi_{}_{}_command_blob".format(variant, cpu)
+        for variant in [
+            "p2",
+            "p3",
+        ]
+        for cpu in [
+            "aarch64",
+            "x86_64",
+        ]
+    ] + ["//runtimes/wasi/tools:wasm_tools"],
+    tags = ["manual"],
+    x_defs = {
+        "componentPaths": " ".join([
+            "$(rlocationpath wasi_{}_{}_command_blob)".format(variant, cpu)
+            for variant in [
+                "p2",
+                "p3",
+            ]
+            for cpu in [
+                "aarch64",
+                "x86_64",
+            ]
+        ]),
+        "validatorPath": "$(rlocationpath //runtimes/wasi/tools:wasm_tools)",
+    },
+    deps = ["@rules_go//go/runfiles"],
+)
+
 cc_binary(
     name = "wasi_threads",
     srcs = ["wasi_threads.c"],

@@ -7,6 +7,7 @@ load("//platforms:common.bzl", "MSVC_TARGET_BOOTSTRAP_SUPPORTED_EXECS", "SUPPORT
 load("//toolchain:cc_toolchain.bzl", "cc_toolchain")
 load("//toolchain:merged_resource_directory.bzl", "merged_resource_directory")
 load("//toolchain/args:resource_directory_args.bzl", "resource_directory_args")
+load("//toolchain/llvm:component_tools.bzl", "component_tools")
 load(":bootstrap_binary.bzl", "bootstrap_binary", "bootstrap_directory")
 
 def _validate_static_library_tool(prefix):
@@ -86,6 +87,18 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
     COMPLETE_ONLY_TOOLS = {
         "@rules_cc//cc/toolchains/actions:cpp_header_parsing": prefix + "/header-parser",
     } | _validate_static_library_tool(prefix)
+
+    component_tools(
+        name = prefix + "/wasi_component_tools_for_runtime",
+        exec_os = exec_os,
+        exec_cpu = exec_cpu,
+        clang = prefix + "/bin/clang++",
+        wasm_ld = prefix + "/bin/wasm-ld",
+        base_tools = BASE_TOOLS | {
+            "@rules_cc//cc/toolchains/actions:ar_actions": prefix + "/llvm-ar",
+        },
+        complete_only_tools = COMPLETE_ONLY_TOOLS,
+    )
 
     cc_tool_map(
         name = prefix + "/default_tools",
@@ -594,6 +607,7 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
                     "//conditions:default": [],
                 }),
                 tool_map = select({
+                    "@llvm//platforms/config:wasi_components": ":%s/wasi_component_tools_for_runtime" % tool_prefix,
                     "@platforms//os:uefi": ":%s/uefi_tools" % tool_prefix,
                     "@llvm//platforms/config:windows_x86_64_msvc": ":%s/tools_for_msvc_for_runtime" % tool_prefix,
                     "@llvm//platforms/config:windows_aarch64_msvc": ":%s/tools_for_msvc_for_runtime" % tool_prefix,

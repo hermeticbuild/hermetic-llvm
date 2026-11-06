@@ -13,8 +13,9 @@ incorporates the approved critique: hosted-C header composition, explicit thread
 model and target-feature groups, and libc-owned source-language flags. The third
 checkpoint separates CRT artifacts from libc archives. The fourth corrects
 public libc-header ordering and adds the demonstrated C23 regression. The fifth
-renames the profile setting to `variant`. Remaining support-contract checks are
-subsequent work.
+renames the profile setting to `variant`. The sixth binds the component linker
+to the selected LLVM execution tooling. Remaining support-contract documentation
+is subsequent work.
 Public API beyond the approved structure still requires Corentin's agreement.
 
 ## First review checkpoint (629e81b2)
@@ -221,6 +222,57 @@ Suggested PR description:
 > The WASI setting selects both API generation and the threaded P1 profile.
 > Name it `variant` so its public label describes that selection accurately,
 > preserving the existing values and default target behavior.
+
+## Sixth review checkpoint: component linker execution binding
+
+The invariant is that every linker subprocess matches its owning C++ action's
+execution platform. Against `407b9847`, the new x86-64 command fixture fails with
+`posix_spawn failed: Exec format error` when ARM64 is the preferred executor:
+Clang and the link worker are x86-64, but the independently resolved component
+linker is ARM64. Both the default and named `cpp_link` execution groups are
+explicitly constrained in the fixture.
+
+The P2/P3 target profile now selects a component tool map before the execution
+transition. That map binds Clang, `wasm-ld`, and pinned `wasm-component-ld` using
+the concrete installation's execution OS/CPU, for prebuilt and bootstrap
+toolchains. The tool owns its executable inputs and `COMPILER_PATH`; the
+existing semantic linker group retains `-fuse-ld=ld`. Removed the independent
+component-linker resolver and directory-copy action. CRT metadata actions still
+resolve `wasm-tools` through their execution toolchain. No LLVM gate changed.
+
+Verification:
+
+- Before/after reproduction: `bazel build --config=remote
+  --extra_execution_platforms=@llvm//:rbe_linux_aarch64,@llvm//:rbe_linux_x86_64
+  --linkopt=-v //tests/wasm:wasi_p2_x86_64_command_blob` fails before and passes
+  after. The successful driver invocation names the x86-64 component executable
+  and passes the selected installation's x86-64 `wasm-ld` explicitly.
+- `bazel test --config=remote
+  --extra_execution_platforms=@llvm//:rbe_linux_aarch64,@llvm//:rbe_linux_x86_64
+  --action_env=PATH=/nonexistent --host_action_env=PATH=/nonexistent
+  --test_env=PATH=/usr/bin:/bin //tests/wasm:wasi_mixed_executors_test` passes,
+  as does reversing executor order. Four subtests validate component headers and
+  run `wasm-tools validate` for P2/P3 built on both Linux CPUs. CI runs both orders.
+  Both action graphs confirm matching compiler/component-linker/wasm-ld CPUs,
+  declared executable inputs, and `PATH=/nonexistent` in all four link actions.
+- Existing Wasm, P1, and WASI variant tests pass. Buildifier and diff checks pass.
+  `e2e/rules_cc`: `bazel build --config=remote //:main` passes; the executable
+  prints `Hello, World!`.
+- LLVM 22.1.8 P2 builds with empty PATH through the downstream scoped toolchain
+  repository. Its P1 production dependency query contains no component linker.
+  The scoped source-built Stage 1 x86-64 linker analyzes with the correct
+  component executable binding; LLVM itself was not rebuilt.
+- Focused review found and corrected missing manual tags on the mixed-platform
+  artifact wrappers. Windows/macOS component execution and source-built linker
+  execution are not newly verified. Component validation is not WASI runtime
+  execution. Logs and action graphs are under `/tmp/wasi-component-binding-*`.
+
+Suggested PR description:
+
+> Mixed execution platforms could pair x86-64 Clang with an ARM64 component
+> linker, failing otherwise valid WASI P2/P3 links. Bind the component executable
+> to the selected LLVM tooling, like LLD, so all linker subprocesses match the
+> owning action's executor without relying on PATH or platform preference order.
 
 ## Intended contract
 
