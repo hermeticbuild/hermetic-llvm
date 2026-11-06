@@ -10,10 +10,10 @@ Worktree: `/Users/corentinkerisit/.codex/worktrees/wasi-integration-review/herme
 The first implementation commit preserved generated compile/link behavior while
 changing argument-group ownership and variant routing. The second checkpoint
 incorporates the approved critique: hosted-C header composition, explicit thread
-model and target-feature groups, and libc-owned source-language flags. CRT
-artifact separation, header-order changes, and the constraint rename remain
-subsequent work. Public API beyond the approved structure still requires
-Corentin's explicit agreement.
+model and target-feature groups, and libc-owned source-language flags. The third
+checkpoint separates CRT artifacts from libc archives. Header-order changes and
+the constraint rename remain subsequent work. Public API beyond the approved
+structure still requires Corentin's explicit agreement.
 
 ## First review checkpoint (629e81b2)
 
@@ -97,6 +97,53 @@ Suggested PR description:
 > source syntax must not leak into unrelated runtime compilations. Route those
 > policies through scoped WASI implementations, reuse hosted-C composition for
 > libc headers, and keep C defer requirements with wasi-libc.
+
+## Third review checkpoint: CRT directory separation
+
+WASI now participates in the existing `//runtimes:crt_objects_directory`
+selection. Its private implementation stages `crt1.o`, `crt1-command.o`, and
+`crt1-reactor.o` in `generated/crt`; the library directory retains its 16 archives
+and no startup objects. `wasi:default_startfiles` reuses the generic
+`crt_search_directory` argument group. No public target or build setting was
+added. Raw CRT extraction and P2/P3 metadata embedding remain unchanged.
+
+Evidence against `1aff6e25`, with the pinned LLVM 23.1.2:
+
+- Of 6,518 compile/link actions, 6,512 are unchanged. Six WASI application
+  links change only the CRT `-B` path and add the CRT directory as a declared
+  input. Library `-L` paths, compiler resource directories, ordered remaining
+  arguments, outputs, environments, and execution properties are unchanged.
+  Captured CRT generation actions also remain unchanged.
+- All eight captured Wasm/WASI linked artifacts have identical SHA-256 hashes
+  before and after, including command, reactor, threaded P1, and P2/P3 outputs.
+- Temporary remote driver checks cover all four variants, command/reactor, and
+  default/`-nostartfiles`/`-nodefaultlibs`/`-nostdlib`: 32 invocations preserve
+  linker arguments except the selected CRT path. Startup and default-library
+  suppression behave as before. These dry runs do not establish P2/P3 reactor
+  execution support. Temporary fixtures were removed before commit.
+- Inspected directory contents: exactly three CRT objects and 16 separate
+  archives for each variant. Reusing the generic group also supplies `-B` and
+  the declared CRT input to ThinLTO indexing; its action graph was checked.
+- `bazel build --config=remote --features=thin_lto
+  --platforms=//platforms:wasi_wasm32_p1 //tests/wasm:wasi_command` fails in
+  ThinLTO indexing because `wasm-ld` rejects the existing `-plugin-opt` arguments.
+  Repeating the same command with the three code files restored temporarily to
+  `1aff6e25` reproduces the same failure. This pre-existing ThinLTO issue remains
+  outside CRT separation; successful ThinLTO builds are not claimed.
+- `bazel test --config=remote //tests/wasm:wasm_test
+  //tests/wasm:wasi_p1_test //tests/wasm:wasi_variants_test` passed before and
+  after (test cache hits). `bazel test --config=remote
+  //internal_tools:buildifier.check` and the `e2e/rules_cc`
+  `bazel build --config=remote //:main` check passed.
+- Focused read-only review found no actionable issues. Action, driver, artifact,
+  and build evidence is stored under `/tmp/wasi-crt-*` for this session.
+
+Suggested PR description:
+
+> WASI startup lookup still depended on the libc archive directory despite
+> having its own semantic group. Stage CRT objects separately and select them
+> through the existing runtime CRT directory contract, preserving Clang's
+> command/reactor selection and the generated binaries.
 
 ## Intended contract
 
@@ -220,7 +267,7 @@ One semantic name does not imply identical implementation at every stage.
   (CRT-directory split, header correction if proved, removal of libc-only syntax
   flags from other runtimes) from semantic-preserving routing and renaming.
 
-## 1. Align startup and libc ownership
+## 1. Align startup and libc ownership (implemented)
 
 Proposed change:
 

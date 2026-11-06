@@ -512,14 +512,23 @@ STUB_LIBRARIES = [
 ]
 
 copy_to_directory(
+    name = "crt_objects_directory",
+    srcs = [
+        "crt1",
+        "crt1_command",
+        "crt1_reactor",
+    ],
+    out = "generated/crt",
+    root_paths = ["lib"],
+    visibility = ["@llvm//runtimes:__pkg__"],
+)
+
+copy_to_directory(
     name = "library_directory",
     srcs = [
         ":c",
         ":c-printscan-long-double",
         ":c-printscan-no-floating-point",
-        ":crt1",
-        ":crt1_command",
-        ":crt1_reactor",
         ":dl",
         ":setjmp",
         ":wasi-emulated-signal",

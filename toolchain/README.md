@@ -90,6 +90,11 @@ retain their own `linker` slot using LLD for intermediate links.
 There is no WASI-only global libc-header slot. Stage 0 builds wasi-libc with its
 own explicit header dependencies; it does not obtain them from the hosted group.
 `default_startfiles` owns CRT lookup and `default_libs` owns library lookup.
+WASI uses the shared `crt_search_directory` implementation and
+`//runtimes:crt_objects_directory` selection for its separate CRT directory.
+The library search directory contains archives only. Clang still selects the
+command or reactor startup object; CRT generation and component metadata remain
+owned by wasi-libc's build.
 
 The staged composition consumes `//toolchain:thread_model` and
 `//toolchain:target_features`. These select WASI profile implementations and are

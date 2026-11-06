@@ -212,10 +212,12 @@ alias(
     name = "crt_objects_directory",
     actual = select({
         "@platforms//os:linux": ":crt_objects_directory_linux",
+        "@platforms//os:wasi": "@wasi_libc//:crt_objects_directory",
         "@platforms//os:windows": ":crt_objects_directory_windows",
     }),
     target_compatible_with = select({
         "@platforms//os:linux": [],
+        "@platforms//os:wasi": [],
         "@platforms//os:windows": [],
         "@platforms//os:uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],

@@ -15,14 +15,9 @@ cc_args(
     target_compatible_with = ["@platforms//os:wasi"],
 )
 
-cc_args(
+cc_args_list(
     name = "default_startfiles",
-    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
-    # Clang selects the command or reactor CRT. For now these objects share
-    # the libc directory; directory separation is independent of this semantic.
-    args = ["-B{wasi_libs}"],
-    data = ["//runtimes/wasi:wasi_library_search_directory"],
-    format = {"wasi_libs": "//runtimes/wasi:wasi_library_search_directory"},
+    args = ["//toolchain/args:crt_search_directory"],
     target_compatible_with = ["@platforms//os:wasi"],
 )
 
