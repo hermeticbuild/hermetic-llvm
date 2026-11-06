@@ -39,6 +39,18 @@ cc_binary(
     deps = [":add"],
 )
 
+cc_library(
+    name = "main_in_dep_lib",
+    srcs = ["main_in_dep.c"],
+)
+
+# Keep every application object in an ordinary archive so that no eagerly
+# loaded object can supply the CRT startup library's default-library directive.
+cc_binary(
+    name = "main_in_dep",
+    deps = ["main_in_dep_lib"],
+)
+
 cc_binary(
     name = "hello",
     srcs = ["hello.c"],
@@ -116,6 +128,19 @@ PLATFORMS = [
         target_platform = platform,
     )
     for platform in PLATFORMS
+]
+
+[
+    platform_transition_binary(
+        name = "main_in_dep_" + platform,
+        binary = "main_in_dep",
+        tags = ["manual"],
+        target_platform = "@llvm//platforms:" + platform,
+    )
+    for platform in [
+        "windows_x86_64_msvc",
+        "windows_aarch64_msvc",
+    ]
 ]
 
 # The runtimes include their headers from external repositories, which clang-cl

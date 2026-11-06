@@ -7,7 +7,7 @@ cc_library(
 )
 
 # The only definition of main lives in a dependency. On Windows MSVC targets
-# this needs the CRT import library to be named on the link line.
+# this needs the CRT startup library to be named on the link line.
 cc_test(
     name = "main_in_dep_test",
     deps = [":main_lib"],

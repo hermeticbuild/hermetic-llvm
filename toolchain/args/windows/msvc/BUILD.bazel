@@ -297,8 +297,14 @@ cc_args_list(
         "common_support_library_search_paths",
         "com_support_library_search_paths",
     ] + select({
-        "//toolchain/features/msvc:static_crt_config": ["static_crt_library_search_paths", "static_crt_default_lib"],
-        "//conditions:default": ["dynamic_crt_library_search_paths", "dynamic_crt_default_lib"],
+        "//toolchain/features/msvc:static_crt_config": [
+            "static_crt_library_search_paths",
+            "static_crt_default_lib",
+        ],
+        "//conditions:default": [
+            "dynamic_crt_library_search_paths",
+            "dynamic_crt_default_lib",
+        ],
     }) + select({
         # Hosted C construction tools need the target CRT and SDK, but do not
         # consume the C++ standard library.
