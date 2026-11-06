@@ -105,22 +105,9 @@ jobs:
               //:main_windows_x86_64_msvc_external_include_paths \
               //:main_windows_aarch64_msvc_external_include_paths \
               //:main_in_dep_windows_x86_64_msvc \
-              //:main_in_dep_windows_aarch64_msvc
-
-            # Exercise archive-only main with the static CRT as well as the
-            # default dynamic CRT above. Neither link may rely on a direct
-            # application object's default-library directives.
-            bazel \
-              --bazelrc=$GITHUB_WORKSPACE/.github/workflows/ci.bazelrc \
-              --bazelrc=.bazelrc \
-              build \
-              "${repository_cache_flags[@]}" \
-              --repo_env=BAZEL_MSVC_RUNTIME_VISUAL_STUDIO_EULA=1 \
-              --repo_env=BAZEL_WINDOWS_SDK_EULA=1 \
-              --features=-dynamic_link_msvcrt \
-              --features=static_link_msvcrt \
-              //:main_in_dep_windows_x86_64_msvc \
-              //:main_in_dep_windows_aarch64_msvc
+              //:main_in_dep_windows_aarch64_msvc \
+              //:main_in_dep_windows_x86_64_msvc_static_crt \
+              //:main_in_dep_windows_aarch64_msvc_static_crt
           fi
 
       # The tests above opt C++ actions into path mapping. Without that opt-in,

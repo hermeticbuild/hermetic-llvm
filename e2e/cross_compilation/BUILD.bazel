@@ -8,6 +8,7 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_qemu//qemu:qemu_binary.bzl", "qemu_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load(":crt.bzl", "static_crt_alias")
 load(":external_include_paths.bzl", "external_include_paths_alias")
 
 string_flag(
@@ -136,6 +137,18 @@ PLATFORMS = [
         binary = "main_in_dep",
         tags = ["manual"],
         target_platform = "@llvm//platforms:" + platform,
+    )
+    for platform in [
+        "windows_x86_64_msvc",
+        "windows_aarch64_msvc",
+    ]
+]
+
+[
+    static_crt_alias(
+        name = "main_in_dep_{}_static_crt".format(platform),
+        actual = "main_in_dep_" + platform,
+        tags = ["manual"],
     )
     for platform in [
         "windows_x86_64_msvc",
