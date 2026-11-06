@@ -7,11 +7,6 @@ load("@rules_platform//platform_data:defs.bzl", "platform_data")
 
 gazelle(name = "gazelle")
 
-exports_files(
-    ["wasi_command.c"],
-    visibility = ["//tests/wasm/mixed_executors:__pkg__"],
-)
-
 cc_library(
     name = "thin_lto_archive",
     srcs = [

@@ -412,46 +412,22 @@ jobs:
           # Header modules require the Starlark implementation of the C++
           # rules (Bazel 9+).
           excluded_tests=()
-          test_flags=()
           if [[ "${{ matrix.bazel_version }}" == "8.x" ]]; then
             excluded_tests+=(-//tests/header_modules/...)
             # The target-scoped C++ stdlib settings are supported on Bazel 9+ only.
             excluded_tests+=(-//tests/cxxstdlib_settings/...)
-            # Mixed-executor constraints require Bazel 9+.
-            test_flags+=(--deleted_packages=tests/wasm/mixed_executors)
           fi
 
           bazel \
             --bazelrc=$GITHUB_WORKSPACE/.github/workflows/ci.bazelrc \
             --bazelrc=.bazelrc \
             test \
-            "${test_flags[@]}" \
             -- \
             //tests/... \
             "${excluded_tests[@]}" \
             //tools/case_insensitive_vfs:cli_test \
             //tools/case_insensitive_vfs:test \
             //tools/def_file_generator:test
-
-      - name: WASI component linking with mixed executors
-        if: matrix.os == 'ubuntu-latest' && matrix.bazel_version == 'last_rc'
-        env:
-          USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
-        shell: bash
-        run: |
-          for cpus in aarch64,x86_64 x86_64,aarch64; do
-            first=${cpus%,*}
-            second=${cpus#*,}
-            bazel \
-              --bazelrc=$GITHUB_WORKSPACE/.github/workflows/ci.bazelrc \
-              --bazelrc=.bazelrc \
-              test \
-              --extra_execution_platforms=@llvm//:rbe_linux_${first},@llvm//:rbe_linux_${second} \
-              --action_env=PATH=/nonexistent \
-              --host_action_env=PATH=/nonexistent \
-              --test_env=PATH=/usr/bin:/bin \
-              //tests/wasm/mixed_executors:wasi_mixed_executors_test
-          done
 
       - name: Stop Bazel before saving repository cache
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.bazel-repository-cache.outputs.cache-hit != 'true'
