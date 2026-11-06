@@ -277,12 +277,9 @@ cc_args(
     }),
 )
 
-cc_args_list(
+alias(
     name = "fuse_ld",
-    args = select({
-        "//platforms/config:wasi_components": ["//toolchain/args/wasi:component_linker"],
-        "//conditions:default": [":fuse_lld"],
-    }),
+    actual = "fuse_lld",
 )
 
 cc_args(

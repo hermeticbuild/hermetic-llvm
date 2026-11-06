@@ -13,6 +13,52 @@ header-order changes, removal of propagated libc-only syntax flags, and the
 constraint rename remain subsequent work. Public API beyond the approved
 structure still requires Corentin's explicit agreement.
 
+## First review checkpoint
+
+Implemented the semantic restructuring: top-level linker selection, explicit
+libc-header and compilation-default slots, scoped P1/P1-threads/component
+implementations, and separate startup/library argument ownership. CRT files
+still share the libc directory; the command lines and inputs are preserved.
+
+New implementation targets have restricted visibility. Removed PR-only argument
+names `headers`, `runtime_compile_flags`, and `component_linker`; the older
+generic `args:fuse_ld` label remains an alias for generic LLD selection.
+
+Baseline and post-change action comparisons cover:
+
+- 6,518 compile/link actions beneath the three Wasm/WASI test targets.
+- Stage 1 and hosted stage 1 compile/link probes for all four WASI variants.
+- Complete Linux x86-64 glibc/musl and freestanding wasm64 compile/link probes.
+
+Action keys, ordered arguments, input/output paths, environments, and execution
+properties match exactly in these comparisons. The stage probes were temporary
+verification fixtures; they are not additions to the public test/API surface.
+The capture/comparison scripts and JSON/log evidence are under
+`/tmp/wasi-semantic-*` in this session.
+
+Checks completed at this checkpoint:
+
+- Baseline: `bazel test --config=remote //tests/wasm:wasm_test
+  //tests/wasm:wasi_p1_test //tests/wasm:wasi_variants_test` passed all three
+  tests using the normal pinned LLVM 23.1.2 repository, without source overrides.
+- After restructuring: the same test command plus
+  `//internal_tools:buildifier.check` passed all four checks. The Wasm tests
+  were cache hits, consistent with unchanged action keys.
+- In `e2e/rules_cc`, `bazel build --config=remote //:main` passed; the resulting
+  arm64 Mach-O executable printed `Hello, World!`.
+- `bazel build --config=remote --platforms=//platforms:wasi_wasm32_p1
+  //toolchain/args/wasi/components:linker` failed with the expected explicit
+  target-incompatibility diagnostic. P2/P3 selection succeeds in the test graph.
+- Focused read-only review found no issues; formatting and `git diff --check`
+  passed. No new Windows execution or additional LLVM-version testing is claimed.
+
+Suggested PR description:
+
+> WASI's argument wiring mixed startup lookup with library lookup and selected
+> component variants inside the generic linker implementation. Give these
+> responsibilities stable semantic slots and scoped WASI implementations, as
+> required by the toolchain design, while preserving existing build behavior.
+
 ## Intended contract
 
 WASI is the target system interface; wasi-libc implements the C library on top
@@ -43,7 +89,7 @@ External implementation references:
 Resolve the driver reference to the exact LLVM revisions under test when
 recording evidence; current upstream main is not proof for all supported versions.
 
-## 0. Agree on the semantic tree before implementation
+## 0. Approved semantic tree
 
 Recommendation: implement WASI through the existing composition hierarchy, with
 stable semantic slots and scoped concrete implementations. Correct ownership
@@ -298,8 +344,9 @@ claims may be inferred solely from `wasm-tools validate` or successful linking.
 
 ## Semantic-tree review: rationale for step 0
 
-These findings follow the toolchain READMEs and motivate the proposed tree in
-step 0. Recording that recommendation does not authorize implementation.
+These findings follow the toolchain READMEs and motivated the approved tree in
+step 0. The first review checkpoint implements its structural changes; later
+behavior and artifact-layout changes remain separate.
 
 | Existing WASI integration | Assessment |
 | --- | --- |

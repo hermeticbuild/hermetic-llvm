@@ -135,6 +135,30 @@ config_setting(
 ]
 
 cc_args_list(
+    name = "linker",
+    args = select({
+        "@platforms//os:wasi": ["//toolchain/args/wasi:linker"],
+        "//conditions:default": ["//toolchain/args:fuse_lld"],
+    }),
+)
+
+cc_args_list(
+    name = "default_compile_flags",
+    # Runtime build defaults belong to the staged composition. Application
+    # compilation currently needs no additional defaults in this slot.
+    args = [],
+)
+
+cc_args_list(
+    name = "libc_headers_include_search_paths",
+    args = select({
+        "@platforms//os:wasi": ["//toolchain/args/wasi:libc_headers_include_search_paths"],
+        # Other platforms retain their existing header compositions.
+        "//conditions:default": [],
+    }),
+)
+
+cc_args_list(
     name = "default_link_flags",
     args = select({
         "@platforms//os:macos": [
@@ -161,7 +185,7 @@ cc_args_list(
         "@platforms//os:windows": ["//toolchain/args/windows:default_startfiles"],
         "@platforms//os:uefi": [],
         "@platforms//os:none": [],
-        "@platforms//os:wasi": [],
+        "@platforms//os:wasi": ["//toolchain/args/wasi:default_startfiles"],
     }),
 )
 
@@ -331,7 +355,7 @@ cc_args_list(
         # Windows uses the complete :windows_toolchain_args composition below.
         "@platforms//os:windows": [],
         "@platforms//os:none": [],
-        "@platforms//os:wasi": ["//toolchain/args/wasi:headers"],
+        "@platforms//os:wasi": [],
         "//conditions:default": [],
     }),
 )
@@ -355,6 +379,8 @@ cc_args_list(
 
         # TODO(cerisier): Explode this into specific args instead
         ":platform_specific_args",
+        ":libc_headers_include_search_paths",
+        ":default_compile_flags",
 
         # Optional sanitizers
         "//toolchain/args:ubsan_flags",
@@ -374,7 +400,7 @@ cc_args_list(
 
         # Common default link flags.
         ":deterministic_link_flags",
-        "//toolchain/args:fuse_ld",
+        ":linker",
         "//toolchain/args:lto_plugin_target_flags",
     ] + [
         ":cxxstdlib_library_search_paths",
@@ -435,7 +461,7 @@ cc_args_list(
 
         # Common default link flags.
         ":deterministic_link_flags",
-        "//toolchain/args:fuse_ld",
+        ":linker",
         "//toolchain/args:lto_plugin_target_flags",
         ":cxxstdlib_library_search_paths",
         ":libunwind_library_search_paths",
@@ -476,7 +502,7 @@ cc_args_list(
         ":sysroot_flags",
         ":hermetic_compile_flags",
         "@rules_cc//cc/toolchains/args/external_include_paths:external_include_paths",
-        "//toolchain/args:fuse_ld",
+        ":linker",
         "//toolchain/args/uefi:default_link_flags",
         "//toolchain/args/uefi:hybrid_gnu_msvc",
         "//toolchain/args/uefi:nostdlib",

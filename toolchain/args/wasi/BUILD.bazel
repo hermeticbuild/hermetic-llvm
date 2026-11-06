@@ -1,10 +1,10 @@
-load("@llvm-project//:vars.bzl", "LLVM_VERSION_MAJOR")
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
+load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
 
-package(default_visibility = ["//visibility:public"])
+package(default_visibility = ["//toolchain:__subpackages__"])
 
 cc_args(
-    name = "headers",
+    name = "libc_headers_include_search_paths",
     actions = ["//toolchain:source_compile_actions"],
     args = [
         "-isystem",
@@ -16,57 +16,43 @@ cc_args(
 )
 
 cc_args(
-    name = "default_libs",
+    name = "default_startfiles",
     actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
-    # Clang resolves crt1-command.o and crt1-reactor.o through -B and -lc
-    # through -L. Both live in the wasi-libc library directory.
-    args = [
-        "-B{wasi_libs}",
-        "-L{wasi_libs}",
-    ],
+    # Clang selects the command or reactor CRT. For now these objects share
+    # the libc directory; directory separation is independent of this semantic.
+    args = ["-B{wasi_libs}"],
     data = ["//runtimes/wasi:wasi_library_search_directory"],
     format = {"wasi_libs": "//runtimes/wasi:wasi_library_search_directory"},
     target_compatible_with = ["@platforms//os:wasi"],
 )
 
 cc_args(
-    name = "runtime_compile_flags",
-    actions = ["@rules_cc//cc/toolchains/actions:source_compile_actions"],
-    args = select({
-        "//platforms/config:wasi_wasm32_p1_threads": [
-            "-mthread-model",
-            "posix",
-            "-pthread",
-            "-ftls-model=local-exec",
-            "-matomics",
-        ],
-        "//platforms/config:wasi_components": [
-            "-mthread-model",
-            "single",
-            "-fdefer-ts",
-        ],
-        "//conditions:default": [
-            "-mthread-model",
-            "single",
-        ],
-    }),
-    # wasi-libc uses C defer statements for WASIp2 and WASIp3.
-    target_compatible_with = ["@platforms//os:wasi"] + ([] if int(LLVM_VERSION_MAJOR) >= 22 else select({
-        "//platforms/config:wasi_components": ["@platforms//:incompatible"],
-        "//conditions:default": [],
-    })),
+    name = "default_libs",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    args = ["-L{wasi_libs}"],
+    data = ["//runtimes/wasi:wasi_library_search_directory"],
+    format = {"wasi_libs": "//runtimes/wasi:wasi_library_search_directory"},
+    target_compatible_with = ["@platforms//os:wasi"],
+    visibility = ["//visibility:public"],
 )
 
-cc_args(
-    name = "component_linker",
-    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
-    # -fuse-ld=lld would force wasm-ld for WASIp2 and WASIp3. Keep Clang's
-    # default component linker and give Clang its execution-platform directory.
-    args = [
-        "-B{component_ld}",
-        "-fuse-ld=ld",
-    ],
-    data = ["//runtimes/wasi/tools:component_ld_directory"],
-    format = {"component_ld": "//runtimes/wasi/tools:component_ld_directory"},
+# These defaults build the runtimes. The complete application composition
+# relies on the target triple and does not add the runtime-only flags.
+cc_args_list(
+    name = "default_compile_flags",
+    args = select({
+        "//platforms/config:wasi_wasm32_p1_threads": ["//toolchain/args/wasi/p1_threads:default_compile_flags"],
+        "//platforms/config:wasi_components": ["//toolchain/args/wasi/components:default_compile_flags"],
+        "//conditions:default": ["//toolchain/args/wasi/p1:default_compile_flags"],
+    }),
+    target_compatible_with = ["@platforms//os:wasi"],
+)
+
+cc_args_list(
+    name = "linker",
+    args = select({
+        "//platforms/config:wasi_components": ["//toolchain/args/wasi/components:linker"],
+        "//conditions:default": ["//toolchain/args:fuse_lld"],
+    }),
     target_compatible_with = ["@platforms//os:wasi"],
 )

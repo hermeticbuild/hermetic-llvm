@@ -4,6 +4,29 @@ load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
 # gazelle:exclude cc_unsanitized_library.bzl
 
 cc_args_list(
+    name = "linker",
+    # Intermediate runtime links use LLD even for component targets. Component
+    # assembly belongs to the complete application toolchain.
+    args = ["//toolchain/args:fuse_lld"],
+)
+
+cc_args_list(
+    name = "default_compile_flags",
+    args = select({
+        "@platforms//os:wasi": ["//toolchain/args/wasi:default_compile_flags"],
+        "//conditions:default": [],
+    }),
+)
+
+cc_args_list(
+    name = "libc_headers_include_search_paths",
+    args = select({
+        "//toolchain:runtimes_stage1_hosted": ["//toolchain:libc_headers_include_search_paths"],
+        "//conditions:default": [],
+    }),
+)
+
+cc_args_list(
     name = "hermetic_link_flags",
     args = select({
         # The generic -nostdlib++ policy says that Bazel's runtime attributes
@@ -68,10 +91,7 @@ cc_args_list(
         # Windows uses the complete :windows_toolchain_args composition below.
         "@platforms//os:windows": [],
         "@platforms//os:none": [],
-        "@platforms//os:wasi": [
-            "//toolchain/args/wasi:headers",
-            "//toolchain/args/wasi:runtime_compile_flags",
-        ],
+        "@platforms//os:wasi": [],
     }),
     visibility = ["//toolchain:__subpackages__"],
 )
@@ -86,7 +106,7 @@ cc_args_list(
         # Windows uses the complete :windows_toolchain_args composition below.
         "@platforms//os:windows": [],
         "@platforms//os:none": [],
-        "@platforms//os:wasi": ["//toolchain/args/wasi:runtime_compile_flags"],
+        "@platforms//os:wasi": [],
     }),
     visibility = ["//toolchain:__subpackages__"],
 )
@@ -117,12 +137,13 @@ cc_args_list(
         "//toolchain:hermetic_compile_flags",
         ":hermetic_link_flags",
 
-        # Keep external -isystem directories before the toolchain C
-        # -isystem directories in :staged_platform_specific_args.
+        # Keep external -isystem directories before the toolchain C headers.
         "@rules_cc//cc/toolchains/args/external_include_paths:external_include_paths",
 
         # TODO(cerisier): Explode this into specific args instead
         ":staged_platform_specific_args",
+        ":libc_headers_include_search_paths",
+        ":default_compile_flags",
 
         # Optional sanitizers
         "//toolchain/runtimes/args:ubsan_flags",
@@ -140,7 +161,7 @@ cc_args_list(
 
         # Common default link flags.
         "//toolchain:deterministic_link_flags",
-        "//toolchain/args:fuse_lld",
+        ":linker",
         "//toolchain/args:lto_plugin_target_flags",
         ":rtlib",
         ":default_link_flags",
@@ -201,7 +222,7 @@ cc_args_list(
 
         # Common default link flags.
         "//toolchain:deterministic_link_flags",
-        "//toolchain/args:fuse_lld",
+        ":linker",
         "//toolchain/args:lto_plugin_target_flags",
         ":rtlib",
         ":default_link_flags",

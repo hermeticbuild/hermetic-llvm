@@ -1,0 +1,35 @@
+load("@llvm-project//:vars.bzl", "LLVM_VERSION_MAJOR")
+load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
+
+package(default_visibility = ["//toolchain/args/wasi:__pkg__"])
+
+_COMPONENT_COMPATIBILITY = select({
+    "//platforms/config:wasi_components": [],
+    "//conditions:default": ["@platforms//:incompatible"],
+})
+
+cc_args(
+    name = "default_compile_flags",
+    actions = ["@rules_cc//cc/toolchains/actions:source_compile_actions"],
+    args = [
+        "-mthread-model",
+        "single",
+        "-fdefer-ts",
+    ],
+    # Preserve the runtime build's existing C defer requirement and LLVM gate.
+    target_compatible_with = _COMPONENT_COMPATIBILITY + ([] if int(LLVM_VERSION_MAJOR) >= 22 else ["@platforms//:incompatible"]),
+)
+
+cc_args(
+    name = "linker",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    # -fuse-ld=lld would force wasm-ld for WASIp2 and WASIp3. Keep Clang's
+    # default component linker and give Clang its execution-platform directory.
+    args = [
+        "-B{component_ld}",
+        "-fuse-ld=ld",
+    ],
+    data = ["//runtimes/wasi/tools:component_ld_directory"],
+    format = {"component_ld": "//runtimes/wasi/tools:component_ld_directory"},
+    target_compatible_with = _COMPONENT_COMPATIBILITY,
+)

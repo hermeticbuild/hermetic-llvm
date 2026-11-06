@@ -77,6 +77,25 @@ runtime toolchains: its public `toolchain_args` selects complete generic or
 Windows runtime compositions, while concrete runtime compiler/linker semantics
 remain in argument implementation packages.
 
+### WASI semantic routing
+
+The complete composition selects `//toolchain:linker` by target OS. WASI then
+selects ordinary LLD or `//toolchain/args/wasi/components:linker`; the generic
+argument package does not select WASI variants. Staged runtime compositions
+retain their own `linker` slot using LLD for intermediate links.
+
+WASI libc headers enter through `libc_headers_include_search_paths`, while
+`default_startfiles` owns CRT lookup and `default_libs` owns library lookup.
+The staged composition supplies public libc headers only at `stage1_hosted`.
+Its `default_compile_flags` selects scoped P1, P1 threads, or shared P2/P3
+component defaults. The complete application's corresponding slot is empty;
+runtime build flags do not become application defaults.
+
+The `components` package is a shared implementation for P2/P3, not another
+selectable ABI. Native component tools remain selected independently through
+their execution toolchain. Other platforms retain their existing compositions
+while their remaining legacy semantic groups are normalized separately.
+
 TODO(cerisier): Support macOS specific flags (objc and frameworks). Still needed ?
 
 # Other Resources
