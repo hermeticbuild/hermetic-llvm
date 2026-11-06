@@ -143,17 +143,17 @@ cc_args_list(
 )
 
 cc_args_list(
-    name = "default_compile_flags",
-    # Runtime build defaults belong to the staged composition. Application
-    # compilation currently needs no additional defaults in this slot.
-    args = [],
+    name = "thread_model",
+    args = select({
+        "@platforms//os:wasi": ["//toolchain/args/wasi:thread_model"],
+        "//conditions:default": [],
+    }),
 )
 
 cc_args_list(
-    name = "libc_headers_include_search_paths",
+    name = "target_features",
     args = select({
-        "@platforms//os:wasi": ["//toolchain/args/wasi:libc_headers_include_search_paths"],
-        # Other platforms retain their existing header compositions.
+        "@platforms//os:wasi": ["//toolchain/args/wasi:target_features"],
         "//conditions:default": [],
     }),
 )
@@ -348,6 +348,11 @@ cc_args_list(
 )
 
 cc_args_list(
+    name = "wasi_hosted_c_toolchain_args",
+    args = ["//toolchain/args/wasi:libc_headers_include_search_paths"],
+)
+
+cc_args_list(
     name = "platform_specific_args",
     args = select({
         "@platforms//os:macos": [":macos_toolchain_args"],
@@ -355,7 +360,7 @@ cc_args_list(
         # Windows uses the complete :windows_toolchain_args composition below.
         "@platforms//os:windows": [],
         "@platforms//os:none": [],
-        "@platforms//os:wasi": [],
+        "@platforms//os:wasi": ["wasi_hosted_c_toolchain_args"],
         "//conditions:default": [],
     }),
 )
@@ -379,8 +384,6 @@ cc_args_list(
 
         # TODO(cerisier): Explode this into specific args instead
         ":platform_specific_args",
-        ":libc_headers_include_search_paths",
-        ":default_compile_flags",
 
         # Optional sanitizers
         "//toolchain/args:ubsan_flags",

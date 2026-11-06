@@ -3,7 +3,7 @@ load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 package(default_visibility = ["//toolchain/args/wasi:__pkg__"])
 
 cc_args(
-    name = "default_compile_flags",
+    name = "thread_model",
     actions = ["@rules_cc//cc/toolchains/actions:source_compile_actions"],
     args = [
         "-mthread-model",

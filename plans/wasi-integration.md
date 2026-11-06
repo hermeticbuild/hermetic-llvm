@@ -7,13 +7,15 @@ Review baseline: PR #143, commit `6dee40b6ea38f8027b5596edd4e7d78b7d427f1c`.
 Branch: `cerisier/wasi-integration-review`.
 Worktree: `/Users/corentinkerisit/.codex/worktrees/wasi-integration-review/hermetic-llvm`.
 
-The first implementation commit preserves generated compile/link behavior while
-changing argument-group ownership and variant routing. CRT artifact separation,
-header-order changes, removal of propagated libc-only syntax flags, and the
-constraint rename remain subsequent work. Public API beyond the approved
-structure still requires Corentin's explicit agreement.
+The first implementation commit preserved generated compile/link behavior while
+changing argument-group ownership and variant routing. The second checkpoint
+incorporates the approved critique: hosted-C header composition, explicit thread
+model and target-feature groups, and libc-owned source-language flags. CRT
+artifact separation, header-order changes, and the constraint rename remain
+subsequent work. Public API beyond the approved structure still requires
+Corentin's explicit agreement.
 
-## First review checkpoint
+## First review checkpoint (629e81b2)
 
 Implemented the semantic restructuring: top-level linker selection, explicit
 libc-header and compilation-default slots, scoped P1/P1-threads/component
@@ -58,6 +60,43 @@ Suggested PR description:
 > component variants inside the generic linker implementation. Give these
 > responsibilities stable semantic slots and scoped WASI implementations, as
 > required by the toolchain design, while preserving existing build behavior.
+
+## Second review checkpoint: semantic groups and hosted headers
+
+Replaced the first checkpoint's generic compilation-default bucket with
+`thread_model` and `target_features`. WASI libc headers now enter through
+`wasi_hosted_c_toolchain_args`, shared by complete applications and hosted
+stage 1. Stage 0 retains explicit libc header dependencies. Removed propagated
+`-fdefer-ts`; wasi-libc retains its own flag, and its affected `bottom_half`
+implementation now owns the LLVM 22 minimum-version restriction.
+
+Compared against `629e81b2` using the normal pinned LLVM 23.1.2:
+
+- Of 6,518 compile/link actions, 4,417 are unchanged. Another 1,805 libc
+  compilations lose a duplicate `-fdefer-ts`, and 296 other runtime compilations
+  lose that unintended flag. Ordered arguments have no other differences;
+  inputs, outputs, environments, and execution properties match.
+- All four variants' stage 1 and hosted stage 1 compile/link checks pass
+  analysis. Only P2/P3 compilations lose the propagated syntax flag. Complete
+  Linux glibc/musl and freestanding wasm64 checks remain unchanged.
+- `bazel test --config=remote //tests/wasm:wasm_test
+  //tests/wasm:wasi_p1_test //tests/wasm:wasi_variants_test` passed (cache hits).
+  `bazel test --config=remote //internal_tools:buildifier.check` passed after
+  correcting attribute order. In `e2e/rules_cc`,
+  `bazel build --config=remote //:main` passed.
+- Focused read-only review found no actionable issues. Temporary stage fixtures
+  were removed. Comparison evidence remains under `/tmp/wasi-groups-*` and
+  `/tmp/wasi-semantic-groups-*`; no permanent probe/API was introduced.
+
+The relocated version gate was reviewed in source, not exercised with an older
+LLVM checkout. No new Windows or P2/P3 runtime-execution coverage is claimed.
+
+Suggested PR description:
+
+> WASI thread policy and target features need distinct semantic owners; libc
+> source syntax must not leak into unrelated runtime compilations. Route those
+> policies through scoped WASI implementations, reuse hosted-C composition for
+> libc headers, and keep C defer requirements with wasi-libc.
 
 ## Intended contract
 
@@ -104,13 +143,13 @@ Existing public labels need an explicit compatibility decision before removal.
 
 | Owner | Proposed target/responsibility |
 | --- | --- |
-| `//toolchain` | `linker`, `default_compile_flags`, `libc_headers_include_search_paths`, existing `default_startfiles` and `default_libs`: select the target-OS implementation and place it in the complete ordered composition. |
+| `//toolchain` | `linker`, `thread_model`, `target_features`, existing `default_startfiles` and `default_libs`: select target-OS implementations. `wasi_hosted_c_toolchain_args` composes the WASI libc-header arguments for hosted consumers. |
 | `//toolchain/runtimes` | Compose the same semantic responsibilities for each runtime stage; preserve which headers, libraries, and flags are available at that stage. |
 | `//toolchain/args` | Reusable concrete implementations such as LLD selection and CRT search arguments; no new WASI variant dispatch. |
 | `//toolchain/args/wasi` | Same-named semantic implementations/selectors; common WASI libc include/search arguments and routing to the applicable WASI profile. |
-| `//toolchain/args/wasi/p1` | P1-specific runtime compilation defaults where needed. |
-| `//toolchain/args/wasi/p1_threads` | P1 threads runtime compilation defaults where needed. |
-| `//toolchain/args/wasi/components` | Shared P2/P3 component linker implementation and applicable runtime compilation defaults; explicitly limited to component variants. |
+| `//toolchain/args/wasi/p1` | Single-thread model for P1 runtime compilation. |
+| `//toolchain/args/wasi/p1_threads` | POSIX thread model, pthread mode, and local-exec TLS; separate atomics target-feature implementation. |
+| `//toolchain/args/wasi/components` | Shared P2/P3 component linker and single-thread-model implementations; explicitly limited to component variants. |
 | `//runtimes/wasi` and `@wasi_libc` | Headers, CRTs, archives, metadata generation, and libc implementation requirements. |
 | Existing WASI execution toolchain | Select native `wasm-tools`/`wasm-component-ld` binaries independently of the Wasm target profile. |
 
@@ -141,18 +180,19 @@ One semantic name does not imply identical implementation at every stage.
    through `//toolchain:linker` and the WASI selector. Keep current non-WASI
    linker arguments and ordering unchanged.
 2. Replace the ambiguous WASI `headers` argument-group name with
-   `libc_headers_include_search_paths`. Give it an explicit composition slot;
-   remove its WASI entry from the legacy `platform_specific_args` holder.
-   Preserve the measured header position and the runtime-stage dependency
-   boundaries. This structural change does not itself choose a new include flag.
+   `libc_headers_include_search_paths` in the WASI argument package. Reference
+   it through `wasi_hosted_c_toolchain_args`, following the existing hosted-C
+   composition in the complete and stage1-hosted paths. Do not introduce a
+   global libc-header slot that only serves WASI. Preserve header position and
+   runtime-stage dependency boundaries; do not choose a new include flag here.
 3. Split `default_startfiles` from `default_libs` as described in step 1 below.
    Use WASI semantic wrappers/selectors and reuse generic CRT-search mechanics.
-4. Replace `runtime_compile_flags` with scoped `default_compile_flags`
-   implementations for the runtime-stage composition. Keep the coherent thread
-   model/TLS/atomics bundle together; do not create one target per compiler flag.
-   Preserve the current consumer set: a name change must not inject runtime-only
-   flags into application compilation. Determine whether any explicit flags are
-   redundant with the target triple before changing their behavior.
+4. Replace the first checkpoint's `default_compile_flags` with `thread_model`
+   and `target_features` semantic groups selected at the toolchain level and
+   implemented by the applicable WASI profile. Keep pthread mode and local-exec
+   TLS with the thread model for now. Put atomics in target features. Both groups
+   are empty for other OSes and consumed only by the staged runtime composition,
+   preserving application behavior. Do not add user-selectable settings.
 5. Remove libc source-language requirements such as `-fdefer-ts` from the broad
    runtime-toolchain bundle where they are already supplied by wasi-libc's own
    `COMMON_COPTS`. Keep the required LLVM compatibility restriction with the
@@ -172,7 +212,9 @@ One semantic name does not imply identical implementation at every stage.
   leaf does not redispatch to a peer variant or a different OS.
 - Common implementations are reused; concrete component-only behavior is
   constrained at its owning implementation, not only at its current caller.
-- No new WASI behavior is routed through `platform_specific_args`.
+- Hosted libc-header composition follows the existing platform grouping, as
+  explicitly agreed during review. Thread model and target features use named
+  semantic slots, not a generic compilation-default bucket.
 - No new public API is exposed incidentally through package-wide visibility.
 - Compare before/after action arguments and inputs. Separate intentional changes
   (CRT-directory split, header correction if proved, removal of libc-only syntax
@@ -344,9 +386,9 @@ claims may be inferred solely from `wasm-tools validate` or successful linking.
 
 ## Semantic-tree review: rationale for step 0
 
-These findings follow the toolchain READMEs and motivated the approved tree in
-step 0. The first review checkpoint implements its structural changes; later
-behavior and artifact-layout changes remain separate.
+These findings describe the original PR and motivated the initial tree in
+step 0. Subsequent review refined libc-header composition and separated thread
+model from target features, as recorded in the second checkpoint above.
 
 | Existing WASI integration | Assessment |
 | --- | --- |
@@ -355,7 +397,7 @@ behavior and artifact-layout changes remain separate.
 | `args/wasi:runtime_compile_flags` | Groups thread model, atomics, TLS, C syntax, and a compiler-version compatibility gate under one consumer-oriented name. Concrete variant behavior is flattened into the OS package. |
 | `args/wasi:headers` | Ambiguous argument-group name: specifically libc include-search arguments, not all headers or a header artifact. Existing targets elsewhere name that responsibility explicitly. |
 | `args/wasi:component_linker` | A sensible concrete linker-choice implementation, but scoped/guarded only as WASI despite its P2/P3 purpose; callers currently supply the narrower restriction. |
-| Additional `platform_specific_args` entries | Extend a holder documented as legacy rather than expressing each stable semantic slot directly. |
+| Additional `platform_specific_args` entries | Initially criticized as extending a legacy holder. Review retained hosted-C composition for libc headers because that matches the existing ownership boundary; distinct thread/feature semantics receive named slots. |
 | Runtime artifact names such as `c`, `crt1_command`, `library_directory` | A different naming domain from argument groups. Upstream library identities and artifact descriptions are not intrinsically violations of the semantic argument tree. |
 
 The README supports stable semantic slots at composition boundaries, OS-level

@@ -11,22 +11,6 @@ cc_args_list(
 )
 
 cc_args_list(
-    name = "default_compile_flags",
-    args = select({
-        "@platforms//os:wasi": ["//toolchain/args/wasi:default_compile_flags"],
-        "//conditions:default": [],
-    }),
-)
-
-cc_args_list(
-    name = "libc_headers_include_search_paths",
-    args = select({
-        "//toolchain:runtimes_stage1_hosted": ["//toolchain:libc_headers_include_search_paths"],
-        "//conditions:default": [],
-    }),
-)
-
-cc_args_list(
     name = "hermetic_link_flags",
     args = select({
         # The generic -nostdlib++ policy says that Bazel's runtime attributes
@@ -91,7 +75,7 @@ cc_args_list(
         # Windows uses the complete :windows_toolchain_args composition below.
         "@platforms//os:windows": [],
         "@platforms//os:none": [],
-        "@platforms//os:wasi": [],
+        "@platforms//os:wasi": ["//toolchain:wasi_hosted_c_toolchain_args"],
     }),
     visibility = ["//toolchain:__subpackages__"],
 )
@@ -142,8 +126,10 @@ cc_args_list(
 
         # TODO(cerisier): Explode this into specific args instead
         ":staged_platform_specific_args",
-        ":libc_headers_include_search_paths",
-        ":default_compile_flags",
+        # Runtime compilation explicitly selects its thread and target feature
+        # policy. Complete applications continue to rely on the target triple.
+        "//toolchain:thread_model",
+        "//toolchain:target_features",
 
         # Optional sanitizers
         "//toolchain/runtimes/args:ubsan_flags",

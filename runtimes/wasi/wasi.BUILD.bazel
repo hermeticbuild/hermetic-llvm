@@ -184,6 +184,12 @@ cc_library(
         ":musl_top_half_interface",
         ":bottom_half_headers",
     ],
+    # WASIp2/P3's libc sources require C defer support; headers and unrelated
+    # runtime compilation do not impose this language requirement.
+    target_compatible_with = [] if int(LLVM_VERSION_MAJOR) >= 22 else select({
+        "@llvm//platforms/config:wasi_components": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
 )
 
 cc_library(

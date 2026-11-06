@@ -84,12 +84,20 @@ selects ordinary LLD or `//toolchain/args/wasi/components:linker`; the generic
 argument package does not select WASI variants. Staged runtime compositions
 retain their own `linker` slot using LLD for intermediate links.
 
-WASI libc headers enter through `libc_headers_include_search_paths`, while
+`wasi_hosted_c_toolchain_args` composes WASI's
+`libc_headers_include_search_paths` implementation for complete applications and
+`stage1_hosted`, following the existing platform-specific hosted-C composition.
+There is no WASI-only global libc-header slot. Stage 0 builds wasi-libc with its
+own explicit header dependencies; it does not obtain them from the hosted group.
 `default_startfiles` owns CRT lookup and `default_libs` owns library lookup.
-The staged composition supplies public libc headers only at `stage1_hosted`.
-Its `default_compile_flags` selects scoped P1, P1 threads, or shared P2/P3
-component defaults. The complete application's corresponding slot is empty;
-runtime build flags do not become application defaults.
+
+The staged composition consumes `//toolchain:thread_model` and
+`//toolchain:target_features`. These select WASI profile implementations and are
+empty for other target OSes. Pthread mode and local-exec TLS remain part of the
+WASI thread-model implementation; `-matomics` belongs to target features.
+Complete applications retain their driver-selected behavior without these
+explicit runtime flags. Libc source-language requirements such as `-fdefer-ts`
+and their compiler-version restrictions belong to the libc build.
 
 The `components` package is a shared implementation for P2/P3, not another
 selectable ABI. Native component tools remain selected independently through

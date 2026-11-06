@@ -36,14 +36,21 @@ cc_args(
     visibility = ["//visibility:public"],
 )
 
-# These defaults build the runtimes. The complete application composition
-# relies on the target triple and does not add the runtime-only flags.
 cc_args_list(
-    name = "default_compile_flags",
+    name = "thread_model",
     args = select({
-        "//platforms/config:wasi_wasm32_p1_threads": ["//toolchain/args/wasi/p1_threads:default_compile_flags"],
-        "//platforms/config:wasi_components": ["//toolchain/args/wasi/components:default_compile_flags"],
-        "//conditions:default": ["//toolchain/args/wasi/p1:default_compile_flags"],
+        "//platforms/config:wasi_wasm32_p1_threads": ["//toolchain/args/wasi/p1_threads:thread_model"],
+        "//platforms/config:wasi_components": ["//toolchain/args/wasi/components:thread_model"],
+        "//conditions:default": ["//toolchain/args/wasi/p1:thread_model"],
+    }),
+    target_compatible_with = ["@platforms//os:wasi"],
+)
+
+cc_args_list(
+    name = "target_features",
+    args = select({
+        "//platforms/config:wasi_wasm32_p1_threads": ["//toolchain/args/wasi/p1_threads:target_features"],
+        "//conditions:default": [],
     }),
     target_compatible_with = ["@platforms//os:wasi"],
 )
