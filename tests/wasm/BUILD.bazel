@@ -7,6 +7,72 @@ load("@rules_platform//platform_data:defs.bzl", "platform_data")
 
 gazelle(name = "gazelle")
 
+cc_library(
+    name = "thin_lto_archive",
+    srcs = [
+        "thin_lto_unused.c",
+        "thin_lto_used.c",
+    ],
+    features = ["thin_lto"],
+    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:wasi"],
+)
+
+cc_library(
+    name = "thin_lto_native",
+    srcs = ["thin_lto_native.c"],
+    features = ["-thin_lto"],
+    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:wasi"],
+)
+
+cc_binary(
+    name = "wasi_thin_lto",
+    srcs = ["thin_lto_main.c"],
+    features = ["thin_lto"],
+    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:wasi"],
+    deps = [
+        "thin_lto_archive",
+        "thin_lto_native",
+    ],
+)
+
+[
+    platform_data(
+        name = "wasi_thin_lto_" + variant,
+        platform = "@llvm//platforms:wasi_wasm32_" + variant,
+        target = "wasi_thin_lto",
+    )
+    for variant in [
+        "p1",
+        "p2",
+        "p3",
+    ]
+]
+
+exec_test(
+    go_test,
+    name = "wasi_thin_lto_test",
+    srcs = ["wasi_thin_lto_test.go"],
+    inner_data = ["wasi_thin_lto_" + variant for variant in [
+        "p1",
+        "p2",
+        "p3",
+    ]] + ["//runtimes/wasi/tools:wasm_tools"],
+    x_defs = {
+        "thinLTOP1": "$(rlocationpath wasi_thin_lto_p1)",
+        "thinLTOP2": "$(rlocationpath wasi_thin_lto_p2)",
+        "thinLTOP3": "$(rlocationpath wasi_thin_lto_p3)",
+        "thinLTOValidator": "$(rlocationpath //runtimes/wasi/tools:wasm_tools)",
+    },
+    deps = [
+        "@com_github_tetratelabs_wazero//:wazero",
+        "@com_github_tetratelabs_wazero//imports/wasi_snapshot_preview1",
+        "@rules_go//go/runfiles",
+    ],
+)
+
 cc_binary(
     name = "wasm",
     srcs = ["wasm.c"],
