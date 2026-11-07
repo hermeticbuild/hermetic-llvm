@@ -1,0 +1,16 @@
+# TODO(https://github.com/tamird/sty/blob/d400a0080/docs/type-interfaces.md#selectors):
+# Use a native selector type once Bazel can express the first branch's list kind.
+# Bazel groups lists and tuples into the same selector concatenation kind.
+type _SelectedDynamicDeps = select[Sequence[str | Label] | None, Literal["list"]]
+type _DynamicDeps = Sequence[str | Label] | _SelectedDynamicDeps
+
+# TODO(https://github.com/bazelbuild/bazel/pull/30373): Use source type parameters when every
+# supported Bazel release accepts them (8.8+ on the 8.x line).
+# TODO(https://github.com/bazelbuild/bazel/issues/32343): Describe forwarded keyword arguments in source.
+class _InnerBinary[**P](Protocol):
+    def __call__(self, *, name: str, dynamic_deps: _SelectedDynamicDeps, **kwargs: KeywordArgs[P]) -> None: ...
+
+class _SanitizerBinary[**P](Protocol):
+    def __call__(self, name: str, dynamic_deps: _DynamicDeps | None = ..., **kwargs: KeywordArgs[P]) -> None: ...
+
+def _with_macos_sanitizer_runtime[**P](inner_binary: _InnerBinary[P], macos_runtime: str) -> _SanitizerBinary[P]: ...

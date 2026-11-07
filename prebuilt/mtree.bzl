@@ -1,4 +1,5 @@
 def _mtree_impl(ctx):
+    # type: (...) -> list[DefaultInfo]
     lines = []
 
     for tgt, dst in ctx.attr.files.items():
