@@ -1,5 +1,10 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 
+exports_files(
+    ["llvm_project_archive.bzl"],
+    visibility = ["//tests/llvm_project_archive:__pkg__"],
+)
+
 bzl_library(
     name = "llvm_project_common",
     srcs = ["llvm_project_common.bzl"],

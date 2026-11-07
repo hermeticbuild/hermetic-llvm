@@ -1,0 +1,8 @@
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+
+sh_test(
+    name = "watch_once_test",
+    srcs = ["watch_once_test.sh"],
+    args = ["$(rootpath //private:llvm_project_archive.bzl)"],
+    data = ["//private:llvm_project_archive.bzl"],
+)
