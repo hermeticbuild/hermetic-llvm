@@ -4,7 +4,6 @@ bzl_library(
     name = "llvm_project_common",
     srcs = ["llvm_project_common.bzl"],
     visibility = ["//:__subpackages__"],
-    deps = ["//3rd_party/llvm-project/x.x/compiler-rt:lse_variants"],
 )
 
 bzl_library(
@@ -14,6 +13,7 @@ bzl_library(
     deps = [
         ":llvm_project_common",
         "//:http_bsdtar_archive",
+        "//3rd_party/llvm-project/x.x/compiler-rt:lse_variants",
         "@bazel_lib//lib:repo_utils",
         "@bazel_skylib//lib:paths",
         "@bazel_tools//tools/build_defs/repo:cache.bzl",

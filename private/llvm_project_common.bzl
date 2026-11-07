@@ -1,5 +1,3 @@
-load("//3rd_party/llvm-project/x.x/compiler-rt:lse_variants.bzl", "LSE_ATOMIC_VARIANTS")
-
 LLVM_PROJECT_OVERLAY = "utils/bazel/llvm-project-overlay"
 
 _MAX_OVERLAY_DIRECTORIES = 1000000
@@ -86,24 +84,8 @@ def _expose_third_party_build_files(rctx):
     rctx.delete("utils/bazel/third_party_build/BUILD.bazel")
     rctx.file("utils/bazel/third_party_build/BUILD.bazel", """exports_files(["pfm.BUILD"])\n""", executable = False)
 
-def _write_lse_atomic_sources(rctx):
-    # One copy of lse.S per atomic helper, so the objects get distinct names
-    # without a copy or symlink action each.
-    lse = rctx.path("compiler-rt/lib/builtins/aarch64/lse.S")
-    if not lse.exists:
-        return
-    content = rctx.read(lse, watch = "no")
-    for pat, size, model in LSE_ATOMIC_VARIANTS:
-        rctx.file(
-            "compiler-rt/lib/builtins/aarch64/lse_{}_{}_{}.S".format(pat, size, model),
-            content,
-            executable = False,
-            legacy_utf8 = False,
-        )
-
 def write_llvm_project_files(rctx):
     _expose_third_party_build_files(rctx)
-    _write_lse_atomic_sources(rctx)
     rctx.file("BUILD.bazel", """\
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 
