@@ -1,10 +1,18 @@
+load("@llvm//toolchain/runtimes:with_cfg_runtimes_common.bzl", "RUNTIME_RESET_FEATURES")
 load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "CC_TOOLCHAIN_TYPE", "find_cc_toolchain", "use_cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 
-#TODO(cerisier): use a single shared transition
-bootstrap_transition = transition(
-    implementation = lambda settings, attr: {
+def _bootstrap_transition_impl(settings, _attr):
+    features = settings["//command_line_option:features"]
+
+    # Append the reset the same way with_cfg's extend does, so stage0 objects
+    # share a configuration with the other stage0 runtimes.
+    if features[-len(RUNTIME_RESET_FEATURES):] != RUNTIME_RESET_FEATURES:
+        features = features + RUNTIME_RESET_FEATURES
+
+    return {
+        "//command_line_option:features": features,
         # we are compiling runtimes without any kind of other dependencies
         "//toolchain:runtime_stage": "stage0",
         # Stage0 objects (crtbegin/crtend) are linked into every binary and
@@ -49,9 +57,13 @@ bootstrap_transition = transition(
         "//config:host_xray": False,
         "//config:host_fuzzer": False,
         "//config:host_profile": False,
-    },
-    inputs = [],
+    }
+
+bootstrap_transition = transition(
+    implementation = _bootstrap_transition_impl,
+    inputs = ["//command_line_option:features"],
     outputs = [
+        "//command_line_option:features",
         "//toolchain:runtime_stage",
         "//command_line_option:copt",
         "//command_line_option:cxxopt",
