@@ -133,14 +133,49 @@ def _extract_source_and_overlay(rctx, archive):
         overlay_prefix.count("/") + 1,
     )
 
-def _copy_files(rctx):
+# Patches and overlay files under this tree are read as plain paths and the
+# tree is watched once. A path() call per label records one file input each,
+# and Bazel checks those one at a time against the repo contents cache.
+_LLVM_PROJECT_INPUTS = Label("//3rd_party/llvm-project:BUILD.bazel")
+
+def _watch_llvm_project_inputs(rctx):
+    inputs = rctx.path(_LLVM_PROJECT_INPUTS).dirname
+    rctx.watch_tree(inputs)
+    return inputs.dirname.dirname
+
+def _input_path(rctx, module_root, label):
+    if label.repo_name == _LLVM_PROJECT_INPUTS.repo_name and (label.package + "/").startswith(_LLVM_PROJECT_INPUTS.package + "/"):
+        return module_root.get_child(label.package, label.name)
+    return rctx.path(label)
+
+def _native_patch_strip(rctx):
+    attr = rctx.attr
+    if attr.patch_tool or attr.patch_cmds or attr.patch_cmds_win or attr.remote_patches or attr.remote_module_file_urls:
+        return None
+    args = ["-p%s" % attr.patch_strip] + attr.patch_args
+    for arg in args:
+        if not arg.startswith("-p"):
+            return None
+    return int(args[-1][2:])
+
+def _patch(rctx, module_root):
+    strip = _native_patch_strip(rctx)
+    if strip == None:
+        return patch(rctx)
+    if rctx.attr.patches:
+        rctx.report_progress("Patching repository")
+    for label in rctx.attr.patches:
+        rctx.patch(_input_path(rctx, module_root, label), strip, watch_patch = "no")
+    return {}
+
+def _copy_files(rctx, module_root):
     files = dict(rctx.attr.overlay_files)
     files.update(rctx.attr.files)
     for path, label in files.items():
-        source = rctx.path(label)
+        source = _input_path(rctx, module_root, label)
         if not source.exists:
             fail("Input {} does not exist".format(label))
-        rctx.file(path, rctx.read(source), executable = False)
+        rctx.file(path, rctx.read(source, watch = "no"), executable = False)
 
 def _update_integrity_attrs(rctx, archive_info, remote_files_info, remote_patches_info):
     overrides = {}
@@ -178,8 +213,9 @@ def _llvm_project_archive_impl(rctx):
     rctx.delete(archive)
 
     remote_files_info = download_remote_files(rctx)
-    remote_patches_info = patch(rctx)
-    _copy_files(rctx)
+    module_root = _watch_llvm_project_inputs(rctx)
+    remote_patches_info = _patch(rctx, module_root)
+    _copy_files(rctx, module_root)
     write_llvm_project_files(rctx)
 
     return _update_integrity_attrs(rctx, archive_info, remote_files_info, remote_patches_info)
