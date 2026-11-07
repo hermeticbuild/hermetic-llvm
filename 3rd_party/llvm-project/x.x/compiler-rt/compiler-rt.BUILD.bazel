@@ -772,6 +772,10 @@ cc_library(
         "//conditions:default": [],
     }),
     deps = select({
+        # Clang only defaults to outline atomics on Linux-like targets, so
+        # nothing calls the __aarch64_* helpers on macOS or Windows.
+        "@llvm//platforms/config:macos_aarch64": [],
+        "@llvm//platforms/config:windows_aarch64": [],
         "@platforms//cpu:aarch64": [
             ":builtins_aarch64_atomic",
         ],
