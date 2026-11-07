@@ -5,6 +5,7 @@ load("@bazel_skylib//rules/directory:directory.bzl", "directory")
 load("@bazel_skylib//rules/directory:subdirectory.bzl", "subdirectory")
 load("@llvm//:sh_script.bzl", "sh_script")
 load("@llvm//3rd_party/llvm-project/x.x/compiler-rt:filter_builtin_sources.bzl", "filter_builtin_sources")
+load("@llvm//3rd_party/llvm-project/x.x/compiler-rt:lse_variants.bzl", "LSE_ATOMIC_VARIANTS")
 load("@llvm//3rd_party/llvm-project/x.x/compiler-rt:targets.bzl", "atomic_helper_cc_library")
 load(
     "@llvm//3rd_party/llvm-project/x.x/compiler-rt:weak_symbols.bzl",
@@ -512,29 +513,7 @@ builtins_aarch64_atomic_deps = [
         model = model,
         pat = pat,
     )
-    for pat in [
-        "cas",
-        "swp",
-        "ldadd",
-        "ldclr",
-        "ldeor",
-        "ldset",
-    ]
-    for size in [
-        1,
-        2,
-        4,
-        8,
-        16,
-    ]
-    for model in [
-        1,
-        2,
-        3,
-        4,
-        5,
-    ]
-    if pat == "cas" or size != 16
+    for pat, size, model in LSE_ATOMIC_VARIANTS
 ]
 
 cc_library(

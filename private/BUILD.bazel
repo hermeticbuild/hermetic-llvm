@@ -4,6 +4,7 @@ bzl_library(
     name = "llvm_project_common",
     srcs = ["llvm_project_common.bzl"],
     visibility = ["//:__subpackages__"],
+    deps = ["//3rd_party/llvm-project/x.x/compiler-rt:lse_variants"],
 )
 
 bzl_library(
