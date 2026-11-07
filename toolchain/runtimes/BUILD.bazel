@@ -324,6 +324,7 @@ bzl_library(
     srcs = ["cc_stage0_object.bzl"],
     visibility = ["//visibility:public"],
     deps = [
+        "@llvm//toolchain/runtimes:with_cfg_runtimes_common",
         "@rules_cc//cc:action_names_bzl",
         "@rules_cc//cc:find_cc_toolchain_bzl",
         "@rules_cc//cc/common",
