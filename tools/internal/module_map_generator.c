@@ -11,7 +11,6 @@
 // directory.
 
 #include <errno.h>
-#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,53 +22,33 @@
 #endif
 
 #if defined(_WIN32)
-static wchar_t *utf8_to_wide(const char *value) {
-  // UTF-16 never needs more code units than UTF-8 needs bytes.
-  size_t capacity = strlen(value) + 1;
-  if (capacity > INT_MAX) {
-    errno = ENAMETOOLONG;
-    return NULL;
-  }
-  wchar_t *wide = malloc(capacity * sizeof(wchar_t));
-  if (wide == NULL) {
-    errno = ENOMEM;
-    return NULL;
-  }
-  if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, value, -1, wide,
-                          (int)capacity) == 0) {
-    free(wide);
-    errno = EINVAL;
-    return NULL;
-  }
-  return wide;
-}
+// The most UTF-16 code units in a Windows path, including the terminator.
+#define PATH_CAPACITY 32768
 
 // Windows rejects paths of MAX_PATH (260) or more characters unless they are
 // absolute and start with \\?\, and a header deep in a Bazel output directory
 // can exceed that limit. The prefix also turns off Windows' normalization of
 // separators and dot segments, so normalize the path first.
-static wchar_t *extended_length_path(const char *path) {
-  wchar_t *wide = utf8_to_wide(path);
-  if (wide == NULL) {
+//
+// Returns a static buffer, which the next call overwrites. The buffers are
+// sized for the longest Windows path, so each step needs only one call.
+static const wchar_t *extended_length_path(const char *path) {
+  static wchar_t wide[PATH_CAPACITY];
+  static wchar_t full[PATH_CAPACITY];
+  static wchar_t extended[PATH_CAPACITY];
+
+  if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path, -1, wide,
+                          PATH_CAPACITY) == 0) {
+    errno = GetLastError() == ERROR_INSUFFICIENT_BUFFER ? ENAMETOOLONG : EINVAL;
     return NULL;
   }
-  DWORD full_length = GetFullPathNameW(wide, 0, NULL, NULL);
+  DWORD full_length = GetFullPathNameW(wide, PATH_CAPACITY, full, NULL);
   if (full_length == 0) {
-    free(wide);
     errno = EINVAL;
     return NULL;
   }
-  wchar_t *full = malloc(full_length * sizeof(wchar_t));
-  if (full == NULL) {
-    free(wide);
-    errno = ENOMEM;
-    return NULL;
-  }
-  DWORD written = GetFullPathNameW(wide, full_length, full, NULL);
-  free(wide);
-  if (written == 0 || written >= full_length) {
-    free(full);
-    errno = EINVAL;
+  if (full_length >= PATH_CAPACITY) {
+    errno = ENAMETOOLONG;
     return NULL;
   }
 
@@ -80,29 +59,23 @@ static wchar_t *extended_length_path(const char *path) {
     prefix = L"\\\\?\\UNC\\";
     rest = full + 2;
   }
-  size_t extended_length = wcslen(prefix) + wcslen(rest) + 1;
-  wchar_t *extended = malloc(extended_length * sizeof(wchar_t));
-  if (extended == NULL) {
-    free(full);
-    errno = ENOMEM;
+  if (wcslen(prefix) + wcslen(rest) >= PATH_CAPACITY) {
+    errno = ENAMETOOLONG;
     return NULL;
   }
   wcscpy(extended, prefix);
   wcscat(extended, rest);
-  free(full);
   return extended;
 }
 
 static int file_size(const char *path, unsigned long long *size) {
-  wchar_t *extended = extended_length_path(path);
+  const wchar_t *extended = extended_length_path(path);
   if (extended == NULL) {
     return -1;
   }
   WIN32_FILE_ATTRIBUTE_DATA data;
-  BOOL found = GetFileAttributesExW(extended, GetFileExInfoStandard, &data);
-  DWORD error = GetLastError();
-  free(extended);
-  if (!found) {
+  if (!GetFileAttributesExW(extended, GetFileExInfoStandard, &data)) {
+    DWORD error = GetLastError();
     switch (error) {
     case ERROR_FILE_NOT_FOUND:
     case ERROR_PATH_NOT_FOUND:
