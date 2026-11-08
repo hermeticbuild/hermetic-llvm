@@ -120,7 +120,7 @@ static int file_size(const char *path, unsigned long long *size) {
   *size = ((unsigned long long)data.nFileSizeHigh << 32) | data.nFileSizeLow;
   return 0;
 }
-#else
+#else // !defined(_WIN32)
 static int file_size(const char *path, unsigned long long *size) {
   struct stat st;
   if (stat(path, &st) != 0) {
@@ -129,7 +129,7 @@ static int file_size(const char *path, unsigned long long *size) {
   *size = (unsigned long long)st.st_size;
   return 0;
 }
-#endif
+#endif // defined(_WIN32)
 
 int main(int argc, char **argv) {
   if (argc != 3 || argv[2][0] != '@') {
