@@ -11,6 +11,7 @@
 // directory.
 
 #include <errno.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,18 +24,23 @@
 
 #if defined(_WIN32)
 static wchar_t *utf8_to_wide(const char *value) {
-  int length =
-      MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, value, -1, NULL, 0);
-  if (length <= 0) {
-    errno = EINVAL;
+  // UTF-16 never needs more code units than UTF-8 needs bytes.
+  size_t capacity = strlen(value) + 1;
+  if (capacity > INT_MAX) {
+    errno = ENAMETOOLONG;
     return NULL;
   }
-  wchar_t *wide = malloc((size_t)length * sizeof(wchar_t));
+  wchar_t *wide = malloc(capacity * sizeof(wchar_t));
   if (wide == NULL) {
     errno = ENOMEM;
     return NULL;
   }
-  MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, value, -1, wide, length);
+  if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, value, -1, wide,
+                          (int)capacity) == 0) {
+    free(wide);
+    errno = EINVAL;
+    return NULL;
+  }
   return wide;
 }
 
