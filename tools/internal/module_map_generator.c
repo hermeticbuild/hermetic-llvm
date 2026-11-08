@@ -14,24 +14,116 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
 
 #if defined(_WIN32)
-#define stat_type struct __stat64
-#define stat_fn _stat64
+#include <windows.h>
 #else
-#define stat_type struct stat
-#define stat_fn stat
+#include <sys/stat.h>
 #endif
 
+#if defined(_WIN32)
+static wchar_t *utf8_to_wide(const char *value) {
+  int length =
+      MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, value, -1, NULL, 0);
+  if (length <= 0) {
+    errno = EINVAL;
+    return NULL;
+  }
+  wchar_t *wide = malloc((size_t)length * sizeof(wchar_t));
+  if (wide == NULL) {
+    errno = ENOMEM;
+    return NULL;
+  }
+  MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, value, -1, wide, length);
+  return wide;
+}
+
+// Windows rejects paths of MAX_PATH (260) or more characters unless they are
+// absolute and start with \\?\, and a header deep in a Bazel output directory
+// can exceed that limit. The prefix also turns off Windows' normalization of
+// separators and dot segments, so normalize the path first.
+static wchar_t *extended_length_path(const char *path) {
+  wchar_t *wide = utf8_to_wide(path);
+  if (wide == NULL) {
+    return NULL;
+  }
+  DWORD full_length = GetFullPathNameW(wide, 0, NULL, NULL);
+  if (full_length == 0) {
+    free(wide);
+    errno = EINVAL;
+    return NULL;
+  }
+  wchar_t *full = malloc(full_length * sizeof(wchar_t));
+  if (full == NULL) {
+    free(wide);
+    errno = ENOMEM;
+    return NULL;
+  }
+  DWORD written = GetFullPathNameW(wide, full_length, full, NULL);
+  free(wide);
+  if (written == 0 || written >= full_length) {
+    free(full);
+    errno = EINVAL;
+    return NULL;
+  }
+
+  const wchar_t *prefix = L"\\\\?\\";
+  const wchar_t *rest = full;
+  if (full[0] == L'\\' && full[1] == L'\\') {
+    // \\server\share\path becomes \\?\UNC\server\share\path.
+    prefix = L"\\\\?\\UNC\\";
+    rest = full + 2;
+  }
+  size_t extended_length = wcslen(prefix) + wcslen(rest) + 1;
+  wchar_t *extended = malloc(extended_length * sizeof(wchar_t));
+  if (extended == NULL) {
+    free(full);
+    errno = ENOMEM;
+    return NULL;
+  }
+  wcscpy(extended, prefix);
+  wcscat(extended, rest);
+  free(full);
+  return extended;
+}
+
 static int file_size(const char *path, unsigned long long *size) {
-  stat_type st;
-  if (stat_fn(path, &st) != 0) {
+  wchar_t *extended = extended_length_path(path);
+  if (extended == NULL) {
+    return -1;
+  }
+  WIN32_FILE_ATTRIBUTE_DATA data;
+  BOOL found = GetFileAttributesExW(extended, GetFileExInfoStandard, &data);
+  DWORD error = GetLastError();
+  free(extended);
+  if (!found) {
+    switch (error) {
+    case ERROR_FILE_NOT_FOUND:
+    case ERROR_PATH_NOT_FOUND:
+      errno = ENOENT;
+      break;
+    case ERROR_ACCESS_DENIED:
+      errno = EACCES;
+      break;
+    default:
+      errno = EIO;
+      break;
+    }
+    return -1;
+  }
+  *size = ((unsigned long long)data.nFileSizeHigh << 32) | data.nFileSizeLow;
+  return 0;
+}
+#else
+static int file_size(const char *path, unsigned long long *size) {
+  struct stat st;
+  if (stat(path, &st) != 0) {
     return -1;
   }
   *size = (unsigned long long)st.st_size;
   return 0;
 }
+#endif
 
 int main(int argc, char **argv) {
   if (argc != 3 || argv[2][0] != '@') {
