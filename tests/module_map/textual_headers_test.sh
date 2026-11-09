@@ -58,6 +58,17 @@ if [[ "$before" != "$after" ]]; then
   exit 1
 fi
 
+# Use a native symlink on Windows; MSYS must not silently copy the target.
+MSYS=winsymlinks:nativestrict ln -s nested.h linked.h
+printf '#include "linked.h"\n' > system.h
+printf 'linked.h\n' >> headers.params
+"$generator" crosstool.modulemap @headers.params
+if ! grep -qF 'textual header "linked.h" { size 24 }' crosstool.modulemap; then
+  cat crosstool.modulemap >&2
+  exit 1
+fi
+compile
+
 # The optimization must preserve layering checks on textual includes.
 printf '#include "undeclared.h"\n' >> client.h
 if compile > error.log 2>&1; then
@@ -77,9 +88,26 @@ while (( ${#PWD} + ${#long_header} < 300 )); do
 done
 mkdir -p "$(dirname "$long_header")"
 printf 'typedef int long_int;\n' > "$long_header"
-printf '%s\n' "$long_header" > long.params
+MSYS=winsymlinks:nativestrict ln -s "$long_header" long_link.h
+printf '%s\n' "$long_header" long_link.h > long.params
 "$generator" long.modulemap @long.params
 if ! grep -qF "textual header \"$long_header\" { size 22 }" long.modulemap; then
   cat long.modulemap >&2
+  exit 1
+fi
+if ! grep -qF 'textual header "long_link.h" { size 22 }' long.modulemap; then
+  cat long.modulemap >&2
+  exit 1
+fi
+
+# A dangling link must fail instead of declaring a header with the link's size.
+MSYS=winsymlinks:nativestrict ln -s missing.h dangling.h
+printf 'dangling.h\n' > dangling.params
+if "$generator" dangling.modulemap @dangling.params > error.log 2>&1; then
+  echo "Expected an error for a dangling header symlink" >&2
+  exit 1
+fi
+if ! grep -qF 'dangling.h:' error.log; then
+  cat error.log >&2
   exit 1
 fi

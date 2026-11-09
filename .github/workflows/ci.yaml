@@ -214,6 +214,15 @@ jobs:
               //:cs_fdo_optimize_test
           fi
 
+      # Run on the Windows host: the CI remote executor is Linux and would
+      # not exercise the generator's Windows path and symlink handling.
+      - name: Test module map generation on Windows
+        if: matrix.folder == 'e2e/rules_cc'
+        env:
+          USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
+        shell: bash
+        run: bazel --bazelrc=.bazelrc test //tests/module_map:textual_headers_test
+
   # macOS: smoke build (//:main_default) plus the supported sanitizer e2e tests.
   test_macos:
     strategy:
