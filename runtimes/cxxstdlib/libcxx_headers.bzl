@@ -1,4 +1,10 @@
-"""Partition libc++ headers for explicit Clang header modules."""
+"""Partition libc++ headers for explicit Clang header modules.
+
+Callers materialize these lists as separate public/detail header directories.
+The include paths in //toolchain/args use both for normal compilation, even
+without modules, so includes resolve to the same public header artifacts that
+//toolchain/cc_runtimes:libcxx declares in its module map.
+"""
 
 def split_libcxx_headers(headers, prefix):
     """Returns public and textual header lists, preserving their input order.
