@@ -68,6 +68,22 @@ static const wchar_t *extended_length_path(const char *path) {
   return extended;
 }
 
+static int file_size_error(DWORD error) {
+  switch (error) {
+  case ERROR_FILE_NOT_FOUND:
+  case ERROR_PATH_NOT_FOUND:
+    errno = ENOENT;
+    break;
+  case ERROR_ACCESS_DENIED:
+    errno = EACCES;
+    break;
+  default:
+    errno = EIO;
+    break;
+  }
+  return -1;
+}
+
 static int file_size(const char *path, unsigned long long *size) {
   const wchar_t *extended = extended_length_path(path);
   if (extended == NULL) {
@@ -75,20 +91,27 @@ static int file_size(const char *path, unsigned long long *size) {
   }
   WIN32_FILE_ATTRIBUTE_DATA data;
   if (!GetFileAttributesExW(extended, GetFileExInfoStandard, &data)) {
-    DWORD error = GetLastError();
-    switch (error) {
-    case ERROR_FILE_NOT_FOUND:
-    case ERROR_PATH_NOT_FOUND:
-      errno = ENOENT;
-      break;
-    case ERROR_ACCESS_DENIED:
-      errno = EACCES;
-      break;
-    default:
-      errno = EIO;
-      break;
+    return file_size_error(GetLastError());
+  }
+  if (data.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
+    // Attribute queries describe the link itself. Open without
+    // FILE_FLAG_OPEN_REPARSE_POINT to read the target's size, as stat does.
+    HANDLE file =
+        CreateFileW(extended, FILE_READ_ATTRIBUTES,
+                    FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                    NULL, OPEN_EXISTING, 0, NULL);
+    if (file == INVALID_HANDLE_VALUE) {
+      return file_size_error(GetLastError());
     }
-    return -1;
+    LARGE_INTEGER target_size;
+    if (!GetFileSizeEx(file, &target_size)) {
+      DWORD error = GetLastError();
+      CloseHandle(file);
+      return file_size_error(error);
+    }
+    CloseHandle(file);
+    *size = (unsigned long long)target_size.QuadPart;
+    return 0;
   }
   *size = ((unsigned long long)data.nFileSizeHigh << 32) | data.nFileSizeLow;
   return 0;
