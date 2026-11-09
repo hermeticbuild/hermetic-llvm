@@ -186,11 +186,11 @@ cc_args(
     },
 )
 
-# The public/textual split is defined in //runtimes/cxxstdlib:libcxx_headers.bzl.
-# Normal compiles also use these directories, even without header modules:
-# includes must resolve to the same public header artifacts declared in
-# //toolchain/cc_runtimes:libcxx's module map. Separate directories let that
-# target select only public module entry headers.
+# //runtimes/cxxstdlib:libcxx_headers.bzl partitions the headers so
+# //toolchain/cc_runtimes:libcxx can use the public directory as hdrs.
+# Normal compilation searches both directories, including implementation
+# headers and C wrappers. We use this layout even without modules to avoid
+# maintaining separate include paths for module and textual builds.
 cc_args(
     name = "split_cxxstdlib_headers_include_search_paths",
     actions = _CXX_COMPILE_ACTIONS,
