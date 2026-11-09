@@ -23,6 +23,27 @@ cc_binary(
 
 scope_probe(name = "exec_scope")
 
+# Module consumption must not reintroduce the default libc++ headers.
+cc_binary(
+    name = "module_binary",
+    srcs = ["main.cc"],
+    defines = select({
+        "//config:nostdincxx_enabled": ["EXPECT_NO_CXX_HEADERS"],
+        "//conditions:default": [],
+    }),
+    features = ["use_header_modules"],
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+    deps = ["explicit_runtime"],
+)
+
+headers_only(
+    name = "header_modules_without_stdlib",
+    srcs = ["module_binary"],
+)
+
 stdlib_contract(name = "contract")
 
 defaults(

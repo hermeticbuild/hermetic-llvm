@@ -26,7 +26,11 @@ cc_runtimes_library(
 
 cc_runtimes_toolchain(
     name = "runtimes",
-    runtimes = [":libcxx"],
+    # The implicit module must follow the default C++ header policy.
+    runtimes = select({
+        "//config:nostdincxx_enabled": [],
+        "//conditions:default": [":libcxx"],
+    }),
 )
 
 bzl_library(
