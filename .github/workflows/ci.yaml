@@ -27,7 +27,7 @@ jobs:
       matrix:
         # only test on linux for now, macos is not ready.
         os: [ubuntu-latest, ubuntu-24.04-arm]
-        bazel_version: [8.x, last_rc]
+        bazel_version: [8.x, 9.x]
         folder:
           - "e2e/rules_cc"
           - "e2e/rules_foreign_cc"
@@ -38,9 +38,17 @@ jobs:
           - "examples/custom_targets"
         include:
           # Path mapping requires Bazel 9+.
-          - bazel_version: last_rc
+          - bazel_version: 9.x
             folder: "e2e/rules_cc"
             extra_flags: "--experimental_output_paths=strip --config=cpp_path_mapping"
+          # Keep prerelease coverage focused on Linux x86_64.
+          - os: ubuntu-latest
+            bazel_version: last_rc
+            folder: "e2e/rules_cc"
+            extra_flags: "--experimental_output_paths=strip --config=cpp_path_mapping"
+          - os: ubuntu-latest
+            bazel_version: last_rc
+            folder: "e2e/cross_compilation"
     runs-on: ${{ matrix.os }}
     environment: ${{ github.ref == 'refs/heads/main' && 'ci' || '' }}
 
@@ -92,7 +100,7 @@ jobs:
           # `bazel test //...` excludes them. Exercise both MSVC target
           # architectures in the existing cross-compilation jobs without
           # adding a dedicated lane or executing the resulting PE files.
-          if [[ "${{ matrix.folder }}" == "e2e/cross_compilation" && "${{ matrix.bazel_version }}" == "last_rc" ]]; then
+          if [[ "${{ matrix.folder }}" == "e2e/cross_compilation" && "${{ matrix.bazel_version }}" != "8.x" ]]; then
             bazel \
               --bazelrc=$GITHUB_WORKSPACE/.github/workflows/ci.bazelrc \
               --bazelrc=.bazelrc \
@@ -113,7 +121,7 @@ jobs:
       # The tests above opt C++ actions into path mapping. Without that opt-in,
       # the toolchain module map must keep the paths the compiles use.
       - name: bazel build //... with path mapping, C++ actions not opted in
-        if: matrix.folder == 'e2e/rules_cc' && matrix.bazel_version == 'last_rc'
+        if: matrix.folder == 'e2e/rules_cc' && matrix.bazel_version != '8.x'
         env:
           USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
         working-directory: ${{ matrix.folder }}
@@ -127,7 +135,7 @@ jobs:
             //...
 
       - name: bazel coverage e2e (lcov)
-        if: matrix.folder == 'e2e/rules_cc' && matrix.bazel_version == 'last_rc'
+        if: matrix.folder == 'e2e/rules_cc' && matrix.bazel_version != '8.x'
         env:
           USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
         working-directory: ${{ matrix.folder }}
@@ -155,7 +163,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-latest, windows-11-arm]
-        bazel_version: [latest]
+        bazel_version: [9.x]
         folder:
           - "e2e/rules_cc"
           # - "e2e/rules_foreign_cc" TODO: Current tests only support linux
@@ -220,7 +228,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-15, macos-15-intel]
-        bazel_version: [last_rc]
+        bazel_version: [9.x]
         folder:
           - "e2e/rules_cc"
           # - "e2e/rules_foreign_cc" TODO: Current tests only support linux
@@ -297,7 +305,7 @@ jobs:
 
       - name: Test with host macOS SDK
         env:
-          USE_BAZEL_VERSION: last_rc
+          USE_BAZEL_VERSION: 9.x
         working-directory: e2e/rules_cc
         shell: bash
         run: |
@@ -378,7 +386,10 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, ubuntu-24.04-arm]
-        bazel_version: [8.x, last_rc]
+        bazel_version: [8.x, 9.x]
+        include:
+          - os: ubuntu-latest
+            bazel_version: last_rc
     runs-on: ${{ matrix.os }}
     environment: ${{ github.ref == 'refs/heads/main' && 'ci' || '' }}
     name: Test //tests/... with Bazel ${{ matrix.bazel_version }} on ${{ matrix.os }}
