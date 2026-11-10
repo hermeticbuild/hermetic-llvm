@@ -26,3 +26,8 @@ bzl_library(
     name = "libc_versions",
     srcs = ["libc_versions.bzl"],
 )
+
+constraint_value(
+    name = "none",
+    constraint_setting = "variant",
+)
