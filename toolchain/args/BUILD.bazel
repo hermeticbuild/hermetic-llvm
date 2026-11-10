@@ -292,7 +292,7 @@ cc_args_list(
 )
 
 cc_args(
-    name = "fuse_ld",
+    name = "fuse_lld",
     actions = [
         "@rules_cc//cc/toolchains/actions:link_actions",
     ],
@@ -307,6 +307,11 @@ cc_args(
             # "--ld-path={lld_path}",
         ],
     }),
+)
+
+alias(
+    name = "fuse_ld",
+    actual = "fuse_lld",
 )
 
 cc_args(
@@ -352,7 +357,7 @@ cc_args(
 #######
 
 cc_args(
-    name = "ubsan_compiler_flags",
+    name = "_ubsan_compiler_flags",
     actions = [
         "@rules_cc//cc/toolchains/actions:compile_actions",
     ],
@@ -365,19 +370,37 @@ cc_args(
     format = {
         "ubsan_ignore": "//sanitizers:ubsan_ignore",
     },
+    visibility = ["//visibility:private"],
+)
+
+cc_args_list(
+    name = "ubsan_compiler_flags",
+    args = [":_ubsan_compiler_flags"] + select({
+        "@platforms//os:wasi": ["//toolchain/args/wasi:ubsan_compiler_flags"],
+        "//conditions:default": [],
+    }),
 )
 
 # Note that sanitizers must use `cc_unsanitized_library` on third-party deps
 # if they end up depending on an exec-configure binary, as linking that binary can fail
 # since it was compiled with sanitizer support but linked without it.
 cc_args(
-    name = "ubsan_linker_flags",
+    name = "_ubsan_linker_flags",
     actions = [
         "@rules_cc//cc/toolchains/actions:link_actions",
     ],
     args = [
         "-fsanitize=undefined",
     ],
+    visibility = ["//visibility:private"],
+)
+
+cc_args_list(
+    name = "ubsan_linker_flags",
+    args = [":_ubsan_linker_flags"] + select({
+        "@platforms//os:wasi": ["//toolchain/args/wasi:ubsan_linker_flags"],
+        "//conditions:default": [],
+    }),
 )
 
 cc_args_list(
@@ -1212,5 +1235,8 @@ bzl_library(
 bzl_library(
     name = "llvm_target_triple",
     srcs = ["llvm_target_triple.bzl"],
-    deps = ["//constraints/windows/abi:abis"],
+    deps = [
+        "//constraints/wasi:variants",
+        "//constraints/windows/abi:abis",
+    ],
 )

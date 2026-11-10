@@ -1,0 +1,53 @@
+load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
+load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
+
+package(default_visibility = ["//toolchain/args/wasi:__pkg__"])
+
+_COMPONENT_COMPATIBILITY = select({
+    "//platforms/config:wasi_components": [],
+    "//conditions:default": ["@platforms//:incompatible"],
+})
+
+cc_args(
+    name = "thread_model",
+    actions = ["@rules_cc//cc/toolchains/actions:source_compile_actions"],
+    args = [
+        "-mthread-model",
+        "single",
+    ],
+    target_compatible_with = _COMPONENT_COMPATIBILITY,
+)
+
+cc_args(
+    name = "component_linker",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:cpp_link_executable",
+        "@rules_cc//cc/toolchains/actions:cpp_link_dynamic_library",
+        "@rules_cc//cc/toolchains/actions:cpp_link_nodeps_dynamic_library",
+        "@rules_cc//cc/toolchains/actions:objc_executable",
+    ],
+    # -fuse-ld=lld would force wasm-ld for WASIp2 and WASIp3. Keep Clang's
+    # default component linker. Its executable is bound by the selected tool map.
+    args = ["-fuse-ld=ld"],
+    target_compatible_with = _COMPONENT_COMPATIBILITY,
+)
+
+cc_args(
+    name = "indexing_linker",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:lto_index_for_executable",
+        "@rules_cc//cc/toolchains/actions:lto_index_for_dynamic_library",
+        "@rules_cc//cc/toolchains/actions:lto_index_for_nodeps_dynamic_library",
+    ],
+    args = ["-fuse-ld=lld"],
+    target_compatible_with = _COMPONENT_COMPATIBILITY,
+)
+
+cc_args_list(
+    name = "linker",
+    args = [
+        "component_linker",
+        "indexing_linker",
+    ],
+    target_compatible_with = _COMPONENT_COMPATIBILITY,
+)

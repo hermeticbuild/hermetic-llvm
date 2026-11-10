@@ -4,6 +4,13 @@ load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
 # gazelle:exclude cc_unsanitized_library.bzl
 
 cc_args_list(
+    name = "linker",
+    # Intermediate runtime links use LLD even for component targets. Component
+    # assembly belongs to the complete application toolchain.
+    args = ["//toolchain/args:fuse_lld"],
+)
+
+cc_args_list(
     name = "hermetic_link_flags",
     args = select({
         # The generic -nostdlib++ policy says that Bazel's runtime attributes
@@ -68,6 +75,7 @@ cc_args_list(
         # Windows uses the complete :windows_toolchain_args composition below.
         "@platforms//os:windows": [],
         "@platforms//os:none": [],
+        "@platforms//os:wasi": ["//toolchain:wasi_hosted_c_toolchain_args"],
     }),
     visibility = ["//toolchain:__subpackages__"],
 )
@@ -82,6 +90,7 @@ cc_args_list(
         # Windows uses the complete :windows_toolchain_args composition below.
         "@platforms//os:windows": [],
         "@platforms//os:none": [],
+        "@platforms//os:wasi": [],
     }),
     visibility = ["//toolchain:__subpackages__"],
 )
@@ -112,12 +121,15 @@ cc_args_list(
         "//toolchain:hermetic_compile_flags",
         ":hermetic_link_flags",
 
-        # Keep external -isystem directories before the toolchain C
-        # -isystem directories in :staged_platform_specific_args.
+        # Keep external -isystem directories before the toolchain C headers.
         "@rules_cc//cc/toolchains/args/external_include_paths:external_include_paths",
 
         # TODO(cerisier): Explode this into specific args instead
         ":staged_platform_specific_args",
+        # Runtime compilation explicitly selects its thread and target feature
+        # policy. Complete applications continue to rely on the target triple.
+        "//toolchain:thread_model",
+        "//toolchain:target_features",
 
         # Optional sanitizers
         "//toolchain/runtimes/args:ubsan_flags",
@@ -135,7 +147,7 @@ cc_args_list(
 
         # Common default link flags.
         "//toolchain:deterministic_link_flags",
-        "//toolchain/args:fuse_ld",
+        ":linker",
         "//toolchain/args:lto_plugin_target_flags",
         ":rtlib",
         ":default_link_flags",
@@ -196,7 +208,7 @@ cc_args_list(
 
         # Common default link flags.
         "//toolchain:deterministic_link_flags",
-        "//toolchain/args:fuse_ld",
+        ":linker",
         "//toolchain/args:lto_plugin_target_flags",
         ":rtlib",
         ":default_link_flags",

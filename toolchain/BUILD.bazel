@@ -135,6 +135,30 @@ config_setting(
 ]
 
 cc_args_list(
+    name = "linker",
+    args = select({
+        "@platforms//os:wasi": ["//toolchain/args/wasi:linker"],
+        "//conditions:default": ["//toolchain/args:fuse_lld"],
+    }),
+)
+
+cc_args_list(
+    name = "thread_model",
+    args = select({
+        "@platforms//os:wasi": ["//toolchain/args/wasi:thread_model"],
+        "//conditions:default": [],
+    }),
+)
+
+cc_args_list(
+    name = "target_features",
+    args = select({
+        "@platforms//os:wasi": ["//toolchain/args/wasi:target_features"],
+        "//conditions:default": [],
+    }),
+)
+
+cc_args_list(
     name = "default_link_flags",
     args = select({
         "@platforms//os:macos": [
@@ -147,6 +171,7 @@ cc_args_list(
         "@platforms//os:windows": ["//toolchain/args/windows:default_link_flags"],
         "@platforms//os:uefi": [],
         "@platforms//os:none": [],
+        "@platforms//os:wasi": [],
     }),
 )
 
@@ -160,6 +185,7 @@ cc_args_list(
         "@platforms//os:windows": ["//toolchain/args/windows:default_startfiles"],
         "@platforms//os:uefi": [],
         "@platforms//os:none": [],
+        "@platforms//os:wasi": ["//toolchain/args/wasi:default_startfiles"],
     }),
 )
 
@@ -190,6 +216,7 @@ cc_args_list(
             "//toolchain/args/linux:default_libs",
         ],
         "@platforms//os:windows": ["//toolchain/args/windows:default_libs"],
+        "@platforms//os:wasi": ["//toolchain/args/wasi:default_libs"],
         "//conditions:default": [],
     }),
 )
@@ -342,6 +369,11 @@ cc_args_list(
 )
 
 cc_args_list(
+    name = "wasi_hosted_c_toolchain_args",
+    args = ["//toolchain/args/wasi:libc_headers_include_search_paths"],
+)
+
+cc_args_list(
     name = "platform_specific_args",
     args = select({
         "@platforms//os:macos": [":macos_toolchain_args"],
@@ -349,6 +381,7 @@ cc_args_list(
         # Windows uses the complete :windows_toolchain_args composition below.
         "@platforms//os:windows": [],
         "@platforms//os:none": [],
+        "@platforms//os:wasi": ["wasi_hosted_c_toolchain_args"],
         "//conditions:default": [],
     }),
 )
@@ -391,7 +424,7 @@ cc_args_list(
 
         # Common default link flags.
         ":deterministic_link_flags",
-        "//toolchain/args:fuse_ld",
+        ":linker",
         "//toolchain/args:lto_plugin_target_flags",
     ] + [
         ":cxxstdlib_library_search_paths",
@@ -452,7 +485,7 @@ cc_args_list(
 
         # Common default link flags.
         ":deterministic_link_flags",
-        "//toolchain/args:fuse_ld",
+        ":linker",
         "//toolchain/args:lto_plugin_target_flags",
         ":cxxstdlib_library_search_paths",
         ":libunwind_library_search_paths",
@@ -502,7 +535,7 @@ cc_args_list(
         ":sysroot_flags",
         ":hermetic_compile_flags",
         "@rules_cc//cc/toolchains/args/external_include_paths:external_include_paths",
-        "//toolchain/args:fuse_ld",
+        ":linker",
         "//toolchain/args/uefi:default_link_flags",
         "//toolchain/args/uefi:hybrid_gnu_msvc",
         "//toolchain/args/uefi:nostdlib",

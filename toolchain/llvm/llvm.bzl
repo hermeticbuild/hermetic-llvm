@@ -3,12 +3,13 @@ load("@llvm//runtimes:module_map.bzl", "include_path", "module_map")
 load("@rules_cc//cc/toolchains:tool.bzl", "cc_tool")
 load("@rules_cc//cc/toolchains:tool_map.bzl", "cc_tool_map")
 load("//:directory.bzl", "headers_directory")
+load(":component_tools.bzl", "component_tools")
 
 _VALIDATE_STATIC_LIBRARY_TOOL = {
     "@rules_cc//cc/toolchains/actions:validate_static_library": ":static_library_validator",
 } if bazel_features.cc.supports_starlarkified_toolchains else {}
 
-def declare_llvm_targets(*, suffix = ""):
+def declare_llvm_targets(*, exec_os, exec_cpu, suffix = ""):
     """Declares the Bazel interface of one installed LLVM distribution.
 
     The bin/* tools and lib/clang/* resource headers below come from the same
@@ -141,6 +142,18 @@ def declare_llvm_targets(*, suffix = ""):
     COMPLETE_ONLY_TOOLS = {
         "@rules_cc//cc/toolchains/actions:cpp_header_parsing": ":header_parser",
     } | _VALIDATE_STATIC_LIBRARY_TOOL
+
+    component_tools(
+        name = "wasi_component_tools_for_runtime",
+        exec_os = exec_os,
+        exec_cpu = exec_cpu,
+        clang = "bin/clang++" + suffix,
+        wasm_ld = "bin/wasm-ld" + suffix,
+        base_tools = BASE_TOOLS | {
+            "@rules_cc//cc/toolchains/actions:ar_actions": ":llvm-ar",
+        },
+        complete_only_tools = COMPLETE_ONLY_TOOLS,
+    )
 
     cc_tool_map(
         name = "default_tools",
@@ -537,8 +550,16 @@ def declare_llvm_targets(*, suffix = ""):
         name = "wasm_target_headers",
         srcs = [
             ":builtin_resource_include_dir",
-            # TODO(zbarsky): We'll want to add wasi libc headers here.
         ],
+    )
+
+    include_path(
+        name = "wasi_target_headers",
+        srcs = [":builtin_resource_include_dir"] + select({
+            "@llvm//toolchain:runtimes_all": ["@llvm//runtimes/wasi:wasi_headers_include_search_directory"],
+            "@llvm//toolchain:runtimes_stage1_hosted": ["@llvm//runtimes/wasi:wasi_headers_include_search_directory"],
+            "//conditions:default": [],
+        }),
     )
 
     module_map(
@@ -549,6 +570,7 @@ def declare_llvm_targets(*, suffix = ""):
             "@platforms//os:windows": ":windows_target_headers",
             "@platforms//os:uefi": ":uefi_target_headers",
             "@platforms//os:none": ":wasm_target_headers",
+            "@platforms//os:wasi": ":wasi_target_headers",
         }),
         # The generator is built with the stage1_hosted toolchain, whose own
         # module map thus can't depend on it.

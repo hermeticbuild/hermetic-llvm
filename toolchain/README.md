@@ -77,6 +77,55 @@ runtime toolchains: its public `toolchain_args` selects complete generic or
 Windows runtime compositions, while concrete runtime compiler/linker semantics
 remain in argument implementation packages.
 
+### WASI semantic routing
+
+`//constraints/wasi:variant` selects the coherent WASI profile: `p1` (the
+default), `p1_threads`, `p2`, or `p3`. The setting covers both API generation
+and the threaded P1 profile; it is not an independent threading setting.
+
+The complete composition selects `//toolchain:linker` by target OS. WASI then
+selects ordinary LLD or `//toolchain/args/wasi/components:linker`; the generic
+argument package does not select WASI variants. Staged runtime compositions
+retain their own `linker` slot using LLD for intermediate links.
+
+`wasi_hosted_c_toolchain_args` composes WASI's
+`libc_headers_include_search_paths` implementation for complete applications and
+`stage1_hosted`, following the existing platform-specific hosted-C composition.
+There is no WASI-only global libc-header slot. Stage 0 builds wasi-libc with its
+own explicit header dependencies; it does not obtain them from the hosted group.
+Public WASI libc headers use Clang's internal system include category, after
+user system paths and compiler resource headers, before user `-idirafter`
+paths. This preserves compiler wrappers such as `limits.h` and their
+`include_next` lookup into libc. Explicit libc paths retain the existing
+behavior under `-nostdinc` and `-nostdlibinc`; those flags do not suppress them.
+
+`default_startfiles` owns CRT lookup and `default_libs` owns library lookup.
+WASI uses the shared `crt_search_directory` implementation and
+`//runtimes:crt_objects_directory` selection for its separate CRT directory.
+The library search directory contains archives only. Clang still selects the
+command or reactor startup object; CRT generation and component metadata remain
+owned by wasi-libc's build.
+
+The staged composition consumes `//toolchain:thread_model` and
+`//toolchain:target_features`. These select WASI profile implementations and are
+empty for other target OSes. Pthread mode and local-exec TLS remain part of the
+WASI thread-model implementation; `-matomics` belongs to target features.
+Complete applications retain their driver-selected behavior without these
+explicit runtime flags. Libc source-language requirements such as `-fdefer-ts`
+and their compiler-version restrictions belong to the libc build.
+
+The `components` package is a shared implementation for P2/P3, not another
+selectable ABI. Its linker tool map is selected in the target configuration,
+before the execution transition. The map binds `wasm-component-ld` to the same
+explicit execution OS/CPU as Clang and `wasm-ld`, for prebuilt and source-built
+toolchains. The selected link tool declares both executables and supplies
+`COMPILER_PATH`; the semantic argument group supplies `-fuse-ld=ld`. P1 and
+non-WASI tool maps do not acquire the component linker. The separate CRT metadata
+action uses `wasm-tools` through `run_binary.tool`, whose execution transition
+lets a `native_binary` select the executable for that action's OS/CPU.
+Other platforms retain their existing compositions while their remaining
+legacy semantic groups are normalized separately.
+
 TODO(cerisier): Support macOS specific flags (objc and frameworks). Still needed ?
 
 # Other Resources
