@@ -1,6 +1,22 @@
 load("@bazel_lib//lib:repo_utils.bzl", "repo_utils")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "get_auth")
 
+def _resolve_file_symlinks(rctx, root):
+    pending = [rctx.path(root)]
+    for _ in range(1000000):
+        if not pending:
+            break
+        for entry in pending.pop().readdir():
+            real = entry.realpath
+            if real != entry:
+                if real.is_dir:
+                    continue
+                content = rctx.read(real)
+                rctx.delete(entry)
+                rctx.file(entry, content)
+            elif entry.is_dir:
+                pending.append(entry)
+
 def _http_pkg_archive_impl(rctx):
     rctx.download(
         url = rctx.attr.urls,
@@ -33,6 +49,8 @@ def _http_pkg_archive_impl(rctx):
         fail("Failed to extract package: {}".format(res.stderr))
 
     rctx.delete(".downloaded.pkg")
+
+    _resolve_file_symlinks(rctx, rctx.attr.dst)
 
     for file, label in rctx.attr.files.items():
         rctx.file(file, rctx.read(label))
