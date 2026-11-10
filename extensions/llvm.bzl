@@ -15,6 +15,7 @@ _DEFAULT_SOURCE_PATCHES = [
     "//3rd_party/llvm-project/x.x/patches:lit_test_stub.patch",
     "//3rd_party/llvm-project/x.x/patches:lld-macho-thinlto-obj-path.patch",
     "//3rd_party/llvm-project/x.x/patches:llvm-bazel-msvc-trapping-math.patch",
+    "//3rd_party/llvm-project/x.x/patches:clang-modules-codegen-exclude-from-explicit-instantiation.patch",
 ]
 
 _BEFORE_23_SOURCE_PATCHES = [
@@ -99,13 +100,15 @@ _LLVM_PATCHES_BY_MAJOR = {
     22: _LLVM_22_SOURCE_PATCHES,
     23: _LLVM_23_SOURCE_PATCHES,
     # So that anyone can test with the next LLVM major easily.
-    # LLVM 24 includes arm64e.x1 support and the instrumentor template rule.
+    # LLVM 24 includes arm64e.x1 support, the instrumentor template rule and
+    # the fix for homing functions excluded from explicit instantiation.
     24: [
         patch
         for patch in _LLVM_23_SOURCE_PATCHES
         if patch not in (
             "//3rd_party/llvm-project/x.x/patches:llvm-macho-arm64e-x1.patch",
             "//3rd_party/llvm-project/23.x/patches:instrumentor-template.patch",
+            "//3rd_party/llvm-project/x.x/patches:clang-modules-codegen-exclude-from-explicit-instantiation.patch",
         )
     ],
 }
