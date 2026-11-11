@@ -178,7 +178,10 @@ bzl_library(
 """)
     rctx.file(
         "version.bzl",
-        "LLVM_VERSION = {}\n".format(repr(rctx.attr.llvm_version)),
+        "LLVM_VERSION = {}\nLLVM_VERSION_MAJOR = {}\n".format(
+            repr(rctx.attr.llvm_version),
+            repr(str(_parse_llvm_major(rctx.attr.llvm_version))),
+        ),
     )
     return rctx.repo_metadata(reproducible = True)
 

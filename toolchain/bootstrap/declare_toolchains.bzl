@@ -1,6 +1,6 @@
 load("@bazel_features//:features.bzl", "bazel_features")
 load("@bazel_skylib//rules/directory:subdirectory.bzl", "subdirectory")
-load("@llvm-project//:vars.bzl", "LLVM_VERSION_MAJOR")
+load("@llvm_version//:version.bzl", "LLVM_VERSION_MAJOR")
 load("@rules_cc//cc/toolchains:tool.bzl", "cc_tool")
 load("@rules_cc//cc/toolchains:tool_map.bzl", "cc_tool_map")
 load("//platforms:common.bzl", "MSVC_TARGET_BOOTSTRAP_SUPPORTED_EXECS", "SUPPORTED_TARGETS")

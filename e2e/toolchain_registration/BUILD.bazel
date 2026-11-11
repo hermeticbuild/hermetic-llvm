@@ -1,0 +1,13 @@
+load(":smoke.bzl", "smoke", "smoke_toolchain")
+
+toolchain_type(name = "toolchain_type")
+
+smoke_toolchain(name = "toolchain_impl")
+
+toolchain(
+    name = "toolchain",
+    toolchain = ":toolchain_impl",
+    toolchain_type = ":toolchain_type",
+)
+
+smoke(name = "smoke")
