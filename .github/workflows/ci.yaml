@@ -259,6 +259,22 @@ jobs:
             build \
             //:main_default
 
+      # macOS replaces the SDK's libc++ headers with hermetic copies, so the
+      # C++ standard library settings need coverage beyond the Linux lanes.
+      - name: bazel build C++ standard library settings contract
+        env:
+          USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
+        working-directory: ${{ matrix.folder }}
+        shell: bash
+        run: |
+          bazel \
+            --bazelrc=.bazelrc \
+            build \
+            @llvm//tests/cxxstdlib_settings:defaults \
+            @llvm//tests/cxxstdlib_settings:headers_only \
+            @llvm//tests/cxxstdlib_settings:libraries_only \
+            @llvm//tests/cxxstdlib_settings:both
+
       # ASan, UBSan and libFuzzer are fully supported on macOS: run their e2e
       # tests (they execute locally — no remote executor is configured for
       # macOS).
