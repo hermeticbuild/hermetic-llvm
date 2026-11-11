@@ -254,20 +254,17 @@ cc_args_list(
 
 # TODO(cerisier): this needs to differ per runtime (e.g libc++ still need crtbegin)
 cc_args(
-    name = "hermetic_link_flags",
+    name = "nostdlib",
     actions = [
         "@rules_cc//cc/toolchains/actions:link_actions",
     ],
-    args = select({
-        "//toolchain:runtimes_all": [],
-        "//toolchain:runtimes_stage1": [
-            "-nostdlib++",
-        ],
-        "//toolchain:runtimes_stage1_hosted": [
-            "-nostdlib++",
-        ],
-        "//toolchain:runtimes_none": [
-            "-nostdlib",
-        ],
-    }),
+    args = ["-nostdlib"],
+)
+
+cc_args(
+    name = "nostdlibxx",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    args = ["-nostdlib++"],
 )

@@ -6,6 +6,7 @@ load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
 load("//toolchain/bootstrap:declare_toolchains.bzl", declare_bootstrap_toolchains = "declare_toolchains")
 load(":bootstrap_stages.bzl", "BOOTSTRAP_STAGES")
 load(":declare_toolchains.bzl", "declare_toolchains")
+load(":stage_independent.bzl", "stage_independent_args_list")
 
 package(default_visibility = ["//toolchain:__subpackages__"])
 
@@ -338,18 +339,22 @@ cc_args_list(
 # TODO(cerisier): extract those into proper semantic args list.
 # TODO(zbarsky): This must match llvm/toolchains/llvm.bzl
 cc_args_list(
-    name = "macos_toolchain_args",
+    name = "macos_runtime_toolchain_args",
     args = [
         "//toolchain/args/macos:macos_minimum_os_flags",
         "//toolchain/args/macos:macos_default_framework_flags",
-    ] + select({
-        # Only expose the sanitizer interface headers when compiling user
-        # programs (runtime_stage=complete), not when building the compiler-rt
-        # runtimes themselves (stage0). Those already include compiler-rt/include
-        # directly.
-        ":runtimes_all": ["//toolchain/args/macos:sanitizer_headers_include_search_paths"],
-        "//conditions:default": [],
-    }),
+    ],
+)
+
+# Only expose the sanitizer interface headers when compiling user programs, not
+# when building the compiler-rt runtimes themselves. Those already include
+# compiler-rt/include directly.
+cc_args_list(
+    name = "macos_toolchain_args",
+    args = [
+        ":macos_runtime_toolchain_args",
+        "//toolchain/args/macos:sanitizer_headers_include_search_paths",
+    ],
 )
 
 # TODO(cerisier): extract those into proper semantic args list.
@@ -531,6 +536,12 @@ cc_args_list(
     visibility = ["//visibility:public"],
 )
 
+stage_independent_args_list(
+    name = "complete_toolchain_args",
+    args = [":toolchain_args"],
+    visibility = ["//visibility:public"],
+)
+
 # UEFI uses the GNU Clang driver with a freestanding Windows ABI. Hosted
 # runtime arguments are deliberately excluded.
 cc_args_list(
@@ -662,8 +673,16 @@ bzl_library(
     name = "cc_toolchain",
     srcs = ["cc_toolchain.bzl"],
     deps = [
+        ":stage_independent",
         "@rules_cc//cc/toolchains:toolchain_rules",
     ],
+)
+
+bzl_library(
+    name = "stage_independent",
+    srcs = ["stage_independent.bzl"],
+    visibility = ["//visibility:public"],
+    deps = ["@rules_cc//cc/toolchains:toolchain_rules"],
 )
 
 bzl_library(
