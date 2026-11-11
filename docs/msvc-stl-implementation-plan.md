@@ -56,15 +56,25 @@ fixture, the default link resolved `sscanf` through the legacy stdio archive.
 Rebuilding with `--cxxopt=/D_CRT_STDIO_ISO_WIDE_SPECIFIERS` reproduced the
 expected ISO/legacy COFF mismatch. The CMake-produced archive carried
 `/DEFAULTLIB:msvcprt.lib` and the final executable imported `MSVCP140.dll`.
-The stage1 action graph selected the source-built clang-cl and declared the
-same STL header path.
+Stage 1 built LLVM from source and used its clang-cl and lld-link to produce the
+x64 `/MD` executable. Its PE imports included `MSVCP140.dll` and
+`VCRUNTIME140.dll`, and the program ran under Wine with the pinned redist.
+[Stage 1 build](https://app.buildbuddy.io/invocation/6ec2add1-4f88-4ebd-87bc-e8947ac01e3a)
 
 RFCC also cross-compiled locally on macOS using
 `--@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_macos=false`,
 `--extra_toolchains=@rules_foreign_cc//toolchains:preinstalled_pkgconfig_toolchain`,
 and `--action_env=PATH=/opt/homebrew/bin:/usr/bin:/bin`. The executable ran
-under Wine with the pinned retail redistributable DLLs. The ARM64 `/MT`
-executable also ran through `rules_wine` 0.1.3 on macOS ARM64.
+under Wine with the pinned retail redistributable DLLs. The Linux ARM64 RFCC
+build on Ubuntu 24.04 also produced an x64 executable that ran under Wine.
+An ARM64 probe built with Microsoft STL ran through `rules_wine` 0.1.3 on
+macOS ARM64 in both `/MD` and `/MT` modes. Each invocation wrote the expected
+file contents and returned the probe's exit status of 23.
+[Linux ARM64 RFCC build](https://app.buildbuddy.io/invocation/394ff3ae-69cd-45ca-9e1e-793df8ec086c)
+
+The validation branch has hosted Windows runs for the
+[native Bazel build and execution](https://github.com/hermeticbuild/hermetic-llvm/actions/runs/43096407376)
+and for [direct execution of the cross-built binaries](https://github.com/hermeticbuild/hermetic-llvm/actions/runs/43096558303).
 
 ## What is already present
 
