@@ -6,6 +6,7 @@ load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_go//go:def.bzl", "go_test")
 load("@rules_platform//platform_data:defs.bzl", "platform_data")
+load(":cc_runtimes.bzl", "no_cc_runtimes")
 
 gazelle(name = "gazelle")
 
@@ -154,9 +155,18 @@ cc_library(
     target_compatible_with = ["@platforms//os:wasi"],
 )
 
+no_cc_runtimes(
+    name = "wasi_no_cc_runtimes",
+    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:wasi"],
+)
+
 platform_transition_filegroup(
     name = "wasi_no_cxx_stdlib_p1",
-    srcs = [":wasi_no_cxx_stdlib"],
+    srcs = [
+        ":wasi_no_cc_runtimes",
+        ":wasi_no_cxx_stdlib",
+    ],
     target_platform = "@llvm//platforms:wasi_wasm32_p1",
 )
 
