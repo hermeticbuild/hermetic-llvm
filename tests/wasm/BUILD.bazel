@@ -1,3 +1,5 @@
+load("@bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@gazelle//:def.bzl", "gazelle")
 load("@llvm//:defs.bzl", "exec_test")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
@@ -143,6 +145,24 @@ cc_library(
     copts = ["-std=c23"],
     tags = ["manual"],
     target_compatible_with = ["@platforms//os:wasi"],
+)
+
+cc_library(
+    name = "wasi_no_cxx_stdlib",
+    srcs = ["wasi_no_cxx_stdlib.cc"],
+    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:wasi"],
+)
+
+platform_transition_filegroup(
+    name = "wasi_no_cxx_stdlib_p1",
+    srcs = [":wasi_no_cxx_stdlib"],
+    target_platform = "@llvm//platforms:wasi_wasm32_p1",
+)
+
+build_test(
+    name = "wasi_no_cxx_stdlib_test",
+    targets = [":wasi_no_cxx_stdlib_p1"],
 )
 
 cc_binary(
