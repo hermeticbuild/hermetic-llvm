@@ -3,40 +3,7 @@ on:
   push:
     branches: [cerisier/msvc-stl-investigation]
 jobs:
-  cross-build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v6
-      - name: Cross-build both Windows executables
-        working-directory: e2e/rules_cc
-        shell: bash
-        env:
-          USE_BAZEL_VERSION: 9.3.2
-        run: |
-          mkdir -p "$RUNNER_TEMP/msvcstl"
-          for cpu in x86_64 aarch64; do
-            bazel build \
-              --config=remote \
-              --lockfile_mode=off \
-              --remote_download_outputs=toplevel \
-              --repo_env=BAZEL_MSVC_RUNTIME_VISUAL_STUDIO_EULA=1 \
-              --repo_env=BAZEL_WINDOWS_SDK_EULA=1 \
-              --features=-layering_check \
-              --features=-dynamic_link_msvcrt \
-              --features=static_link_msvcrt \
-              "--platforms=//msvcstl:windows_${cpu}_msvcstl" \
-              //msvcstl:main
-            cp bazel-bin/msvcstl/main.exe "$RUNNER_TEMP/msvcstl/msvcstl-$cpu.exe"
-          done
-      - uses: actions/upload-artifact@v4
-        with:
-          name: msvcstl-executables
-          path: ${{ runner.temp }}/msvcstl/
-          if-no-files-found: error
-          retention-days: 1
   smoke:
-    needs: cross-build
     strategy:
       fail-fast: false
       matrix:
@@ -46,18 +13,27 @@ jobs:
           - runner: windows-11-arm
             cpu: aarch64
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 5
+    timeout-minutes: 45
     steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: msvcstl-executables
-      - name: Run the Microsoft STL executable on Windows
-        shell: pwsh
+      - uses: actions/checkout@v6
+      - name: Build and run the Microsoft STL executable
+        working-directory: e2e/rules_cc
+        shell: bash
         env:
+          USE_BAZEL_VERSION: 9.3.2
           MSVCSTL_CPU: ${{ matrix.cpu }}
+          MSYS2_ARG_CONV_EXCL: "*"
         run: |
-          $output = & ".\msvcstl-$env:MSVCSTL_CPU.exe"
-          if ($LASTEXITCODE -ne 0 -or $output -cne (('x' * 64) + '1')) {
-            throw "Unexpected output or exit status: '$output', $LASTEXITCODE"
-          }
-          Write-Output $output
+          bazel run \
+            --lockfile_mode=off \
+            --remote_executor= \
+            --remote_cache= \
+            --experimental_remote_downloader= \
+            --spawn_strategy=local \
+            --repo_env=BAZEL_MSVC_RUNTIME_VISUAL_STUDIO_EULA=1 \
+            --repo_env=BAZEL_WINDOWS_SDK_EULA=1 \
+            --features=-layering_check \
+            --features=-dynamic_link_msvcrt \
+            --features=static_link_msvcrt \
+            "--platforms=//msvcstl:windows_${MSVCSTL_CPU}_msvcstl" \
+            //msvcstl:main

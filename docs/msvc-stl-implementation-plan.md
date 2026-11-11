@@ -72,9 +72,10 @@ macOS ARM64 in both `/MD` and `/MT` modes. Each invocation wrote the expected
 file contents and returned the probe's exit status of 23.
 [Linux ARM64 RFCC build](https://app.buildbuddy.io/invocation/394ff3ae-69cd-45ca-9e1e-793df8ec086c)
 
-The validation branch has hosted Windows runs for the
-[native Bazel build and execution](https://github.com/hermeticbuild/hermetic-llvm/actions/runs/43096407376)
-and for [direct execution of the cross-built binaries](https://github.com/hermeticbuild/hermetic-llvm/actions/runs/43096558303).
+Both hosted Windows runners built their matching `/MT` executable locally
+with Bazel 9.3.2 and printed the expected output when running it. The x64 job
+used `windows-latest` and the ARM64 job used `windows-11-arm`.
+[Native Windows run](https://github.com/hermeticbuild/hermetic-llvm/actions/runs/43094825945)
 
 ## What is already present
 
