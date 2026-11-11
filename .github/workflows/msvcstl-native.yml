@@ -24,8 +24,11 @@ jobs:
           MSVCSTL_CPU: ${{ matrix.cpu }}
           MSYS2_ARG_CONV_EXCL: "*"
         run: |
-          bazel run \
+          bazel --output_user_root=D:/msvcstl-bazel --noexperimental_remote_repo_contents_cache run \
             --lockfile_mode=off \
+            --repository_cache= \
+            --repo_contents_cache= \
+            --show_timestamps \
             --remote_executor= \
             --remote_cache= \
             --experimental_remote_downloader= \
