@@ -259,8 +259,9 @@ jobs:
             build \
             //:main_default
 
-      # macOS replaces the SDK's libc++ headers with hermetic copies, so the
-      # C++ standard library settings need coverage beyond the Linux lanes.
+      # On macOS, the toolchain uses split copies of the SDK's libc++ headers
+      # and links the system libc++ dylib. Check that nostdincxx and
+      # nostdlibxx remove them as they do on Linux.
       - name: bazel build C++ standard library settings contract
         env:
           USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
