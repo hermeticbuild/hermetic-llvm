@@ -1,0 +1,42 @@
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_foreign_cc//foreign_cc:defs.bzl", "cmake")
+
+platform(
+    name = "windows_x86_64_msvcstl",
+    constraint_values = ["@llvm//constraints/cxxstdlib:msvcstl"],
+    parents = ["@llvm//platforms:windows_x86_64_msvc"],
+)
+
+platform(
+    name = "linux_arm64_ubuntu_24_04",
+    exec_properties = {"container-image": "docker://ubuntu:24.04"},
+    parents = ["@llvm//:rbe_linux_aarch64"],
+)
+
+filegroup(
+    name = "cmake_sources",
+    srcs = [
+        "CMakeLists.txt",
+        "foreign.cc",
+    ],
+)
+
+cmake(
+    name = "foreign",
+    cache_entries = {
+        "CMAKE_SYSTEM_NAME": "Windows",
+        "CMAKE_TRY_COMPILE_TARGET_TYPE": "STATIC_LIBRARY",
+    },
+    generate_args = ["-GNinja"],
+    lib_source = "cmake_sources",
+    out_static_libs = ["foreign.lib"],
+    tags = ["manual"],
+    target_compatible_with = ["@llvm//constraints/cxxstdlib:msvcstl"],
+)
+
+cc_binary(
+    name = "main",
+    srcs = ["main.cc"],
+    tags = ["manual"],
+    deps = ["foreign"],
+)

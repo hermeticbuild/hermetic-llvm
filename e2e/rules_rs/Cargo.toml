@@ -4,6 +4,7 @@ version = "0.0.0"
 edition = "2021"
 
 [dependencies]
+libc = "=0.2.186"
 lz4-sys = "=1.11.1"
 mimalloc = "=0.1.43"
 serde_derive = "=1.0.228"

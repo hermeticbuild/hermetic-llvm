@@ -143,6 +143,12 @@ case_insensitive_vfs_overlay(
 )
 
 case_insensitive_vfs_overlay(
+    name = "msvcstl_header_case_overlay",
+    roots = [":msvc_include"],
+    visibility = ["//toolchain/args/windows/msvc:__pkg__"],
+)
+
+case_insensitive_vfs_overlay(
     name = "msvc_sdk_library_case_overlay",
     roots = [
         ":winsdk_ucrt_lib",

@@ -44,3 +44,9 @@ both(
     name = "both",
     srcs = ["contract"],
 )
+
+cc_library(
+    name = "msvcstl_probe",
+    srcs = ["msvcstl_probe.cc"],
+    target_compatible_with = ["//constraints/cxxstdlib:msvcstl"],
+)

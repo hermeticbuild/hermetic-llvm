@@ -113,14 +113,6 @@ cc_args_list(
 )
 
 cc_args_list(
-    name = "configuration_validation_args",
-    args = select({
-        "//constraints/windows/abi:msvc": ["//toolchain/features/msvc:configuration_validation_args"],
-        "//conditions:default": [],
-    }),
-)
-
-cc_args_list(
     name = "crt_compile_defines",
     args = select({
         "//constraints/windows/abi:msvc": ["//toolchain/args/windows/msvc:msvc_crt_compile_defines"],

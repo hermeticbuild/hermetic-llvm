@@ -308,6 +308,10 @@ def cc_toolchain(
             "@llvm//toolchain:runtimes_stage1": ["@llvm//toolchain/runtimes:toolchain_args"],
             "@llvm//toolchain:runtimes_stage1_hosted": ["@llvm//toolchain/runtimes:toolchain_args"],
             "//conditions:default": ["@llvm//toolchain:toolchain_args"],
+        }) + select({
+            "@llvm//constraints/windows/abi:msvc": ["@llvm//toolchain/features/msvc:configuration_validation_args"],
+            "@llvm//constraints/cxxstdlib:msvcstl": ["@llvm//toolchain/features/msvc:configuration_validation_args"],
+            "//conditions:default": [],
         }) + extra_args,
         # clang-cl header parsing remains a named unsupported boundary. It can
         # become true only with a dialect-correct parse-only action and proved

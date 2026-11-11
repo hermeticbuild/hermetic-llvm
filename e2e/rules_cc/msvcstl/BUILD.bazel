@@ -1,0 +1,25 @@
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+
+cc_binary(
+    name = "main",
+    srcs = ["main.cc"],
+    tags = ["manual"],
+)
+
+[
+    platform(
+        name = "windows_" + cpu + "_msvcstl",
+        constraint_values = ["@llvm//constraints/cxxstdlib:msvcstl"],
+        parents = ["@llvm//platforms:windows_" + cpu + "_msvc"],
+    )
+    for cpu in [
+        "x86_64",
+        "aarch64",
+    ]
+]
+
+platform(
+    name = "windows_x86_64_mingw_msvcstl_invalid",
+    constraint_values = ["@llvm//constraints/cxxstdlib:msvcstl"],
+    parents = ["@llvm//platforms:windows_x86_64"],
+)

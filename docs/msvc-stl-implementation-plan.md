@@ -1,10 +1,10 @@
 # Microsoft STL for Windows MSVC: investigation and proposed plan
 
-Status: proposal for agreement. No implementation or public API approved.
+Status: the opt-in is implemented in this worktree. The MSVC default is libc++.
 Investigated 2026-11-11 against refreshed `origin/main` at
 `8a3f5bd77702fc0de58252e715404fcac1eed24e`. Scope follows [issue #878][878].
 
-## Recommendation and decisions to agree
+## Opt-in design
 
 Add Microsoft STL as another value of the existing **C++ standard-library
 constraint**, alongside libc++ and versioned GNU libstdc++. Keep libc++ as the
@@ -17,18 +17,54 @@ implementation. Support Windows MSVC x86-64 and ARM64, with `/MD` and `/MT`,
 through the existing native and cross toolchains. Preserve native Microsoft
 stdio defaults for this selection; keep libc++'s ISO stdio policy unchanged.
 
-Concrete decisions requiring agreement before implementation:
+The opt-in uses the following policies.
 
-| Decision | Proposed answer | Reason / alternative |
+| Decision | Policy | Rationale |
 | --- | --- | --- |
-| Public selection | One new constraint value, candidate `@llvm//constraints/cxxstdlib:msvcstl` | Reuses existing platform selection. Exact spelling requires approval; `msvc` is shorter but confuses target ABI with library. No new `libstdcxx` version or boolean selector. |
+| Public selection | `@llvm//constraints/cxxstdlib:msvcstl` | Reuses the existing C++ standard-library constraint on Windows MSVC/UCRT platforms. |
 | Default/platforms | Existing platforms and default stay libc++; document a user-defined MSVC+STL platform | Avoid a default ABI/library change. Additional convenience platforms would be additional public API, requiring separate approval. |
 | Acquisition/version | Reuse pinned toolset headers and libraries as a matched unit | No independent STL version knob initially. Root overrides must remain internally consistent with compiler compatibility flags. |
 | Linkage | `/MD` selects `msvcprt.lib`; `/MT` selects `libcpmt.lib` | Bazel `linkstatic` controls ordinary dependency linkage, not this CRT/STL choice. Mixed static STL/dynamic CRT is deferred. |
-| Default-library ownership | Keep native header directives; select the explicit STL default in Bazel's existing MSVC default-library composition | Matches existing libc++ ownership, handles archive/foreign link scenarios, and keeps toolchain policy inspectable. Header-only autolink is a viable smaller alternative; see below. |
+| Default-library ownership | Native COFF directives | Bazel supplies the mode-specific library directory and the existing explicit CRT startup default. |
 | Opt-outs | Preserve independent `nostdincxx` / `nostdlibxx`; selectively suppress STL default-library directives for the latter | Removing a linker flag alone is insufficient with Microsoft STL headers. Explicit library dependencies must still work. |
 | Deployment | Declare DLLs explicitly in `/MD` test fixtures; document application redist requirement | No automatic application bundling API in the first change. Do not rely on runner-installed Visual Studio. |
 | Dependency sequencing | C++ integration can proceed on current main; coordinate with #920 and CRT work, without silently adopting their APIs | Native C++ consumers are not blocked by Rust's final-link selection work. Rust qualification needs its own exact dependency revision. |
+
+## Reproduce the cross-compilation checks
+
+All builds use Bazel 9.3.2 and the repository's SDK acceptance flags
+`--repo_env=BAZEL_MSVC_RUNTIME_VISUAL_STUDIO_EULA=1` and
+`--repo_env=BAZEL_WINDOWS_SDK_EULA=1`. Use `--config=remote` for the following
+checks. The two Rust fixtures use `cc_common.link`.
+
+| Working directory | Targets and options |
+| --- | --- |
+| `e2e/rules_cc` | `//msvcstl:main --platforms=//msvcstl:windows_x86_64_msvcstl --features=-layering_check`. Repeat with `windows_aarch64_msvcstl`, with `--features=-dynamic_link_msvcrt --features=static_link_msvcrt` for each CPU, and with `--features=thin_lto` on x64. |
+| `e2e/rules_rs` | `//msvcstl:main --platforms=//msvcstl:windows_x86_64_msvcstl`. The program uses `libc::sscanf` from `legacy_stdio_definitions.lib` and calls a C++ archive built with the native stdio defaults. |
+| `e2e/rules_rust` | `//msvcstl:main --platforms=//msvcstl:windows_x86_64_msvcstl --extra_toolchains=@rust_toolchains//:rust_linux_aarch64__x86_64-pc-windows-msvc__stable,@rust_toolchains//:rust_linux_x86_64__x86_64-pc-windows-msvc__stable`. This prioritizes the MSVC Rust target over the GNU target on each Linux executor. |
+| `e2e/rules_foreign_cc` | `//msvcstl:main --platforms=//msvcstl:windows_x86_64_msvcstl --extra_execution_platforms=@llvm//:rbe_linux_x86_64`. For Linux ARM64 execution, use `--extra_execution_platforms=//msvcstl:linux_arm64_ubuntu_24_04` to meet the pinned Ninja binary's glibc 2.38 requirement. |
+| Repository root | `//tests/cgo:msvcstl //tests/cgo:msvcstl_bridge.dll --platforms=//tests/cgo:windows_x86_64_msvcstl --features=-dynamic_link_msvcrt --features=static_link_msvcrt`. The Go executable takes the DLL path as its argument and calls the exported C ABI function. This exercises DLL interoperability because rules_go excludes clang-cl from cgo. |
+
+The C++ probe checks `_MSVC_STL_VERSION`. On the baseline MSVC platform it
+fails on that assertion. On the opted-in platform the object contains the
+matching STL directive, and the PE import table shows MSVCP under `/MD`.
+`/MT` imports only `KERNEL32` for this fixture. The link action names the CRT
+startup library and the matching search directory.
+
+The x64 Rust fixtures and the Go DLL call ran under Wine. In the rules_rs
+fixture, the default link resolved `sscanf` through the legacy stdio archive.
+Rebuilding with `--cxxopt=/D_CRT_STDIO_ISO_WIDE_SPECIFIERS` reproduced the
+expected ISO/legacy COFF mismatch. The CMake-produced archive carried
+`/DEFAULTLIB:msvcprt.lib` and the final executable imported `MSVCP140.dll`.
+The stage1 action graph selected the source-built clang-cl and declared the
+same STL header path.
+
+RFCC also cross-compiled locally on macOS using
+`--@rules_cc//cc/toolchains/args/archiver_flags:use_libtool_on_macos=false`,
+`--extra_toolchains=@rules_foreign_cc//toolchains:preinstalled_pkgconfig_toolchain`,
+and `--action_env=PATH=/opt/homebrew/bin:/usr/bin:/bin`. The executable ran
+under Wine with the pinned retail redistributable DLLs. The ARM64 `/MT`
+executable also ran through `rules_wine` 0.1.3 on macOS ARM64.
 
 ## What is already present
 
@@ -234,8 +270,8 @@ Consequences:
 [PR #903][903] introduced independent, target-scoped `nostdincxx` and
 `nostdlibxx`, retaining explicit dependencies and C/CRT/unwind facilities. Under
 Microsoft STL, omit the implicit header path for `nostdincxx`, but retain the
-filtered ABI/COM/UCRT/SDK headers. For `nostdlibxx`, omit the toolchain STL
-default and suppress relevant native STL default-library directives with
+filtered ABI/COM/UCRT/SDK headers. For `nostdlibxx`, suppress the retail STL
+default-library directives with
 selective `/NODEFAULTLIB:<STL archive>` entries. Keep explicitly named library
 inputs usable. Do not use bare `/NODEFAULTLIB`, which would suppress the CRT.
 Decide the suppression list from the supported pinned library family and test
@@ -243,24 +279,10 @@ its boundaries; the direct probes established the selected retail name only.
 Existing opt-out tests require Bazel 9+, and their libc++/libstdc++ string-based
 runtime evidence must be extended to understand MSVC default-library policy.
 
-**Proposed normal-link policy:** retain native directives and let Bazel also
-name the selected STL default beside its existing CRT default. Both use the
-same configuration-wide CRT choice; a mismatched archive should still fail.
-The explicit default is a lazy search request, not whole-archive linkage. A
-C-only executable must show no extracted STL implementation or MSVCP import.
-Native directives keep ordinary third-party object semantics, while the Bazel
-default handles header-free C++ references and external final-link adapters
-that forward Bazel-owned flags. Arbitrary external linkers do not inherit this
-policy. Do not insert retail import libraries into the generic
-MSVC runtime provider and accidentally tie them to Bazel dynamic linkage.
-
-**Alternative:** remove the libc++ default for Microsoft STL and rely entirely
-on native directives plus declared search paths. Direct normal and ThinLTO
-probes support this. It is smaller and naturally avoids a C++ default on C-only
-links, but the header-free C++ case and foreign final link must then be given
-an explicit supported contract. Choose this alternative if those cases are
-explicit-only by design and the corresponding acceptance tests demonstrate it.
-Neither option avoids the `nostdlibxx` directive problem.
+The normal link relies on the Microsoft STL headers' COFF directives. Bazel
+declares the matching retail library directory and the CRT startup default.
+Prebuilt objects with stripped directives can name their STL archive as an
+explicit dependency. The original libc++ route supplies its own explicit default.
 
 ### Stdio behavior is part of the feature
 
@@ -357,11 +379,8 @@ themselves eliminate CRT/stdio compatibility requirements.
 
 ## Proposed implementation sequence
 
-1. **Agree selection and behavioral contract.** Approve only the new constraint
-   spelling and first-cut matrix above. Decide explicit default versus native-only
-   autolink; proposed default is explicit selection plus preserved directives.
-   Keep existing public defaults and independent opt-outs. No new CRT, source-STL,
-   stdio, or deployment knobs as incidental additions.
+1. **Select the opt-in constraint.** Keep libc++ as the default for this phase.
+   Use the native COFF directives and preserve both C++ opt-outs.
 2. **Finish narrowly targeted baseline probes.** Use exact pinned payloads with
    shipped LLVM families, existing restricted library subsets, native/ISO stdio,
    and both CRT modes. The direct probes below establish feasibility; add the
@@ -490,12 +509,11 @@ Observed results, **not Bazel integration or native runtime qualification**:
   `_HAS_EXCEPTIONS=0` variant also compiled. This is a macro/compile observation;
   behavior and ODR compatibility across dependencies remain unqualified.
 
-Not demonstrated here: native execution; Linux case-sensitive execution; shipped
+The direct probes left native execution, Linux case-sensitive execution, shipped
 LLVM 21/22/23 integration; source-bootstrap qualification; complete STL surface
 and satellite DLL closure; `no_exceptions`/`no_rtti` runtime behavior;
-real Rust/Cargo/bindgen use; configured Bazel opt-out and invalid-platform
-regressions. Those are explicit
-implementation acceptance tasks, not reasons to widen this research patch.
+real Rust/Cargo/bindgen use, and configured Bazel opt-out and invalid-platform
+regressions for the subsequent integration checks.
 
 ## Paste-ready eventual PR motivation
 
@@ -503,9 +521,8 @@ implementation acceptance tasks, not reasons to widen this research patch.
 > the Microsoft STL environment. Add an explicit Windows MSVC C++ library
 > selection using the already pinned Microsoft toolset, while preserving libc++
 > defaults and configuration-wide CRT behavior. The Microsoft selection uses
-> native stdio defaults and retains independent C++ header/library opt-outs.
-
-This paragraph describes the intended result, not an implemented change.
+> native COFF autolinking and native stdio defaults. Cross-build fixtures
+> exercise C++, Rust, CMake, and a Go caller through a C ABI DLL.
 
 [878]: https://github.com/hermeticbuild/hermetic-llvm/issues/878
 [871]: https://github.com/hermeticbuild/hermetic-llvm/issues/871

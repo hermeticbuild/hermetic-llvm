@@ -497,7 +497,6 @@ cc_args_list(
         # Needs to stay out of resource_dir since clang does not always search for crtstuff for all targets.
         ":default_startfiles",
         ":default_libs",
-        "//toolchain/args/windows:configuration_validation_args",
         "//toolchain/args/windows:crt_linkage_args",
         "//toolchain/args/windows:ignore_unused_command_line_argument",
     ],

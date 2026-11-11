@@ -186,6 +186,9 @@ cc_args(
     name = "default_clang_cl_cxxstdlib_headers_include_search_paths",
     actions = _CLANG_CL_CXX_FRONTEND_ACTIONS,
     args = select({
+        "//toolchain/args/windows/msvc:msvcstl_default_headers": [
+            "/imsvc{cxxstdlib_headers_include_search_path}",
+        ],
         # /imsvc comes after implicit builtins. libc++ wrappers must precede
         # them, so use the Clang system-include category instead.
         "//toolchain:runtimes_all": [
@@ -1145,13 +1148,18 @@ cc_args(
     ],
     # clang-cl rejects the common -L spelling in CL mode. Keep the common
     # declared directory model, but translate it to clang-cl/link syntax.
-    args = [
-        "/clang:-Xlinker",
-        "/clang:/LIBPATH:{cxxstdlib_library_search_path}",
-    ],
-    data = [
-        "//runtimes/cxxstdlib:library_search_directory",
-    ],
+    args = select({
+        # The selected CRT directory already contains the Microsoft STL.
+        "//constraints/cxxstdlib:msvcstl": [],
+        "//conditions:default": [
+            "/clang:-Xlinker",
+            "/clang:/LIBPATH:{cxxstdlib_library_search_path}",
+        ],
+    }),
+    data = select({
+        "//constraints/cxxstdlib:msvcstl": [],
+        "//conditions:default": ["//runtimes/cxxstdlib:library_search_directory"],
+    }),
     format = {
         "cxxstdlib_library_search_path": "//runtimes/cxxstdlib:library_search_directory",
     },

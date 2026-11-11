@@ -28,6 +28,17 @@ config_setting(
     ],
 )
 
+config_setting(
+    name = "msvcstl_windows_msvc",
+    constraint_values = [
+        "//constraints/cxxstdlib:msvcstl",
+        "//constraints/windows/abi:msvc",
+        "//constraints/windows/crt:ucrt",
+        "@platforms//os:windows",
+    ],
+    visibility = ["//visibility:private"],
+)
+
 selects.config_setting_group(
     name = "libstdcxx_linux",
     match_all = [
@@ -50,6 +61,7 @@ selects.config_setting_group(
 alias(
     name = "headers_include_search_directory",
     actual = select({
+        ":msvcstl_windows_msvc": "//runtimes/msvc:msvc_include",
         ":libstdcxx_linux": "//runtimes/libstdcxx:headers_include_search_directory",
         ":libstdcxx_windows": ":libstdcxx_windows_unsupported",
         "//conditions:default": "@llvm-project//libcxx:libcxx_headers_include_search_directory",
@@ -59,6 +71,7 @@ alias(
 alias(
     name = "abi_headers_include_search_directory",
     actual = select({
+        ":msvcstl_windows_msvc": "//runtimes:none",
         ":libstdcxx_linux": "//runtimes/libstdcxx:abi_headers_include_search_directory",
         ":libstdcxx_windows": ":libstdcxx_windows_unsupported",
         # The supported native Windows tuple uses libc++ with the Microsoft
@@ -71,11 +84,21 @@ alias(
 alias(
     name = "library_search_directory",
     actual = select({
+        ":msvcstl_windows_msvc": ":msvcstl_library_search_directory",
         ":libstdcxx_linux": "//runtimes/libstdcxx:libstdcxx_library_search_directory",
         ":libstdcxx_windows": ":libstdcxx_windows_unsupported",
         ":libcxx_windows_msvc_vcruntime": "//runtimes/libcxx:libcxx_msvc_library_search_directory",
         "//conditions:default": "//runtimes/libcxx:libcxx_library_search_directory",
     }),
+)
+
+alias(
+    name = "msvcstl_library_search_directory",
+    actual = select({
+        "//toolchain/features/msvc:static_crt_config": "//runtimes/msvc:msvc_static_runtime_libraries",
+        "//conditions:default": "//runtimes/msvc:msvc_dynamic_runtime_libraries",
+    }),
+    visibility = ["//visibility:private"],
 )
 
 include_path(
