@@ -412,6 +412,12 @@ jobs:
             bazel-repository-v2-tests-${{ matrix.os }}-${{ matrix.bazel_version }}-
             bazel-cache-tests-${{ matrix.os }}-${{ matrix.bazel_version }}-
 
+      - name: Verify toolchain registration without LLVM sources
+        env:
+          USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
+        working-directory: e2e/toolchain_registration
+        run: bazel --bazelrc=/dev/null build //:smoke --lockfile_mode=off
+
       - name: bazel query kernel headers and test root targets
         env:
           USE_BAZEL_VERSION: ${{ matrix.bazel_version }}

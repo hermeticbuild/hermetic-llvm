@@ -31,7 +31,7 @@ bzl_library(
     name = "transition_settings",
     srcs = ["transition_settings.bzl"],
     visibility = ["//visibility:public"],
-    deps = ["@llvm-project//:version"],
+    deps = ["@llvm_version//:version"],
 )
 
 bzl_library(
@@ -46,7 +46,7 @@ bzl_library(
         "//toolchain/args:resource_directory_args",
         "//toolchain/llvm:component_tools",
         "@bazel_skylib//rules/directory:subdirectory",
-        "@llvm-project//:version",
+        "@llvm_version//:version",
         "@rules_cc//cc/toolchains:toolchain_rules",
     ],
 )
