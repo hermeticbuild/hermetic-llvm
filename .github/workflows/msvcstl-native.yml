@@ -22,6 +22,7 @@ jobs:
         env:
           USE_BAZEL_VERSION: 9.3.2
           MSVCSTL_CPU: ${{ matrix.cpu }}
+          MSYS2_ARG_CONV_EXCL: "*"
         run: |
           bazel run \
             --lockfile_mode=off \
