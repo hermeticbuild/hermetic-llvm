@@ -8,7 +8,6 @@ stage_independent_test(
     name = "stage_independent_test",
     per_stage = [":per_stage"],
     shared = [
-        "//toolchain:complete_toolchain_args",
         "//toolchain/runtimes:stage0_toolchain_args",
         "//toolchain/runtimes:stage1_hosted_toolchain_args",
         "//toolchain/runtimes:stage1_toolchain_args",
