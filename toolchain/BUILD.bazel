@@ -6,7 +6,6 @@ load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
 load("//toolchain/bootstrap:declare_toolchains.bzl", declare_bootstrap_toolchains = "declare_toolchains")
 load(":bootstrap_stages.bzl", "BOOTSTRAP_STAGES")
 load(":declare_toolchains.bzl", "declare_toolchains")
-load(":stage_independent.bzl", "stage_independent_args_list")
 
 package(default_visibility = ["//toolchain:__subpackages__"])
 
@@ -533,12 +532,6 @@ cc_args_list(
         "@platforms//os:windows": [":windows_toolchain_args"],
         "//conditions:default": [":generic_toolchain_args"],
     }),
-    visibility = ["//visibility:public"],
-)
-
-stage_independent_args_list(
-    name = "complete_toolchain_args",
-    args = [":toolchain_args"],
     visibility = ["//visibility:public"],
 )
 
