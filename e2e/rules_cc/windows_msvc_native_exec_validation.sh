@@ -84,12 +84,10 @@ native_flags=(
   --repo_env=BAZEL_WINDOWS_SDK_EULA=1
 )
 
-run_bazel() {
-  local command="$1"
-  shift
+query_actions() {
   bazel \
     --bazelrc=.bazelrc \
-    "${command}" \
+    aquery \
     "${native_flags[@]}" \
     "$@"
 }
@@ -112,13 +110,13 @@ for target_cpu in x86_64 aarch64; do
   compile_report="${validation_dir}/${target_cpu}-compile.txt"
   link_report="${validation_dir}/${target_cpu}-link.txt"
 
-  run_bazel aquery \
+  query_actions \
     "--platforms=${platform}" \
     --features=-compiler_param_file \
     --output=text \
     'mnemonic("CppCompile", //:windows_msvc_crt_default_probe)' \
     >"${compile_report}"
-  run_bazel aquery \
+  query_actions \
     "--platforms=${platform}" \
     --include_param_files \
     --output=text \
@@ -142,21 +140,6 @@ for target_cpu in x86_64 aarch64; do
   assert_matches "${link_report}" 'bin[/\\]lld-link[.]exe'
   assert_contains "${link_report}" "/clang:/MACHINE:${target_machine}"
   assert_contains "${link_report}" "/clang:-fuse-ld=lld"
-
-  run_bazel build \
-    "--platforms=${platform}" \
-    --features=-dynamic_link_msvcrt \
-    --features=static_link_msvcrt \
-    //:windows_msvc_generated_def_thinlto_binary
 done
 
-for platform in "@llvm//platforms:windows_${exec_cpu}_msvc" "//:windows_${exec_cpu}_msvc_libcxx"; do
-  run_bazel test \
-    --test_strategy=standalone \
-    "--platforms=${platform}" \
-    --features=-dynamic_link_msvcrt \
-    --features=static_link_msvcrt \
-    //:windows_msvc_behavior_mt
-done
-
-echo "Native Windows GNU/MinGW-built clang-cl MSVC execution validation passed."
+echo "Native Windows GNU/MinGW-built clang-cl MSVC action checks passed."

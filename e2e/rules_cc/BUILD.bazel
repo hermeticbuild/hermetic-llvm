@@ -48,7 +48,7 @@ load(":bazel_version.bzl", "validate_static_library_compatible")
 load(":fdo_optimize_test.bzl", "cs_fdo_optimize_test", "fdo_optimize_test")
 load(":musl_header_generation_tests.bzl", "musl_header_generation_tests")
 load(":thin_lto_features_test.bzl", "thin_lto_features_test")
-load(":windows_msvc_artifacts.bzl", "windows_msvc_artifacts")
+load(":windows_msvc_artifacts.bzl", "windows_msvc_artifacts", "windows_msvc_native_test")
 load(":windows_runtime_dynamic_libraries_test.bzl", "windows_runtime_dynamic_libraries_assertion")
 
 _VALIDATE_STATIC_LIBRARY_COMPATIBLE = validate_static_library_compatible()
@@ -1823,6 +1823,33 @@ _WINDOWS_MSVC_ARTIFACT_CONFIGS = [
     )
     for cpu, machine in _WINDOWS_MSVC_CPUS
 ]
+
+[
+    windows_msvc_native_test(
+        name = "windows_msvc_" + cpu + "_" + stdlib + "_native_test",
+        binary = ":windows_msvc_behavior_mt",
+        tags = [
+            "manual",
+            "no-remote",
+        ],
+        target_compatible_with = [
+            "@platforms//cpu:" + cpu,
+            "@platforms//os:windows",
+        ],
+        target_platform = platform,
+    )
+    for cpu, _ in _WINDOWS_MSVC_CPUS
+    for stdlib, platform in [
+        (
+            "msvcstl",
+            "@llvm//platforms:windows_" + cpu + "_msvc",
+        ),
+        (
+            "libcxx",
+            ":windows_" + cpu + "_msvc_libcxx",
+        ),
+    ]
+] if bazel_features.cc.supports_starlarkified_toolchains else []
 
 cc_library(
     name = "windows_msvc_crt_default_probe",

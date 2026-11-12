@@ -1,4 +1,5 @@
 load("@bazel_lib//lib:transitions.bzl", "platform_transition_binary")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
 load("@llvm//constraints/libc:libc_versions.bzl", "LIBCS")
 load("@llvm//platforms/distros/linux:constraints.bzl", "UBUNTU_20_04_CONSTRAINTS")
@@ -169,6 +170,21 @@ PLATFORMS = [
         "windows_aarch64_msvc",
     ]
 ]
+
+build_test(
+    name = "windows_msvc_cross_build_test",
+    tags = ["manual"],
+    targets = [
+        ":main_windows_x86_64_msvc",
+        ":main_windows_aarch64_msvc",
+        ":main_windows_x86_64_msvc_external_include_paths",
+        ":main_windows_aarch64_msvc_external_include_paths",
+        ":main_in_dep_windows_x86_64_msvc",
+        ":main_in_dep_windows_aarch64_msvc",
+        ":main_in_dep_windows_x86_64_msvc_static_crt",
+        ":main_in_dep_windows_aarch64_msvc_static_crt",
+    ],
+)
 
 platform(
     name = "linux_armv7_musl_vfpv4_d16",

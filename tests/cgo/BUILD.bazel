@@ -1,6 +1,5 @@
 load("@bazel_lib//lib:transitions.bzl", "platform_transition_binary")
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
-load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_go//go:def.bzl", "go_binary")
 load(":defs.bzl", "force_pic_go_binary", "macos_arm64_debug_go_binary")
 
@@ -87,30 +86,4 @@ genrule(
 build_test(
     name = "hello_cgo_exec_test",
     targets = [":hello_cgo_exec_run"],
-)
-
-platform(
-    name = "windows_x86_64_msvcstl",
-    constraint_values = ["//constraints/cxxstdlib:msvcstl"],
-    parents = ["//platforms:windows_x86_64_msvc"],
-)
-
-cc_binary(
-    name = "msvcstl_bridge.dll",
-    srcs = ["msvcstl_bridge.cc"],
-    linkshared = True,
-    tags = ["manual"],
-    target_compatible_with = ["//constraints/cxxstdlib:msvcstl"],
-    deps = ["//tests/cxxstdlib_settings:msvcstl_probe"],
-)
-
-# rules_go requires a GNU-style compiler for cgo. Use the Windows C ABI
-# through a DLL to exercise the Microsoft STL toolchain alongside rules_go.
-go_binary(
-    name = "msvcstl",
-    srcs = ["msvcstl.go"],
-    data = ["msvcstl_bridge.dll"],
-    pure = "on",
-    tags = ["manual"],
-    target_compatible_with = ["//constraints/cxxstdlib:msvcstl"],
 )
