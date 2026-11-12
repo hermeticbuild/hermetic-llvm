@@ -1799,8 +1799,8 @@ _WINDOWS_MSVC_CPUS = [
 
 [
     platform(
-        name = "windows_" + cpu + "_msvc_libcxx",
-        constraint_values = ["@llvm//constraints/cxxstdlib:libcxx"],
+        name = "windows_" + cpu + "_msvcstl",
+        constraint_values = ["@llvm//constraints/cxxstdlib:msvcstl"],
         parents = ["@llvm//platforms:windows_" + cpu + "_msvc"],
     )
     for cpu, _ in _WINDOWS_MSVC_CPUS
@@ -1811,15 +1811,15 @@ _WINDOWS_MSVC_ARTIFACT_CONFIGS = [
         "windows_msvc_artifacts_" + cpu,
         "@llvm//platforms:windows_" + cpu + "_msvc",
         machine,
-        "msvcstl",
+        "libcxx",
     )
     for cpu, machine in _WINDOWS_MSVC_CPUS
 ] + [
     (
-        "windows_msvc_artifacts_" + cpu + "_libcxx",
-        ":windows_" + cpu + "_msvc_libcxx",
+        "windows_msvc_artifacts_" + cpu + "_msvcstl",
+        ":windows_" + cpu + "_msvcstl",
         machine,
-        "libcxx",
+        "msvcstl",
     )
     for cpu, machine in _WINDOWS_MSVC_CPUS
 ]
@@ -1841,12 +1841,12 @@ _WINDOWS_MSVC_ARTIFACT_CONFIGS = [
     for cpu, _ in (_WINDOWS_MSVC_CPUS if bazel_features.cc.supports_starlarkified_toolchains else [])
     for stdlib, platform in [
         (
-            "msvcstl",
+            "libcxx",
             "@llvm//platforms:windows_" + cpu + "_msvc",
         ),
         (
-            "libcxx",
-            ":windows_" + cpu + "_msvc_libcxx",
+            "msvcstl",
+            ":windows_" + cpu + "_msvcstl",
         ),
     ]
 ]

@@ -14,7 +14,7 @@ llvm_release(
     bin_suffix = ".exe",
     target_compatible_with = [
         "@platforms//os:windows",
-        "//constraints/cxxstdlib:msvcstl",
+        "//constraints/cxxstdlib:libcxx",
         "//constraints/windows/abi:msvc",
         "//constraints/windows/crt:ucrt",
     ],

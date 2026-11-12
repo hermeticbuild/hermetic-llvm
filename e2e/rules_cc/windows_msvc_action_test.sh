@@ -49,7 +49,7 @@ assert_before() {
 action_dir="$(mktemp -d "${RUNNER_TEMP:-/tmp}/windows-msvc-actions.XXXXXX")"
 common_flags=(
   "$@"
-  --platforms=//:windows_x86_64_msvc_libcxx
+  --platforms=@llvm//platforms:windows_x86_64_msvc
   --repo_env=BAZEL_MSVC_RUNTIME_VISUAL_STUDIO_EULA=1
   --repo_env=BAZEL_WINDOWS_SDK_EULA=1
 )
