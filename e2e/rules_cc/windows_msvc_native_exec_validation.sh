@@ -80,7 +80,6 @@ native_flags=(
   --repository_cache=
   --repo_contents_cache=
   --spawn_strategy=local
-  --test_strategy=local
   --repo_env=BAZEL_MSVC_RUNTIME_VISUAL_STUDIO_EULA=1
   --repo_env=BAZEL_WINDOWS_SDK_EULA=1
 )
@@ -153,6 +152,7 @@ done
 
 for platform in "@llvm//platforms:windows_${exec_cpu}_msvc" "//:windows_${exec_cpu}_msvc_libcxx"; do
   run_bazel test \
+    --test_strategy=standalone \
     "--platforms=${platform}" \
     --features=-dynamic_link_msvcrt \
     --features=static_link_msvcrt \
