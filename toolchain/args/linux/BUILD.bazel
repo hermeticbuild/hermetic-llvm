@@ -12,6 +12,9 @@ cc_args(
     args = [
         "-Wl,-no-as-needed",
         "-Wl,-z,relro,-z,now",
+        # Distribution GCC and Clang builds emit a build ID by default. The
+        # SHA-1 of the output is deterministic, unlike --build-id=uuid.
+        "-Wl,--build-id=sha1",
     ],
 )
 
