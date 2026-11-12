@@ -70,10 +70,8 @@ if command -v cygpath >/dev/null 2>&1; then
 fi
 validation_dir="$(mktemp -d "${runner_temp}/windows-msvc-native-exec.XXXXXX")"
 
-# Reuse the already-fetched external repositories, but discard the regular
-# remote-enabled build's outputs and action cache. Subsequent actions must run
-# on the native Windows host without duplicating the large LLVM repository.
-bazel --bazelrc=.bazelrc clean
+# Keep Bazel labels and clang-cl arguments intact under Windows Git Bash.
+export MSYS2_ARG_CONV_EXCL="*"
 
 native_flags=(
   --remote_executor=
@@ -82,6 +80,7 @@ native_flags=(
   --repository_cache=
   --repo_contents_cache=
   --spawn_strategy=local
+  --test_strategy=local
   --repo_env=BAZEL_MSVC_RUNTIME_VISUAL_STUDIO_EULA=1
   --repo_env=BAZEL_WINDOWS_SDK_EULA=1
 )
@@ -150,18 +149,14 @@ for target_cpu in x86_64 aarch64; do
     --features=-dynamic_link_msvcrt \
     --features=static_link_msvcrt \
     //:windows_msvc_generated_def_thinlto_binary
-
-  run_bazel build \
-    "--platforms=//:windows_${target_cpu}_msvc_libcxx" \
-    --features=-dynamic_link_msvcrt \
-    --features=static_link_msvcrt \
-    //:windows_msvc_libcxx_behavior_mt
 done
 
-run_bazel test \
-  "--platforms=//:windows_${exec_cpu}_msvc_libcxx" \
-  --features=-dynamic_link_msvcrt \
-  --features=static_link_msvcrt \
-  //:windows_msvc_libcxx_behavior_mt
+for platform in "@llvm//platforms:windows_${exec_cpu}_msvc" "//:windows_${exec_cpu}_msvc_libcxx"; do
+  run_bazel test \
+    "--platforms=${platform}" \
+    --features=-dynamic_link_msvcrt \
+    --features=static_link_msvcrt \
+    //:windows_msvc_behavior_mt
+done
 
 echo "Native Windows GNU/MinGW-built clang-cl MSVC execution validation passed."

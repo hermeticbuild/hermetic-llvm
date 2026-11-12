@@ -118,6 +118,21 @@ jobs:
               //:main_in_dep_windows_aarch64_msvc_static_crt
           fi
 
+      - name: Test Windows MSVC C++ artifacts
+        if: matrix.folder == 'e2e/rules_cc' && matrix.bazel_version == '9.x'
+        env:
+          USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
+        working-directory: e2e/rules_cc
+        shell: bash
+        run: |
+          bazel \
+            --bazelrc=$GITHUB_WORKSPACE/.github/workflows/ci.bazelrc \
+            --bazelrc=.bazelrc \
+            test \
+            --repo_env=BAZEL_MSVC_RUNTIME_VISUAL_STUDIO_EULA=1 \
+            --repo_env=BAZEL_WINDOWS_SDK_EULA=1 \
+            //:windows_msvc_artifacts_matrix
+
       # The tests above opt C++ actions into path mapping. Without that opt-in,
       # the toolchain module map must keep the paths the compiles use.
       - name: bazel build //... with path mapping, C++ actions not opted in
@@ -221,6 +236,14 @@ jobs:
               //:fdo_optimize_test \
               //:cs_fdo_optimize_test
           fi
+
+      - name: Test native Windows MSVC C++ behavior
+        if: matrix.folder == 'e2e/rules_cc'
+        env:
+          USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
+        working-directory: e2e/rules_cc
+        shell: bash
+        run: ./windows_msvc_native_exec_validation.sh
 
   # macOS: smoke build (//:main_default) plus the supported sanitizer e2e tests.
   test_macos:

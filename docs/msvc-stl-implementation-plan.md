@@ -41,17 +41,17 @@ checks. The two Rust fixtures use `cc_common.link`.
 
 | Working directory | Targets and options |
 | --- | --- |
-| `e2e/rules_cc` | `//msvcstl:main --platforms=//msvcstl:windows_x86_64_msvcstl --features=-layering_check`. Repeat with `windows_aarch64_msvcstl`, with `--features=-dynamic_link_msvcrt --features=static_link_msvcrt` for each CPU, and with `--features=thin_lto` on x64. |
+| `e2e/rules_cc` | `bazel test --config=remote //:windows_msvc_artifacts_matrix` with the SDK acceptance flags above. The matrix builds both CPUs, both standard libraries, and both CRT modes. |
 | `e2e/rules_rs` | `//msvcstl:main --platforms=//msvcstl:windows_x86_64_msvcstl`. The program uses `libc::sscanf` from `legacy_stdio_definitions.lib` and calls a C++ archive built with the native stdio defaults. |
 | `e2e/rules_rust` | `//msvcstl:main --platforms=//msvcstl:windows_x86_64_msvcstl --extra_toolchains=@rust_toolchains//:rust_linux_aarch64__x86_64-pc-windows-msvc__stable,@rust_toolchains//:rust_linux_x86_64__x86_64-pc-windows-msvc__stable`. This prioritizes the MSVC Rust target over the GNU target on each Linux executor. |
 | `e2e/rules_foreign_cc` | `//msvcstl:main --platforms=//msvcstl:windows_x86_64_msvcstl --extra_execution_platforms=@llvm//:rbe_linux_x86_64`. For Linux ARM64 execution, use `--extra_execution_platforms=//msvcstl:linux_arm64_ubuntu_24_04` to meet the pinned Ninja binary's glibc 2.38 requirement. |
 | Repository root | `//tests/cgo:msvcstl //tests/cgo:msvcstl_bridge.dll --platforms=//tests/cgo:windows_x86_64_msvcstl --features=-dynamic_link_msvcrt --features=static_link_msvcrt`. The Go executable takes the DLL path as its argument and calls the exported C ABI function. This exercises DLL interoperability because rules_go excludes clang-cl from cgo. |
 
-The C++ probe checks `_MSVC_STL_VERSION`. On the baseline MSVC platform it
-fails on that assertion. On the opted-in platform the object contains the
-matching STL directive, and the PE import table shows MSVCP under `/MD`.
-`/MT` imports only `KERNEL32` for this fixture. The link action names the CRT
-startup library and the matching search directory.
+The shared C++ fixture checks the selected standard library headers. The
+artifact test verifies the Microsoft STL COFF directive and its MSVCP import
+under `/MD`. Under `/MT` it checks that the behavior executable uses static
+Microsoft runtimes. The link action names the CRT startup library and the
+matching search directory.
 
 The x64 Rust fixtures and the Go DLL call ran under Wine. In the rules_rs
 fixture, the default link resolved `sscanf` through the legacy stdio archive.

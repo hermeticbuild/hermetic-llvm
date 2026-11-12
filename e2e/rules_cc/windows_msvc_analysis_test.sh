@@ -57,8 +57,8 @@ expect_failure \
   windows-mingw-msvcstl \
   "//constraints/cxxstdlib:msvcstl requires a Windows MSVC target" \
   "${common_flags[@]}" \
-  --platforms=//msvcstl:windows_x86_64_mingw_msvcstl_invalid \
-  //msvcstl:main
+  --platforms=//:windows_x86_64_mingw_msvcstl_invalid \
+  //:main_default
 
 expect_failure \
   windows-msvc-missing-crt \
