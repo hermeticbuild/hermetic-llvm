@@ -1838,7 +1838,7 @@ _WINDOWS_MSVC_ARTIFACT_CONFIGS = [
         ],
         target_platform = platform,
     )
-    for cpu, _ in _WINDOWS_MSVC_CPUS
+    for cpu, _ in (_WINDOWS_MSVC_CPUS if bazel_features.cc.supports_starlarkified_toolchains else [])
     for stdlib, platform in [
         (
             "msvcstl",
@@ -1849,7 +1849,7 @@ _WINDOWS_MSVC_ARTIFACT_CONFIGS = [
             ":windows_" + cpu + "_msvc_libcxx",
         ),
     ]
-] if bazel_features.cc.supports_starlarkified_toolchains else []
+]
 
 cc_library(
     name = "windows_msvc_crt_default_probe",
