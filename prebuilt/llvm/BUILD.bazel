@@ -14,7 +14,7 @@ llvm_release(
     bin_suffix = ".exe",
     target_compatible_with = [
         "@platforms//os:windows",
-        "//constraints/cxxstdlib:libcxx",
+        "//constraints/cxxstdlib:msvcstl",
         "//constraints/windows/abi:msvc",
         "//constraints/windows/crt:ucrt",
     ],
@@ -31,24 +31,11 @@ llvm_release(
     for platform in PLATFORMS
 ]
 
-# Keep the published LLVM archives on libc++.
-[
-    platform(
-        name = "windows_{}_msvc_libcxx".format(cpu),
-        constraint_values = ["//constraints/cxxstdlib:libcxx"],
-        parents = ["//platforms:windows_{}_msvc".format(cpu)],
-    )
-    for cpu in [
-        "x86_64",
-        "aarch64",
-    ]
-]
-
 [
     platform_transition_filegroup(
         name = "for_windows_{}_msvc".format(archive_cpu),
         srcs = [":windows_msvc_llvm_release"],
-        target_platform = ":windows_{}_msvc_libcxx".format(target_cpu),
+        target_platform = "//platforms:windows_{}_msvc".format(target_cpu),
     )
     for archive_cpu, target_cpu in [
         ("amd64", "x86_64"),
