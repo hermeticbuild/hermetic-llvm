@@ -490,6 +490,9 @@ def declare_llvm_targets(*, exec_os, exec_cpu, suffix = ""):
             ":builtin_resource_include_dir",
             "@macos_sdk//sysroot",
             "@llvm//sanitizers:sanitizers_headers_include_search_directory",
+            # Match the libc++ include paths.
+            "@llvm//runtimes/cxxstdlib:public_headers_directory",
+            "@llvm//runtimes/cxxstdlib:detail_headers_directory",
         ],
     )
 

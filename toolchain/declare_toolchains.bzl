@@ -1,3 +1,4 @@
+load("@bazel_features//:features.bzl", "bazel_features")
 load("//platforms:common.bzl", "MSVC_TARGET_STAGE0_SUPPORTED_EXECS", "SUPPORTED_EXECS", "SUPPORTED_TARGETS")
 load("//toolchain:merged_resource_directory.bzl", "merged_resource_directory")
 load("//toolchain:selects.bzl", "platform_cc_tool_map", "platform_module_map", "platform_resource_dir")
@@ -95,3 +96,27 @@ def declare_toolchains(*, execs = SUPPORTED_EXECS, targets = SUPPORTED_TARGETS):
                     toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
                     visibility = ["//visibility:public"],
                 )
+
+    # Attach libc++ to user targets through the runtime toolchain in Bazel 9+.
+    # Runtime builds must not depend on this toolchain themselves. WASI and
+    # bare-metal platforms match the default libc++ constraint value, but have
+    # no hermetic C++ standard library.
+    if bazel_features.cc.cc_common_is_in_rules_cc:
+        cxxstdlib_oses = {
+            target_os: None
+            for (target_os, _) in targets
+            if target_os not in ["none", "wasi"]
+        }
+        for target_os in cxxstdlib_oses:
+            native.toolchain(
+                name = "cc_runtimes_" + target_os,
+                target_compatible_with = [
+                    "@platforms//os:" + target_os,
+                    "@llvm//constraints/cxxstdlib:libcxx",
+                ],
+                target_settings = ["@llvm//toolchain:runtimes_all"],
+                toolchain = "@llvm//toolchain/cc_runtimes:runtimes",
+                # This is the defining target; rules_cc 0.2.25 has no alias for it.
+                toolchain_type = "@bazel_tools//tools/cpp:cc_runtimes_toolchain_type",
+                visibility = ["//visibility:public"],
+            )
