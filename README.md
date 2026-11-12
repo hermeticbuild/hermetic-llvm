@@ -308,8 +308,8 @@ target environment.
 The native MSVC ABI is available through
 `@llvm//platforms:windows_x86_64_msvc` and
 `@llvm//platforms:windows_aarch64_msvc`. These target toolchains use clang-cl,
-lld-link, the Microsoft Visual C++ runtime and Windows SDK, and a statically
-linked libc++. Their compile and link actions support macOS, Linux and native
+lld-link, the Microsoft Visual C++ runtime, the Windows SDK, and Microsoft STL
+by default. Their compile and link actions support macOS, Linux and native
 Windows execution platforms at every bootstrap stage. Stage 0 native Windows
 execution selects the published GNU/MinGW-built LLVM prebuilt and uses its
 clang-cl/lld-link tools. Later bootstrap stages build their GNU/MinGW-compatible
@@ -333,23 +333,27 @@ header parsing, module maps, and layering checks are also not yet supported for
 MSVC targets; requests for unsupported features fail during analysis rather than
 being ignored.
 
-To select Microsoft STL, derive a Windows MSVC platform and override its C++
+Microsoft STL uses native MSVC wide-stdio behavior. Its headers select the
+retail STL library through COFF directives using the configured CRT mode.
+Applications built with `/MD` need the matching Visual C++ redistributable at
+runtime.
+
+To select static libc++, derive a Windows MSVC platform and override its C++
 standard-library constraint.
 
 ```starlark
 platform(
-    name = "windows_x86_64_msvcstl",
+    name = "windows_x86_64_msvc_libcxx",
     parents = ["@llvm//platforms:windows_x86_64_msvc"],
-    constraint_values = ["@llvm//constraints/cxxstdlib:msvcstl"],
+    constraint_values = ["@llvm//constraints/cxxstdlib:libcxx"],
 )
 ```
 
-Build with `--platforms=//:windows_x86_64_msvcstl` and the same SDK acceptance
-flags as above. The matching ARM64 parent is
-`@llvm//platforms:windows_aarch64_msvc`. Microsoft STL uses the native MSVC
-wide-stdio defaults. Its headers select the retail STL library through COFF
-directives using the configured CRT mode. Applications built with `/MD` need
-the matching Visual C++ redistributable at runtime.
+Build with `--platforms=//:windows_x86_64_msvc_libcxx` and the same SDK
+acceptance flags as above. The matching ARM64 parent is
+`@llvm//platforms:windows_aarch64_msvc`. On a custom MSVC platform with no
+parent, set `@llvm//constraints/cxxstdlib:msvcstl` to select Microsoft STL.
+Bazel's global default for an omitted C++ standard-library constraint is libc++.
 
 ### macOS notes
 

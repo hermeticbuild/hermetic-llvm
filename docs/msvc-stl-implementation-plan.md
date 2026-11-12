@@ -1,6 +1,8 @@
 # Microsoft STL for Windows MSVC: investigation and proposed plan
 
-Status: the opt-in is implemented in this worktree. The MSVC default is libc++.
+Status: Microsoft STL is implemented and selected by both built-in Windows
+MSVC platforms. Select `@llvm//constraints/cxxstdlib:libcxx` on a derived
+platform to retain libc++. The original opt-in investigation follows.
 Investigated 2026-11-11 against refreshed `origin/main` at
 `8a3f5bd77702fc0de58252e715404fcac1eed24e`. Scope follows [issue #878][878].
 

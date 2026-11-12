@@ -53,8 +53,8 @@ PLATFORMS=(
   macos_amd64      darwin-amd64     llvm_release
   windows_amd64    windows-amd64    windows_llvm_release
   windows_arm64    windows-arm64    windows_llvm_release
-  windows_x86_64_msvc windows-amd64-msvc windows_msvc_llvm_release
-  windows_aarch64_msvc windows-arm64-msvc windows_msvc_llvm_release
+  windows_x86_64_msvc_libcxx windows-amd64-msvc windows_msvc_llvm_release
+  windows_aarch64_msvc_libcxx windows-arm64-msvc windows_msvc_llvm_release
 )
 
 for ((i=0; i<${#PLATFORMS[@]}; i+=3)); do

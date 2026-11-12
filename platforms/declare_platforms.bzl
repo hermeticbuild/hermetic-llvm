@@ -68,7 +68,7 @@ def declare_windows_msvc_platforms():
             constraint_values = [
                 "@platforms//cpu:{}".format(target_cpu),
                 "@platforms//os:windows",
-                "//constraints/cxxstdlib:libcxx",
+                "//constraints/cxxstdlib:msvcstl",
                 "//constraints/windows/abi:msvc",
                 "//constraints/windows/crt:ucrt",
             ],

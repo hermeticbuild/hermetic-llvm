@@ -1793,8 +1793,17 @@ cc_test(
 assert_msvc_tuple_features()
 
 _WINDOWS_MSVC_ARTIFACT_PLATFORMS = [
-    ("x86_64", "@llvm//platforms:windows_x86_64_msvc", "AMD64"),
-    ("aarch64", "@llvm//platforms:windows_aarch64_msvc", "ARM64"),
+    ("x86_64", ":windows_x86_64_msvc_libcxx", "AMD64"),
+    ("aarch64", ":windows_aarch64_msvc_libcxx", "ARM64"),
+]
+
+[
+    platform(
+        name = platform_label[1:],
+        constraint_values = ["@llvm//constraints/cxxstdlib:libcxx"],
+        parents = ["@llvm//platforms:windows_" + cpu + "_msvc"],
+    )
+    for cpu, platform_label, _ in _WINDOWS_MSVC_ARTIFACT_PLATFORMS
 ]
 
 cc_library(

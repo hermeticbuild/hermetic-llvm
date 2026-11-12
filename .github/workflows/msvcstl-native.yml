@@ -35,5 +35,5 @@ jobs:
             --features=-layering_check \
             --features=-dynamic_link_msvcrt \
             --features=static_link_msvcrt \
-            "--platforms=//msvcstl:windows_${MSVCSTL_CPU}_msvcstl" \
+            "--platforms=@llvm//platforms:windows_${MSVCSTL_CPU}_msvc" \
             //msvcstl:main
