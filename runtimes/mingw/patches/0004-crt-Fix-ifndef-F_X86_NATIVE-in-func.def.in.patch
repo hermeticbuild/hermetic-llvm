@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fabian Meumertzheim <fabian@meumertzhe.im>
+Date: Fri, 13 Nov 2026 22:36:56 +0100
+Subject: [PATCH] crt: Fix #ifndef F_X86_NATIVE in func.def.in
+
+The guard checked `F_X86_NATIVE(x)` instead of the macro name, which is
+diagnosed as "extra tokens at end of #ifndef directive" (-Wextra-tokens)
+when preprocessing .def.in files without -Wp,-w.
+
+Signed-off-by: Fabian Meumertzheim <fabian@meumertzhe.im>
+---
+ mingw-w64-crt/def-include/func.def.in | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/mingw-w64-crt/def-include/func.def.in b/mingw-w64-crt/def-include/func.def.in
+index 7663e01b..9a7960ec 100644
+--- a/mingw-w64-crt/def-include/func.def.in
++++ b/mingw-w64-crt/def-include/func.def.in
+@@ -56,7 +56,7 @@
+ #ifndef F_X86_ANY
+ #define F_X86_ANY(x)
+ #endif
+-#ifndef F_X86_NATIVE(x)
++#ifndef F_X86_NATIVE
+ #define F_X86_NATIVE(x)
+ #endif
+ #ifndef F_I386
