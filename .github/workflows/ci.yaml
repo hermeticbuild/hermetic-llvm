@@ -274,6 +274,23 @@ jobs:
             build \
             //:main_default
 
+      # On macOS, the toolchain uses split copies of the SDK's libc++ headers
+      # and links the system libc++ dylib. Check that nostdincxx and
+      # nostdlibxx remove them as they do on Linux.
+      - name: bazel build C++ standard library settings contract
+        env:
+          USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
+        working-directory: ${{ matrix.folder }}
+        shell: bash
+        run: |
+          bazel \
+            --bazelrc=.bazelrc \
+            build \
+            @llvm//tests/cxxstdlib_settings:defaults \
+            @llvm//tests/cxxstdlib_settings:headers_only \
+            @llvm//tests/cxxstdlib_settings:libraries_only \
+            @llvm//tests/cxxstdlib_settings:both
+
       # ASan, UBSan and libFuzzer are fully supported on macOS: run their e2e
       # tests (they execute locally — no remote executor is configured for
       # macOS).
@@ -448,16 +465,21 @@ jobs:
           # Header modules require the Starlark implementation of the C++
           # rules (Bazel 9+).
           excluded_tests=()
+          test_flags=()
           if [[ "${{ matrix.bazel_version }}" == "8.x" ]]; then
             excluded_tests+=(-//tests/header_modules/...)
             # The target-scoped C++ stdlib settings are supported on Bazel 9+ only.
             excluded_tests+=(-//tests/cxxstdlib_settings/...)
+            # Preparing remote inputs for 800 concurrent actions exhausts
+            # Bazel 8's Java heap in the root test suite.
+            test_flags+=(--jobs=100)
           fi
 
           bazel \
             --bazelrc=$GITHUB_WORKSPACE/.github/workflows/ci.bazelrc \
             --bazelrc=.bazelrc \
             test \
+            "${test_flags[@]}" \
             -- \
             //tests/... \
             "${excluded_tests[@]}" \

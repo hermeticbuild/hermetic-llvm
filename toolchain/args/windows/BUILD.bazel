@@ -136,6 +136,7 @@ cc_args_list(
     }),
 )
 
+# MinGW uses the split libc++ header directories.
 cc_args_list(
     name = "cxxstdlib_headers_include_search_paths",
     args = select({

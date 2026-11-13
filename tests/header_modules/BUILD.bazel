@@ -1,4 +1,5 @@
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_shared_library.bzl", "cc_shared_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 
 package(features = [
@@ -7,8 +8,7 @@ package(features = [
     "layering_check",
 ])
 
-# Warnings in the test targets' compiles, including their module compiles, are
-# most likely misconfigurations of the header module support.
+# Treat module warnings as toolchain configuration errors.
 _COPTS = ["-Werror"]
 
 cc_library(
@@ -32,18 +32,80 @@ cc_test(
     deps = [":double_counter"],
 )
 
-# Targets with system includes work without compiled modules for them: system
-# headers are declared as textual headers in the toolchain's module map and
-# are parsed textually even in `-fmodules` builds.
+# Exercise textual C headers alongside the compiled libc++ module.
+cc_library(
+    name = "greeter",
+    srcs = ["greeter.cc"],
+    hdrs = ["greeter.h"],
+    copts = _COPTS,
+)
 
+cc_test(
+    name = "greeter_test",
+    srcs = ["greeter_main.cc"],
+    copts = _COPTS,
+    deps = [":greeter"],
+)
+
+# Consume dependency modules without compiling this library's headers.
 cc_library(
     name = "textual_greeter",
     srcs = ["greeter.cc"],
     hdrs = ["greeter.h"],
+    copts = _COPTS,
+    features = ["-header_modules"],
 )
 
 cc_test(
-    name = "greeter_textual_test",
+    name = "textual_greeter_test",
     srcs = ["greeter_main.cc"],
+    copts = _COPTS,
+    features = ["-header_modules"],
     deps = [":textual_greeter"],
+)
+
+# Module codegen must track its dependency on the libc++ module.
+# https://github.com/bazelbuild/bazel/pull/30396
+# Import greeter as well to test merging modules that share libc++.
+_CODEGEN_FEATURES = [
+    "header_module_codegen",
+    "header_modules_codegen_functions",
+]
+
+cc_library(
+    name = "item_store",
+    srcs = ["item_store.cc"],
+    hdrs = ["item_store.h"],
+    copts = _COPTS,
+    features = _CODEGEN_FEATURES,
+)
+
+cc_test(
+    name = "item_store_test",
+    srcs = ["item_store_main.cc"],
+    copts = _COPTS,
+    features = _CODEGEN_FEATURES,
+    deps = [
+        ":greeter",
+        ":item_store",
+    ],
+)
+
+# Check shared-library linkage, including module objects when codegen is enabled.
+cc_shared_library(
+    name = "greeter_shared",
+    deps = [":greeter"],
+)
+
+cc_test(
+    name = "greeter_shared_test",
+    srcs = ["greeter_main.cc"],
+    copts = _COPTS,
+    dynamic_deps = [
+        ":greeter_shared",
+    ],
+    features = _CODEGEN_FEATURES,
+    deps = [
+        ":greeter",
+    ],
 )

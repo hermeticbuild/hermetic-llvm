@@ -193,13 +193,23 @@ cc_args_list(
     name = "cxxstdlib_headers_include_search_paths",
     args = select({
         "@platforms//os:linux": ["//toolchain/args:cxxstdlib_headers_include_search_paths"],
+        "@platforms//os:macos": ["macos_nostdincxx"],
         "@platforms//os:windows": ["//toolchain/args/windows:cxxstdlib_headers_include_search_paths"],
-        "//conditions:default": ["macos_nostdincxx"],
+        # WASI and bare-metal targets have no hermetic C++ standard library.
+        "//conditions:default": ["nostdincxx_if_enabled"],
     }),
 )
 
 cc_args_list(
     name = "macos_nostdincxx",
+    args = select({
+        "//config:nostdincxx_enabled": ["//toolchain/args:nostdincxx"],
+        "//conditions:default": ["//toolchain/args:macos_cxxstdlib_headers_include_search_paths"],
+    }),
+)
+
+cc_args_list(
+    name = "nostdincxx_if_enabled",
     args = select({
         "//config:nostdincxx_enabled": ["//toolchain/args:nostdincxx"],
         "//conditions:default": [],
@@ -671,6 +681,7 @@ bzl_library(
         ":selects",
         "//platforms:common",
         "//toolchain/args:resource_directory_args",
+        "@bazel_features//:features",
     ],
 )
 
