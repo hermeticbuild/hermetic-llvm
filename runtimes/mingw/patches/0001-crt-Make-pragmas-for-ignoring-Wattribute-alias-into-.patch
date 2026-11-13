@@ -1,0 +1,76 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Martin=20Storsj=C3=B6?= <martin@martin.st>
+Date: Fri, 28 Aug 2026 11:25:04 +0300
+Subject: [PATCH 1/3] crt: Make pragmas for ignoring -Wattribute-alias into a
+ reusable macro
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This encapsulates the condition for in which cases the pragmas
+are enabled, and allows easily using them in more locations.
+
+Signed-off-by: Martin Storsjö <martin@martin.st>
+(cherry picked from commit 6c6368cb4a682b5c8b95a61d088efce453074cf4)
+---
+ mingw-w64-crt/include/internal.h | 11 +++++++++++
+ mingw-w64-crt/misc/imaxdiv.c     | 15 ++++-----------
+ 2 files changed, 15 insertions(+), 11 deletions(-)
+
+diff --git a/mingw-w64-crt/include/internal.h b/mingw-w64-crt/include/internal.h
+index 997a89b1..004776c6 100644
+--- a/mingw-w64-crt/include/internal.h
++++ b/mingw-w64-crt/include/internal.h
+@@ -308,6 +308,17 @@ static inline unsigned int __mingw_statusfp(void)
+ 
+ #endif
+ 
++#if defined(__GNUC__) && __GNUC__ >= 8
++#define PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_BEGIN     \
++    _Pragma("GCC diagnostic push")                          \
++    _Pragma("GCC diagnostic ignored \"-Wattribute-alias\"")
++#define PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_END       \
++    _Pragma ("GCC diagnostic pop")
++#else
++#define PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_BEGIN
++#define PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_END
++#endif
++
+ #ifdef __cplusplus
+ }
+ #endif
+diff --git a/mingw-w64-crt/misc/imaxdiv.c b/mingw-w64-crt/misc/imaxdiv.c
+index 8a6fb02c..fb380c52 100644
+--- a/mingw-w64-crt/misc/imaxdiv.c
++++ b/mingw-w64-crt/misc/imaxdiv.c
+@@ -17,6 +17,7 @@
+ 
+ #include	<inttypes.h>
+ #include	<stdlib.h>
++#include	"internal.h"
+ 
+ imaxdiv_t
+ __cdecl
+@@ -29,19 +30,11 @@ imaxdiv(intmax_t numer, intmax_t denom)
+ }
+ imaxdiv_t (__cdecl *__MINGW_IMP_SYMBOL(imaxdiv))(intmax_t, intmax_t) = imaxdiv;
+ 
+-/*
+- * avoid gcc 8+ warning:
+- * 'lldiv' alias between functions of incompatible types 'lldiv_t(long long int,  long long int)' {aka 'struct <anonymous>(long long int,  long long int)'} and 'imaxdiv_t(intmax_t,  intmax_t)' {aka 'struct <anonymous>(long long int,  long long int)'}
+- */
+-#if defined(__GNUC__) && __GNUC__ >= 8
+-#pragma GCC diagnostic push
+-#pragma GCC diagnostic ignored "-Wattribute-alias"
+-#endif
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_BEGIN
+ lldiv_t __attribute__ ((alias ("imaxdiv")))
+ __cdecl
+ lldiv (long long, long long); 
+ extern lldiv_t __attribute__ ((alias (__MINGW64_STRINGIFY(__MINGW_IMP_SYMBOL(imaxdiv)))))
+ (__cdecl *__MINGW_IMP_SYMBOL(lldiv))(long long, long long);
+-#if defined(__GNUC__) && __GNUC__ >= 8
+-#pragma GCC diagnostic pop
+-#endif
++
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_END
