@@ -149,11 +149,14 @@ cc_library(
         # build for the target specified by compiler defines. Since we pass -target the compiler
         # defines will be correct.
         "_LIBUNWIND_IS_NATIVE_ONLY",
-        "_NDEBUG",
         # "_LIBUNWIND_HAS_NO_THREADS", # ANY_NON_SINGLE_THREADED
         # "_DCOMPILER_RT_ARMHF_TARGET", # ARM
-        "_LIBUNWIND_USE_FRAME_HEADER_CACHE",
     ] + select({
+        # The cache requires serialized dl_iterate_phdr callbacks, as provided
+        # by glibc's loader lock. musl does not serialize these callbacks.
+        "@llvm//platforms/config:gnu": ["_LIBUNWIND_USE_FRAME_HEADER_CACHE"],
+        "//conditions:default": [],
+    }) + select({
         ":windows_static": [
             "_LIBUNWIND_HIDE_SYMBOLS",
         ],
