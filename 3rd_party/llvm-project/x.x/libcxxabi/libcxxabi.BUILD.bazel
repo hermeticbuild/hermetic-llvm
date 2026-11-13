@@ -104,7 +104,6 @@ cc_library(
         "//conditions:default": [],
     }),
     defines = [
-        "NDEBUG",
         "_LIBCPP_BUILDING_LIBRARY",
         "LIBCXX_BUILDING_LIBCXXABI",
     ] + ([
