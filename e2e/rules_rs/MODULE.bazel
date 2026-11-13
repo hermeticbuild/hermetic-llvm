@@ -38,16 +38,7 @@ register_toolchains(
     dev_dependency = True,
 )
 
-bazel_dep(name = "rules_rs", version = "0.0.102")
-single_version_override(
-    module_name = "rules_rs",
-    patch_strip = 1,
-    patches = [
-        # Ubuntu's live mirrors dropped the pinned packages. Newer rules_rs releases use Launchpad.
-        "//:rules_rs_zlib_archive.patch",
-    ],
-    version = "0.0.102",
-)
+bazel_dep(name = "rules_rs", version = "0.2.4")
 
 rules_rust = use_extension("@rules_rs//rs:rules_rust.bzl", "rules_rust")
 use_repo(rules_rust, "rules_rust")
