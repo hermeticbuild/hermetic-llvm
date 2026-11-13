@@ -48,7 +48,7 @@ load(":bazel_version.bzl", "validate_static_library_compatible")
 load(":fdo_optimize_test.bzl", "cs_fdo_optimize_test", "fdo_optimize_test")
 load(":musl_header_generation_tests.bzl", "musl_header_generation_tests")
 load(":thin_lto_features_test.bzl", "thin_lto_features_test")
-load(":windows_msvc_artifacts.bzl", "windows_msvc_artifacts")
+load(":windows_msvc_artifacts.bzl", "windows_msvc_artifacts", "windows_msvc_native_test")
 load(":windows_runtime_dynamic_libraries_test.bzl", "windows_runtime_dynamic_libraries_assertion")
 
 _VALIDATE_STATIC_LIBRARY_COMPATIBLE = validate_static_library_compatible()
@@ -491,49 +491,50 @@ cc_binary(
 )
 
 cc_library(
-    name = "windows_msvc_libcxx_behavior_support",
-    srcs = ["windows_msvc_libcxx_behavior_support.cc"],
-    hdrs = ["windows_msvc_libcxx_behavior_support.h"],
+    name = "windows_msvc_behavior_support",
+    srcs = ["windows_msvc_behavior_support.cc"],
+    hdrs = ["windows_msvc_behavior_support.h"],
     linkstatic = True,
+    local_defines = select({
+        "@llvm//constraints/cxxstdlib:msvcstl": ["EXPECT_MSVC_STL"],
+        "//conditions:default": [],
+    }),
     target_compatible_with = [
         "@llvm//constraints/windows/abi:msvc",
-        "@llvm//constraints/cxxstdlib:libcxx",
         "@platforms//os:windows",
     ],
 )
 
 cc_library(
-    name = "windows_msvc_libcxx_alwayslink",
-    srcs = ["windows_msvc_libcxx_alwayslink.cc"],
+    name = "windows_msvc_alwayslink",
+    srcs = ["windows_msvc_alwayslink.cc"],
     linkstatic = True,
     target_compatible_with = [
         "@llvm//constraints/windows/abi:msvc",
-        "@llvm//constraints/cxxstdlib:libcxx",
         "@platforms//os:windows",
     ],
-    deps = [":windows_msvc_libcxx_behavior_support"],
+    deps = [":windows_msvc_behavior_support"],
     alwayslink = True,
 )
 
 [
     cc_test(
-        name = "windows_msvc_libcxx_behavior_" + crt,
+        name = "windows_msvc_behavior_" + crt,
         srcs = [
             "windows_msvc_assembly.S",
+            "windows_msvc_behavior.cc",
             "windows_msvc_c_smoke.c",
-            "windows_msvc_libcxx_behavior.cc",
         ] + _WINDOWS_MSVC_RAW_ASSEMBLY_SRCS,
         features = ["generate_pdb_file"] if crt == "debug" else [],
         linkopts = ["/OPT:REF"],
         linkstatic = False,
         target_compatible_with = [
             "@llvm//constraints/windows/abi:msvc",
-            "@llvm//constraints/cxxstdlib:libcxx",
             "@platforms//os:windows",
         ],
         deps = [
-            ":windows_msvc_libcxx_alwayslink",
-            ":windows_msvc_libcxx_behavior_support",
+            ":windows_msvc_alwayslink",
+            ":windows_msvc_behavior_support",
         ],
     )
     for crt in [
@@ -582,23 +583,22 @@ cc_library(
 ]
 
 cc_test(
-    name = "windows_msvc_libcxx_behavior_thinlto",
+    name = "windows_msvc_behavior_thinlto",
     srcs = [
         "windows_msvc_assembly.S",
+        "windows_msvc_behavior.cc",
         "windows_msvc_c_smoke.c",
-        "windows_msvc_libcxx_behavior.cc",
     ] + _WINDOWS_MSVC_RAW_ASSEMBLY_SRCS,
     features = ["thin_lto"],
     linkopts = ["/OPT:REF"],
     linkstatic = False,
     target_compatible_with = [
         "@llvm//constraints/windows/abi:msvc",
-        "@llvm//constraints/cxxstdlib:libcxx",
         "@platforms//os:windows",
     ],
     deps = [
-        ":windows_msvc_libcxx_alwayslink",
-        ":windows_msvc_libcxx_behavior_support",
+        ":windows_msvc_alwayslink",
+        ":windows_msvc_behavior_support",
     ],
 )
 
@@ -615,9 +615,9 @@ cc_test(
 )
 
 filegroup(
-    name = "windows_msvc_libcxx_behavior_debug_pdb",
+    name = "windows_msvc_behavior_debug_pdb",
     testonly = True,
-    srcs = [":windows_msvc_libcxx_behavior_debug"],
+    srcs = [":windows_msvc_behavior_debug"],
     output_group = "pdb_file",
 )
 
@@ -1792,9 +1792,63 @@ cc_test(
 
 assert_msvc_tuple_features()
 
-_WINDOWS_MSVC_ARTIFACT_PLATFORMS = [
-    ("x86_64", "@llvm//platforms:windows_x86_64_msvc", "AMD64"),
-    ("aarch64", "@llvm//platforms:windows_aarch64_msvc", "ARM64"),
+_WINDOWS_MSVC_CPUS = [
+    ("x86_64", "AMD64"),
+    ("aarch64", "ARM64"),
+]
+
+[
+    platform(
+        name = "windows_" + cpu + "_msvcstl",
+        constraint_values = ["@llvm//constraints/cxxstdlib:msvcstl"],
+        parents = ["@llvm//platforms:windows_" + cpu + "_msvc"],
+    )
+    for cpu, _ in _WINDOWS_MSVC_CPUS
+]
+
+_WINDOWS_MSVC_ARTIFACT_CONFIGS = [
+    (
+        "windows_msvc_artifacts_" + cpu,
+        "@llvm//platforms:windows_" + cpu + "_msvc",
+        machine,
+        "libcxx",
+    )
+    for cpu, machine in _WINDOWS_MSVC_CPUS
+] + [
+    (
+        "windows_msvc_artifacts_" + cpu + "_msvcstl",
+        ":windows_" + cpu + "_msvcstl",
+        machine,
+        "msvcstl",
+    )
+    for cpu, machine in _WINDOWS_MSVC_CPUS
+]
+
+[
+    windows_msvc_native_test(
+        name = "windows_msvc_" + cpu + "_" + stdlib + "_native_test",
+        binary = ":windows_msvc_behavior_mt",
+        tags = [
+            "manual",
+            "no-remote",
+        ],
+        target_compatible_with = [
+            "@platforms//cpu:" + cpu,
+            "@platforms//os:windows",
+        ],
+        target_platform = platform,
+    )
+    for cpu, _ in (_WINDOWS_MSVC_CPUS if bazel_features.cc.supports_starlarkified_toolchains else [])
+    for stdlib, platform in [
+        (
+            "libcxx",
+            "@llvm//platforms:windows_" + cpu + "_msvc",
+        ),
+        (
+            "msvcstl",
+            ":windows_" + cpu + "_msvcstl",
+        ),
+    ]
 ]
 
 cc_library(
@@ -1841,15 +1895,22 @@ platform(
     tags = ["manual"],
 )
 
+platform(
+    name = "windows_x86_64_mingw_msvcstl_invalid",
+    constraint_values = ["@llvm//constraints/cxxstdlib:msvcstl"],
+    parents = ["@llvm//platforms:windows_x86_64"],
+    tags = ["manual"],
+)
+
 _WINDOWS_MSVC_MD_ARTIFACTS = [
     "windows_msvc_com_support_ansi_md",
     "windows_msvc_com_support_unicode_md",
-    "windows_msvc_libcxx_behavior_md",
+    "windows_msvc_behavior_md",
     "windows_msvc_legacy_stdio_md",
-    "windows_msvc_libcxx_behavior_thinlto",
-    "windows_msvc_libcxx_behavior_debug",
-    "windows_msvc_libcxx_behavior_debug_pdb",
-    "windows_msvc_libcxx_behavior_support",
+    "windows_msvc_behavior_thinlto",
+    "windows_msvc_behavior_debug",
+    "windows_msvc_behavior_debug_pdb",
+    "windows_msvc_behavior_support",
     "windows_msvc_dll_behavior",
     "windows_add.dll",
     "windows_add_interface_library",
@@ -1865,59 +1926,60 @@ _WINDOWS_MSVC_MD_ARTIFACTS = [
 _WINDOWS_MSVC_MT_ARTIFACTS = [
     "windows_msvc_com_support_ansi_mt",
     "windows_msvc_com_support_unicode_mt",
-    "windows_msvc_libcxx_behavior_mt",
+    "windows_msvc_behavior_mt",
     "windows_msvc_legacy_stdio_mt",
 ]
 
 [
     windows_msvc_artifacts(
-        name = "windows_msvc_artifacts_" + cpu + "_md",
+        name = name + "_md",
         testonly = True,
         static_crt = False,
         tags = ["manual"],
         target_platform = platform,
         targets = _WINDOWS_MSVC_MD_ARTIFACTS,
     )
-    for cpu, platform, _ in _WINDOWS_MSVC_ARTIFACT_PLATFORMS
+    for name, platform, _, _ in _WINDOWS_MSVC_ARTIFACT_CONFIGS
 ]
 
 [
     windows_msvc_artifacts(
-        name = "windows_msvc_artifacts_" + cpu + "_mt",
+        name = name + "_mt",
         testonly = True,
         static_crt = True,
         tags = ["manual"],
         target_platform = platform,
         targets = _WINDOWS_MSVC_MT_ARTIFACTS,
     )
-    for cpu, platform, _ in _WINDOWS_MSVC_ARTIFACT_PLATFORMS
+    for name, platform, _, _ in _WINDOWS_MSVC_ARTIFACT_CONFIGS
 ]
 
 [
     filegroup(
-        name = "windows_msvc_artifacts_" + cpu,
+        name = name,
         testonly = True,
         srcs = [
-            ":windows_msvc_artifacts_" + cpu + "_md",
-            ":windows_msvc_artifacts_" + cpu + "_mt",
+            ":" + name + "_md",
+            ":" + name + "_mt",
         ],
         tags = ["manual"],
     )
-    for cpu, _, _ in _WINDOWS_MSVC_ARTIFACT_PLATFORMS
+    for name, _, _, _ in _WINDOWS_MSVC_ARTIFACT_CONFIGS
 ]
 
 [
     exec_test(
         sh_test,
-        name = "windows_msvc_artifacts_" + cpu + "_test",
+        name = name + "_test",
         srcs = ["windows_msvc_artifacts_test.sh"],
-        data = ["windows_msvc_artifacts_" + cpu],
+        data = [name],
         env = {
-            "ARTIFACTS": "$(rlocationpaths :windows_msvc_artifacts_{})".format(cpu),
+            "ARTIFACTS": "$(rlocationpaths :{})".format(name),
             "LLVM_AR": "$(rlocationpath @llvm//tools:llvm-ar)",
             "LLVM_NM": "$(rlocationpath @llvm//tools:llvm-nm)",
             "LLVM_READOBJ": "$(rlocationpath @llvm//tools:llvm-readobj)",
             "MACHINE": machine,
+            "MSVC_STDLIB": stdlib,
         },
         tags = ["manual"],
         target_compatible_with = select({
@@ -1931,15 +1993,15 @@ _WINDOWS_MSVC_MT_ARTIFACTS = [
         ],
         deps = ["@bazel_tools//tools/bash/runfiles"],
     )
-    for cpu, _, machine in _WINDOWS_MSVC_ARTIFACT_PLATFORMS
+    for name, _, machine, stdlib in _WINDOWS_MSVC_ARTIFACT_CONFIGS
 ]
 
 test_suite(
     name = "windows_msvc_artifacts_matrix",
     tags = ["manual"],
     tests = [
-        "windows_msvc_artifacts_" + cpu + "_test"
-        for cpu, _, _ in _WINDOWS_MSVC_ARTIFACT_PLATFORMS
+        name + "_test"
+        for name, _, _, _ in _WINDOWS_MSVC_ARTIFACT_CONFIGS
     ],
 )
 

@@ -83,7 +83,16 @@ def _stdlib_contract_impl(ctx):
 
     library_evidence = link_args + static_runtime + dynamic_runtime
     has_stdlib = any(["libc++" in arg or "libstdc++" in arg or arg == "-lc++" for arg in library_evidence])
-    if has_stdlib == no_libraries:
+    if ctx.target_platform_has_constraint(ctx.attr._msvcstl[platform_common.ConstraintValueInfo]):
+        has_msvcstl_headers = any([arg.startswith("/imsvc") and "/VC/Tools/MSVC/" in arg for arg in compile_args])
+        if has_msvcstl_headers == no_headers:
+            fail("Microsoft STL include path differs from nostdincxx: %s" % compile_args)
+        if has_stdlib or any(["/DEFAULTLIB:" + lib in arg for arg in link_args for lib in ["msvcprt.lib", "libcpmt.lib"]]):
+            fail("Microsoft STL must use its COFF library directives: %s" % library_evidence)
+        for lib in ["msvcprt.lib", "libcpmt.lib"]:
+            if ("/clang:/NODEFAULTLIB:" + lib in link_args) != no_libraries:
+                fail("Microsoft STL library suppression differs from nostdlibxx: %s" % link_args)
+    elif has_stdlib == no_libraries:
         fail("implicit C++ library selection differs from nostdlibxx: %s" % library_evidence)
     if ctx.target_platform_has_constraint(ctx.attr._linux[platform_common.ConstraintValueInfo]):
         if not any(["unwind" in path for path in static_runtime]) or not any(["unwind" in path for path in dynamic_runtime]):
@@ -117,6 +126,7 @@ stdlib_contract = rule(
         "_exec_scope": attr.label(default = "exec_scope", cfg = "exec"),
         "_linux": attr.label(default = "@platforms//os:linux"),
         "_macos": attr.label(default = "@platforms//os:macos"),
+        "_msvcstl": attr.label(default = "//constraints/cxxstdlib:msvcstl"),
     }),
     fragments = ["cpp"],
     toolchains = use_cpp_toolchain(),

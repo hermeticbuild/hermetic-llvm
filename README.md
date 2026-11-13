@@ -355,6 +355,26 @@ header parsing, module maps, and layering checks are also not yet supported for
 MSVC targets; requests for unsupported features fail during analysis rather than
 being ignored.
 
+To use Microsoft STL, derive a Windows MSVC platform and set the C++
+standard-library constraint to `msvcstl`.
+
+```starlark
+platform(
+    name = "windows_x86_64_msvcstl",
+    parents = ["@llvm//platforms:windows_x86_64_msvc"],
+    constraint_values = ["@llvm//constraints/cxxstdlib:msvcstl"],
+)
+```
+
+Build with `--platforms=//:windows_x86_64_msvcstl` and the same SDK
+acceptance flags as above. For ARM64, use
+`@llvm//platforms:windows_aarch64_msvc` as the parent.
+
+Microsoft STL uses native MSVC wide-stdio behavior. Its headers select the
+retail STL library through COFF directives using the configured CRT mode.
+Applications built with `/MD` need the matching Visual C++ redistributable at
+runtime.
+
 ### macOS notes
 
 Cross-compiling to macOS from any host is supported.

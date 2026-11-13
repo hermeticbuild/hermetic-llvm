@@ -15,6 +15,16 @@ _FRONTEND_ACTIONS = [
     "@rules_cc//cc/toolchains/actions:cpp_header_parsing",
 ]
 
+config_setting(
+    name = "msvcstl_default_headers",
+    constraint_values = ["//constraints/cxxstdlib:msvcstl"],
+    flag_values = {
+        "//config:nostdincxx": "false",
+        "//toolchain:runtime_stage": "complete",
+    },
+    visibility = ["//toolchain/args:__pkg__"],
+)
+
 cc_args(
     name = "compatibility",
     actions = [
@@ -46,6 +56,8 @@ cc_args(
         "/D_CRT_NONSTDC_NO_WARNINGS",
         "/D_CRT_SECURE_NO_DEPRECATE",
         "/D_CRT_SECURE_NO_WARNINGS",
+    ] + select({
+        "//constraints/cxxstdlib:msvcstl": [],
         # Match libc++'s ISO wide-stdio semantics. MSVC C++ libraries built
         # without this define can record an incompatible mode, even when
         # they only use narrow stdio.
@@ -59,8 +71,8 @@ cc_args(
         # with native MSVC dependencies needs an explicit policy; removing
         # this define only from consumers is insufficient.
         # See https://github.com/hermeticbuild/hermetic-llvm/issues/871.
-        "/D_CRT_STDIO_ISO_WIDE_SPECIFIERS",
-    ],
+        "//conditions:default": ["/D_CRT_STDIO_ISO_WIDE_SPECIFIERS"],
+    }),
 )
 
 cc_args(
@@ -121,6 +133,21 @@ cc_args(
     format = {
         "sdk_header_case_overlay": "//runtimes/msvc:msvc_sdk_header_case_overlay",
     },
+)
+
+cc_args(
+    name = "msvcstl_header_case_overlay",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:cpp_compile",
+        "@rules_cc//cc/toolchains/actions:cpp_header_parsing",
+        "@rules_cc//cc/toolchains/actions:linkstamp_compile",
+    ],
+    args = [
+        "/clang:-ivfsoverlay",
+        "/clang:{overlay}",
+    ],
+    data = ["//runtimes/msvc:msvcstl_header_case_overlay"],
+    format = {"overlay": "//runtimes/msvc:msvcstl_header_case_overlay"},
 )
 
 cc_args(
@@ -275,10 +302,36 @@ cc_args(
 cc_args_list(
     name = "case_overlays",
     args = ["sdk_header_case_overlay"] + select({
+        ":msvcstl_default_headers": ["msvcstl_header_case_overlay"],
+        "//conditions:default": [],
+    }) + select({
         "//toolchain:runtimes_none": [],
         "//conditions:default": ["sdk_library_case_overlay"],
     }),
     visibility = ["//visibility:public"],
+)
+
+cc_args(
+    name = "msvcstl_suppress_default_libs",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    args = select({
+        "//config:nostdlibxx_enabled": [
+            "/clang:-Xlinker",
+            "/clang:/NODEFAULTLIB:msvcprt.lib",
+            "/clang:-Xlinker",
+            "/clang:/NODEFAULTLIB:libcpmt.lib",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+cc_args_list(
+    name = "cxxstdlib_default_libs",
+    args = select({
+        # Microsoft STL headers emit the matching retail /DEFAULTLIB.
+        "//constraints/cxxstdlib:msvcstl": ["msvcstl_suppress_default_libs"],
+        "//conditions:default": ["//toolchain/args:clang_cl_static_libcxx_default_lib"],
+    }),
 )
 
 cc_args_list(
@@ -309,7 +362,7 @@ cc_args_list(
         # Hosted C construction tools need the target CRT and SDK, but do not
         # consume the C++ standard library.
         "//toolchain:runtimes_stage1_hosted": [],
-        "//conditions:default": ["//toolchain/args:clang_cl_static_libcxx_default_lib"],
+        "//conditions:default": ["cxxstdlib_default_libs"],
     }),
     visibility = ["//visibility:public"],
 )

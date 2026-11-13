@@ -1,4 +1,4 @@
-#include "windows_msvc_libcxx_behavior_support.h"
+#include "windows_msvc_behavior_support.h"
 
 namespace {
 struct RegisterAlwayslinkObject {

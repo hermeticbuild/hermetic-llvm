@@ -7,6 +7,7 @@ LIBSTDCXXS = [
 
 CXXSTDLIBS = [
     "libcxx",
+    "msvcstl",
 ] + LIBSTDCXXS
 
 DEFAULT_CXXSTDLIB = "libcxx"

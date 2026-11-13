@@ -83,9 +83,22 @@ jobs:
         shell: bash
         run: |
           repository_cache_flags=()
+          msvc_flags=()
+          test_targets=(//...)
           if [[ "${{ matrix.folder }}" == "e2e/cross_compilation" ]]; then
             repository_cache_flags+=(--repository_cache= --repo_contents_cache=)
             repository_cache_flags+=(--jobs=100)
+            if [[ "${{ matrix.bazel_version }}" != "8.x" ]]; then
+              test_targets+=(//:windows_msvc_cross_build_test)
+            fi
+          elif [[ "${{ matrix.folder }}" == "e2e/rules_cc" && "${{ matrix.bazel_version }}" == "9.x" ]]; then
+            test_targets+=(//:windows_msvc_artifacts_matrix)
+          fi
+          if (( ${#test_targets[@]} > 1 )); then
+            msvc_flags+=(
+              --repo_env=BAZEL_MSVC_RUNTIME_VISUAL_STUDIO_EULA=1
+              --repo_env=BAZEL_WINDOWS_SDK_EULA=1
+            )
           fi
 
           bazel \
@@ -93,30 +106,9 @@ jobs:
             --bazelrc=.bazelrc \
             test \
             "${repository_cache_flags[@]}" \
+            "${msvc_flags[@]}" \
             ${{ matrix.extra_flags }} \
-            //...
-
-          # The MSVC cross-compilation binaries are tagged manual, so
-          # `bazel test //...` excludes them. Exercise both MSVC target
-          # architectures in the existing cross-compilation jobs without
-          # adding a dedicated lane or executing the resulting PE files.
-          if [[ "${{ matrix.folder }}" == "e2e/cross_compilation" && "${{ matrix.bazel_version }}" != "8.x" ]]; then
-            bazel \
-              --bazelrc=$GITHUB_WORKSPACE/.github/workflows/ci.bazelrc \
-              --bazelrc=.bazelrc \
-              build \
-              "${repository_cache_flags[@]}" \
-              --repo_env=BAZEL_MSVC_RUNTIME_VISUAL_STUDIO_EULA=1 \
-              --repo_env=BAZEL_WINDOWS_SDK_EULA=1 \
-              //:main_windows_x86_64_msvc \
-              //:main_windows_aarch64_msvc \
-              //:main_windows_x86_64_msvc_external_include_paths \
-              //:main_windows_aarch64_msvc_external_include_paths \
-              //:main_in_dep_windows_x86_64_msvc \
-              //:main_in_dep_windows_aarch64_msvc \
-              //:main_in_dep_windows_x86_64_msvc_static_crt \
-              //:main_in_dep_windows_aarch64_msvc_static_crt
-          fi
+            "${test_targets[@]}"
 
       # The tests above opt C++ actions into path mapping. Without that opt-in,
       # the toolchain module map must keep the paths the compiles use.
@@ -186,12 +178,27 @@ jobs:
         id: bazel_test
         env:
           USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
+          MSYS2_ARG_CONV_EXCL: "*"
         working-directory: ${{ matrix.folder }}
         shell: bash
         run: |
-          EXTRA_ARGS=""
+          extra_args=()
+          test_targets=(//...)
           if [[ "${{ matrix.folder }}" == *"cross_compilation"* ]]; then
-            EXTRA_ARGS="--//:test_glibc_versions=none"
+            extra_args+=(--//:test_glibc_versions=none)
+          else
+            extra_args+=(
+              --repo_env=BAZEL_MSVC_RUNTIME_VISUAL_STUDIO_EULA=1
+              --repo_env=BAZEL_WINDOWS_SDK_EULA=1
+            )
+            cpu=x86_64
+            if [[ "${RUNNER_ARCH}" == ARM64 ]]; then
+              cpu=aarch64
+            fi
+            test_targets+=(
+              "//:windows_msvc_${cpu}_msvcstl_native_test"
+              "//:windows_msvc_${cpu}_libcxx_native_test"
+            )
           fi
 
           bazel \
@@ -203,8 +210,8 @@ jobs:
             --repo_contents_cache= \
             --jobs=100 \
             --test_tag_filters=-analysis \
-            $EXTRA_ARGS \
-            //...
+            "${extra_args[@]}" \
+            "${test_targets[@]}"
 
           if [[ "${{ matrix.folder }}" == "e2e/rules_cc" ]]; then
             bazel \
@@ -221,6 +228,14 @@ jobs:
               //:fdo_optimize_test \
               //:cs_fdo_optimize_test
           fi
+
+      - name: Check native Windows MSVC actions
+        if: matrix.folder == 'e2e/rules_cc'
+        env:
+          USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
+        working-directory: e2e/rules_cc
+        shell: bash
+        run: ./windows_msvc_native_exec_validation.sh
 
   # macOS: smoke build (//:main_default) plus the supported sanitizer e2e tests.
   test_macos:
