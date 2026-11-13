@@ -175,8 +175,9 @@ def config_settings():
     # prequisites like the standard C library, the C++ standard library,
     # the unwinder, etc.
     #
-    # Setting this to "debug" will compile these libraries with debug symbols,
-    # frame pointers where applicable, and no optimizations.
+    # Setting this to "debug" will compile these libraries with debug symbols
+    # and frame pointers where applicable. Sanitizers use -O1 in debug mode,
+    # matching compiler-rt; the other runtimes use -O0.
     string_flag(
         name = "runtimes_optimization_mode",
         values = OPTIMIZATION_MODES,

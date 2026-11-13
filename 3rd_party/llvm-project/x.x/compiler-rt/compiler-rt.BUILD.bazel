@@ -44,6 +44,15 @@ config_setting(
     flag_values = {"@llvm//config:runtimes_optimization_mode": "optimized"},
 )
 
+config_setting(
+    name = "windows_msvc_debug",
+    constraint_values = [
+        "@llvm//constraints/windows/abi:msvc",
+        "@platforms//os:windows",
+    ],
+    flag_values = {"@llvm//config:runtimes_optimization_mode": "debug"},
+)
+
 # diff_tests asserting the weak-symbol lists in weak_symbols.bzl stay in sync
 # with upstream's compiler-rt/lib/<name>/weak_symbols.txt (run on any platform).
 weak_symbols_in_sync_tests()
@@ -977,14 +986,23 @@ SANITIZER_COMMON_CFLAGS = select({
     "-fno-stack-protector",
     "-fvisibility=hidden",
     "-fno-lto",
-    "-O3",  # if not debug else -O1
-    "-gline-tables-only",
-    # "-g" # if debug
     "-fno-modules",
     "-Wno-gnu",
     "-Wno-variadic-macros",
     "-Wno-c99-extensions",
 ] + select({
+    # Let the shared runtime flags choose the MSVC optimization level.
+    ":windows_msvc_debug": ["-DSANITIZER_DEBUG=1"],
+    ":windows_msvc_optimized": [],
+    "@llvm//config:runtimes_optimization_mode_debug": [
+        "-DSANITIZER_DEBUG=1",
+        "-O1",
+    ],
+    "//conditions:default": ["-O3"],
+}) + select({
+    "@llvm//config:runtimes_optimization_mode_debug": [],
+    "//conditions:default": ["-gline-tables-only"],
+}) + select({
     # macOS uses the SDK libc++ on the default include path; don't strip it.
     "@platforms//os:macos": [],
     "//conditions:default": ["-nostdinc++"],
@@ -3589,8 +3607,15 @@ cc_runtime_stage0_shared_library(
 
 # Standalone Scudo is selected on final executables through their malloc attribute.
 # Keep the runtime static and retained: its allocation entry points are weak.
-SCUDO_STANDALONE_COPTS = [
-    "-O3",
+SCUDO_STANDALONE_COPTS = select({
+    "@llvm//config:runtimes_optimization_mode_debug": [
+        "-O0",
+        "-g",
+        "-DSCUDO_DEBUG=1",
+        "-DSCUDO_ENABLE_HOOKS=1",
+    ],
+    "//conditions:default": ["-O3"],
+}) + [
     "-fno-lto",
     "-fvisibility=hidden",
     "-fno-exceptions",
