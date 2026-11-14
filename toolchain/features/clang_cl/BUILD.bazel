@@ -610,6 +610,13 @@ cc_feature(
     feature_name = "compiler_param_file",
 )
 
+# Takes precedence over compiler_param_file in Bazel versions that support it,
+# so that param files are only used for long command lines.
+cc_feature(
+    name = "compiler_param_file_on_demand",
+    feature_name = "compiler_param_file_on_demand",
+)
+
 cc_feature(
     name = "windows_quoting_for_param_files",
     feature_name = "windows_quoting_for_param_files",
@@ -650,6 +657,7 @@ cc_feature_set(
     name = "known_features",
     all_of = [
         ":compiler_param_file",
+        ":compiler_param_file_on_demand",
         ":def_file",
         ":pending_layering_check",
         ":pending_use_module_maps",
@@ -663,6 +671,7 @@ cc_feature_set(
     name = "enabled_features",
     all_of = [
         ":compiler_param_file",
+        ":compiler_param_file_on_demand",
         ":def_file",
         ":windows_quoting_for_param_files",
     ],
