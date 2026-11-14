@@ -1,0 +1,16 @@
+load("@bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+
+platform_transition_filegroup(
+    name = "builtins",
+    srcs = ["@llvm-project//compiler-rt:clang_rt.builtins.static"],
+    target_platform = "//platforms:linux_aarch64",
+)
+
+sh_test(
+    name = "lse_members_test",
+    size = "small",
+    srcs = ["lse_members_test.sh"],
+    args = ["$(rootpath :builtins)"],
+    data = [":builtins"],
+)

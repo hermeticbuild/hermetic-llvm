@@ -12,6 +12,7 @@ load(
     "update_attrs",
 )
 load("//:http_bsdtar_archive.bzl", "download_remote_files")
+load("//3rd_party/llvm-project/x.x/compiler-rt:lse_variants.bzl", "LSE_ATOMIC_VARIANTS")
 load(":llvm_project_common.bzl", "LLVM_PROJECT_OVERLAY", "write_llvm_project_files")
 
 _DEFAULT_OVERLAY_FILES = {
@@ -142,6 +143,19 @@ def _copy_files(rctx):
             fail("Input {} does not exist".format(label))
         rctx.file(path, rctx.read(source), executable = False)
 
+def _write_lse_atomic_sources(rctx):
+    # One copy of lse.S per atomic helper, so the objects get distinct names
+    # without a copy or symlink action each. Only the compiler-rt BUILD file
+    # in overlay_files uses them.
+    content = rctx.read("compiler-rt/lib/builtins/aarch64/lse.S")
+    for pat, size, model in LSE_ATOMIC_VARIANTS:
+        rctx.file(
+            "compiler-rt/lib/builtins/aarch64/lse_{}_{}_{}.S".format(pat, size, model),
+            content,
+            executable = False,
+            legacy_utf8 = False,
+        )
+
 def _update_integrity_attrs(rctx, archive_info, remote_files_info, remote_patches_info):
     overrides = {}
     if not rctx.attr.sha256 and not rctx.attr.integrity:
@@ -180,6 +194,7 @@ def _llvm_project_archive_impl(rctx):
     remote_files_info = download_remote_files(rctx)
     remote_patches_info = patch(rctx)
     _copy_files(rctx)
+    _write_lse_atomic_sources(rctx)
     write_llvm_project_files(rctx)
 
     return _update_integrity_attrs(rctx, archive_info, remote_files_info, remote_patches_info)
