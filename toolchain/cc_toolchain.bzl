@@ -1,5 +1,6 @@
 load("@rules_cc//cc/toolchains:feature_set.bzl", "cc_feature_set")
 load("@rules_cc//cc/toolchains:toolchain.bzl", _cc_toolchain = "cc_toolchain")
+load(":stage_independent.bzl", "stage_independent_feature_set")
 
 _WINDOWS_MSVC_SUPPORTS_HEADER_PARSING = False
 
@@ -17,7 +18,7 @@ def cc_toolchain(
         "@llvm//toolchain/features:gcc_quoting_for_param_files",
     ] if supports_gnu_param_file_quoting else []
     cc_feature_set(
-        name = name + "_msvc_known_features",
+        name = name + "_msvc_runtimes_known_features",
         all_of = [
             "@llvm//toolchain/features:opt",
             "@llvm//toolchain/features:opt_stub",
@@ -48,12 +49,15 @@ def cc_toolchain(
             # Target ABI: COFF link policy, CRT, validation, and explicit
             # unsupported coverage/sanitizer/header-parsing boundaries.
             "@llvm//toolchain/features/msvc:abi_known_features",
-        ] + select({
-            "@llvm//toolchain:runtimes_none": [],
-            "@llvm//toolchain:runtimes_stage1": [],
-            "@llvm//toolchain:runtimes_stage1_hosted": [],
-            "//conditions:default": ["@llvm//toolchain/features/clang_cl:compiler_policy_features"],
-        }),
+        ],
+    )
+
+    cc_feature_set(
+        name = name + "_msvc_known_features",
+        all_of = [
+            name + "_msvc_runtimes_known_features",
+            "@llvm//toolchain/features/clang_cl:compiler_policy_features",
+        ],
     )
 
     cc_feature_set(
@@ -91,16 +95,6 @@ def cc_toolchain(
             # Always last: contains user compile/link arguments.
             "@llvm//toolchain/features/legacy:clang_cl_experimental_replace_legacy_action_config_features",
         ],
-    )
-
-    cc_feature_set(
-        name = name + "_msvc_selected_enabled_features",
-        all_of = select({
-            "@llvm//toolchain:runtimes_none": [name + "_msvc_runtimes_enabled_features"],
-            "@llvm//toolchain:runtimes_stage1": [name + "_msvc_runtimes_enabled_features"],
-            "@llvm//toolchain:runtimes_stage1_hosted": [name + "_msvc_runtimes_enabled_features"],
-            "//conditions:default": [name + "_msvc_enabled_features"],
-        }),
     )
 
     cc_feature_set(
@@ -213,55 +207,50 @@ def cc_toolchain(
         ],
     )
 
-    cc_feature_set(
-        name = name + "_generic_selected_known_features",
-        all_of = gnu_quoting_features + select({
-            "@llvm//toolchain:runtimes_none": [
+    # Runtime stages share one feature set, complete toolchains use another.
+    # Each is analysed once, outside the runtime stage configurations.
+    for kind, generic_known_features, generic_enabled_features in [
+        (
+            "runtimes",
+            [
                 "@llvm//toolchain/features:external_include_paths",
                 "@llvm//toolchain/features:fdo_optimize",
                 "@llvm//toolchain/features:skip_virtual_includes",
             ],
-            "@llvm//toolchain:runtimes_stage1": [
-                "@llvm//toolchain/features:external_include_paths",
-                "@llvm//toolchain/features:fdo_optimize",
-                "@llvm//toolchain/features:skip_virtual_includes",
-            ],
-            "@llvm//toolchain:runtimes_stage1_hosted": [
-                "@llvm//toolchain/features:external_include_paths",
-                "@llvm//toolchain/features:fdo_optimize",
-                "@llvm//toolchain/features:skip_virtual_includes",
-            ],
-            "//conditions:default": [name + "_generic_known_features"],
-        }),
-    )
+            [name + "_generic_runtimes_only_enabled_features"],
+        ),
+        (
+            "complete",
+            [name + "_generic_known_features"],
+            [name + "_generic_enabled_features"],
+        ),
+    ]:
+        msvc_kind = "_msvc_runtimes" if kind == "runtimes" else "_msvc"
+        cc_feature_set(
+            name = name + "_" + kind + "_known_features_for_target",
+            all_of = select({
+                "@platforms//os:uefi": ["@llvm//toolchain/features/legacy:uefi_legacy_replacements"],
+                "@llvm//constraints/windows/abi:msvc": [name + msvc_kind + "_known_features"],
+                "//conditions:default": gnu_quoting_features + generic_known_features,
+            }),
+        )
+        stage_independent_feature_set(
+            name = name + "_" + kind + "_known_features",
+            all_of = [name + "_" + kind + "_known_features_for_target"],
+        )
 
-    cc_feature_set(
-        name = name + "_generic_selected_enabled_features",
-        all_of = gnu_quoting_features + select({
-            "@llvm//toolchain:runtimes_none": [name + "_generic_runtimes_only_enabled_features"],
-            "@llvm//toolchain:runtimes_stage1": [name + "_generic_runtimes_only_enabled_features"],
-            "@llvm//toolchain:runtimes_stage1_hosted": [name + "_generic_runtimes_only_enabled_features"],
-            "//conditions:default": [name + "_generic_enabled_features"],
-        }),
-    )
-
-    cc_feature_set(
-        name = name + "_selected_known_features",
-        all_of = select({
-            "@platforms//os:uefi": ["@llvm//toolchain/features/legacy:uefi_legacy_replacements"],
-            "@llvm//constraints/windows/abi:msvc": [name + "_msvc_known_features"],
-            "//conditions:default": [name + "_generic_selected_known_features"],
-        }),
-    )
-
-    cc_feature_set(
-        name = name + "_selected_enabled_features",
-        all_of = select({
-            "@platforms//os:uefi": ["@llvm//toolchain/features/legacy:uefi_legacy_replacements"],
-            "@llvm//constraints/windows/abi:msvc": [name + "_msvc_selected_enabled_features"],
-            "//conditions:default": [name + "_generic_selected_enabled_features"],
-        }),
-    )
+        cc_feature_set(
+            name = name + "_" + kind + "_enabled_features_for_target",
+            all_of = select({
+                "@platforms//os:uefi": ["@llvm//toolchain/features/legacy:uefi_legacy_replacements"],
+                "@llvm//constraints/windows/abi:msvc": [name + msvc_kind + "_enabled_features"],
+                "//conditions:default": gnu_quoting_features + generic_enabled_features,
+            }),
+        )
+        stage_independent_feature_set(
+            name = name + "_" + kind + "_enabled_features",
+            all_of = [name + "_" + kind + "_enabled_features_for_target"],
+        )
 
     native.alias(
         name = name + "_generic_static_runtime_lib",
@@ -304,9 +293,10 @@ def cc_toolchain(
     _cc_toolchain(
         name = name,
         args = select({
-            "@llvm//toolchain:runtimes_none": ["@llvm//toolchain/runtimes:toolchain_args"],
-            "@llvm//toolchain:runtimes_stage1": ["@llvm//toolchain/runtimes:toolchain_args"],
-            "@llvm//toolchain:runtimes_stage1_hosted": ["@llvm//toolchain/runtimes:toolchain_args"],
+            "@llvm//toolchain:runtimes_none": ["@llvm//toolchain/runtimes:stage0_toolchain_args"],
+            "@llvm//toolchain:runtimes_stage1": ["@llvm//toolchain/runtimes:stage1_toolchain_args"],
+            "@llvm//toolchain:runtimes_stage1_hosted": ["@llvm//toolchain/runtimes:stage1_hosted_toolchain_args"],
+            # The libc++ include paths must use the same configuration as module_map.
             "//conditions:default": ["@llvm//toolchain:toolchain_args"],
         }) + select({
             "@llvm//constraints/windows/abi:msvc": ["@llvm//toolchain/features/msvc:configuration_validation_args"],
@@ -348,8 +338,18 @@ def cc_toolchain(
             ],
             "//conditions:default": [],
         }),
-        known_features = [name + "_selected_known_features"],
-        enabled_features = [name + "_selected_enabled_features"],
+        known_features = select({
+            "@llvm//toolchain:runtimes_none": [name + "_runtimes_known_features"],
+            "@llvm//toolchain:runtimes_stage1": [name + "_runtimes_known_features"],
+            "@llvm//toolchain:runtimes_stage1_hosted": [name + "_runtimes_known_features"],
+            "//conditions:default": [name + "_complete_known_features"],
+        }),
+        enabled_features = select({
+            "@llvm//toolchain:runtimes_none": [name + "_runtimes_enabled_features"],
+            "@llvm//toolchain:runtimes_stage1": [name + "_runtimes_enabled_features"],
+            "@llvm//toolchain:runtimes_stage1_hosted": [name + "_runtimes_enabled_features"],
+            "//conditions:default": [name + "_complete_enabled_features"],
+        }),
         tool_map = tool_map,
         module_map = module_map,
         static_runtime_lib = name + "_static_runtime_lib",
