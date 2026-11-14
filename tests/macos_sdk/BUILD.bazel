@@ -1,0 +1,10 @@
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+
+sh_test(
+    name = "symlinks_test",
+    size = "small",
+    srcs = ["symlinks_test.sh"],
+    args = ["$(rootpath @macos_sdk//sysroot)"],
+    data = ["@macos_sdk//sysroot"],
+    target_compatible_with = ["@platforms//os:linux"],
+)
