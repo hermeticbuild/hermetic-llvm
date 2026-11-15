@@ -38,12 +38,11 @@ apify_binary(
 )
 
 exec_test(
-    # buildifier: disable=positional-args
-    sh_test,
     name = "smoke_test",
     size = "small",
     srcs = ["smoke_test.sh"],
     data = [":smoke"],
+    rule = sh_test,
     target_compatible_with = select({
         "@platforms//os:linux": [],
         "@platforms//os:macos": [],

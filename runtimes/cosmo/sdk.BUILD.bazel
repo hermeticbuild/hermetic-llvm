@@ -22,7 +22,10 @@ exports_files(glob([
         name = cpu + "_libs",
         srcs = [cpu + "-linux-cosmo/lib"],
     )
-    for cpu in ["aarch64", "x86_64"]
+    for cpu in [
+        "aarch64",
+        "x86_64",
+    ]
 ]
 
 [
