@@ -40,6 +40,8 @@ The fixture uses an explicit private toolchain declaration because the ruleset's
 
 The release staging script was run locally with `FLANG_RELEASE_TAG=flang-23.1.2-r1`, `FLANG_RELEASE_DIR=/tmp/flang-release-staging-23.1.2-r1-recheck` and `FLANG_BAZEL_OUTPUT_BASE=/tmp/flang-implementation-output`. It reran the release-mode archive smoke test and both ruleset tests with uncached test results ([ruleset invocation](https://app.buildbuddy.io/invocation/af56d5f0-80b9-4230-9c05-2f639e753b62)); the staged `flang-toolchain-23.1.2-linux-amd64-musl.tar.zst` was 98 MiB and `shasum -a 256 -c SHA256.txt` passed. A mismatched version tag and an existing staging destination both fail before any build. No GitHub publication step ran.
 
+The existing GitHub `release` environment initially rejected `main` and allowed only `llvm-*` and `prebuilts-extras-*`. Its branch policy now also allows `main` (policy ID `66863859`), with the earlier patterns retained. This repository-settings change enables the manual post-merge workflow to access the existing release BuildBuddy key; it did not dispatch a workflow or create a release.
+
 ## Remaining before publication
 
 - Review and merge this branch. The `flang-prebuilt.yml` workflow has only a manual trigger, requires `main`, and rejects an existing tag before entering the release environment. Its staging script runs the release-mode relocated archive smoke test and pinned ruleset fixture before preparing `flang-toolchain-<version>-linux-amd64-musl.tar.zst` and `SHA256.txt`; the workflow then attests and publishes them.
