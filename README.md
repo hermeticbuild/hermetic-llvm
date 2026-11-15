@@ -443,9 +443,10 @@ contains both x86-64 and AArch64. Build `//runtimes/cosmo:llvm_distribution`
 for the archive with the Clang resource headers and the tool name symlinks.
 
 Run commands as `sh bin/llvm.com clang --version` or
-`sh bin/llvm.com ld.lld --version` from the extracted archive. On Linux,
-install the APE loader to invoke the tool name symlinks directly from programs
-that use the operating system's executable loader.
+`sh bin/llvm.com ld.lld --version` from the extracted archive. An installed
+APE loader accepts tool symlinks, for example `ape bin/clang --version`.
+On Linux, register the APE loader with `binfmt_misc` for direct execution via
+`execve`. LLVM's dynamic plugin loading is unavailable on Cosmopolitan 4.0.2.
 
 ### Other platforms
 
