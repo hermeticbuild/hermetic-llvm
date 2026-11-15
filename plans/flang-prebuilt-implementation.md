@@ -6,6 +6,8 @@
 
 Linux x86_64 execution to Linux x86_64 musl static executables. The archive is relocatable and carries Flang, its intrinsic modules and runtime, compiler-rt builtins, LLVM's multicall tools including LLD, the matching musl sysroot/CRT, and LLVM/Flang/musl license files. `bin/flang.cfg` selects those bundled paths. Dynamic linking, cross targets, macOS, Windows, OpenMP, CUDA and quadmath are not qualified by these tests.
 
+The archive target is constrained to Linux x86_64 musl. An explicit build under `//platforms:linux_amd64_gnu.2.28` fails analysis as incompatible, preventing a mixed-target package; Linux musl analysis succeeds with the matching musl execution platform.
+
 The selected final-link owner depends on the ruleset rule: `fortran_test` invokes Flang; `cc_test` consuming `fortran_library` invokes the registered Hermetic LLVM `CppLink` toolchain. The ruleset fixture enables `fully_static_link` for the latter.
 
 ## Reproduction and verification

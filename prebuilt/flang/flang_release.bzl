@@ -85,4 +85,9 @@ def flang_release(name):
         compress = "zstd",
         args = ["--options", "zstd:compression-level=6"],
         tags = ["manual"],
+        target_compatible_with = [
+            "@platforms//cpu:x86_64",
+            "@platforms//os:linux",
+            "//constraints/libc:musl",
+        ],
     )
