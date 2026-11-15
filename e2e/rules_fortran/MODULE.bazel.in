@@ -1,0 +1,18 @@
+module(name = "flang_prebuilt_e2e", version = "0.0.0")
+
+bazel_dep(name = "llvm", version = "0.0.0")
+local_path_override(module_name = "llvm", path = "__LLVM_REPO__")
+
+bazel_dep(name = "rules_fortran", version = "0.1.0")
+bazel_dep(name = "rules_cc", version = "0.2.25")
+bazel_dep(name = "platforms", version = "1.1.0")
+git_override(
+    module_name = "rules_fortran",
+    remote = "https://github.com/miinso/rules_fortran.git",
+    commit = "f0cac73ebdcbda7bc01b38b8a4ee33869416c220",
+)
+
+local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "local_repository")
+local_repository(name = "flang_prebuilt", path = "__FLANG_DIST__")
+
+register_toolchains("//:flang_toolchain")
