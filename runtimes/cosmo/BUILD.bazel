@@ -35,11 +35,6 @@ alias(
 )
 
 bzl_library(
-    name = "host_tools",
-    srcs = ["host_tools.bzl"],
-)
-
-bzl_library(
     name = "sdk",
     srcs = ["sdk.bzl"],
     deps = ["//:http_bsdtar_archive"],
@@ -71,4 +66,9 @@ llvm_release(
     name = "llvm_distribution",
     binary = ":llvm",
     binary_name = "llvm.com",
+)
+
+bzl_library(
+    name = "host_tools",
+    srcs = ["host_tools.bzl"],
 )
