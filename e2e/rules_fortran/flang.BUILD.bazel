@@ -9,13 +9,16 @@ exports_files([
 
 filegroup(
     name = "all_files",
-    srcs = glob(["**/*"], exclude = ["BUILD.bazel"]),
+    srcs = glob(
+        ["**/*"],
+        exclude = ["BUILD.bazel"],
+    ),
 )
 
 filegroup(
     name = "runtime_libraries",
     srcs = [
-        "lib/clang/23/lib/x86_64-unknown-linux-musl/libflang_rt.runtime.a",
         "lib/clang/23/lib/x86_64-unknown-linux-musl/libclang_rt.builtins.a",
+        "lib/clang/23/lib/x86_64-unknown-linux-musl/libflang_rt.runtime.a",
     ],
 )
