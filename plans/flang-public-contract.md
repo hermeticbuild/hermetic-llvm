@@ -1,5 +1,7 @@
 # Proposed Flang integration contract (for approval)
 
+**Superseded for design discussion:** Corentin rejected Hermetic LLVM ownership of the Flang toolchain type/provider. Current options: [flang-link-contract-options.md](flang-link-contract-options.md). This document records the earlier proposal only; its public labels are not approved.
+
 Status: proposal only. The toolchain ownership choice is open. No public API or implementation is authorized by this document. The initial qualified pair is Linux x86_64 execution and Linux x86_64 musl target, static executable. The existing standalone Flang draft is superseded.
 
 ## Toolchain ownership options
