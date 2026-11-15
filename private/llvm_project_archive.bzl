@@ -25,8 +25,6 @@ _DEFAULT_OVERLAY_FILES = {
 
 def _default_excludes():
     excludes = [
-        "flang-rt",
-        "flang",
         "polly",
         "orc-rt",
         "libclc",
@@ -48,6 +46,8 @@ def _default_excludes():
         "lldb",
         "llvm",
         "mlir",
+        "flang",
+        "flang-rt",
     ]
 
     for subproject in test_docs_subprojects:

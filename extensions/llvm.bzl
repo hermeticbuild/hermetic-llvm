@@ -72,6 +72,7 @@ _LLVM_22_SOURCE_PATCHES = [
 ] + _BEFORE_23_SOURCE_PATCHES + _DEFAULT_SOURCE_PATCHES
 
 _LLVM_23_SOURCE_PATCHES = [
+    "//3rd_party/llvm-project/23.x/patches:flang-runtime-build.patch",
     "//3rd_party/llvm-project/23.x/patches:llvm-macho-thinlto-guid.patch",
     "//3rd_party/llvm-project/x.x/patches:llvm-macho-arm64e-x1.patch",
     "//3rd_party/llvm-project/x.x/patches:clang-bazel-static-windows.patch",
