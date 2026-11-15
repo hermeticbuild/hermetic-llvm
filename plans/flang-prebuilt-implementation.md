@@ -4,7 +4,7 @@
 
 ## Qualified contract
 
-Linux x86_64 execution to Linux x86_64 musl static executables. The archive is relocatable and carries Flang, its intrinsic modules and runtime, compiler-rt builtins, LLVM's multicall tools including LLD, and the matching musl sysroot/CRT. `bin/flang.cfg` selects those bundled paths. Dynamic linking, cross targets, macOS, Windows, OpenMP, CUDA and quadmath are not qualified by these tests.
+Linux x86_64 execution to Linux x86_64 musl static executables. The archive is relocatable and carries Flang, its intrinsic modules and runtime, compiler-rt builtins, LLVM's multicall tools including LLD, the matching musl sysroot/CRT, and LLVM/Flang/musl license files. `bin/flang.cfg` selects those bundled paths. Dynamic linking, cross targets, macOS, Windows, OpenMP, CUDA and quadmath are not qualified by these tests.
 
 The selected final-link owner depends on the ruleset rule: `fortran_test` invokes Flang; `cc_test` consuming `fortran_library` invokes the registered Hermetic LLVM `CppLink` toolchain. The ruleset fixture enables `fully_static_link` for the latter.
 

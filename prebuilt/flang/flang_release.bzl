@@ -54,6 +54,7 @@ def flang_release(name):
         "@llvm-project//flang:include/flang/ISO_Fortran_binding.h": "include/ISO_Fortran_binding.h",
         "@llvm-project//flang:LICENSE.TXT": "LICENSE.Flang.txt",
         "@llvm-project//llvm:LICENSE.TXT": "LICENSE.LLVM.txt",
+        "@musl_libc//:COPYRIGHT": "LICENSE.musl.txt",
     }
     mtree(
         name = name + "_files_mtree",

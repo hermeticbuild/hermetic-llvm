@@ -24,6 +24,8 @@ exports_files(
     visibility = ["//visibility:public"],
 )
 
+exports_files(["COPYRIGHT"], visibility = ["@llvm//prebuilt/flang:__pkg__"])
+
 filegroup(
     name = "compile_srcs",
     srcs = glob(
