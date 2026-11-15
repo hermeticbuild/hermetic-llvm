@@ -1,24 +1,25 @@
 # Flang prebuilt investigation and implementation plan
 
 Investigation: 2026-11-15. Baseline: `02a44d57c9efc2410f70227fd61463a5f62cb6b1`.
-Status: investigation only; no feature implementation or public API introduced.
+Status: investigation only; no feature implementation or public API introduced. Updated after Corentin's design correction: **minimal host Flang prebuilt; target modules, runtime and sysroot supplied by Hermetic LLVM**. The earlier self-contained target distribution is superseded, not the desired release contract.
 
 ## Recommendation and acceptance boundary
 
-Publish a separate, versioned Flang distribution using the LLVM prebuilt release machinery. Do not put it in `prebuilt/extras`, enlarge the existing minimal LLVM archive, or add a Fortran ruleset dependency to the public module merely to publish binaries.
+Publish a separate minimal, versioned **host compiler** distribution using the LLVM prebuilt release machinery. Its core is `bin/flang` plus the host-side dependencies actually required to execute it, licenses and provenance. Do not put it in `prebuilt/extras`, enlarge the existing minimal LLVM archive, bundle a target sysroot, or add a Fortran ruleset dependency to the public module merely to publish binaries.
 
-Start with **Linux x86_64 execution → Linux x86_64 musl, static executable**. This is the first required qualification pair, not a pair already demonstrated working. It matches the current Linux release policy and avoids assuming a host GCC installation, glibc version, or dynamic loader. Add macOS arm64 next, then expand the existing host matrix only after each pair passes.
+Start host qualification with **Linux x86_64-musl Flang**, matching the existing Linux LLVM executable policy. Distinguish the compiler's execution platform from its output target. Separately qualify a Linux x86_64-musl Fortran target with Hermetic LLVM's target-side inputs; the host archive must not fix that target or static-link policy in an installed `flang.cfg`.
 
-Keep two distinct deliverables visible:
+Keep these ownership boundaries:
 
-1. A relocatable compiler distribution: Flang, intrinsic modules, matching target Flang runtime, C interoperability headers, LLVM tools/linker, licenses and provenance. This is useful independently of Hermetic LLVM's C++ rule integration, but **does not alone make final linking hermetic**.
-2. Fully hermetic native linking: add the target's CRT, libc, compiler builtins, sysroot and explicit driver defaults; demonstrate compile/link/run without host toolchain discovery. This is required before describing the distribution as a complete hermetic Fortran toolchain.
+1. Host prebuilt: Flang driver, integrated frontend/code generator and required host executable dependencies. Ordinary CPU `-c` needs no separately packaged Clang, assembler, LLVM optimization tools or linker.
+2. Hermetic LLVM target configuration: target intrinsic modules, Flang runtime, ISO C binding header, compiler builtins, libc/CRT/sysroot/SDK and selected linker. Generate modules with the matching **execution-platform** Flang and target flags; compile the runtime with the **target-platform** C++ toolchain.
+3. Consumer rule or explicit outside-Bazel environment: compose those declared inputs. Prefer separate Flang compile actions followed by `cc_common.link`; language-appropriate target runtimes are explicit link dependencies. An outside-Bazel cross environment, if later implemented, is a separate composition product, not content added to the host compiler tarball.
 
-The simpler long-term Bazel integration is Flang compilation plus `cc_common.link` through the selected C++ toolchain. The existing ruleset does not implement that for Fortran-main executables. Avoid building a second general C++ toolchain adapter inside Hermetic LLVM just for this release. A self-contained Flang archive plus a narrowly scoped test adapter is a reasonable first implementation.
+Source inspection supports Clang-owned final links for both Fortran-main and C-main programs in LLVM 23.1.2. It does not prove a complete `cc_common.link` adapter. The stock ruleset lacks that path for Fortran-main executables. Do not replace this missing integration by silently changing the release into a bundled target distribution.
 
 ### Public API approval
 
-The investigation adds no API. Proposed package name below is provisional. A new public `flang` extension, tag class, toolchain provider, source-selection switch, runtime label intended for downstream use, or `@llvm//...` adapter requires Corentin's explicit approval before implementation. Internal packaging rules and private test fixtures can reuse existing APIs. Do not infer approval for a new Bzlmod surface from approval to implement publishing.
+The investigation adds no API and does not change the separately approved artifact/tag naming. A new public `flang` extension, tag class, toolchain provider, source-selection switch, runtime label intended for downstream use, or `@llvm//...` adapter requires Corentin's explicit approval before implementation. Internal packaging rules and private test fixtures can reuse existing APIs. Do not infer approval for a new Bzlmod surface from approval to implement publishing.
 
 ## Current owning paths
 
@@ -48,11 +49,67 @@ Fixes belong in source extraction and versioned source-overlay/runtime build con
 
 The runtime also inherits `//llvm:Support` through public header dependencies in the existing overlay. Inspect the resulting link closure rather than assuming the archive contains all transitive code, or assuming all compiler-side dependencies are required at runtime.
 
-## Archive contents and layout
+## Minimal host archive and driver audit
+
+The source references below are to the exact 23.1.2 archive identified above; Clang driver files were inspected in its fetched repository, Flang/Flang-RT files in the extracted archive. They are not claims about older Flang releases.
+
+| Operation | Executables and inputs required | Owning source |
+|---|---|---|
+| Ordinary CPU `flang -c input.f90 -o input.o` | Flang invokes itself with `-fc1 ... -emit-obj`. Native code generation and object emission are integrated. No external `clang`, `as`, `opt`, `llc` or linker is required for this path. | `clang/lib/Driver/ToolChains/Flang.cpp:1037–1076,1344–1358`; `Flang.h:155–157`; `flang/tools/flang-driver/driver.cpp:62–72,125–135`. |
+| Fortran preprocessing | Integrated CPP, source/include inputs and selected preprocessor definitions; no external C preprocessor for the ordinary path. | `Flang.h:156`; `Flang.cpp:1055–1059`. |
+| Source using intrinsic modules | Matching target `.mod` inputs, selected via `-fintrinsic-modules-path` or the target-specific resource directory; these are compile-time data, not host compiler dependencies. User `.mod` and textual includes must also be declared. | `ToolChain.cpp:1175–1178`; `Flang.cpp:1203–1235`. |
+| Target runtime archives during `-c` | Not opened/linked by ordinary compilation. Runtime calls and, for MSVC, dependent-library directives can be emitted without those archives being present. Host libraries needed to execute a dynamically linked Flang are a different dependency. | `Flang.cpp:1037–1076,485–532`. |
+| Plain `flang input.o ... -o app` | The platform-specific external linker plus target startup objects, Fortran runtime, compiler runtime, libc/math libraries and platform SDK/system libraries. Flang constructs the link command; it does not invoke a Clang driver as its normal linker. | `Gnu.cpp:450–540`; `Darwin.cpp:749–758`; `MinGW.cpp:263–273`; `MSVC.cpp:191–200`. |
+| `clang --driver-mode=flang ...` | The Clang driver explicitly searches for a separate `flang` executable for frontend jobs. This is an alternative composition, not evidence that `bin/flang` needs `bin/clang`. | `Flang.cpp:1344–1358`. |
+
+The host archive therefore does not need target `.mod`, Flang-RT, compiler-rt builtins, libc headers/libraries, a target `flang.cfg`, LLD or the LLVM multicall binary solely to support normal Fortran compilation. Linux static executable closure was inspected in the preceding implementation review; other host executable dependencies must be inspected independently (`readelf`, `otool`, PE imports). This audit has not rebuilt or executed a newly stripped-down host-only archive.
+
+The audit covers ordinary CPU compilation and linking. Offload, CUDA, OpenMP target devices, optional math libraries, compiler plugins and other opt-in modes may require additional tools/data; no blanket claim is made that every possible Flang invocation requires only one executable. Backend coverage also depends on how the host compiler was built.
+
+### Final-link ownership and ordering
+
+**Fortran main is generated during compilation.** `flang/lib/Lower/Bridge.cpp:616–626` calls `fir::runtime::genMain` when a main program is present. `flang/lib/Optimizer/Builder/Runtime/Main.cpp:22–81` emits a normal externally visible C `main`, calling `_FortranAProgramStart`, `_QQmain`, and `_FortranAProgramEndStatement`. The source regression `flang/test/Driver/emit-mlir.f90:15–26` checks that wrapper. Thus LLVM 23.1.2 does not require a separately linked `FortranMain` archive to turn `_QQmain` into the process entry point. The comment in `clang/lib/Driver/ToolChains/MSVC.cpp:198–199` still says the runtime defines `main`; the lowering implementation and regression are more authoritative than that stale comment.
+
+**A normal Clang/Clang++ final link is viable in principle.** Compile Fortran to target objects first, then supply them, other native dependencies and the matching Flang runtime to the Hermetic LLVM C++ link action. The native startup objects call the emitted `main` normally. Clang does not automatically infer a Flang runtime dependency merely from a `.o`; the runtime must be represented explicitly. A consumer using `cc_common.link` should create compilation outputs from the Fortran objects and use target-side `CcInfo` linking contexts for runtime and native libraries. Preserve the selected C++ toolchain's target, sysroot, CRT, linker, runtime mode and inputs. Its action may use `clang++` and add C++ runtime libraries; do not claim that choosing `cc_common.link` necessarily produces a C-only link.
+
+For the GNU/Linux driver, `Gnu.cpp:475–485` deliberately places the Fortran runtime **after program/linker inputs, before `-lm` and the compiler/C runtime group**. `ToolChain.cpp:972–1053` adds these language dependencies:
+
+- Ordinary CPU: `libflang_rt.runtime` (an explicit archive path with `-static-libflangrt`, otherwise `-lflang_rt.runtime`). Linux additionally appends `-lm`; libc and compiler builtins/libgcc come from the ordinary platform driver.
+- Configured real(16) math support: `-lflang_rt.quadmath`, configured F128 math provider with the driver's as-needed policy, then the main runtime. This is conditional, not a default package requirement established by this audit.
+- BSD runtime backtrace paths: `-lexecinfo` where the driver selects it.
+- OpenMP: the platform driver adds the OpenMP runtime; Flang's helper can additionally require libatomic when using libomp plus libgcc (AIX differs).
+- Windows MSVC: `Flang.cpp:485–532` emits dependent-library directives for compiler builtins, CRT and the corresponding `flang_rt.runtime.{static,static_dbg,dynamic,dynamic_dbg}.lib`; default is static CRT. A Clang/clang-cl/LLD-owned final link must honor or deliberately replace these directives consistently, and provide the actual target inputs. The Fortran driver also adds `/subsystem:console`.
+
+Model the runtime as a real target dependency, not an absolute `-L` string. Check the final action order because traditional static linkers resolve archives according to preceding unresolved symbols; success under LLD alone can hide an ordering problem. Compiler runtime and libc supply dependencies introduced by Flang-RT, so moving the latter after those libraries is not a faithful port of the driver contract. The source runtime is C++ implementation code, but `flang-rt/cmake/modules/AddFlangRT.cmake:263–283` force-includes `stl-overrides.h` to avoid a build-host C++ library dependency. Preserve that behavior when producing target `CcInfo`.
+
+**Do not set Flang's raw linker path to `clang` and assume integration is done.** `ToolChain.cpp:1261–1323` selects a linker via `--ld-path`, `-fuse-ld`, program paths and platform defaults; the toolchain then sends that executable raw linker arguments. Supplying a real Hermetic LLVM LLD is possible but still leaves Flang responsible for assembling all target paths/defaults. A separate Clang final-link action is the clean ownership boundary. An adapter translating raw linker arguments would be a different, unimplemented design.
+
+For C-main callers, `flang-rt/lib/runtime/main.cpp:36–43` notes that I/O initializes on demand, which supports non-Fortran `main`. This does not establish all command-argument/environment or initialization semantics for arbitrary mixed-language applications; qualify those when needed.
+
+### Comparison with rules_rust and cross environments
+
+Inspected clean `hermeticbuild/rules_rust` revision [`b554c95ddb5b69bd8505745b47a3a0898d2a096c`](https://github.com/hermeticbuild/rules_rust/tree/b554c95ddb5b69bd8505745b47a3a0898d2a096c), `rust/private/rustc.bzl`:
+
+- Default rustc-owned linking obtains the selected C++ tool and link variables (`_get_linker_config`, lines 421–458), environment and expanded link arguments, then passes `--codegen=linker=...` and individual `--codegen=link-arg=...` arguments to rustc (lines 1543–1600). Linker files are declared inputs (lines 880–887,949–958). The executable name alone is not the integration.
+- Its separate `cc_common.link` path emits a Rust object, creates `compilation_outputs`, collects std/allocator/runtime/native `CcInfo` contexts, and invokes the C++ link action (lines 2075–2098,2436–2475,2526–2540). This is the closer pattern for Flang: host compiler → target object; explicit language runtime → target link graph; selected C++ toolchain → final link. Rust-specific allocator, panic, stdlib and LTO logic should not be copied into Fortran rules.
+- Rust can pass C++-driver arguments to a selected driver because rustc owns a supported driver interface. Flang's `--ld-path` selects the raw linker's interface. These mechanisms are not interchangeable merely because both options choose an executable.
+
+At the inspected Hermetic LLVM baseline, README's crossenv section calls the interface WIP and lists minimal LLVM host archive targets; no completed general crossenv exporter was found in the tracked implementation. Do not describe a hypothetical Fortran crossenv wrapper as an existing reusable facility. The useful architectural pattern is to compose host tools with explicitly selected target sysroot/runtime inputs outside the host tarball. The final external API/layout remains to be proposed, approved and tested.
+
+### What is still unproven
+
+- A new minimal host-only archive compiling in isolation, with all intrinsic modules supplied outside it; all additional host OS/architecture pairs.
+- Fortran-main objects linked by **Hermetic LLVM's** `cc_common.link`, including actual runtime library order. Previous tests proved Fortran-main through Flang and a simple C-main through the C++ toolchain, not this combined path.
+- Cross-target intrinsic modules and runtime ABI agreement, especially MSVC default-library/CRT handling; dynamic links and optional runtimes.
+- A generic consumer adapter/provider contract or outside-Bazel crossenv interface. No ruleset or such API was written in this audit.
+
+## Historical target archive proposal (superseded)
+
+The following records the initial bundled-distribution proposal and is **not** the current implementation plan. Corentin subsequently required target-side assets to remain in Hermetic LLVM. Keep it only as context for the earlier experiments below.
 
 Proposed artifact: `flang-toolchain-<llvm-version>-<host-suffix>.tar.zst`, separate from the unchanged `llvm-toolchain-minimal-*` assets. Publish with the same SHA256/attestation/immutable-asset discipline. A dedicated `flang-*` workflow/branch namespace avoids making ordinary LLVM bootstrap releases depend on the much larger Flang/MLIR graph; the final naming and trigger policy need confirmation before becoming a published contract.
 
-The first complete Linux x86_64-musl archive needs the following closure:
+The earlier complete Linux x86_64-musl archive proposal contained the following closure:
 
 | Path/content | Required behavior |
 |---|---|
@@ -67,7 +124,7 @@ The first complete Linux x86_64-musl archive needs the following closure:
 | Driver defaults/configuration | Relocatable target, resource directory, sysroot, linker, compiler-rt, static-link policy. Prevent host GCC/startfile fallback. Test the chosen mechanism; do not assume a config file is automatically discovered. |
 | License/provenance files | LLVM and bundled runtime source versions, hashes, licenses; keep host and target identities explicit. |
 
-This is a required closure specification, not a claim that the current targets already produce this installed layout. Derive the exact normalized triple and final paths from `flang -###`, `-print-resource-dir`, selected target and real output files. Static non-PIE is the simplest initial link contract; add PIE/shared modes only with their own CRT and runtime tests.
+This historical table must not be used to enlarge the minimal host tarball. The target-side requirements still matter when composing a complete compile/link environment, but they belong to separately configured Hermetic LLVM targets.
 
 ### Intrinsic modules
 
@@ -99,7 +156,7 @@ Integration findings:
 - Download rule assumes `flang+llvm-<version>` strip prefix and old file naming. Use an explicit `http_archive` plus an existing `fortran_toolchain` declaration in the test module for the new artifact; do not distort the release layout to satisfy this downloader.
 - `fortran_toolchain.all_files` includes compiler/linker/archiver and `tool_deps`, but not `runtime_libraries` automatically. The fixture must put the entire declared tool/runtime/sysroot closure in `tool_deps` as well as the target runtime link list.
 
-Recommended first adapter: a test-local `fortran_toolchain` using the extracted complete archive's compiler/linker/archiver, target-specific compiler flags and matching runtime. For a C-main fixture, register the existing Hermetic LLVM C++ toolchain and verify `CppLink` actually owns final linking. For Fortran-main fixtures, retain the packaged Flang driver until an upstream `cc_common.link` integration is designed; this avoids pretending that replacing its `linker` attribute with an arbitrary linker binary supplies C++ toolchain features.
+For the corrected design, this ruleset remains evidence of a consumer, not an implementation requirement. Its compile actions could consume a minimal host Flang plus declared target modules. Its existing Fortran-main link rule still needs an actual C++ toolchain integration; pointing its linker at a minimal Flang does not provide target runtime/sysroot inputs, and pointing it at raw Clang does not provide C++ toolchain flags. The prior complete-archive adapter tested a different architecture and must not be treated as proof of the corrected path.
 
 ## Test evidence and reproduction
 
@@ -163,25 +220,25 @@ Adding `use_repo(flang, "flang_linux_x86_64")`, then querying `@flang_linux_x86_
 
 ## Actionable implementation sequence
 
-1. **Restore/build source support.** Remove Flang source exclusions or otherwise use the existing source repository inputs without a new public switch. Repair libc shared-header ownership narrowly. Build the compiler and target runtime independently. Port CMake runtime feature definitions, explicit source selection and forced STL override header. Use target constraints for backtrace/strerror configuration; preserve musl and Windows distinctions. Keep runtime archives machine code unless LTO distribution is explicitly designed; the release config currently enables thin LTO globally.
-2. **Generate intrinsic modules.** Private build rule/action; same-version execution-platform Flang, target flags, ordered dependencies, declared outputs. Match the selected compiler's search layout. Cover ISO C/Fortran environment and IEEE modules before archive work.
-3. **Package compiler/runtime closure.** Separate internal `prebuilt/flang` package modeled on mtree/tar LLVM packaging. Ensure compiler runtime dependencies, target archive, C header, modules, licenses and LLVM tools are present. No `extras` edits. Inspect tar paths, permissions and symlink targets.
-4. **Complete native Linux static linking.** Assemble declared musl sysroot, CRT and compiler builtins from existing targets. Configure relocatable Flang defaults and bundled LLD. Verify `-###` uses archive paths only. Avoid silently falling back to GCC/libgcc. Check `readelf -l/-d` on compiler and generated executable: no ELF interpreter or NEEDED entries for the promised static pair.
-5. **Add focused archive tests.** Unpack to a directory containing spaces, move it again, compile and run under an empty/controlled environment on a minimal Linux worker. The test's action inputs must include only archive + sources + declared runner. Add a negative test proving a missing module/runtime/linker fails rather than finding a host fallback.
-6. **Exercise the ruleset.** Test-local dependency and toolchain declaration using this artifact. Fortran-main test through packaged Flang; C-main `bind(c)` test through Hermetic LLVM `cc_common.link`/`cc_test`. Inspect both action graphs. Fix/assert return statuses; do not rely on upstream examples' exit codes alone. Qualify remote execution from macOS without the stock downloader's wrong-host bug.
-7. **Wire release publication.** Dedicated version/branch contract, same build flags/security environment/checksums/attestations/non-overwrite behavior as LLVM. Release workflow must run archive consumption tests before publishing. Add platform lanes only after real compile/link/run plus artifact inspection. Document exact supported host/target/CRT combinations.
+1. **Retain source-build repairs that belong to each component.** Compiler extraction/build support is independent of the target runtime. Keep target libc configuration, STL overrides and native archive policy with the runtime, not the host package. Do not introduce a new public API implicitly.
+2. **Reduce the archive to host executable closure.** Separate `prebuilt/flang` artifact, no target-fixed config, intrinsic modules, runtime, sysroot or duplicated LLVM tool bundle. Inspect host imports/dynamic dependencies, archive paths and provenance. Host-static Linux remains a packaging property, not the Fortran target's link policy.
+3. **Model target modules/runtime in Hermetic LLVM.** Matching execution compiler generates target modules; selected target C++ toolchain builds Flang-RT. Keep `.mod` dependencies, the ISO C binding header and runtime linking context explicit. Propose any new downstream-facing labels/provider/extension API before implementing it.
+4. **Demonstrate C++-owned linking without writing a new general ruleset.** A narrowly scoped internal fixture should compile a Fortran-main object and link it through the selected Hermetic LLVM C++ action with target runtime `CcInfo`. Inspect `main` and runtime undefined symbols, final library order, CRT/libc/builtins and linked output. Also exercise C-main interop. This is the key previously untested claim.
+5. **Verify separation.** A relocated minimal host executable compiles a module-free source with target runtimes/linker absent; importing an intrinsic module succeeds only when its external declared target module input is supplied. Final linking succeeds only with the target runtime/toolchain closure. The same host artifact must not embed one target's sysroot or static-link defaults.
+6. **Keep external consumer integration scoped.** Reuse or improve an existing ruleset only under a separately agreed scope. A crossenv export is a separate composition interface, currently unproven; do not add it to the host archive as a shortcut.
+7. **Requalify the manual publication path against the corrected artifact.** Preserve checksums/attestations, approved naming and explicit release gating. Prior bundled-archive test results do not qualify the minimal artifact. No release before approval and merge; this audit does not publish anything.
 
 ## Required acceptance scenarios
 
-- Relocated archive: `--version`, resource lookup, trivial compile, native link and execution with empty PATH; no undeclared host compiler/linker/SDK/GCC paths in trace.
+- Relocated host archive: `--version`, trivial `-c`, preprocessing and object inspection with no other compiler/linker on PATH; no target-fixed defaults or hidden target payload.
 - Runtime: formatted I/O, allocation/arrays, math, `stop` failure status; object/archive inspection for C++ ABI dependencies and executable dependency inspection.
 - Modules: `iso_c_binding`, `iso_fortran_env`, IEEE arithmetic; a user module consumed by a second compilation; preprocessing and include inputs; matching target-kind values.
-- Interop: C calls `bind(c)` Fortran and Fortran calls C; descriptor API via `ISO_Fortran_binding.h`; correct final-link owner and target runtime.
-- Boundaries: unsupported target/ABI/mode clearly rejected or documented; missing packaged runtime/module cannot be satisfied by host paths; ordinary minimal LLVM tarball remains unchanged.
+- Linking: a Fortran-main object contains C `main`; Hermetic LLVM's C++ link action consumes it with the matching runtime and correct library order. C calls `bind(c)` Fortran and Fortran calls C; descriptor API via the declared `ISO_Fortran_binding.h`.
+- Boundaries: missing external module/runtime cannot be supplied by an undeclared host installation; compile-only does not require a target linker/runtime; ordinary minimal LLVM tarball remains unchanged.
 - Build portability: source archive mode and release configuration; Linux x86_64-musl first; each additional host/target independently qualified. No Windows, OpenMP, CUDA, quadmath or shared-link success is implied by native hello-world.
 
 ## Suggested short PR description after implementation
 
-> Publish a separate Flang toolchain so Fortran users can compile and link without installing a host Fortran toolchain. Keep the minimal LLVM distribution unchanged and package the matching intrinsic modules and target runtime together, with explicitly qualified linker/CRT/sysroot inputs for the supported targets.
+> Publish a minimal Flang host compiler alongside the existing LLVM prebuilts. Keep target intrinsic modules and runtime configuration in Hermetic LLVM so the compiler can be reused across target environments without embedding a sysroot or fixed link policy.
 
-Replace the last clause with the actually demonstrated scope before opening a PR. If final linking still uses host SDK/CRT tools, say so and do not call the result fully hermetic.
+Describe final-link integration separately according to what has actually been demonstrated. Source-level viability is not an end-to-end test result.
