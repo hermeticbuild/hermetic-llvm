@@ -1,0 +1,10 @@
+--target=x86_64-unknown-linux-musl
+--sysroot=<CFGDIR>/../sysroot
+-resource-dir=<CFGDIR>/../lib/clang/@LLVM_MAJOR@
+-B<CFGDIR>
+-B<CFGDIR>/../sysroot/usr/lib
+--gcc-toolchain=<CFGDIR>/../sysroot
+-fuse-ld=lld
+-rtlib=compiler-rt
+-static-libflangrt
+-static

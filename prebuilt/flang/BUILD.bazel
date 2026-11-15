@@ -1,0 +1,44 @@
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load(":flang_release.bzl", "flang_release")
+load(":modules.bzl", "FLANG_MODULE_SOURCES", "flang_modules")
+load(":strip_binary.bzl", "strip_binary")
+
+package(default_visibility = ["//visibility:private"])
+
+flang_modules(
+    name = "intrinsic_modules_linux_amd64_musl",
+    srcs = FLANG_MODULE_SOURCES,
+    hdrs = ["@llvm-project//flang:include/flang/Runtime/magic-numbers.h"],
+    target_triple = "x86_64-unknown-linux-musl",
+)
+
+strip_binary(
+    name = "flang_stripped",
+    src = "@llvm-project//flang/tools/flang-driver:flang",
+    exec_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ],
+)
+
+flang_release(name = "linux_amd64_musl_release")
+
+sh_test(
+    name = "linux_amd64_musl_smoke",
+    srcs = ["smoke.sh"],
+    args = [
+        "$(location :linux_amd64_musl_release)",
+        "$(location :smoke.f90)",
+        "$(location @bsd_tar_toolchains_linux_amd64//:tar)",
+    ],
+    data = [
+        "smoke.f90",
+        ":linux_amd64_musl_release",
+        "@bsd_tar_toolchains_linux_amd64//:tar",
+    ],
+    target_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+        "//constraints/libc:musl",
+    ],
+)
