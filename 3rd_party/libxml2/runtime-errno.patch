@@ -1,0 +1,280 @@
+diff --git a/xmlIO.c b/xmlIO.c
+--- a/xmlIO.c
++++ b/xmlIO.c
+@@ -405,161 +405,204 @@
+ static int
+ xmlIOErr(int err)
+ {
+-    xmlParserErrors code;
+-
+-    switch (err) {
+ #ifdef EACCES
+-        case EACCES: code = XML_IO_EACCES; break;
++    if (err == EACCES)
++        return(XML_IO_EACCES);
+ #endif
+ #ifdef EAGAIN
+-        case EAGAIN: code = XML_IO_EAGAIN; break;
++    if (err == EAGAIN)
++        return(XML_IO_EAGAIN);
+ #endif
+ #ifdef EBADF
+-        case EBADF: code = XML_IO_EBADF; break;
++    if (err == EBADF)
++        return(XML_IO_EBADF);
+ #endif
+ #ifdef EBADMSG
+-        case EBADMSG: code = XML_IO_EBADMSG; break;
++    if (err == EBADMSG)
++        return(XML_IO_EBADMSG);
+ #endif
+ #ifdef EBUSY
+-        case EBUSY: code = XML_IO_EBUSY; break;
++    if (err == EBUSY)
++        return(XML_IO_EBUSY);
+ #endif
+ #ifdef ECANCELED
+-        case ECANCELED: code = XML_IO_ECANCELED; break;
++    if (err == ECANCELED)
++        return(XML_IO_ECANCELED);
+ #endif
+ #ifdef ECHILD
+-        case ECHILD: code = XML_IO_ECHILD; break;
++    if (err == ECHILD)
++        return(XML_IO_ECHILD);
+ #endif
+ #ifdef EDEADLK
+-        case EDEADLK: code = XML_IO_EDEADLK; break;
++    if (err == EDEADLK)
++        return(XML_IO_EDEADLK);
+ #endif
+ #ifdef EDOM
+-        case EDOM: code = XML_IO_EDOM; break;
++    if (err == EDOM)
++        return(XML_IO_EDOM);
+ #endif
+ #ifdef EEXIST
+-        case EEXIST: code = XML_IO_EEXIST; break;
++    if (err == EEXIST)
++        return(XML_IO_EEXIST);
+ #endif
+ #ifdef EFAULT
+-        case EFAULT: code = XML_IO_EFAULT; break;
++    if (err == EFAULT)
++        return(XML_IO_EFAULT);
+ #endif
+ #ifdef EFBIG
+-        case EFBIG: code = XML_IO_EFBIG; break;
++    if (err == EFBIG)
++        return(XML_IO_EFBIG);
+ #endif
+ #ifdef EINPROGRESS
+-        case EINPROGRESS: code = XML_IO_EINPROGRESS; break;
++    if (err == EINPROGRESS)
++        return(XML_IO_EINPROGRESS);
+ #endif
+ #ifdef EINTR
+-        case EINTR: code = XML_IO_EINTR; break;
++    if (err == EINTR)
++        return(XML_IO_EINTR);
+ #endif
+ #ifdef EINVAL
+-        case EINVAL: code = XML_IO_EINVAL; break;
++    if (err == EINVAL)
++        return(XML_IO_EINVAL);
+ #endif
+ #ifdef EIO
+-        case EIO: code = XML_IO_EIO; break;
++    if (err == EIO)
++        return(XML_IO_EIO);
+ #endif
+ #ifdef EISDIR
+-        case EISDIR: code = XML_IO_EISDIR; break;
++    if (err == EISDIR)
++        return(XML_IO_EISDIR);
+ #endif
+ #ifdef EMFILE
+-        case EMFILE: code = XML_IO_EMFILE; break;
++    if (err == EMFILE)
++        return(XML_IO_EMFILE);
+ #endif
+ #ifdef EMLINK
+-        case EMLINK: code = XML_IO_EMLINK; break;
++    if (err == EMLINK)
++        return(XML_IO_EMLINK);
+ #endif
+ #ifdef EMSGSIZE
+-        case EMSGSIZE: code = XML_IO_EMSGSIZE; break;
++    if (err == EMSGSIZE)
++        return(XML_IO_EMSGSIZE);
+ #endif
+ #ifdef ENAMETOOLONG
+-        case ENAMETOOLONG: code = XML_IO_ENAMETOOLONG; break;
++    if (err == ENAMETOOLONG)
++        return(XML_IO_ENAMETOOLONG);
+ #endif
+ #ifdef ENFILE
+-        case ENFILE: code = XML_IO_ENFILE; break;
++    if (err == ENFILE)
++        return(XML_IO_ENFILE);
+ #endif
+ #ifdef ENODEV
+-        case ENODEV: code = XML_IO_ENODEV; break;
++    if (err == ENODEV)
++        return(XML_IO_ENODEV);
+ #endif
+ #ifdef ENOENT
+-        case ENOENT: code = XML_IO_ENOENT; break;
++    if (err == ENOENT)
++        return(XML_IO_ENOENT);
+ #endif
+ #ifdef ENOEXEC
+-        case ENOEXEC: code = XML_IO_ENOEXEC; break;
++    if (err == ENOEXEC)
++        return(XML_IO_ENOEXEC);
+ #endif
+ #ifdef ENOLCK
+-        case ENOLCK: code = XML_IO_ENOLCK; break;
++    if (err == ENOLCK)
++        return(XML_IO_ENOLCK);
+ #endif
+ #ifdef ENOMEM
+-        case ENOMEM: code = XML_IO_ENOMEM; break;
++    if (err == ENOMEM)
++        return(XML_IO_ENOMEM);
+ #endif
+ #ifdef ENOSPC
+-        case ENOSPC: code = XML_IO_ENOSPC; break;
++    if (err == ENOSPC)
++        return(XML_IO_ENOSPC);
+ #endif
+ #ifdef ENOSYS
+-        case ENOSYS: code = XML_IO_ENOSYS; break;
++    if (err == ENOSYS)
++        return(XML_IO_ENOSYS);
+ #endif
+ #ifdef ENOTDIR
+-        case ENOTDIR: code = XML_IO_ENOTDIR; break;
+-#endif
+-/* AIX uses the same value for ENOTEMPTY and EEXIST */
+-#if defined(ENOTEMPTY) && ENOTEMPTY != EEXIST
+-        case ENOTEMPTY: code = XML_IO_ENOTEMPTY; break;
++    if (err == ENOTDIR)
++        return(XML_IO_ENOTDIR);
++#endif
++/* If ENOTEMPTY equals EEXIST, the EEXIST check above takes precedence. */
++#ifdef ENOTEMPTY
++    if (err == ENOTEMPTY)
++        return(XML_IO_ENOTEMPTY);
+ #endif
+ #ifdef ENOTSUP
+-        case ENOTSUP: code = XML_IO_ENOTSUP; break;
++    if (err == ENOTSUP)
++        return(XML_IO_ENOTSUP);
+ #endif
+ #ifdef ENOTTY
+-        case ENOTTY: code = XML_IO_ENOTTY; break;
++    if (err == ENOTTY)
++        return(XML_IO_ENOTTY);
+ #endif
+ #ifdef ENXIO
+-        case ENXIO: code = XML_IO_ENXIO; break;
++    if (err == ENXIO)
++        return(XML_IO_ENXIO);
+ #endif
+ #ifdef EPERM
+-        case EPERM: code = XML_IO_EPERM; break;
++    if (err == EPERM)
++        return(XML_IO_EPERM);
+ #endif
+ #ifdef EPIPE
+-        case EPIPE: code = XML_IO_EPIPE; break;
++    if (err == EPIPE)
++        return(XML_IO_EPIPE);
+ #endif
+ #ifdef ERANGE
+-        case ERANGE: code = XML_IO_ERANGE; break;
++    if (err == ERANGE)
++        return(XML_IO_ERANGE);
+ #endif
+ #ifdef EROFS
+-        case EROFS: code = XML_IO_EROFS; break;
++    if (err == EROFS)
++        return(XML_IO_EROFS);
+ #endif
+ #ifdef ESPIPE
+-        case ESPIPE: code = XML_IO_ESPIPE; break;
++    if (err == ESPIPE)
++        return(XML_IO_ESPIPE);
+ #endif
+ #ifdef ESRCH
+-        case ESRCH: code = XML_IO_ESRCH; break;
++    if (err == ESRCH)
++        return(XML_IO_ESRCH);
+ #endif
+ #ifdef ETIMEDOUT
+-        case ETIMEDOUT: code = XML_IO_ETIMEDOUT; break;
++    if (err == ETIMEDOUT)
++        return(XML_IO_ETIMEDOUT);
+ #endif
+ #ifdef EXDEV
+-        case EXDEV: code = XML_IO_EXDEV; break;
++    if (err == EXDEV)
++        return(XML_IO_EXDEV);
+ #endif
+ #ifdef ENOTSOCK
+-        case ENOTSOCK: code = XML_IO_ENOTSOCK; break;
++    if (err == ENOTSOCK)
++        return(XML_IO_ENOTSOCK);
+ #endif
+ #ifdef EISCONN
+-        case EISCONN: code = XML_IO_EISCONN; break;
++    if (err == EISCONN)
++        return(XML_IO_EISCONN);
+ #endif
+ #ifdef ECONNREFUSED
+-        case ECONNREFUSED: code = XML_IO_ECONNREFUSED; break;
++    if (err == ECONNREFUSED)
++        return(XML_IO_ECONNREFUSED);
+ #endif
+ #ifdef ENETUNREACH
+-        case ENETUNREACH: code = XML_IO_ENETUNREACH; break;
++    if (err == ENETUNREACH)
++        return(XML_IO_ENETUNREACH);
+ #endif
+ #ifdef EADDRINUSE
+-        case EADDRINUSE: code = XML_IO_EADDRINUSE; break;
++    if (err == EADDRINUSE)
++        return(XML_IO_EADDRINUSE);
+ #endif
+ #ifdef EALREADY
+-        case EALREADY: code = XML_IO_EALREADY; break;
++    if (err == EALREADY)
++        return(XML_IO_EALREADY);
+ #endif
+ #ifdef EAFNOSUPPORT
+-        case EAFNOSUPPORT: code = XML_IO_EAFNOSUPPORT; break;
+-#endif
+-        default: code = XML_IO_UNKNOWN; break;
+-    }
+-
+-    return(code);
++    if (err == EAFNOSUPPORT)
++        return(XML_IO_EAFNOSUPPORT);
++#endif
++    return(XML_IO_UNKNOWN);
+ }
+ 
+ /************************************************************************
+diff --git a/include/libxml/xmlversion.h b/include/libxml/xmlversion.h
+--- a/include/libxml/xmlversion.h
++++ b/include/libxml/xmlversion.h
+@@ -297,7 +297,7 @@
+  *
+  * Whether the module interfaces are compiled in
+  */
+-#if 1
++#if !defined(__COSMOPOLITAN__)
+ #define LIBXML_MODULES_ENABLED
+ /**
+  * LIBXML_MODULE_EXTENSION:

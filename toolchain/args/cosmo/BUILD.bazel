@@ -1,19 +1,25 @@
+load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
 load(":link_args.bzl", "cosmo_link_args")
 
 package(default_visibility = ["//toolchain:__subpackages__"])
 
+filegroup(
+    name = "normalize",
+    srcs = ["normalize.h"],
+    visibility = ["//visibility:public"],
+)
+
 cc_args(
     name = "compile",
     actions = ["@llvm//toolchain:source_compile_actions"],
     allowlist_include_directories = ["@cosmopolitan_sdk//:c_headers"],
     args = [
-        "-nostdinc",
         "-isystem",
         "{headers}",
         "-include",
-        "libc/integral/normalize.inc",
+        "{normalize}",
         "-D__COSMOCC__",
         "-fno-pie",
     ] + select({
@@ -27,8 +33,14 @@ cc_args(
             "-mno-tls-direct-seg-refs",
         ],
     }),
-    data = ["@cosmopolitan_sdk//:c_headers"],
-    format = {"headers": "@cosmopolitan_sdk//:c_headers"},
+    data = [
+        ":normalize",
+        "@cosmopolitan_sdk//:c_headers",
+    ],
+    format = {
+        "headers": "@cosmopolitan_sdk//:c_headers",
+        "normalize": ":normalize",
+    },
 )
 
 cc_args(
@@ -87,4 +99,10 @@ cc_args_list(
             ":x86_64_link_env",
         ],
     }),
+)
+
+bzl_library(
+    name = "link_args",
+    srcs = ["link_args.bzl"],
+    deps = ["@rules_cc//cc/toolchains:args"],
 )

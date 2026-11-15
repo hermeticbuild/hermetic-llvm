@@ -149,6 +149,12 @@ def declare_llvm_targets(*, exec_os, exec_cpu, suffix = ""):
         srcs = ["bin/clang" + suffix],
     )
 
+    if exec_os != "windows":
+        headers_directory(
+            name = "cosmo_intrinsics",
+            path = "cosmo_intrinsics_include",
+        )
+
     cosmo_tools(
         name = "cosmo_tools",
         exec_os = exec_os,
@@ -157,6 +163,7 @@ def declare_llvm_targets(*, exec_os, exec_cpu, suffix = ""):
         clangxx = ":clangxx_file",
         ar = ":llvm-ar",
         strip = ":llvm-strip",
+        resource_include_dir = ":cosmo_intrinsics",
     )
 
     component_tools(
@@ -586,7 +593,7 @@ def declare_llvm_targets(*, exec_os, exec_cpu, suffix = ""):
         srcs = select({
             "@llvm//config:nostdincxx_enabled": [],
             "//conditions:default": ["@cosmopolitan_sdk//:cxx_headers"],
-        }) + ["@cosmopolitan_sdk//:c_headers"],
+        }) + [":cosmo_intrinsics", "@cosmopolitan_sdk//:c_headers", "@llvm//toolchain/args/cosmo:normalize"],
     )
 
     module_map(

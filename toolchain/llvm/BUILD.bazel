@@ -37,6 +37,7 @@ bzl_library(
 bzl_library(
     name = "cosmo_tools",
     srcs = ["cosmo_tools.bzl"],
+    visibility = ["//visibility:public"],
     deps = [
         "//runtimes/cosmo:host_tools",
         "@rules_cc//cc/toolchains:toolchain_rules",

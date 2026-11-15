@@ -12,7 +12,10 @@ if [ "${COSMO_LINK_OUTPUT:-}" ]; then
     exec "$COSMO_APE_LOADER" "$COSMO_FIXUPOBJ" "$COSMO_LINK_OUTPUT"
 fi
 
-"$COSMO_CLANG" "$@"
+# The SDK's intrinsics headers target an older Clang. Search the current
+# compiler's resource headers first and keep the SDK's libc headers available
+# to Clang's include_next directives.
+"$COSMO_CLANG" -nostdinc -isystem "$COSMO_RESOURCE_INCLUDE" "$@"
 if [ "${COSMO_OBJECT_OUTPUT:-}" ]; then
     exec "$COSMO_APE_LOADER" "$COSMO_FIXUPOBJ" "$COSMO_OBJECT_OUTPUT"
 fi

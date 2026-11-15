@@ -4,7 +4,7 @@ load("@rules_cc//cc/toolchains:tool.bzl", "cc_tool")
 load("@rules_cc//cc/toolchains:tool_map.bzl", "cc_tool_map")
 load("//runtimes/cosmo:host_tools.bzl", "APE_LOADERS")
 
-def cosmo_tools(name, *, exec_os, exec_cpu, clang, clangxx, ar, strip):
+def cosmo_tools(name, *, exec_os, exec_cpu, clang, clangxx, ar, strip, resource_include_dir):
     loader = APE_LOADERS.get((exec_os, exec_cpu))
     if loader == None:
         return
@@ -13,16 +13,19 @@ def cosmo_tools(name, *, exec_os, exec_cpu, clang, clangxx, ar, strip):
         cc_tool(
             name = name + "/" + tool,
             src = Label("//runtimes/cosmo:driver.sh"),
-            data = [compiler, loader, fixupobj],
+            data = [compiler, loader, fixupobj, resource_include_dir],
+            allowlist_include_directories = [resource_include_dir],
             env = {
                 "COSMO_APE_LOADER": "{loader}",
                 "COSMO_CLANG": "{compiler}",
+                "COSMO_RESOURCE_INCLUDE": "{resource_include_dir}",
                 "COSMO_FIXUPOBJ": "{fixupobj}",
             },
             format = {
                 "compiler": compiler,
                 "fixupobj": fixupobj,
                 "loader": loader,
+                "resource_include_dir": resource_include_dir,
             },
         )
 

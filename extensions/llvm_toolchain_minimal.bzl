@@ -89,6 +89,32 @@ def _release_repo_specs(index):
         for target in _TARGETS
     }
 
+# Clang's intrinsic headers are tied to the compiler version. Expose a distinct
+# directory so Cosmopolitan keeps its own C library headers ahead of Clang's
+# generic C library wrappers.
+_COSMO_INTRINSICS = [
+    "arm_*.h",
+    "*intrin.h",
+    "__wmmintrin_*.h",
+    "velintrin_*.h",
+    "cpuid.h",
+    "mm_malloc.h",
+]
+
+def _cosmo_intrinsics_command(exec_os):
+    if exec_os == "windows":
+        return []
+    return ["""set -e
+mkdir cosmo_intrinsics_include
+for include in lib/clang/*/include; do
+  for header in {patterns}; do
+    if [ -f "$header" ]; then
+      cp "$header" cosmo_intrinsics_include/
+    fi
+  done
+done
+""".format(patterns = " ".join(['"$include"/' + pattern for pattern in _COSMO_INTRINSICS]))]
+
 def _llvm_toolchain_minimal_impl(module_ctx):
     index = _get_index(module_ctx)
     repo_specs = _release_repo_specs(index)
@@ -100,6 +126,7 @@ def _llvm_toolchain_minimal_impl(module_ctx):
                 exec_os = spec.exec_os,
                 exec_cpu = spec.exec_cpu,
             ),
+            patch_cmds = _cosmo_intrinsics_command(spec.exec_os),
             sha256 = spec.sha256,
             urls = spec.urls,
         )

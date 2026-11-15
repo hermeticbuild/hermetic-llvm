@@ -1,4 +1,7 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load("//:apify.bzl", "apify_binary")
+load("//prebuilt/llvm:llvm_release.bzl", "llvm_release")
+load("//toolchain/bootstrap:bootstrap_binary.bzl", "bootstrap_binary")
 load("//toolchain/runtimes:cc_runtime_binary.bzl", "cc_runtime_stage1_hosted_binary")
 load(":host_tools.bzl", "APE_LOADER")
 
@@ -34,4 +37,38 @@ alias(
 bzl_library(
     name = "host_tools",
     srcs = ["host_tools.bzl"],
+)
+
+bzl_library(
+    name = "sdk",
+    srcs = ["sdk.bzl"],
+    deps = ["//:http_bsdtar_archive"],
+)
+
+[
+    bootstrap_binary(
+        name = "llvm_" + cpu,
+        actual = "@llvm-project//llvm:llvm",
+        cosmopolitan = True,
+        platform = "//platforms:cosmo_" + cpu,
+        tags = ["manual"],
+    )
+    for cpu in [
+        "aarch64",
+        "x86_64",
+    ]
+]
+
+apify_binary(
+    name = "llvm",
+    aarch64 = ":llvm_aarch64",
+    tags = ["manual"],
+    visibility = ["//visibility:public"],
+    x86_64 = ":llvm_x86_64",
+)
+
+llvm_release(
+    name = "llvm_distribution",
+    binary = ":llvm",
+    binary_name = "llvm.com",
 )

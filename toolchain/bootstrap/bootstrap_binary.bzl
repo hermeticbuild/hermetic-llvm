@@ -26,6 +26,10 @@ def _bootstrap_transition_impl(settings, attr):
         fail("fdo_profile and fdo_instrumented are mutually exclusive")
 
     features = settings["//command_line_option:features"]
+    cxxopt = settings["//command_line_option:cxxopt"]
+    if getattr(attr, "cosmopolitan", False):
+        # The 4.0.2 SDK libc++ needs rewritten comparisons for std::errc.
+        cxxopt = cxxopt + ["-std=c++20"]
 
     if source_backed:
         bootstrap_stage = "stage1_from_source"
@@ -37,6 +41,7 @@ def _bootstrap_transition_impl(settings, attr):
         "//toolchain:runtime_stage": "complete",
         "//toolchain:bootstrap_stage": bootstrap_stage,
         "//command_line_option:compilation_mode": "opt",
+        "//command_line_option:cxxopt": cxxopt,
         "//command_line_option:features": _append_unique(features, _LLVM_TOOL_FEATURES + ["thin_lto"]) if source_backed else features,
         "//command_line_option:fdo_profile": fdo_profile,
         "@llvm-project//llvm:driver-tools": LLVM_TOOLS,
@@ -57,11 +62,13 @@ def _bootstrap_transition_impl(settings, attr):
 bootstrap_transition = transition(
     implementation = _bootstrap_transition_impl,
     inputs = [
+        "//command_line_option:cxxopt",
         "//command_line_option:features",
         "//command_line_option:platforms",
     ],
     outputs = [
         "//command_line_option:compilation_mode",
+        "//command_line_option:cxxopt",
         "//command_line_option:fdo_profile",
         "//command_line_option:features",
         "//command_line_option:platforms",
@@ -111,6 +118,9 @@ bootstrap_binary = rule(
         "platform": attr.label(
             default = None,
             doc = "If set, build the actual binary for this platform instead of the incoming target platform.",
+        ),
+        "cosmopolitan": attr.bool(
+            doc = "Build LLVM with the C++ standard required by Cosmopolitan's libc++.",
         ),
         "source_backed": attr.bool(
             default = False,

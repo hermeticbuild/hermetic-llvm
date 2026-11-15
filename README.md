@@ -403,9 +403,8 @@ ELF with `cc_binary`. The Stage 0 Clang toolchain supports these targets on
 Linux and macOS hosts. Use `os = "cosmo"` when selecting these targets
 with the toolchain module extension. Cosmopolitan uses the published 4.0.2 SDK
 for libc, libc++, the startup objects, GNU BFD, `fixupobj`, and `apelink`.
-Building those components from source is follow-up work. Shared libraries and ThinLTO are
-outside the current Cosmopolitan toolchain support. The LLVM source targets
-still require Cosmopolitan-specific portability fixes.
+Building the Cosmopolitan SDK components from source is follow-up work.
+The Cosmopolitan target toolchain supports static linking without ThinLTO.
 
 Use `apify_binary` to package one or both architectures into a `.com` file.
 Use a platform transition to build the same `cc_binary` for both architectures.
@@ -435,6 +434,18 @@ apify_binary(
 
 Build `//:hello` and run `sh bazel-bin/hello.com`. This uses the embedded APE
 loaders and does not require installing an APE `binfmt_misc` handler.
+
+#### LLVM multicall executable
+
+Build `//runtimes/cosmo:llvm` with `--extra_toolchains=//toolchain:all` for
+`llvm.com`. It uses the same multicall command list as the LLVM prebuilts and
+contains both x86-64 and AArch64. Build `//runtimes/cosmo:llvm_distribution`
+for the archive with the Clang resource headers and the tool name symlinks.
+
+Run commands as `sh bin/llvm.com clang --version` or
+`sh bin/llvm.com ld.lld --version` from the extracted archive. On Linux,
+install the APE loader to invoke the tool name symlinks directly from programs
+that use the operating system's executable loader.
 
 ### Other platforms
 

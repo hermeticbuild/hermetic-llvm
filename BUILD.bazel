@@ -86,6 +86,12 @@ bzl_library(
 )
 
 bzl_library(
+    name = "apify",
+    srcs = ["apify.bzl"],
+    visibility = ["//visibility:public"],
+)
+
+bzl_library(
     name = "defs",
     srcs = ["defs.bzl"],
     visibility = ["//visibility:public"],
