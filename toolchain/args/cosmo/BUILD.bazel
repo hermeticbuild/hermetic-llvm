@@ -104,5 +104,5 @@ cc_args_list(
 bzl_library(
     name = "link_args",
     srcs = ["link_args.bzl"],
-    deps = ["@rules_cc//cc/toolchains:args"],
+    deps = ["@rules_cc//cc/toolchains:toolchain_rules"],  # keep
 )
