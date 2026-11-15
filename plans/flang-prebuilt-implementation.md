@@ -1,6 +1,6 @@
 # Flang prebuilt implementation evidence
 
-2026-11-15. Branch: `cerisier/flang-prebuilt-implementation`. Source: LLVM 23.1.2. This is an internal first-platform implementation; no release workflow or public extension API has been added.
+2026-11-15. Branch: `cerisier/flang-prebuilt-implementation`. Source: LLVM 23.1.2. The first-platform artifact and manual release workflow are implemented; no artifact has been published and no public extension API has been added.
 
 ## Qualified contract
 
@@ -38,8 +38,10 @@ The pinned `miinso/rules_fortran` 0.1.0 fixture passed Fortran-main and C-main `
 
 The fixture uses an explicit private toolchain declaration because the ruleset's stock downloader selects the host OS, even for a requested Linux repository on a macOS host. This test does not change that upstream rule.
 
+The release staging script was run locally with `FLANG_RELEASE_TAG=flang-23.1.2-r1`, `FLANG_RELEASE_DIR=/tmp/flang-release-staging-23.1.2-r1-recheck` and `FLANG_BAZEL_OUTPUT_BASE=/tmp/flang-implementation-output`. It reran the release-mode archive smoke test and both ruleset tests with uncached test results ([ruleset invocation](https://app.buildbuddy.io/invocation/af56d5f0-80b9-4230-9c05-2f639e753b62)); the staged `flang-toolchain-23.1.2-linux-amd64-musl.tar.zst` was 98 MiB and `shasum -a 256 -c SHA256.txt` passed. A mismatched version tag and an existing staging destination both fail before any build. No GitHub publication step ran.
+
 ## Remaining before publication
 
-- Agree on the artifact name and release tag/branch contract, then add a dedicated publication workflow with the same checksum, attestation, immutable-asset and smoke-test gates as LLVM prebuilts.
-- Gate publication on both the fixture tests and the relocated archive test.
+- Review and merge this branch. The `flang-prebuilt.yml` workflow has only a manual trigger, requires `main`, and rejects an existing tag before entering the release environment. Its staging script runs the release-mode relocated archive smoke test and pinned ruleset fixture before preparing `flang-toolchain-<version>-linux-amd64-musl.tar.zst` and `SHA256.txt`; the workflow then attests and publishes them.
+- Dispatch the workflow from merged `main` with a new `flang-<version>-r<revision>` tag only when a release is intended. This session did not dispatch it or create a GitHub release.
 - Add each additional execution/target pair only with its own sysroot, runtime configuration, final-link trace, relocated-archive test and ruleset consumption test. The current archive makes no claim for those pairs.

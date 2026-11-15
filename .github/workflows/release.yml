@@ -33,8 +33,8 @@ jobs:
         hermetic-llvm-*.tar.gz
       tag_name: ${{ inputs.tag_name || github.ref_name }}
   publish:
-    # Skip BCR publish for prebuilts tags like llvm-* or prebuilts-extras-*.
-    if: ${{ !startsWith(inputs.tag_name || github.ref_name, 'llvm-') && !startsWith(inputs.tag_name || github.ref_name, 'prebuilts-extras-') }}
+    # Skip BCR publish for prebuilt-only release tags.
+    if: ${{ !startsWith(inputs.tag_name || github.ref_name, 'llvm-') && !startsWith(inputs.tag_name || github.ref_name, 'flang-') && !startsWith(inputs.tag_name || github.ref_name, 'prebuilts-extras-') }}
     needs: release
     uses: ./.github/workflows/publish.yml
     with:

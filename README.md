@@ -477,6 +477,14 @@ cc_library(
 )
 ```
 
+# Flang prebuilt (pending release)
+
+The `flang-toolchain-<LLVM version>-linux-amd64-musl.tar.zst` archive is a separate Flang distribution. It includes the matching intrinsic modules and Flang runtime, LLVM tools and LLD, compiler builtins, and a musl sysroot. The bundled `bin/flang.cfg` selects those paths after the archive is moved. It does not enlarge the minimal LLVM prebuilt.
+
+The qualified pair is Linux x86_64 execution to Linux x86_64 musl **static executables**. Dynamic linking, glibc targets, other architectures, macOS, Windows, OpenMP, CUDA, and quadmath have not been qualified. A Fortran ruleset can use the archive's Flang driver for Fortran-owned final links; the pinned `rules_fortran` fixture also verifies C-owned final links through Hermetic LLVM. See [the implementation evidence](plans/flang-prebuilt-implementation.md).
+
+No Flang artifact has been released yet. After this change is approved and merged, the manual Flang release workflow can publish a `flang-<LLVM version>-r<revision>` release from `main`; it runs the relocated archive and ruleset tests before attaching the archive, SHA256 checksum and attestation.
+
 # Crossenv packages for use outside Bazel (WIP)
 
 This is actively in progress. The goal is to produce working crossenv packages that mirror the Bazel toolchain contents so they can be reused by other build systems outside Bazel.

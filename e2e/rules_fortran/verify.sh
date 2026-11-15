@@ -26,4 +26,5 @@ GIT_CONFIG_GLOBAL=/dev/null USE_BAZEL_VERSION=9.3.2 bazel --output_base="${scrat
   --extra_execution_platforms=//:linux_amd64_musl_remote \
   --extra_toolchains=//:flang_toolchain,@llvm//toolchain:all \
   --platforms=@llvm//platforms:linux_amd64_musl \
+  --nocache_test_results \
   //:fortran_main //:c_main --test_output=errors
