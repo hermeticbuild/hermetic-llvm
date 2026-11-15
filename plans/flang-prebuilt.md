@@ -15,7 +15,7 @@ Keep these ownership boundaries:
 2. Hermetic LLVM target configuration: target intrinsic modules, Flang runtime, ISO C binding header, compiler builtins, libc/CRT/sysroot/SDK and selected linker. Generate modules with the matching **execution-platform** Flang and target flags; compile the runtime with the **target-platform** C++ toolchain.
 3. Consumer rule or explicit outside-Bazel environment: compose those declared inputs. Prefer separate Flang compile actions followed by `cc_common.link`; language-appropriate target runtimes are explicit link dependencies. An outside-Bazel cross environment, if later implemented, is a separate composition product, not content added to the host compiler tarball.
 
-Source inspection supports Clang-owned final links for both Fortran-main and C-main programs in LLVM 23.1.2. It does not prove a complete `cc_common.link` adapter. The stock ruleset lacks that path for Fortran-main executables. Do not replace this missing integration by silently changing the release into a bundled target distribution.
+Source inspection supports Clang-owned final links for both Fortran-main and C-main programs in LLVM 23.1.2. A subsequent focused probe demonstrated the Fortran-main path with `cc_common.link`, as recorded below; this does not prove a complete consumer adapter. The stock ruleset lacks that path for Fortran-main executables. Do not replace this missing integration by silently changing the release into a bundled target distribution.
 
 ### Public API approval
 
@@ -96,10 +96,21 @@ Inspected clean `hermeticbuild/rules_rust` revision [`b554c95ddb5b69bd8505745b47
 
 At the inspected Hermetic LLVM baseline, README's crossenv section calls the interface WIP and lists minimal LLVM host archive targets; no completed general crossenv exporter was found in the tracked implementation. Do not describe a hypothetical Fortran crossenv wrapper as an existing reusable facility. The useful architectural pattern is to compose host tools with explicitly selected target sysroot/runtime inputs outside the host tarball. The final external API/layout remains to be proposed, approved and tested.
 
+### Focused composition evidence after the source audit
+
+The coordinating agent created `/tmp/flang-cc-common-probe`; this investigator inspected its final `probe.bzl`, BUILD/MODULE files and both test logs. Two Linux x86_64-musl remote tests pass:
+
+- [Fortran main through `cc_common.link`](https://app.buildbuddy.io/invocation/88177cdc-9b5d-4e0a-929d-424daa104250): compile action declares only Flang and `main.f90`, with `--no-default-config -target x86_64-unknown-linux-musl -c`. Its output is linked by Hermetic LLVM's selected C++ toolchain with a separately declared `libflang_rt.runtime.a` linking context. Test output: `Flang cc_common link probe`.
+- [External intrinsic-module inputs](https://app.buildbuddy.io/invocation/fb079636-81df-43e9-9386-52d6bb8450af): same action additionally declares ten `.mod` files and uses `-fintrinsic-modules-path`; source imports `iso_fortran_env`, `iso_c_binding`, `ieee_arithmetic`. Test output: `7`.
+
+The fixture configures `fully_static_link`, uses `cc_common.create_library_to_link` / `create_linker_input` / `create_linking_context`, and supplies the compiled object in both `objects` and `pic_objects`. The coordinating agent reported an initial undefined-`main` link when only `objects` was supplied; the final inspected fixture matches rules_rust's object-selection pattern. For production, compilation flags must actually satisfy the PIC model when advertising PIC output; listing an arbitrary non-PIC object twice is not a general PIC solution.
+
+**Limit:** Flang, modules and runtime were extracted from the earlier bundled distribution at `/tmp/flang-prebuilt-e2e.0Py3GM/distribution`. The fixture proves declared-input composition and C++-owned final linking. It does not prove target-runtime construction from source in the new layout, a newly produced minimal release archive, all target platforms, or a general ruleset implementation. The investigator did not rerun these builds; source and result artifacts were inspected, and invocation links were supplied by the coordinating agent.
+
 ### What is still unproven
 
 - A new minimal host-only archive compiling in isolation, with all intrinsic modules supplied outside it; all additional host OS/architecture pairs.
-- Fortran-main objects linked by **Hermetic LLVM's** `cc_common.link`, including actual runtime library order. Previous tests proved Fortran-main through Flang and a simple C-main through the C++ toolchain, not this combined path.
+- General Fortran/runtime coverage and portable final library order beyond the focused Linux x86_64-musl composition probe; in particular other linkers and platform-specific runtime dependencies.
 - Cross-target intrinsic modules and runtime ABI agreement, especially MSVC default-library/CRT handling; dynamic links and optional runtimes.
 - A generic consumer adapter/provider contract or outside-Bazel crossenv interface. No ruleset or such API was written in this audit.
 
@@ -223,7 +234,7 @@ Adding `use_repo(flang, "flang_linux_x86_64")`, then querying `@flang_linux_x86_
 1. **Retain source-build repairs that belong to each component.** Compiler extraction/build support is independent of the target runtime. Keep target libc configuration, STL overrides and native archive policy with the runtime, not the host package. Do not introduce a new public API implicitly.
 2. **Reduce the archive to host executable closure.** Separate `prebuilt/flang` artifact, no target-fixed config, intrinsic modules, runtime, sysroot or duplicated LLVM tool bundle. Inspect host imports/dynamic dependencies, archive paths and provenance. Host-static Linux remains a packaging property, not the Fortran target's link policy.
 3. **Model target modules/runtime in Hermetic LLVM.** Matching execution compiler generates target modules; selected target C++ toolchain builds Flang-RT. Keep `.mod` dependencies, the ISO C binding header and runtime linking context explicit. Propose any new downstream-facing labels/provider/extension API before implementing it.
-4. **Demonstrate C++-owned linking without writing a new general ruleset.** A narrowly scoped internal fixture should compile a Fortran-main object and link it through the selected Hermetic LLVM C++ action with target runtime `CcInfo`. Inspect `main` and runtime undefined symbols, final library order, CRT/libc/builtins and linked output. Also exercise C-main interop. This is the key previously untested claim.
+4. **Promote the proven C++-owned composition into a focused regression.** The scratch Fortran-main probe now passes. Replace its runtime/module artifacts from the old distribution with declared source-built Hermetic LLVM target inputs. Inspect `main` and runtime undefined symbols, final library order, CRT/libc/builtins and linked output. Also exercise C-main interop. No new general ruleset is needed for this qualification.
 5. **Verify separation.** A relocated minimal host executable compiles a module-free source with target runtimes/linker absent; importing an intrinsic module succeeds only when its external declared target module input is supplied. Final linking succeeds only with the target runtime/toolchain closure. The same host artifact must not embed one target's sysroot or static-link defaults.
 6. **Keep external consumer integration scoped.** Reuse or improve an existing ruleset only under a separately agreed scope. A crossenv export is a separate composition interface, currently unproven; do not add it to the host archive as a shortcut.
 7. **Requalify the manual publication path against the corrected artifact.** Preserve checksums/attestations, approved naming and explicit release gating. Prior bundled-archive test results do not qualify the minimal artifact. No release before approval and merge; this audit does not publish anything.
