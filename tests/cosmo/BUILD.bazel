@@ -1,0 +1,52 @@
+load("@bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load("//:apify.bzl", "apify_binary")
+load("//:defs.bzl", "exec_test")
+
+cc_library(
+    name = "c_tls",
+    srcs = ["c_tls.c"],
+    target_compatible_with = ["//constraints/libc:cosmo"],
+)
+
+cc_binary(
+    name = "smoke_elf",
+    srcs = ["smoke.cc"],
+    target_compatible_with = ["//constraints/libc:cosmo"],
+    deps = [":c_tls"],
+)
+
+[
+    platform_transition_filegroup(
+        name = "smoke_" + cpu,
+        srcs = [":smoke_elf"],
+        target_platform = "//platforms:cosmo_" + cpu,
+    )
+    for cpu in [
+        "aarch64",
+        "x86_64",
+    ]
+]
+
+apify_binary(
+    name = "smoke",
+    aarch64 = ":smoke_aarch64",
+    tags = ["manual"],
+    x86_64 = ":smoke_x86_64",
+)
+
+exec_test(
+    # buildifier: disable=positional-args
+    sh_test,
+    name = "smoke_test",
+    size = "small",
+    srcs = ["smoke_test.sh"],
+    data = [":smoke"],
+    target_compatible_with = select({
+        "@platforms//os:linux": [],
+        "@platforms//os:macos": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)

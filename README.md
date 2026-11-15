@@ -47,7 +47,7 @@ Cross-compilation usually requires two main components:
 
 Usually, this is done by providing a sysroot per target platform.
 
-This ecosystem simplifies the process by cross-compiling all target-specific components from source, then compiling/linking user programs against those components in Bazel.
+This ecosystem generally cross-compiles target-specific components from source, then compiles and links user programs against those components in Bazel.
 
 ## Advanced Usage
 
@@ -394,6 +394,47 @@ osx.from_host()
 For now, RISC-V support is limited to Linux and currently hard-wired to the
 rv64gc ISA and lp64d ABI while we work out a clean way to configure freestanding
 targets and ISA matrices.
+
+### Cosmopolitan
+
+Use `--platforms=@llvm//platforms:cosmo_x86_64` or
+`--platforms=@llvm//platforms:cosmo_aarch64` to build a static Cosmopolitan
+ELF with `cc_binary`. The Stage 0 Clang toolchain supports these targets on
+Linux and macOS hosts. Use `os = "cosmo"` when selecting these targets
+with the toolchain module extension. Cosmopolitan uses the published 4.0.2 SDK
+for libc, libc++, the startup objects, GNU BFD, `fixupobj`, and `apelink`.
+Building those components from source is follow-up work. Shared libraries and ThinLTO are
+outside the current Cosmopolitan toolchain support. The LLVM source targets
+still require Cosmopolitan-specific portability fixes.
+
+Use `apify_binary` to package one or both architectures into a `.com` file.
+Use a platform transition to build the same `cc_binary` for both architectures.
+
+```starlark
+load("@bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
+load("@llvm//:apify.bzl", "apify_binary")
+
+platform_transition_filegroup(
+    name = "hello_arm64",
+    srcs = [":hello_elf"],
+    target_platform = "@llvm//platforms:cosmo_aarch64",
+)
+
+platform_transition_filegroup(
+    name = "hello_amd64",
+    srcs = [":hello_elf"],
+    target_platform = "@llvm//platforms:cosmo_x86_64",
+)
+
+apify_binary(
+    name = "hello",
+    aarch64 = ":hello_arm64",
+    x86_64 = ":hello_amd64",
+)
+```
+
+Build `//:hello` and run `sh bazel-bin/hello.com`. This uses the embedded APE
+loaders and does not require installing an APE `binfmt_misc` handler.
 
 ### Other platforms
 

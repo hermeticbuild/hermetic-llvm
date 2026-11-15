@@ -122,6 +122,7 @@ def cc_toolchain(
             "@llvm//toolchain/features:thin_lto_linkstatic_tests_use_shared_nonlto_backends",
             "@llvm//toolchain/features:thin_lto_all_linkstatic_use_shared_nonlto_backends",
         ] + select({
+            "@llvm//constraints/libc:cosmo": [],
             "@platforms//cpu:wasm32": ["@llvm//toolchain/features/wasm:feature"],
             "@platforms//cpu:wasm64": ["@llvm//toolchain/features/wasm:feature"],
             "//conditions:default": ["@rules_cc//cc/toolchains/args/thin_lto:feature"],
@@ -176,7 +177,7 @@ def cc_toolchain(
             ],
             "@platforms//os:uefi": [],
             "@platforms//os:none": [],
-            "@platforms//os:wasi": [],
+            "//conditions:default": [],
         }) + [
             "@llvm//toolchain/features:hosted_dynamic_linker",
             "@llvm//toolchain/features:prefer_pic_for_opt_binaries",
@@ -277,6 +278,7 @@ def cc_toolchain(
         name = name + "_static_runtime_lib",
         actual = select({
             "@platforms//os:uefi": "@llvm//runtimes:none",
+            "@llvm//constraints/libc:cosmo": "@llvm//runtimes:none",
             "@llvm//constraints/windows/abi:msvc": "@llvm//runtimes:none",
             "//conditions:default": name + "_generic_static_runtime_lib",
         }),
@@ -296,6 +298,7 @@ def cc_toolchain(
         name = name + "_dynamic_runtime_lib",
         actual = select({
             "@platforms//os:uefi": "@llvm//runtimes:none",
+            "@llvm//constraints/libc:cosmo": "@llvm//runtimes:none",
             "@llvm//constraints/windows/abi:msvc": "@llvm//runtimes:none",
             "//conditions:default": name + "_generic_dynamic_runtime_lib",
         }),
@@ -317,6 +320,7 @@ def cc_toolchain(
         # become true only with a dialect-correct parse-only action and proved
         # module-map/layering behavior.
         supports_header_parsing = select({
+            "@llvm//constraints/libc:cosmo": False,
             "@llvm//constraints/windows/abi:msvc": _WINDOWS_MSVC_SUPPORTS_HEADER_PARSING,
             "//conditions:default": True,
         }),
@@ -361,6 +365,7 @@ def cc_toolchain(
         target_libc = select({
             "@llvm//platforms/config:gnu": "glibc",
             "@llvm//platforms/config:musl": "musl",
+            "@llvm//constraints/libc:cosmo": "cosmo",
             "@llvm//platforms/config:windows_crt_msvcrt": "msvcrt",
             "@llvm//platforms/config:windows_crt_ucrt": "ucrt",
             "@platforms//os:macos": "macosx",

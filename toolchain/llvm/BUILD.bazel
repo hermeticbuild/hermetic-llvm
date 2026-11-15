@@ -11,6 +11,7 @@ bzl_library(
     visibility = ["//visibility:public"],
     deps = [
         ":component_tools",
+        ":cosmo_tools",
         "//:directory",
         "//runtimes:module_map",
         "//toolchain:selects",
@@ -29,6 +30,15 @@ bzl_library(
     deps = [
         "//platforms:common",
         "@bazel_skylib//rules/directory:providers",
+        "@rules_cc//cc/toolchains:toolchain_rules",
+    ],
+)
+
+bzl_library(
+    name = "cosmo_tools",
+    srcs = ["cosmo_tools.bzl"],
+    deps = [
+        "//runtimes/cosmo:host_tools",
         "@rules_cc//cc/toolchains:toolchain_rules",
     ],
 )

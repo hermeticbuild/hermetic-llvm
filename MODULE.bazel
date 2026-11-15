@@ -93,6 +93,9 @@ use_repo(
     "bsd_tar_toolchains_windows_arm64",
 )
 
+cosmopolitan = use_extension("//runtimes/cosmo:sdk.bzl", "cosmopolitan")
+use_repo(cosmopolitan, "cosmopolitan_sdk")
+
 musl = use_extension("//runtimes/musl/extension:musl.bzl", "musl")
 use_repo(musl, "musl_libc")
 

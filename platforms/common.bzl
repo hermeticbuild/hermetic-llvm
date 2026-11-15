@@ -6,6 +6,8 @@ ARCH_ALIASES = {
     "armv7": [],
 }
 
+COSMO_TARGET_CPUS = ["x86_64", "aarch64"]
+
 SUPPORTED_TARGETS = [
     ("macos", "x86_64"),
     ("macos", "aarch64"),

@@ -3,6 +3,8 @@ load("//constraints/windows/abi:abis.bzl", "WINDOWS_TARGET_TRIPLES_BY_CONFIG")
 
 LLVM_TARGET_TRIPLE = select({
     # TODO: Generate this automatically.
+    "@llvm//platforms/config:cosmo_x86_64": ["x86_64-linux-gnu"],
+    "@llvm//platforms/config:cosmo_aarch64": ["aarch64-linux-gnu"],
     "@llvm//platforms/config:linux_x86_64_gnu": ["x86_64-linux-gnu"],
     "@llvm//platforms/config:linux_aarch64_gnu": ["aarch64-linux-gnu"],
     "@llvm//platforms/config:linux_riscv64_gnu": ["riscv64-linux-gnu"],

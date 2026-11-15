@@ -1,0 +1,37 @@
+load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load("//toolchain/runtimes:cc_runtime_binary.bzl", "cc_runtime_stage1_hosted_binary")
+load(":host_tools.bzl", "APE_LOADER")
+
+package(default_visibility = [
+    "//runtimes/cosmo:__pkg__",
+    "//toolchain:__subpackages__",
+])
+
+exports_files(["sdk.BUILD.bazel"])
+
+exports_files(
+    ["driver.sh"],
+    visibility = ["//visibility:public"],
+)
+
+cc_runtime_stage1_hosted_binary(
+    name = "ape-macos-arm64",
+    srcs = ["@cosmopolitan_sdk//:bin/ape-m1.c"],
+    copts = ["-O2"],
+    target_compatible_with = [
+        "@platforms//cpu:aarch64",
+        "@platforms//os:macos",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "ape_loader",
+    actual = APE_LOADER,
+    visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "host_tools",
+    srcs = ["host_tools.bzl"],
+)

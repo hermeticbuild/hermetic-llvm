@@ -70,6 +70,7 @@ cc_feature_set(
     name = "hosted_dynamic_linker",
     all_of = select({
         "//constraints/libc:musl": [],
+        "//constraints/libc:cosmo": [],
         # Nodeps dylibs omit dependencies, leaving unresolved symbols on macOS.
         # https://github.com/hermeticbuild/hermetic-llvm/issues/893
         "@platforms//os:macos": [],

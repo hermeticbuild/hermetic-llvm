@@ -479,6 +479,7 @@ jobs:
             --bazelrc=$GITHUB_WORKSPACE/.github/workflows/ci.bazelrc \
             --bazelrc=.bazelrc \
             test \
+            --extra_toolchains=//toolchain:all \
             "${test_flags[@]}" \
             -- \
             //tests/... \

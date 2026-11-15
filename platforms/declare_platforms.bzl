@@ -2,7 +2,7 @@ load("//constraints/cxxstdlib:cxxstdlib_versions.bzl", "DEFAULT_CXXSTDLIB")
 load("//constraints/libc:libc_versions.bzl", "LIBCS", "default_libc", "glibc_supported")
 load("//constraints/wasi:variants.bzl", "WASI_TARGET_TRIPLES")
 load("//constraints/windows/abi:abis.bzl", "WINDOWS_GENERIC_PLATFORM_ABI")
-load("//platforms:common.bzl", "ARCH_ALIASES", "LIBC_SUPPORTED_TARGETS", "SUPPORTED_TARGETS")
+load("//platforms:common.bzl", "ARCH_ALIASES", "COSMO_TARGET_CPUS", "LIBC_SUPPORTED_TARGETS", "SUPPORTED_TARGETS")
 
 def declare_platforms():
     for (target_os, target_cpu) in SUPPORTED_TARGETS:
@@ -44,6 +44,16 @@ def declare_platforms():
                 constraint_values = constraints,
                 visibility = ["//visibility:public"],
             )
+
+    for cpu in COSMO_TARGET_CPUS:
+        native.platform(
+            name = "cosmo_" + cpu,
+            constraint_values = [
+                "@platforms//cpu:" + cpu,
+                "//constraints/libc:cosmo",
+            ],
+            visibility = ["//visibility:public"],
+        )
 
     declare_platforms_libc_aware()
     declare_windows_msvc_platforms()

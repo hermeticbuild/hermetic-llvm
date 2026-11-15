@@ -1,0 +1,46 @@
+load("@llvm//:directory.bzl", "headers_directory")
+
+package(default_visibility = ["//visibility:public"])
+
+headers_directory(
+    name = "c_headers",
+    path = "include",
+)
+
+headers_directory(
+    name = "cxx_headers",
+    path = "include/third_party/libcxx",
+)
+
+exports_files(glob([
+    "bin/*",
+    "*-linux-cosmo/lib/*",
+]))
+
+[
+    filegroup(
+        name = cpu + "_libs",
+        srcs = [cpu + "-linux-cosmo/lib"],
+    )
+    for cpu in ["aarch64", "x86_64"]
+]
+
+[
+    filegroup(
+        name = target,
+        srcs = [file],
+    )
+    for target, file in {
+        "aarch64_bfd": "bin/aarch64-linux-cosmo-ld",
+        "aarch64_crt": "aarch64-linux-cosmo/lib/crt.o",
+        "aarch64_script": "aarch64-linux-cosmo/lib/aarch64.lds",
+        "fixupobj": "bin/fixupobj",
+        "linux_aarch64_loader": "bin/ape-aarch64.elf",
+        "linux_x86_64_loader": "bin/ape-x86_64.elf",
+        "macos_x86_64_loader": "bin/ape-x86_64.macho",
+        "x86_64_ape": "x86_64-linux-cosmo/lib/ape.o",
+        "x86_64_bfd": "bin/x86_64-linux-cosmo-ld",
+        "x86_64_crt": "x86_64-linux-cosmo/lib/crt.o",
+        "x86_64_script": "x86_64-linux-cosmo/lib/ape.lds",
+    }.items()
+]

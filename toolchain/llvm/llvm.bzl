@@ -4,6 +4,7 @@ load("@rules_cc//cc/toolchains:tool.bzl", "cc_tool")
 load("@rules_cc//cc/toolchains:tool_map.bzl", "cc_tool_map")
 load("//:directory.bzl", "headers_directory")
 load(":component_tools.bzl", "component_tools")
+load(":cosmo_tools.bzl", "cosmo_tools")
 
 _VALIDATE_STATIC_LIBRARY_TOOL = {
     "@rules_cc//cc/toolchains/actions:validate_static_library": ":static_library_validator",
@@ -142,6 +143,21 @@ def declare_llvm_targets(*, exec_os, exec_cpu, suffix = ""):
     COMPLETE_ONLY_TOOLS = {
         "@rules_cc//cc/toolchains/actions:cpp_header_parsing": ":header_parser",
     } | _VALIDATE_STATIC_LIBRARY_TOOL
+
+    native.filegroup(
+        name = "clang_file",
+        srcs = ["bin/clang" + suffix],
+    )
+
+    cosmo_tools(
+        name = "cosmo_tools",
+        exec_os = exec_os,
+        exec_cpu = exec_cpu,
+        clang = ":clang_file",
+        clangxx = ":clangxx_file",
+        ar = ":llvm-ar",
+        strip = ":llvm-strip",
+    )
 
     component_tools(
         name = "wasi_component_tools_for_runtime",
@@ -565,9 +581,18 @@ def declare_llvm_targets(*, exec_os, exec_cpu, suffix = ""):
         }),
     )
 
+    include_path(
+        name = "cosmo_target_headers",
+        srcs = select({
+            "@llvm//config:nostdincxx_enabled": [],
+            "//conditions:default": ["@cosmopolitan_sdk//:cxx_headers"],
+        }) + ["@cosmopolitan_sdk//:c_headers"],
+    )
+
     module_map(
         name = "module_map",
         include_path = select({
+            "@llvm//constraints/libc:cosmo": ":cosmo_target_headers",
             "@platforms//os:macos": ":macos_target_headers",
             "@platforms//os:linux": ":linux_target_headers",
             "@platforms//os:windows": ":windows_target_headers",
