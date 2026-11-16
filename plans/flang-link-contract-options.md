@@ -1,6 +1,13 @@
-# Flang link integration choices (for discussion)
+# Flang link integration choices (historical proposals)
 
-Status: proposal only. Corentin wants a future Fortran ruleset to own Flang toolchains and providers. No new Hermetic LLVM Flang toolchain type or provider. No public API, build setting, or release is approved by this document.
+Status: historical options, not an approved API. The current decisions and
+compiler-agnostic ruleset boundary are in
+[fortran-ruleset-composition.md](fortran-ruleset-composition.md). The first
+release is only the repository-pinned LLVM 23.1.2 host Flang archive; the
+retrieval, intrinsic-module and runtime targets proposed below are deferred.
+No Hermetic LLVM Flang toolchain type/provider, CC feature or build setting
+was approved. Preserve the one-pair scratch link evidence below, but do not
+treat its proposed labels or target counts as an implementation instruction.
 
 ## Observed boundary
 
@@ -65,6 +72,10 @@ A future ruleset may define one generic Fortran toolchain type/provider with com
 
 Do not pass Clang to Flang's `--ld-path` and expect a Clang-driver link: Flang sends raw linker arguments to the selected external linker. Reusing Hermetic LLVM's cross environment for a Flang-driver action would need an explicit, tested mapping of its CRT, sysroot, builtins, library ordering and linker files. The initial release does not need that mapping for the proven CC link path. The ruleset can add driver-link support independently for full or local toolchains while the Hermetic LLVM composition remains CC-owned.
 
-## Decision requested
+## Future decision
 
-Agree on whether the first API should be option 1, or name the specific CC behavior that should be selected by a feature or build setting now. Toolchain and provider design stays with the future ruleset.
+Design the retrieval and target component API after the minimal release. The
+future ruleset owns a generic Fortran toolchain and compiler adapters. Its
+initial Hermetic LLVM backend should link through `cc_common.link` with an
+explicit, propagated Flang-RT `CcInfo`; exact public labels and provider
+fields still need separate approval.

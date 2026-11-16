@@ -1,8 +1,17 @@
 # Minimal Flang distribution PR plan
 
-Status: proposal for Corentin's approval before implementation. No release or new consumer API is authorized by this document. This PR is release infrastructure and a private composition probe, not a Fortran ruleset or the public Flang retrieval/runtime API.
+Status: historical pre-implementation plan. Current scope and future consumer
+boundary: [fortran-ruleset-composition.md](fortran-ruleset-composition.md).
+The pushed review branch `cerisier/flang-minimal-prebuilts` packages only the
+repository-pinned LLVM **23.1.2** Flang compiler for eight host variants. It
+adds no private probe, runtime target, retrieval API or Fortran ruleset. The
+LLVM 21/22 and 23.1.5 release plan and extra verification lanes below were
+superseded by Corentin's later decisions. No PR or release had been created
+when this record was updated.
 
-## Decisions
+## Superseded proposal (retained as design history)
+
+### Decisions at the time
 
 - Publish one minimal **host compiler** archive per qualified execution-platform variant. The archive contains `bin/flang` (or `bin/flang.exe`), LLVM and Flang license files, and only non-OS host execution dependencies proven necessary by binary inspection. It contains no target libc headers/libraries, CRT, sysroot, Flang-RT, intrinsic `.mod` files, Clang, LLD, archiver, target-specific `flang.cfg`, or helper assets added solely for standalone linking.
 - Produce releases for the latest patch in each of LLVM 21, 22 and 23: **21.1.8, 22.1.8, 23.1.5** as of 2026-11-16. Version 23.1.5 exists upstream and in `hermeticbuild/llvm-redist`, but this repository currently indexes and defaults to 23.1.2. Add the exact 23.1.5 source archive metadata; leave the module's default version unchanged in this PR. Never pair a Flang compiler with target modules/runtime from a different LLVM source version.

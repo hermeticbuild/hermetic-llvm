@@ -1,7 +1,13 @@
 # Flang prebuilt investigation and implementation plan
 
 Investigation: 2026-11-15. Baseline: `02a44d57c9efc2410f70227fd61463a5f62cb6b1`.
-Status: investigation only; no feature implementation or public API introduced. Updated after Corentin's design correction: **minimal host Flang prebuilt; target modules, runtime and sysroot supplied by Hermetic LLVM**. The earlier self-contained target distribution is superseded, not the desired release contract.
+Status: historical investigation evidence. Current release and future ruleset
+decisions: [fortran-ruleset-composition.md](fortran-ruleset-composition.md).
+The separate `cerisier/flang-minimal-prebuilts` review branch now builds the
+minimal host archives for the repository's LLVM 23.1.2 pin on eight execution
+platforms. This earlier scratch probe still establishes only one Linux
+x86_64-musl static Fortran composition; it does not qualify the production
+archive with target modules/runtime. No public consumer API or release exists.
 
 ## Recommendation and acceptance boundary
 

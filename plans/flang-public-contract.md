@@ -1,10 +1,19 @@
 # Proposed Flang integration contract (for approval)
 
-**Superseded for design discussion:** Corentin rejected Hermetic LLVM ownership of the Flang toolchain type/provider. Current options: [flang-link-contract-options.md](flang-link-contract-options.md). This document records the earlier proposal only; its public labels are not approved.
+**Superseded:** Corentin rejected Hermetic LLVM ownership of the Flang
+toolchain type/provider and chose a compiler-agnostic future Fortran ruleset.
+Current decisions: [fortran-ruleset-composition.md](fortran-ruleset-composition.md).
+This document records the earlier proposal only; none of its labels, provider
+fields or target counts are approved.
 
-Status: proposal only. The toolchain ownership choice is open. No public API or implementation is authorized by this document. The initial qualified pair is Linux x86_64 execution and Linux x86_64 musl target, static executable. The existing standalone Flang draft is superseded.
+Status: historical proposal only. Toolchain ownership is now assigned to the
+future compiler-agnostic Fortran ruleset. No public API or implementation is
+authorized by this document. The earlier qualified pair was Linux x86_64
+execution and Linux x86_64 musl target, static executable.
 
-## Toolchain ownership options
+## Superseded proposal (retained as design history)
+
+### Toolchain ownership options at the time
 
 | Option | Downstream contract | Public surface now | Cost |
 |---|---|---|---|
