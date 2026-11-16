@@ -256,11 +256,17 @@ validation action over its complete own-plus-dependency manifest closure. It
 produces a success stamp carried in default outputs and the normal validation
 output group, so building that library detects conflicting producers without a
 downstream compile. Consumers declare their dependencies' validation stamps as
-compile inputs. A library's own stamp follows its source compilations; it cannot
+compile inputs. The library also carries its stamp in a
+`LinkerInput.additional_inputs` entry in its `CcInfo`, so a C/C++-only consumer
+cannot bypass namespace validation by requesting only native linking inputs.
+A library's own stamp follows its source compilations; it cannot
 be an input of those same actions because that would create a cycle. A CC-only
 or completely empty aggregator has no module namespace to validate. Include
 standalone conflicting-source and conflicting-aggregator builds in acceptance
 tests, not just collisions discovered by a later consumer.
+
+The link pseudocode below omits that validation-only linker input for brevity;
+the implementation must merge it into the returned library linking context.
 
 Flang names ordinary modules `<name>.mod` and submodules
 `<ancestor>-<submodule>.mod`. `.smod` is **not** a Fortran-standard filename
