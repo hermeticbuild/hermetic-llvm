@@ -498,6 +498,13 @@ the available Linux profile-training executables record Itanium C++ names,
 which cannot profile the Microsoft-mangled C++ functions in the Windows LLVM
 binaries.
 
+Flang host compiler archives are built by `//prebuilt/flang:all` for the same
+execution platforms. They contain the ThinLTO-built `flang` executable and its
+licenses, not target intrinsic modules, Flang-RT, a linker, or a target sysroot.
+The dedicated `flang-<LLVM version>-r<revision>` release branches publish one
+archive per execution platform after the source version is selected in
+`MODULE.bazel`. These archives are not standalone Fortran toolchains.
+
 ## Roadmap
 
 See https://github.com/hermeticbuild/hermetic-llvm/milestone/1

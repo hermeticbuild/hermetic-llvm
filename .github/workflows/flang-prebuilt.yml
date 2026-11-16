@@ -1,0 +1,91 @@
+name: Flang Prebuilt Release
+
+on:
+  push:
+    branches:
+      - "flang-*"
+  workflow_dispatch:
+
+permissions:
+  attestations: write
+  contents: write
+  artifact-metadata: write
+  id-token: write
+
+concurrency:
+  group: flang-prebuilt-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    # The release BuildBuddy API key belongs to a separate BuildBuddy org, so
+    # release builds only consume cache entries written by release builds. It
+    # is an environment secret so that only release branches can use it.
+    environment: release
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - uses: ./.github/actions/buildbuddy-api-key
+        with:
+          api-key: ${{ secrets.BUILDBUDDY_RELEASE_API_KEY }}
+          required: true
+
+      - name: Mount bazel caches
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cache/bazel-repo
+          key: flang-prebuilt-bazel-${{ runner.os }}-${{ github.ref_name }}
+          restore-keys: |
+            flang-prebuilt-bazel-${{ runner.os }}
+
+      - name: Build and package prebuilts
+        id: build_and_package
+        run: bash .github/workflows/flang-prebuilt.sh
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: flang-toolchain-${{ steps.build_and_package.outputs.version }}
+          path: release/*
+
+      - name: Attest release artifacts
+        id: attest
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4
+        with:
+          subject-path: |
+            release/*.tar.zst
+            release/SHA256.txt
+
+      - name: Normalize attestation bundle filename
+        run: |
+          mv \
+            "${{ steps.attest.outputs.bundle-path }}" \
+            "release/flang-toolchain-${{ steps.build_and_package.outputs.version }}.attestation.jsonl"
+
+      - name: Upload attestation bundle artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: flang-toolchain-${{ steps.build_and_package.outputs.version }}.attestation
+          path: release/flang-toolchain-${{ steps.build_and_package.outputs.version }}.attestation.jsonl
+          if-no-files-found: error
+
+      - name: Publish release
+        # TODO(cerisier): Revert me to @v2 once they fixed make_latest broken behavior starting at v2.5.0.
+        uses: softprops/action-gh-release@5be0e66d93ac7ed76da52eca8bb058f665c3a5fe # v2.4.2
+        with:
+          tag_name: ${{ github.ref_name }}
+          target_commitish: ${{ github.sha }}
+          name: Flang prebuilts ${{ steps.build_and_package.outputs.version }}
+          files: |
+            release/*.tar.zst
+            release/SHA256.txt
+            release/*.attestation.jsonl
+          overwrite_files: false
+          draft: false
+          prerelease: false
+          generate_release_notes: false
+          make_latest: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
