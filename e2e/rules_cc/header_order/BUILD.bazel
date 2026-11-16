@@ -9,7 +9,7 @@ cc_library(
     name = "precedence",
     srcs = [
         "precedence.c",
-        "precedence.cc",
+        "precedence_cxx.cc",
     ],
     hdrs = [
         "include/stddef.h",
@@ -21,21 +21,18 @@ cc_library(
     includes = ["include"],
 )
 
+# libc++'s C++ wrappers diagnose when the C library header is found before
+# their corresponding libc++ C wrapper.
 cc_library(
-    name = "c_precedence",
-    srcs = ["precedence.c"],
-    hdrs = [
-        "include/stddef.h",
-        "include/stdlib.h",
-        "include/windows.h",
+    name = "libcxx_c_wrappers",
+    srcs = [
+        "libcxx_c_headers.cc",
+        "libcxx_cmath.cc",
+        "libcxx_cstdlib.cc",
     ],
-    features = ["system_include_paths"],
-    includes = ["include"],
 )
 
 # Musl still places its ordinary -isystem libc paths before user headers.
-# macOS currently passes libc++ using -isystem before target includes, so
-# its target covers C only.
 _PLATFORMS = [
     "linux_" + cpu
     for cpu in [
@@ -50,6 +47,8 @@ _PLATFORMS = [
     "windows_aarch64",
     "windows_x86_64_msvc",
     "windows_aarch64_msvc",
+    "macos_x86_64",
+    "macos_aarch64",
 ]
 
 [
@@ -70,13 +69,38 @@ filegroup(
 
 [
     platform_transition_filegroup(
-        name = "c_precedence_" + platform,
-        srcs = [":c_precedence"],
+        name = "libcxx_c_wrappers_" + platform,
+        srcs = [":libcxx_c_wrappers"],
         tags = ["manual"],
         target_platform = "@llvm//platforms:" + platform,
     )
-    for platform in [
-        "macos_x86_64",
-        "macos_aarch64",
-    ]
+    for platform in _PLATFORMS
 ]
+
+filegroup(
+    name = "all_libcxx_c_wrappers",
+    srcs = [":libcxx_c_wrappers_" + platform for platform in _PLATFORMS],
+    tags = ["manual"],
+)
+
+# An external include directory must precede clang-cl's resource headers.
+_MSVC_PLATFORMS = [
+    "windows_x86_64_msvc",
+    "windows_aarch64_msvc",
+]
+
+[
+    platform_transition_filegroup(
+        name = "external_builtin_precedence_" + platform,
+        srcs = ["@external_include_paths_test//:builtin_header_precedence"],
+        tags = ["manual"],
+        target_platform = "@llvm//platforms:" + platform,
+    )
+    for platform in _MSVC_PLATFORMS
+]
+
+filegroup(
+    name = "all_external_builtin_precedence",
+    srcs = [":external_builtin_precedence_" + platform for platform in _MSVC_PLATFORMS],
+    tags = ["manual"],
+)

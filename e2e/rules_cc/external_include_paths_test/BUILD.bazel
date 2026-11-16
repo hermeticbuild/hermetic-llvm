@@ -1,4 +1,14 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load(":defs.bzl", "external_include_paths_ubsan_cc_binary")
+
+cc_library(
+    name = "builtin_header_precedence",
+    srcs = ["builtin_header_precedence.c"],
+    hdrs = ["builtin_include/stddef.h"],
+    features = ["external_include_paths"],
+    includes = ["builtin_include"],
+    visibility = ["//visibility:public"],
+)
 
 external_include_paths_ubsan_cc_binary(
     name = "error_header_binary",
