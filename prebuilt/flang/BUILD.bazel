@@ -51,4 +51,3 @@ flang_release(
         ("arm64", "aarch64"),
     ]
 ]
-
