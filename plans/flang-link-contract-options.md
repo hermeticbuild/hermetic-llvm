@@ -36,6 +36,19 @@ The release archive is the previously approved host-only artifact form: `flang-t
 
 Initial qualified pair: Linux x86_64 execution to Linux x86_64 musl target, static executable. The bespoke probe should compile a Fortran main importing intrinsic and user modules; link it via `cc_common.link`; then link a C main against a Fortran library whose `CcInfo` carries Flang-RT. Inspect actual compile/link action inputs and link order. Confirm missing-module and missing-runtime failures. If the existing CC toolchain cannot reproduce the scratch probe with the production archive, identify the precise missing behavior before choosing option 2 or 3.
 
+## Future ruleset: two link backends
+
+Both paths compile source/module units with the selected Fortran compiler into declared `.o`/`.mod` outputs. The link backend is a separate choice; module dependency ordering still requires individual compile actions.
+
+| Backend | Link owner | Required toolchain environment | Status with minimal Flang archive |
+|---|---|---|---|
+| CC link | `cc_common.link` with the selected C++ toolchain | Target Flang-RT `CcInfo`, Fortran/native object and library inputs, and the CC toolchain's normal CRT/libc/builtins/linker closure. | Demonstrated for a Linux x86_64-musl static executable in a scratch probe. Recommended initial backend for Hermetic LLVM integration. |
+| Fortran driver link | `flang <objects> ... -o <output>` in a ruleset-owned action | A complete target-aware Flang driver installation or explicit target sysroot, linker executable/files, startup objects, builtins, Flang-RT, libc/math/SDK libraries, search paths and flags. These are declared action inputs if the build is hermetic. | The same `bin/flang` can be the driver, but the minimal archive alone is insufficient. No Hermetic LLVM-composed driver link has been demonstrated. |
+
+A future ruleset may define one generic Fortran toolchain type/provider with compiler inputs plus explicit link capabilities, and choose a backend per target or configuration. It can support a fully packaged Flang toolchain or a host-installed Flang on the driver path; host-installed tools are local/nonhermetic unless their full executable and target dependency closure is captured. Runtime `.mod` and archive versions must match the selected compiler in either path.
+
+Do not pass Clang to Flang's `--ld-path` and expect a Clang-driver link: Flang sends raw linker arguments to the selected external linker. Reusing Hermetic LLVM's cross environment for a Flang-driver action would need an explicit, tested mapping of its CRT, sysroot, builtins, library ordering and linker files. The initial release does not need that mapping for the proven CC link path. The ruleset can add driver-link support independently for full or local toolchains while the Hermetic LLVM composition remains CC-owned.
+
 ## Decision requested
 
 Agree on whether the first API should be option 1, or name the specific CC behavior that should be selected by a feature or build setting now. Toolchain and provider design stays with the future ruleset.
