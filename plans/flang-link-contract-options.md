@@ -18,6 +18,18 @@ Hermetic LLVM's CC toolchain already selects its CRT, libc, builtins, C++ runtim
 
 Recommendation for the first implementation: option 1. The probe found no missing CC driver behavior to switch for the first qualified pair. Keep option 2 available if the production probe shows a specific missing link flag or platform rule. Do not create option 3 merely to make the runtime implicit.
 
+## Proposed ownership of the CC link
+
+Hermetic LLVM builds target `runtimes/flang:runtime` from the selected LLVM source and returns ordinary `CcInfo`. This target owns Flang-RT and any target-specific link dependencies required by that runtime, such as `libm` on a qualified glibc target. It is target-configured and version-matched to the host Flang release. Hermetic LLVM does **not** add it to the CC toolchain's `static_runtime_lib`/`dynamic_runtime_lib`, globally enable a Flang feature, or define a Fortran toolchain provider.
+
+A future ruleset owns `FortranToolchainInfo` (name illustrative, not an Hermetic LLVM API). The minimum Flang-backed instance carries: an execution-configured compiler and execution files; target triple/compile options consistent with the selected CC target; target intrinsic `.mod` files and their search directory; and the `CcInfo` from `runtimes/flang:runtime`. Its compiler, intrinsic modules and runtime share one qualified LLVM source identity. The ruleset selects that runtime when constructing the Fortran toolchain; the CC link does not discover it from the object file or a global flag.
+
+For a Fortran executable, the rule passes its compiled objects as `compilation_outputs` and the runtime plus native/Fortran dependency `CcInfo.linking_context`s as `linking_contexts` to `cc_common.link`, along with the selected `CcToolchainInfo` and feature configuration. For a Fortran library, its returned `CcInfo` contains the library's objects/archive and propagates the runtime linking context, so a downstream `cc_binary` with a C/C++ main links the runtime without resolving a Fortran toolchain. The initial probe must verify archive/runtime order and real PIC/non-PIC object selection.
+
+`cc_common.link` itself supplies no Fortran-specific inputs. The **selected Hermetic LLVM CC toolchain** supplies the configured Clang/LLD link action and files, target triple and CPU/ABI flags, CRT/startup objects, libc/sysroot/SDK, compiler builtins, and its configured C++/unwind runtimes. The rule supplies Flang-RT, other Fortran-specific libraries and flags, its objects, and its dependency link graph. `libm`/quadmath/OpenMP are not assumed CC defaults: include each in the Fortran runtime/dependency `CcInfo` only when that target/mode is qualified. Intrinsic modules are compile inputs, never link inputs.
+
+The initial Linux x86_64-musl probe can use a qualified fixed triple. For general target support, the ruleset's toolchain resolution and compiler flags must agree with Hermetic LLVM's selected libc/ABI, not merely OS and CPU. Exposing an additional shared target-configuration API from Hermetic LLVM would need separate approval; it is not part of this first surface.
+
 ## Proposed initial public surface under option 1
 
 | Surface | Proposed placement | Purpose |
