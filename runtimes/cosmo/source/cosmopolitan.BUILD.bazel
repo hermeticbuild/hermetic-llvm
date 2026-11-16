@@ -1,6 +1,6 @@
 load("@llvm//:directory.bzl", "headers_directory")
 load("@llvm//runtimes/cosmo/source:runtime.bzl", "cosmo_sdk_tool", "cosmo_static_library", "cosmo_zip_assets")
-load("@llvm//runtimes/cosmo/source:sources.bzl", "SDK_TOOL_SRCS", "libcosmo_sources", "libcxx_sources", "zip_assets")
+load("@llvm//runtimes/cosmo/source:sources.bzl", "SDK_TOOL_SRCS", "libcosmo_sources", "libcxx_sources")
 load("@llvm//runtimes/cosmo/source:startup.bzl", "cosmo_stage1_tool", "cosmo_startup_files")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 
@@ -53,7 +53,7 @@ headers_directory(
 
 cosmo_stage1_tool("archive_llvm_ar", "llvm-ar")
 
-cosmo_zip_assets(srcs = zip_assets())
+cosmo_zip_assets()
 
 cosmo_static_library(
     name = "cosmo",

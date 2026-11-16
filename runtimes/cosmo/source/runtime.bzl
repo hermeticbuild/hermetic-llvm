@@ -239,14 +239,22 @@ _zip_objects = rule(
     },
 )
 
-def cosmo_zip_assets(srcs):
+def cosmo_zip_assets():
     """Converts upstream's ZIP assets to target ELF objects."""
+    zoneinfo_files = native.glob(["usr/share/zoneinfo/**"])
+    zoneinfo_paths = native.glob(["usr/share/zoneinfo/**"], exclude_directories = 0)
     _zip_objects(
         name = "zip_objects",
         cpu = select({
             "@platforms//cpu:aarch64": "aarch64",
             "@platforms//cpu:x86_64": "x86_64",
         }),
-        directories = [path for path in srcs if path.endswith("/")],
-        srcs = [path for path in srcs if not path.endswith("/")],
+        directories = [path + "/" for path in zoneinfo_paths if path not in zoneinfo_files],
+        srcs = [
+            "dsp/audio/cosmoaudio/cosmoaudio.c",
+            "dsp/audio/cosmoaudio/cosmoaudio.dll",
+            "dsp/audio/cosmoaudio/cosmoaudio.h",
+            "dsp/audio/cosmoaudio/miniaudio.h",
+            "libc/runtime/.cosmo",
+        ] + zoneinfo_files,
     )

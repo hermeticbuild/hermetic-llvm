@@ -681,23 +681,6 @@ def _libcxx_source_group():
 def libcxx_sources():
     return [_libcxx_source_group()]
 
-def zip_assets():
-    """Selects Cosmopolitan's embedded ZIP assets.
-
-    Returns:
-        Source paths for files and paths ending in `/` for directory records.
-    """
-    zoneinfo_files = native.glob(["usr/share/zoneinfo/**"])
-    zoneinfo_paths = native.glob(["usr/share/zoneinfo/**"], exclude_directories = 0)
-    directories = [path + "/" for path in zoneinfo_paths if path not in zoneinfo_files]
-    return [
-        "dsp/audio/cosmoaudio/cosmoaudio.c",
-        "dsp/audio/cosmoaudio/cosmoaudio.dll",
-        "dsp/audio/cosmoaudio/cosmoaudio.h",
-        "dsp/audio/cosmoaudio/miniaudio.h",
-        "libc/runtime/.cosmo",
-    ] + directories + zoneinfo_files
-
 SDK_TOOL_SRCS = {
     "apelink": ["tool/build/lib/parsesupportvector.c"],
     "fixupobj": [],
