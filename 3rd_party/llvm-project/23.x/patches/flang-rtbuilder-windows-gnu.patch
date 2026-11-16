@@ -1,4 +1,4 @@
-Flang's runtime type builder must model the Windows 64-bit allocator
+Flang's runtime type builder must model the Windows 64-bit memory-copy callback
 signature for both the MSVC and GNU Windows targets. MinGW uses the same
 64-bit size argument but does not define _MSC_VER, leaving getModel undefined
 when ThinLTO links the Flang driver.
