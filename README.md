@@ -399,11 +399,18 @@ targets and ISA matrices.
 
 Use `--platforms=@llvm//platforms:cosmo_x86_64` or
 `--platforms=@llvm//platforms:cosmo_aarch64` to build a static Cosmopolitan
-ELF with `cc_binary`. The Stage 0 Clang toolchain supports these targets on
-Linux and macOS hosts. Use `os = "cosmo"` when selecting these targets
-with the toolchain module extension. By default, Cosmopolitan uses the published
-4.0.2 SDK for libc, libc++, the startup objects, GNU BFD, `fixupobj`, and `apelink`.
-The Cosmopolitan target toolchain supports static linking without ThinLTO.
+ELF with the published 4.0.2 SDK. Use
+`--platforms=@llvm//platforms:cosmo_x86_64_source` or
+`--platforms=@llvm//platforms:cosmo_aarch64_source` to build libc, libc++,
+the CRT objects, and linker scripts with the repository's Stage 1 LLVM.
+The source SDK requires Stage 1 Linux toolchains. Registering
+`@llvm//toolchain:all` includes them. The source SDK uses the released GNU BFD
+linkers and APE bootstrap tools.
+
+The Stage 0 Clang toolchain supports these targets on Linux and macOS hosts.
+Use `os = "cosmo"` when selecting these targets with the toolchain module
+extension. The Cosmopolitan target toolchain supports static linking without
+ThinLTO.
 
 Use `apify_binary` to package one or both architectures into a `.com` file.
 Use a platform transition to build the same `cc_binary` for both architectures.
@@ -436,16 +443,11 @@ loaders and does not require installing an APE `binfmt_misc` handler.
 
 #### LLVM multicall executable
 
-Build `//runtimes/cosmo:llvm` with `--extra_toolchains=//toolchain:all` for
-`llvm.com`. It uses the same multicall command list as the LLVM prebuilts and
-contains both x86-64 and AArch64. Build `//runtimes/cosmo:llvm_distribution`
-for the archive with the Clang resource headers and the tool name symlinks.
-
-Add `--//runtimes/cosmo:source_sdk` to stage headers from the Cosmopolitan
-4.0.2 source release and build the CRT objects, linker scripts, `libcosmo.a`,
-and `libcxx.a` with the repository's Stage 1 LLVM. The SDK build uses the
-released GNU BFD linkers and APE bootstrap tools. `//runtimes/cosmo:llvm`
-packages `llvm.com` with the source-built `apelink.com` when this flag is set.
+Build `//runtimes/cosmo:llvm` for `llvm.com` or
+`//prebuilt/llvm:llvm_distribution` for the archive with the Clang resource
+headers and the tool name symlinks. Pass `--extra_toolchains=//toolchain:all`
+for either target. Both build for `cosmo_x86_64_source` and
+`cosmo_aarch64_source` and use the source-built `apelink.com` to combine them.
 
 Run commands as `sh bin/llvm.com clang --version` or
 `sh bin/llvm.com ld.lld --version` from the extracted archive. An installed

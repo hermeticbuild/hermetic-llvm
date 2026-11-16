@@ -54,8 +54,8 @@ def apify_binary(name, *, x86_64 = None, aarch64 = None, apelink = None, **kwarg
 
     Args:
         name: Rule name. The output is named <name>.com.
-        x86_64: Optional binary target built for cosmo_x86_64.
-        aarch64: Optional binary target built for cosmo_aarch64.
+        x86_64: Optional Cosmopolitan x86-64 ELF target.
+        aarch64: Optional Cosmopolitan AArch64 ELF target.
         apelink: Optional apelink executable built for the execution platform.
         **kwargs: Common Bazel rule attributes.
     """

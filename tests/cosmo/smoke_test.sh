@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-ape="$TEST_SRCDIR/$TEST_WORKSPACE/tests/cosmo/smoke.com"
+ape="$TEST_SRCDIR/$TEST_WORKSPACE/tests/cosmo/$1"
 test "$(head -c 8 "$ape")" = "MZqFpD='"
 export TMPDIR="$TEST_TMPDIR"
 before=$(cksum < "$ape")

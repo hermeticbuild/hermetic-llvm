@@ -19,6 +19,13 @@ constraint_value(
     constraint_setting = ":variant",
 )
 
+constraint_setting(name = "cosmo_sdk")
+
+constraint_value(
+    name = "cosmo_source",
+    constraint_setting = ":cosmo_sdk",
+)
+
 [
     constraint_value(
         name = libc,

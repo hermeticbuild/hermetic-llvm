@@ -1,9 +1,8 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
-load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load("//:apify.bzl", "apify_binary")
-load("//prebuilt/llvm:llvm_release.bzl", "llvm_release")
+load("//platforms:common.bzl", "COSMO_TARGET_CPUS")
 load("//runtimes:defs.bzl", "stub_library")
 load("//toolchain/bootstrap:bootstrap_binary.bzl", "bootstrap_binary")
 load("//toolchain/runtimes:cc_runtime_binary.bzl", "cc_runtime_stage1_hosted_binary")
@@ -52,35 +51,19 @@ bzl_library(
         name = "llvm_" + cpu,
         actual = "@llvm-project//llvm:llvm",
         cosmopolitan = True,
-        platform = "//platforms:cosmo_" + cpu,
+        platform = "//platforms:cosmo_" + cpu + "_source",
         tags = ["manual"],
     )
-    for cpu in [
-        "aarch64",
-        "x86_64",
-    ]
+    for cpu in COSMO_TARGET_CPUS
 ]
 
 apify_binary(
     name = "llvm",
     aarch64 = ":llvm_aarch64",
-    apelink = ":sdk_apelink",
+    apelink = ":apelink",
     tags = ["manual"],
     visibility = ["//visibility:public"],
     x86_64 = ":llvm_x86_64",
-)
-
-llvm_release(
-    name = "llvm_distribution",
-    binary = ":llvm",
-    binary_name = "llvm.com",
-)
-
-bool_flag(
-    name = "source_sdk",
-    build_setting_default = False,
-    scope = "universal",
-    visibility = ["//visibility:public"],
 )
 
 SDK_TOOL_NAMES = [
@@ -95,13 +78,10 @@ SDK_TOOL_NAMES = [
         name = tool + "_" + cpu,
         srcs = ["@cosmopolitan_source//:" + tool],
         tags = ["manual"],
-        target_platform = "//platforms:cosmo_" + cpu,
+        target_platform = "//platforms:cosmo_" + cpu + "_source",
     )
     for tool in SDK_TOOL_NAMES
-    for cpu in [
-        "aarch64",
-        "x86_64",
-    ]
+    for cpu in COSMO_TARGET_CPUS
 ]
 
 [
@@ -115,26 +95,11 @@ SDK_TOOL_NAMES = [
     for tool in SDK_TOOL_NAMES
 ]
 
-config_setting(
-    name = "source_sdk_enabled",
-    flag_values = {":source_sdk": "true"},
-    visibility = ["//visibility:public"],
-)
-
-alias(
-    name = "sdk_apelink",
-    actual = select({
-        ":source_sdk_enabled": ":apelink",
-        "//conditions:default": "@cosmopolitan_sdk//:bin/apelink",
-    }),
-    visibility = ["//visibility:public"],
-)
-
 [
     alias(
         name = artifact,
         actual = select({
-            ":source_sdk_enabled": "@cosmopolitan_source//:" + artifact,
+            "//constraints/libc:cosmo_source": "@cosmopolitan_source//:" + artifact,
             "//conditions:default": "@cosmopolitan_sdk//:" + artifact,
         }),
         visibility = ["//visibility:public"],
@@ -179,12 +144,10 @@ COMPANION_LIBRARIES = [
             "@cosmopolitan_source//:cosmo",
             "@cosmopolitan_source//:cxx",
         ],
+        tags = ["manual"],
         target_platform = "//platforms:linux_" + cpu + "_musl",
     )
-    for cpu in [
-        "aarch64",
-        "x86_64",
-    ]
+    for cpu in COSMO_TARGET_CPUS
 ]
 
 [
@@ -196,26 +159,21 @@ COMPANION_LIBRARIES = [
         ],
         include_external_repositories = ["**"],
         root_paths = [package_name() + "/stubs"],
+        tags = ["manual"],
     )
-    for cpu in [
-        "aarch64",
-        "x86_64",
-    ]
+    for cpu in COSMO_TARGET_CPUS
 ]
 
 [
     alias(
         name = cpu + "_libs",
         actual = select({
-            ":source_sdk_enabled": ":" + cpu + "_source_libs",
+            "//constraints/libc:cosmo_source": ":" + cpu + "_source_libs",
             "//conditions:default": "@cosmopolitan_sdk//:" + cpu + "_libs",
         }),
         visibility = ["//visibility:public"],
     )
-    for cpu in [
-        "aarch64",
-        "x86_64",
-    ]
+    for cpu in COSMO_TARGET_CPUS
 ]
 
 bzl_library(

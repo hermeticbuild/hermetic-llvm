@@ -46,12 +46,19 @@ def declare_platforms():
             )
 
     for cpu in COSMO_TARGET_CPUS:
+        name = "cosmo_" + cpu
         native.platform(
-            name = "cosmo_" + cpu,
+            name = name,
             constraint_values = [
                 "@platforms//cpu:" + cpu,
                 "//constraints/libc:cosmo",
             ],
+            visibility = ["//visibility:public"],
+        )
+        native.platform(
+            name = name + "_source",
+            constraint_values = ["//constraints/libc:cosmo_source"],
+            parents = [":" + name],
             visibility = ["//visibility:public"],
         )
 

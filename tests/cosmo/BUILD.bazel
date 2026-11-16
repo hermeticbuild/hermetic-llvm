@@ -4,6 +4,12 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//:apify.bzl", "apify_binary")
 load("//:defs.bzl", "exec_test")
+load("//platforms:common.bzl", "COSMO_TARGET_CPUS")
+
+SMOKE_SUFFIXES = [
+    "",
+    "_source",
+]
 
 cc_library(
     name = "c_tls",
@@ -20,33 +26,40 @@ cc_binary(
 
 [
     platform_transition_filegroup(
-        name = "smoke_" + cpu,
+        name = "smoke" + suffix + "_" + cpu,
         srcs = [":smoke_elf"],
-        target_platform = "//platforms:cosmo_" + cpu,
+        tags = ["manual"] if suffix else [],
+        target_platform = "//platforms:cosmo_" + cpu + suffix,
     )
-    for cpu in [
-        "aarch64",
-        "x86_64",
-    ]
+    for suffix in SMOKE_SUFFIXES
+    for cpu in COSMO_TARGET_CPUS
 ]
 
-apify_binary(
-    name = "smoke",
-    aarch64 = ":smoke_aarch64",
-    apelink = "//runtimes/cosmo:sdk_apelink",
-    tags = ["manual"],
-    x86_64 = ":smoke_x86_64",
-)
+[
+    apify_binary(
+        name = "smoke" + suffix,
+        aarch64 = ":smoke" + suffix + "_aarch64",
+        apelink = "//runtimes/cosmo:apelink" if suffix else None,
+        tags = ["manual"],
+        x86_64 = ":smoke" + suffix + "_x86_64",
+    )
+    for suffix in SMOKE_SUFFIXES
+]
 
-exec_test(
-    name = "smoke_test",
-    size = "small",
-    srcs = ["smoke_test.sh"],
-    data = [":smoke"],
-    rule = sh_test,
-    target_compatible_with = select({
-        "@platforms//os:linux": [],
-        "@platforms//os:macos": [],
-        "//conditions:default": ["@platforms//:incompatible"],
-    }),
-)
+[
+    exec_test(
+        name = "smoke" + suffix + "_test",
+        size = "small",
+        srcs = ["smoke_test.sh"],
+        args = ["smoke" + suffix + ".com"],
+        data = [":smoke" + suffix],
+        rule = sh_test,
+        tags = ["manual"] if suffix else [],
+        target_compatible_with = select({
+            "@platforms//os:linux": [],
+            "@platforms//os:macos": [],
+            "//conditions:default": ["@platforms//:incompatible"],
+        }),
+    )
+    for suffix in SMOKE_SUFFIXES
+]
