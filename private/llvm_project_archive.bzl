@@ -12,7 +12,7 @@ load(
     "update_attrs",
 )
 load("//:http_bsdtar_archive.bzl", "download_remote_files")
-load(":llvm_project_common.bzl", "LLVM_PROJECT_OVERLAY", "write_llvm_project_files")
+load(":llvm_project_common.bzl", "LLVM_PROJECT_OVERLAY", "default_source_excludes", "write_llvm_project_files")
 
 _DEFAULT_OVERLAY_FILES = {
     "compiler-rt/BUILD.bazel": Label("//3rd_party/llvm-project/x.x/compiler-rt:compiler-rt.BUILD.bazel"),
@@ -22,40 +22,6 @@ _DEFAULT_OVERLAY_FILES = {
     "libunwind/BUILD.bazel": Label("//3rd_party/llvm-project/x.x/libunwind:libunwind.BUILD.bazel"),
     "openmp/BUILD.bazel": Label("//3rd_party/llvm-project/x.x/openmp:openmp.BUILD.bazel"),
 }
-
-def _default_excludes():
-    excludes = [
-        "flang-rt",
-        "polly",
-        "orc-rt",
-        "libclc",
-        "offload",
-        "libc/docs",
-        "libc/utils/gn",
-        "llvm/utils/mlgo-utils/*",
-    ]
-
-    test_docs_subprojects = [
-        "bolt",
-        "clang-tools-extra",
-        "clang",
-        "compiler-rt",
-        "libcxx",
-        "libcxxabi",
-        "libunwind",
-        "lld",
-        "lldb",
-        "llvm",
-        "mlir",
-        "flang",
-    ]
-
-    for subproject in test_docs_subprojects:
-        if subproject != "mlir":
-            excludes.append("{}/test/*".format(subproject))
-        excludes.append("{}/docs/*".format(subproject))
-
-    return excludes
 
 def _source_urls(rctx):
     if not rctx.attr.url and not rctx.attr.urls:
@@ -209,7 +175,7 @@ _llvm_project_archive_attrs = {
     "patch_cmds": attr.string_list(default = []),
     "patch_cmds_win": attr.string_list(default = []),
     "includes": attr.string_list(default = []),
-    "excludes": attr.string_list(default = _default_excludes()),
+    "excludes": attr.string_list(default = default_source_excludes()),
     "targets": attr.string_list(mandatory = True),
 }
 

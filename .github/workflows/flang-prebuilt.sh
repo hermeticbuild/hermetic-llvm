@@ -37,6 +37,7 @@ bazel \
   --config=remote \
   --config=release \
   --discard_analysis_cache \
+  --repo_env=HERMETIC_LLVM_INCLUDE_FLANG=1 \
   --repo_env=BAZEL_MSVC_RUNTIME_VISUAL_STUDIO_EULA=1 \
   --repo_env=BAZEL_WINDOWS_SDK_EULA=1 \
   --remote_download_outputs=toplevel \

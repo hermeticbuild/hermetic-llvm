@@ -1,9 +1,11 @@
 load("@bazel_skylib//lib:structs.bzl", "structs")
 load("//private:llvm_project_archive.bzl", "llvm_project_archive")
+load("//private:llvm_project_common.bzl", "default_source_excludes")
 load("//private:llvm_project_from_git.bzl", "llvm_project_from_git")
 load("//private:llvm_project_from_path.bzl", "llvm_project_from_path")
 
 _DEFAULT_LLVM_VERSIONS_INDEX_FILE = "//:llvm_versions.json"
+_FLANG_23_SOURCE_PATCH = "//3rd_party/llvm-project/23.x/patches:flang-rtbuilder-windows-gnu.patch"
 
 _DEFAULT_SOURCE_PATCHES = [
     "//3rd_party/llvm-project/x.x/patches:llvm-mimalloc.patch",
@@ -89,7 +91,6 @@ _LLVM_23_SOURCE_PATCHES = [
     "//3rd_party/llvm-project/22.x/patches:bundle_resources_no_python.patch",
     "//3rd_party/llvm-project/x.x/patches:no_rules_python.patch",
     "//3rd_party/llvm-project/23.x/patches:instrumentor-template.patch",
-    "//3rd_party/llvm-project/23.x/patches:flang-rtbuilder-windows-gnu.patch",
     "//3rd_party/llvm-project/x.x/patches:llvm-extra.patch",
     "//3rd_party/llvm-project/x.x/patches:llvm-cov-multicall.patch",
     "//3rd_party/llvm-project/x.x/patches:thinlto-roundtrip-before-codegen.patch",
@@ -109,7 +110,6 @@ _LLVM_PATCHES_BY_MAJOR = {
         if patch not in (
             "//3rd_party/llvm-project/x.x/patches:llvm-macho-arm64e-x1.patch",
             "//3rd_party/llvm-project/23.x/patches:instrumentor-template.patch",
-            "//3rd_party/llvm-project/23.x/patches:flang-rtbuilder-windows-gnu.patch",
             "//3rd_party/llvm-project/x.x/patches:clang-modules-codegen-exclude-from-explicit-instantiation.patch",
         )
     ],
@@ -138,7 +138,8 @@ def _create_llvm_project_repository(mctx, llvm_version, llvm_version_index, targ
             llvm_project_archive(name = "llvm-project", targets = targets, **structs.to_dict(tag))
 
     if not had_override:
-        source_archive = _source_archive_for_version(llvm_version, llvm_version_index)
+        include_flang = mctx.getenv("HERMETIC_LLVM_INCLUDE_FLANG") == "1"
+        source_archive = _source_archive_for_version(llvm_version, llvm_version_index, include_flang)
         llvm_project_archive(name = "llvm-project", targets = targets, **structs.to_dict(source_archive))
 
 def _parse_llvm_major(llvm_version):
@@ -148,7 +149,7 @@ def _parse_llvm_major(llvm_version):
 
     return int(major)
 
-def _source_archive_for_version(llvm_version, llvm_version_index):
+def _source_archive_for_version(llvm_version, llvm_version_index, include_flang):
     major = _parse_llvm_major(llvm_version)
     source_info = llvm_version_index.get(llvm_version)
     if source_info == None:
@@ -160,12 +161,17 @@ def _source_archive_for_version(llvm_version, llvm_version_index):
     if source_info.get("url") == None or source_info.get("sha256") == None:
         fail("Invalid llvm version index entry for '{}': expected keys 'url' and 'sha256'".format(llvm_version))
 
+    patches = _LLVM_PATCHES_BY_MAJOR.get(major, [])
+    if major == 23 and include_flang:
+        patches = patches + [_FLANG_23_SOURCE_PATCH]
+
     return struct(
         strip_prefix = source_info.get("strip_prefix", "llvm-project-{}.src".format(llvm_version)),
         url = source_info["url"],
         sha256 = source_info["sha256"],
         patch_args = ["-p1"],
-        patches = _LLVM_PATCHES_BY_MAJOR.get(major, []),
+        patches = patches,
+        excludes = default_source_excludes() + ([] if include_flang else ["flang"]),
     )
 
 def _llvm_version_repository_impl(rctx):

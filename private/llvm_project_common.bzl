@@ -2,6 +2,40 @@ LLVM_PROJECT_OVERLAY = "utils/bazel/llvm-project-overlay"
 
 _MAX_OVERLAY_DIRECTORIES = 1000000
 
+def default_source_excludes():
+    excludes = [
+        "flang-rt",
+        "polly",
+        "orc-rt",
+        "libclc",
+        "offload",
+        "libc/docs",
+        "libc/utils/gn",
+        "llvm/utils/mlgo-utils/*",
+    ]
+
+    test_docs_subprojects = [
+        "bolt",
+        "clang-tools-extra",
+        "clang",
+        "compiler-rt",
+        "libcxx",
+        "libcxxabi",
+        "libunwind",
+        "lld",
+        "lldb",
+        "llvm",
+        "mlir",
+        "flang",
+    ]
+
+    for subproject in test_docs_subprojects:
+        if subproject != "mlir":
+            excludes.append("{}/test/*".format(subproject))
+        excludes.append("{}/docs/*".format(subproject))
+
+    return excludes
+
 def _extract_cmake_settings(rctx, path):
     settings = {
         "CMAKE_CXX_STANDARD": None,
