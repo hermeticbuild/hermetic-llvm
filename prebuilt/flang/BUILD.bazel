@@ -1,0 +1,62 @@
+load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load("@bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
+load("//prebuilt:platforms.bzl", "PLATFORMS")
+load("//prebuilt/flang:flang_release.bzl", "flang_release")
+load("//toolchain/bootstrap:bootstrap_binary.bzl", "bootstrap_binary")
+
+bootstrap_binary(
+    name = "flang_lto",
+    actual = "@llvm-project//flang/tools/flang-driver:flang",
+    source_backed = True,
+    symlink = False,
+)
+
+flang_release(name = "flang_release")
+
+flang_release(
+    name = "windows_flang_release",
+    bin_suffix = ".exe",
+)
+
+flang_release(
+    name = "windows_msvc_flang_release",
+    bin_suffix = ".exe",
+    target_compatible_with = [
+        "@platforms//os:windows",
+        "//constraints/cxxstdlib:libcxx",
+        "//constraints/windows/abi:msvc",
+        "//constraints/windows/crt:ucrt",
+    ],
+)
+
+[
+    platform_transition_filegroup(
+        name = "for_" + platform.split(":")[1],
+        srcs = [
+            ":windows_flang_release" if "windows" in platform else ":flang_release",
+        ],
+        target_platform = platform,
+    )
+    for platform in PLATFORMS
+]
+
+[
+    platform_transition_filegroup(
+        name = "for_windows_{}_msvc".format(archive_cpu),
+        srcs = [":windows_msvc_flang_release"],
+        target_platform = "//platforms:windows_{}_msvc".format(target_cpu),
+    )
+    for archive_cpu, target_cpu in [
+        ("amd64", "x86_64"),
+        ("arm64", "aarch64"),
+    ]
+]
+
+bzl_library(
+    name = "flang_release_bzl",
+    srcs = ["flang_release.bzl"],
+    deps = [
+        "//prebuilt:mtree",
+        "@tar.bzl//tar",
+    ],
+)
