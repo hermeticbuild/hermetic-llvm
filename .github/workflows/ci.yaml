@@ -242,7 +242,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-15, macos-15-intel]
+        os: [macos-26, macos-26-intel]
         bazel_version: [9.x]
         folder:
           - "e2e/rules_cc"
@@ -325,7 +325,7 @@ jobs:
         run: ./coverage_lcov_test.sh
 
   test_macos_host_sdk:
-    runs-on: macos-15
+    runs-on: macos-26
     environment: ${{ github.ref == 'refs/heads/main' && 'ci' || '' }}
     name: Test host macOS SDK
     steps:
@@ -503,7 +503,7 @@ jobs:
           key: ${{ steps.bazel-repository-cache.outputs.cache-primary-key }}
 
   docs:
-    runs-on: macos-15-intel
+    runs-on: macos-26-intel
     environment: ${{ github.ref == 'refs/heads/main' && 'ci' || '' }}
     name: Verify public docs generation
     steps:
