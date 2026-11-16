@@ -6,7 +6,7 @@ load("//toolchain/bootstrap:bootstrap_binary.bzl", "bootstrap_binary")
 
 bootstrap_binary(
     name = "flang_lto",
-    actual = "@llvm-project//flang/tools/flang-driver:flang",
+    actual = "@llvm-project//flang/tools/flang-driver:flang.stripped",
     source_backed = True,
     symlink = False,
 )
