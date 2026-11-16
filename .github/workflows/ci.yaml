@@ -136,12 +136,13 @@ jobs:
           bazel \
             --bazelrc=$GITHUB_WORKSPACE/.github/workflows/ci.bazelrc \
             --bazelrc=.bazelrc \
-            build \
+            test \
             --repo_env=BAZEL_MSVC_RUNTIME_VISUAL_STUDIO_EULA=1 \
             --repo_env=BAZEL_WINDOWS_SDK_EULA=1 \
             //header_order:all_precedence \
             //header_order:all_libcxx_c_wrappers \
-            //header_order:all_external_builtin_precedence
+            //header_order:all_external_builtin_precedence \
+            //header_order:search_tests
 
       - name: bazel coverage e2e (lcov)
         if: matrix.folder == 'e2e/rules_cc' && matrix.bazel_version != '8.x'
@@ -215,6 +216,11 @@ jobs:
             test_targets+=(
               "//:windows_msvc_${cpu}_msvcstl_native_test"
               "//:windows_msvc_${cpu}_libcxx_native_test"
+              "//header_order:search_c_windows_${cpu}_msvc_test"
+              "//header_order:search_cxx_windows_${cpu}_msvc_test"
+              "//header_order:search_c_windows_${cpu}_msvcstl_test"
+              "//header_order:search_cxx_windows_${cpu}_msvcstl_test"
+              "//header_order:search_external_windows_${cpu}_msvc_test"
             )
           fi
 
@@ -282,19 +288,25 @@ jobs:
         with:
           api-key: ${{ github.ref == 'refs/heads/main' && secrets.BUILDBUDDY_CI_API_KEY || '' }}
 
-      - name: bazel build //:main_default
+      - name: bazel test native macOS headers
         id: bazel_test
         env:
           USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
         working-directory: ${{ matrix.folder }}
         shell: bash
         run: |
+          cpu=x86_64
+          if [[ "${RUNNER_ARCH}" == ARM64 ]]; then
+            cpu=aarch64
+          fi
           bazel \
             --bazelrc=.bazelrc \
-            build \
+            test \
             //:main_default \
             //header_order:precedence \
-            //header_order:libcxx_c_wrappers
+            //header_order:libcxx_c_wrappers \
+            "//header_order:search_c_macos_${cpu}_test" \
+            "//header_order:search_cxx_macos_${cpu}_test"
 
       # On macOS, the toolchain uses split copies of the SDK's libc++ headers
       # and links the system libc++ dylib. Check that nostdincxx and

@@ -1,0 +1,6 @@
+user-system
+builtin
+winpthreads
+mingw-generated-crt
+mingw-sdk
+mingw-crt

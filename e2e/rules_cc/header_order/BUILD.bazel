@@ -1,5 +1,10 @@
+load("@bazel_features//:features.bzl", "bazel_features")
 load("@bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
+load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
+load("@llvm//3rd_party/gcc:version.bzl", "DEFAULT_GCC_VERSION", "libstdcxx_constraint_value")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+load(":search.bzl", "search_output")
 
 package(default_visibility = ["//:__pkg__"])
 
@@ -32,6 +37,74 @@ cc_library(
     ],
 )
 
+sh_binary(
+    name = "search_capture",
+    srcs = ["search_capture.sh"],
+    tags = ["manual"],
+)
+
+[
+    cc_library(
+        name = "search_" + language,
+        srcs = ["search_" + language + extension],
+        hdrs = ["include/stddef.h"],
+        features = ["system_include_paths"],
+        includes = ["include"],
+        tags = ["manual"],
+    )
+    for language, extension in [
+        ("c", ".c"),
+        ("cxx", ".cc"),
+    ]
+]
+
+[
+    search_output(
+        name = "search_output_" + language,
+        tags = ["manual"],
+        target = ":search_" + language,
+    )
+    for language in [
+        "c",
+        "cxx",
+    ]
+]
+
+cc_library(
+    name = "search_cuda_host",
+    srcs = ["search_cxx.cc"],
+    hdrs = ["include/stddef.h"],
+    copts = [
+        "-x",
+        "cuda",
+        "-nocudainc",
+        "-nocudalib",
+        "--cuda-host-only",
+    ],
+    features = ["system_include_paths"],
+    includes = ["include"],
+    tags = ["manual"],
+)
+
+search_output(
+    name = "search_output_cuda_host",
+    tags = ["manual"],
+    target = ":search_cuda_host",
+)
+
+search_output(
+    name = "search_output_external",
+    tags = ["manual"],
+    target = "@external_include_paths_test//:builtin_header_precedence",
+)
+
+platform_transition_filegroup(
+    name = "search_output_cuda_host_linux_x86_64",
+    srcs = [":search_output_cuda_host"],
+    tags = ["manual"],
+    target_platform = "@llvm//platforms:linux_x86_64",
+)
+
 # Musl still places its ordinary -isystem libc paths before user headers.
 _PLATFORMS = [
     "linux_" + cpu
@@ -49,6 +122,13 @@ _PLATFORMS = [
     "windows_aarch64_msvc",
     "macos_x86_64",
     "macos_aarch64",
+]
+
+_NONE_PLATFORMS = [
+    "none_bpfeb",
+    "none_bpfel",
+    "none_wasm32",
+    "none_wasm64",
 ]
 
 [
@@ -103,4 +183,260 @@ filegroup(
     name = "all_external_builtin_precedence",
     srcs = [":external_builtin_precedence_" + platform for platform in _MSVC_PLATFORMS],
     tags = ["manual"],
+)
+
+[
+    platform_transition_filegroup(
+        name = "search_output_external_" + platform,
+        srcs = [":search_output_external"],
+        tags = ["manual"],
+        target_platform = "@llvm//platforms:" + platform,
+    )
+    for platform in _MSVC_PLATFORMS
+]
+
+[
+    diff_test(
+        name = "search_external_" + platform + "_test",
+        file1 = ":search_output_external_" + platform,
+        file2 = "golden/msvc_external_c" + ("" if bazel_features.cc.supports_starlarkified_toolchains else "_bazel8") + ".txt",
+        tags = ["manual"],
+    )
+    for platform in _MSVC_PLATFORMS
+]
+
+[
+    platform_transition_filegroup(
+        name = "search_output_" + language + "_" + platform,
+        srcs = [":search_output_" + language],
+        tags = ["manual"],
+        target_platform = "@llvm//platforms:" + platform,
+    )
+    for platform in _PLATFORMS + _NONE_PLATFORMS
+    for language in [
+        "c",
+        "cxx",
+    ]
+]
+
+filegroup(
+    name = "all_search_outputs",
+    srcs = [
+        ":search_output_" + language + "_" + platform
+        for platform in _PLATFORMS + _NONE_PLATFORMS
+        for language in [
+            "c",
+            "cxx",
+        ]
+    ],
+    tags = ["manual"],
+)
+
+_SEARCH_FAMILIES = {
+    "linux_x86_64": "gnu",
+    "linux_aarch64": "gnu",
+    "linux_armv7": "gnu",
+    "linux_riscv64": "gnu",
+    "linux_s390x": "gnu",
+    "windows_x86_64": "mingw",
+    "windows_aarch64": "mingw",
+    "windows_x86_64_msvc": "msvc",
+    "windows_aarch64_msvc": "msvc",
+    "macos_x86_64": "macos",
+    "macos_aarch64": "macos",
+    "none_bpfeb": "none",
+    "none_bpfel": "none",
+    "none_wasm32": "none",
+    "none_wasm64": "none",
+}
+
+[
+    diff_test(
+        name = "search_" + language + "_" + platform + "_test",
+        failure_message = "Clang's effective " + language + " header search order changed for " + platform,
+        file1 = ":search_output_" + language + "_" + platform,
+        file2 = "golden/" + family + "_" + language + ("_bazel8" if family == "msvc" and not bazel_features.cc.supports_starlarkified_toolchains else "") + ".txt",
+        tags = ["manual"],
+    )
+    for platform, family in _SEARCH_FAMILIES.items()
+    for language in [
+        "c",
+        "cxx",
+    ]
+]
+
+test_suite(
+    name = "search_tests",
+    tags = ["manual"],
+    tests = [
+        ":search_" + language + "_" + platform + "_test"
+        for platform in _SEARCH_FAMILIES
+        for language in [
+            "c",
+            "cxx",
+        ]
+    ] + [
+        ":search_" + language + "_windows_" + cpu + "_msvcstl_test"
+        for cpu in [
+            "x86_64",
+            "aarch64",
+        ]
+        for language in [
+            "c",
+            "cxx",
+        ]
+    ] + [
+        ":search_" + language + "_linux_x86_64_libstdcxx_test"
+        for language in [
+            "c",
+            "cxx",
+        ]
+    ] + [":search_cuda_host_linux_x86_64_test"] + [
+        ":search_external_" + platform + "_test"
+        for platform in _MSVC_PLATFORMS
+    ],
+)
+
+diff_test(
+    name = "search_cuda_host_linux_x86_64_test",
+    file1 = ":search_output_cuda_host_linux_x86_64",
+    file2 = "golden/gnu_cuda_host.txt",
+    tags = ["manual"],
+)
+
+# The matching root-package platforms are private. These test-only variants
+# carry the same constraints so the search matrix can transition to MSVC STL.
+[
+    platform(
+        name = "windows_" + cpu + "_msvcstl",
+        constraint_values = ["@llvm//constraints/cxxstdlib:msvcstl"],
+        parents = ["@llvm//platforms:windows_" + cpu + "_msvc"],
+    )
+    for cpu in [
+        "x86_64",
+        "aarch64",
+    ]
+]
+
+[
+    platform_transition_filegroup(
+        name = "search_output_" + language + "_windows_" + cpu + "_msvcstl",
+        srcs = [":search_output_" + language],
+        tags = ["manual"],
+        target_platform = ":windows_" + cpu + "_msvcstl",
+    )
+    for cpu in [
+        "x86_64",
+        "aarch64",
+    ]
+    for language in [
+        "c",
+        "cxx",
+    ]
+]
+
+[
+    diff_test(
+        name = "search_" + language + "_windows_" + cpu + "_msvcstl_test",
+        file1 = ":search_output_" + language + "_windows_" + cpu + "_msvcstl",
+        file2 = "golden/msvcstl_" + language + ".txt",
+        tags = ["manual"],
+    )
+    for cpu in [
+        "x86_64",
+        "aarch64",
+    ]
+    for language in [
+        "c",
+        "cxx",
+    ]
+]
+
+# A single GNU CPU covers libstdc++'s distinct C++ root composition. This
+# mirrors the root module's private linux_x86_64_libstdcxx platform.
+platform(
+    name = "linux_x86_64_libstdcxx",
+    constraint_values = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+        "@llvm//constraints/libc:gnu.2.28",
+        "@llvm//constraints/cxxstdlib:" + libstdcxx_constraint_value(DEFAULT_GCC_VERSION),
+    ],
+)
+
+[
+    platform_transition_filegroup(
+        name = "search_output_" + language + "_linux_x86_64_libstdcxx",
+        srcs = [":search_output_" + language],
+        tags = ["manual"],
+        target_platform = ":linux_x86_64_libstdcxx",
+    )
+    for language in [
+        "c",
+        "cxx",
+    ]
+]
+
+[
+    diff_test(
+        name = "search_" + language + "_linux_x86_64_libstdcxx_test",
+        file1 = ":search_output_" + language + "_linux_x86_64_libstdcxx",
+        file2 = "golden/" + ("gnu_c" if language == "c" else "libstdcxx_cxx") + ".txt",
+        tags = ["manual"],
+    )
+    for language in [
+        "c",
+        "cxx",
+    ]
+]
+
+# Musl's C-before-builtin order is intentional. Its current C paths precede
+# target includes, so these desired-order tests stay manual until that is fixed.
+_MUSL_PLATFORMS = ["linux_" + cpu + "_musl" for cpu in [
+    "x86_64",
+    "aarch64",
+    "armv7",
+    "riscv64",
+    "s390x",
+]]
+
+[
+    platform_transition_filegroup(
+        name = "search_output_" + language + "_" + platform,
+        srcs = [":search_output_" + language],
+        tags = ["manual"],
+        target_platform = "@llvm//platforms:" + platform,
+    )
+    for platform in _MUSL_PLATFORMS
+    for language in [
+        "c",
+        "cxx",
+    ]
+]
+
+[
+    diff_test(
+        name = "search_" + language + "_" + platform + "_test",
+        file1 = ":search_output_" + language + "_" + platform,
+        file2 = "golden/musl_" + language + ".txt",
+        tags = ["manual"],
+    )
+    for platform in _MUSL_PLATFORMS
+    for language in [
+        "c",
+        "cxx",
+    ]
+]
+
+test_suite(
+    name = "musl_search_tests",
+    tags = ["manual"],
+    tests = [
+        ":search_" + language + "_" + platform + "_test"
+        for platform in _MUSL_PLATFORMS
+        for language in [
+            "c",
+            "cxx",
+        ]
+    ],
 )
