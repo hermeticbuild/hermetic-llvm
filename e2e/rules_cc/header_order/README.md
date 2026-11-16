@@ -2,20 +2,21 @@
 
 The compile fixtures check real headers and `#include_next` behavior. The
 `search_*_test` targets compare Clang's **effective** `-E -v` search list with
-ordered, version-independent golden files. Each configured target has a C and
-C++ check because Clang inserts C++ library roots only for C++ actions.
+ordered goldens of version-independent directory roles. Each configured
+target has a C and C++ check because Clang inserts C++ library roots only for
+C++ actions.
 
 The private aspect in `search.bzl` reads the native `cc_library` compile
 action's expanded `argv`. Its companion action shadows that compile action's
 inputs and environment. `search_capture.sh` removes only compilation and
 output-file options, runs the same compiler with preprocessing and verbose
-output enabled, and maps recognized directory identities to roles. The golden
-retains Bazel's package and generated quote roots as well as every target and
-toolchain header root. An unknown directory, missing verbose search block, or
-changed role order fails the test. Bazel 8's native C++ rule omits one
-generated LLVM quote root that Bazel 9's Starlark C++ rule supplies on MSVC.
-Those configurations use separate full-list goldens, selected using
-`bazel_features.cc.supports_starlarkified_toolchains`.
+output enabled, and maps recognized directory identities to roles. Each golden
+includes Clang's quote and angle search blocks, with their boundaries, Bazel's
+package and generated quote roots, and every target and toolchain header root.
+An unknown directory, missing search block, or changed role order fails the
+test. Bazel 8 omits a generated LLVM root present with Bazel 9 and later in
+several configurations. Those configurations use separate full-list goldens
+selected using `bazel_features.cc.supports_starlarkified_toolchains`.
 The captured stderr and preprocessed source are available through the
 `search_debug` output group. This is a replay of the native action's logical
 arguments; Bazel may execute the original action through a parameter file or

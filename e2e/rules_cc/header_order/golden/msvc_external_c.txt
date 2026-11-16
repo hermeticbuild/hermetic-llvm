@@ -1,3 +1,5 @@
+quote-search
+angle-search
 generated-llvm-root
 external-package-root
 generated-external-package

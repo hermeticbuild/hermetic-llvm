@@ -250,12 +250,19 @@ _SEARCH_FAMILIES = {
     "none_wasm64": "none",
 }
 
+_BAZEL8_SEARCH_FAMILIES = [
+    "gnu",
+    "macos",
+    "mingw",
+    "msvc",
+]
+
 [
     diff_test(
         name = "search_" + language + "_" + platform + "_test",
         failure_message = "Clang's effective " + language + " header search order changed for " + platform,
         file1 = ":search_output_" + language + "_" + platform,
-        file2 = "golden/" + family + "_" + language + ("_bazel8" if family == "msvc" and not bazel_features.cc.supports_starlarkified_toolchains else "") + ".txt",
+        file2 = "golden/" + family + "_" + language + ("_bazel8" if family in _BAZEL8_SEARCH_FAMILIES and not bazel_features.cc.supports_starlarkified_toolchains else "") + ".txt",
         tags = ["manual"],
     )
     for platform, family in _SEARCH_FAMILIES.items()
@@ -300,7 +307,7 @@ test_suite(
 diff_test(
     name = "search_cuda_host_linux_x86_64_test",
     file1 = ":search_output_cuda_host_linux_x86_64",
-    file2 = "golden/gnu_cuda_host.txt",
+    file2 = "golden/gnu_cuda_host" + ("" if bazel_features.cc.supports_starlarkified_toolchains else "_bazel8") + ".txt",
     tags = ["manual"],
 )
 
@@ -381,7 +388,7 @@ platform(
     diff_test(
         name = "search_" + language + "_linux_x86_64_libstdcxx_test",
         file1 = ":search_output_" + language + "_linux_x86_64_libstdcxx",
-        file2 = "golden/" + ("gnu_c" if language == "c" else "libstdcxx_cxx") + ".txt",
+        file2 = "golden/libstdcxx_" + language + ".txt",
         tags = ["manual"],
     )
     for language in [
@@ -418,7 +425,7 @@ _MUSL_PLATFORMS = ["linux_" + cpu + "_musl" for cpu in [
     diff_test(
         name = "search_" + language + "_" + platform + "_test",
         file1 = ":search_output_" + language + "_" + platform,
-        file2 = "golden/musl_" + language + ".txt",
+        file2 = "golden/musl_" + language + ("" if bazel_features.cc.supports_starlarkified_toolchains else "_bazel8") + ".txt",
         tags = ["manual"],
     )
     for platform in _MUSL_PLATFORMS

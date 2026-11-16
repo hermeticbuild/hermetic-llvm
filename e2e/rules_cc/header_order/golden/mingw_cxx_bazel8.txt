@@ -1,0 +1,13 @@
+quote-search
+workspace-root
+generated-bin
+angle-search
+user-system
+cxx-public
+cxx-detail
+cxx-abi
+builtin
+winpthreads
+mingw-generated-crt
+mingw-sdk
+mingw-crt

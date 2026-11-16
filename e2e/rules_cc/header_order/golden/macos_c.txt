@@ -1,3 +1,8 @@
+quote-search
+workspace-root
+generated-bin
+generated-llvm-root
+angle-search
 user-system
 builtin
 macos-libc

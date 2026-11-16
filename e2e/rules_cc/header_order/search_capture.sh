@@ -55,10 +55,21 @@ else
 fi
 
 if ! awk '
-  /^#include <\.\.\.> search starts here:$/ { inside = 1; count++; next }
-  /^End of search list\.$/ { if (inside) { inside = 0; ended++ }; next }
-  inside { sub(/^ /, ""); print }
-  END { if (count != 1 || ended != 1) exit 1 }
+  { sub(/\r$/, "") }
+  /^#include "\.\.\." search starts here:$/ {
+    if (section != "") exit 1
+    section = "quote"; quote++; print "quote-search"; next
+  }
+  /^#include <\.\.\.> search starts here:$/ {
+    if (section != "quote") exit 1
+    section = "angle"; angle++; print "angle-search"; next
+  }
+  /^End of search list\.$/ {
+    if (section != "angle") exit 1
+    section = "done"; ended++; next
+  }
+  section == "quote" || section == "angle" { sub(/^ /, ""); print }
+  END { if (quote != 1 || angle != 1 || ended != 1) exit 1 }
 ' "$stderr" > "$search.raw"; then
   cat "$stderr" >&2
   exit 1
@@ -68,6 +79,7 @@ generated_bin=${search%%/bin/*}/bin
 while IFS= read -r path; do
   path=${path//\\//}
   case "$path" in
+    quote-search|angle-search) role=$path ;;
     .) role=workspace-root ;;
     header_order/include) role=user-system ;;
     external/external_include_paths_test+) role=external-package-root ;;

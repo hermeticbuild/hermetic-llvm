@@ -1,2 +1,6 @@
+quote-search
+workspace-root
+generated-bin
+angle-search
 user-system
 builtin
