@@ -89,6 +89,7 @@ _LLVM_23_SOURCE_PATCHES = [
     "//3rd_party/llvm-project/22.x/patches:bundle_resources_no_python.patch",
     "//3rd_party/llvm-project/x.x/patches:no_rules_python.patch",
     "//3rd_party/llvm-project/23.x/patches:instrumentor-template.patch",
+    "//3rd_party/llvm-project/23.x/patches:flang-rtbuilder-windows-gnu.patch",
     "//3rd_party/llvm-project/x.x/patches:llvm-extra.patch",
     "//3rd_party/llvm-project/x.x/patches:llvm-cov-multicall.patch",
     "//3rd_party/llvm-project/x.x/patches:thinlto-roundtrip-before-codegen.patch",
@@ -108,6 +109,7 @@ _LLVM_PATCHES_BY_MAJOR = {
         if patch not in (
             "//3rd_party/llvm-project/x.x/patches:llvm-macho-arm64e-x1.patch",
             "//3rd_party/llvm-project/23.x/patches:instrumentor-template.patch",
+            "//3rd_party/llvm-project/23.x/patches:flang-rtbuilder-windows-gnu.patch",
             "//3rd_party/llvm-project/x.x/patches:clang-modules-codegen-exclude-from-explicit-instantiation.patch",
         )
     ],

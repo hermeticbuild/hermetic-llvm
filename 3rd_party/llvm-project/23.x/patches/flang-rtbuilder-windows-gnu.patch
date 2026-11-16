@@ -1,0 +1,17 @@
+Flang's runtime type builder must model the Windows 64-bit allocator
+signature for both the MSVC and GNU Windows targets. MinGW uses the same
+64-bit size argument but does not define _MSC_VER, leaving getModel undefined
+when ThinLTO links the Flang driver.
+
+diff --git a/flang/include/flang/Optimizer/Builder/Runtime/RTBuilder.h b/flang/include/flang/Optimizer/Builder/Runtime/RTBuilder.h
+--- a/flang/include/flang/Optimizer/Builder/Runtime/RTBuilder.h
++++ b/flang/include/flang/Optimizer/Builder/Runtime/RTBuilder.h
+@@ -266,7 +266,7 @@ getModel<void *(*)(void *, const void *, unsigned long)>() {
+   };
+ }
+-#ifdef _MSC_VER
++#ifdef _WIN32
+ template <>
+ constexpr TypeBuilderFunc
+ getModel<void *(*)(void *, const void *, unsigned __int64)>() {
+  return [](mlir::MLIRContext *context) -> mlir::Type {
