@@ -213,14 +213,10 @@ jobs:
             if [[ "${RUNNER_ARCH}" == ARM64 ]]; then
               cpu=aarch64
             fi
+            # The Windows-target search goldens run in the Linux CI lane.
             test_targets+=(
               "//:windows_msvc_${cpu}_msvcstl_native_test"
               "//:windows_msvc_${cpu}_libcxx_native_test"
-              "//header_order:search_c_windows_${cpu}_msvc_test"
-              "//header_order:search_cxx_windows_${cpu}_msvc_test"
-              "//header_order:search_c_windows_${cpu}_msvcstl_test"
-              "//header_order:search_cxx_windows_${cpu}_msvcstl_test"
-              "//header_order:search_external_windows_${cpu}_msvc_test"
             )
           fi
 
