@@ -6,7 +6,7 @@ when ThinLTO links the Flang driver.
 diff --git a/flang/include/flang/Optimizer/Builder/Runtime/RTBuilder.h b/flang/include/flang/Optimizer/Builder/Runtime/RTBuilder.h
 --- a/flang/include/flang/Optimizer/Builder/Runtime/RTBuilder.h
 +++ b/flang/include/flang/Optimizer/Builder/Runtime/RTBuilder.h
-@@ -266,7 +266,7 @@ getModel<void *(*)(void *, const void *, unsigned long)>() {
+@@ -267,7 +267,7 @@ getModel<void *(*)(void *, const void *, unsigned long)>() {
    };
  }
 -#ifdef _MSC_VER
@@ -14,4 +14,4 @@ diff --git a/flang/include/flang/Optimizer/Builder/Runtime/RTBuilder.h b/flang/i
  template <>
  constexpr TypeBuilderFunc
  getModel<void *(*)(void *, const void *, unsigned __int64)>() {
-  return [](mlir::MLIRContext *context) -> mlir::Type {
+   return [](mlir::MLIRContext *context) -> mlir::Type {
