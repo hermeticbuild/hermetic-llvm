@@ -1,3 +1,110 @@
+diff --git a/dsp/core/sad16x8n.c b/dsp/core/sad16x8n.c
+--- a/dsp/core/sad16x8n.c
++++ b/dsp/core/sad16x8n.c
+@@ -19,8 +19,12 @@
+ #include "dsp/core/core.h"
+ #include "libc/limits.h"
+ #include "libc/macros.h"
+-#include "third_party/aarch64/arm_neon.internal.h"
+-#include "third_party/intel/emmintrin.internal.h"
++#if defined(__aarch64__)
++#include <arm_neon.h>
++#endif
++#if defined(__x86_64__)
++#include <emmintrin.h>
++#endif
+ 
+ /**
+  * Mixes audio.
+diff --git a/dsp/scale/cdecimate2xuint8x8.c b/dsp/scale/cdecimate2xuint8x8.c
+--- a/dsp/scale/cdecimate2xuint8x8.c
++++ b/dsp/scale/cdecimate2xuint8x8.c
+@@ -19,7 +19,9 @@
+ #include "libc/macros.h"
+ #include "libc/nexgen32e/x86feature.h"
+ #include "libc/str/str.h"
+-#include "third_party/intel/immintrin.internal.h"
++#if defined(__x86_64__)
++#include <immintrin.h>
++#endif
+ 
+ /**
+  * Performs 2D Motion Picture Convolution Acceleration by Leveraging SSSE3.
+diff --git a/dsp/tty/internal.h b/dsp/tty/internal.h
+--- a/dsp/tty/internal.h
++++ b/dsp/tty/internal.h
+@@ -2,7 +2,9 @@
+ #define COSMOPOLITAN_DSP_TTY_INTERNAL_H_
+ #include "dsp/tty/quant.h"
+ #include "dsp/tty/ttyrgb.h"
+-#include "third_party/intel/xmmintrin.internal.h"
++#if defined(__x86_64__)
++#include <xmmintrin.h>
++#endif
+ COSMOPOLITAN_C_START_
+ 
+ struct TtyRgb rgb2tty24f_(ttyrgb_m128);
+diff --git a/dsp/tty/rgb2xterm24f.c b/dsp/tty/rgb2xterm24f.c
+--- a/dsp/tty/rgb2xterm24f.c
++++ b/dsp/tty/rgb2xterm24f.c
+@@ -19,7 +19,9 @@
+ #include "dsp/tty/quant.h"
+ #include "libc/macros.h"
+ #include "libc/math.h"
+-#include "third_party/intel/xmmintrin.internal.h"
++#if defined(__x86_64__)
++#include <xmmintrin.h>
++#endif
+ 
+ struct TtyRgb rgb2tty24f_(ttyrgb_m128 rgb) {
+ #ifdef __x86_64__
+diff --git a/libc/intrin/memchr.c b/libc/intrin/memchr.c
+--- a/libc/intrin/memchr.c
++++ b/libc/intrin/memchr.c
+@@ -19,8 +19,23 @@
+ #include "libc/dce.h"
+ #include "libc/nexgen32e/x86feature.h"
+ #include "libc/str/str.h"
+-#include "third_party/aarch64/arm_neon.internal.h"
+-#include "third_party/intel/immintrin.internal.h"
++#if defined(__aarch64__)
++#include <arm_neon.h>
++#endif
++#if defined(__has_builtin)
++#define COSMO_HAS_MMX_BUILTINS __has_builtin(__builtin_ia32_vec_init_v2si)
++#else
++#define COSMO_HAS_MMX_BUILTINS 0
++#endif
++
++#if defined(__x86_64__) && !defined(__chibicc__) && COSMO_HAS_MMX_BUILTINS
++#if defined(__x86_64__)
++#include <emmintrin.h>
++#endif
++#define COSMO_MEMCHR_SSE 1
++#else
++#define COSMO_MEMCHR_SSE 0
++#endif
+ #ifndef __aarch64__
+ 
+ static inline const unsigned char *memchr_pure(const unsigned char *s,
+@@ -34,7 +49,7 @@
+   return 0;
+ }
+ 
+-#if defined(__x86_64__) && !defined(__chibicc__)
++#if COSMO_MEMCHR_SSE
+ static const char *memchr_sse(const char *s, char c, size_t n) {
+   const char *e = s + n;
+   __m128i t = _mm_set1_epi8(c);
+@@ -72,7 +87,7 @@
+  * @asyncsignalsafe
+  */
+ void *memchr(const void *s, int c, size_t n) {
+-#if defined(__x86_64__) && !defined(__chibicc__)
++#if COSMO_MEMCHR_SSE
+   return (void *)memchr_sse(s, c, n);
+ #else
+   return (void *)memchr_pure(s, c, n);
 diff --git a/libc/isystem/ammintrin.h b/libc/isystem/ammintrin.h
 --- a/libc/isystem/ammintrin.h
 +++ b/libc/isystem/ammintrin.h
@@ -392,131 +499,124 @@ diff --git a/libc/isystem/xmmintrin.h b/libc/isystem/xmmintrin.h
  #else
  #include "third_party/intel/xmmintrin.internal.h"
  #endif
-diff --git a/libc/intrin/memchr.c b/libc/intrin/memchr.c
---- a/libc/intrin/memchr.c
-+++ b/libc/intrin/memchr.c
-@@ -19,7 +19,9 @@
- #include "libc/dce.h"
- #include "libc/nexgen32e/x86feature.h"
- #include "libc/str/str.h"
--#include "third_party/aarch64/arm_neon.internal.h"
-+#if defined(__aarch64__)
-+#include <arm_neon.h>
-+#endif
- #if defined(__has_builtin)
- #define COSMO_HAS_MMX_BUILTINS __has_builtin(__builtin_ia32_vec_init_v2si)
- #else
-@@ -27,7 +29,9 @@
- #endif
- 
- #if defined(__x86_64__) && !defined(__chibicc__) && COSMO_HAS_MMX_BUILTINS
--#include "libc/isystem/emmintrin.h"
-+#if defined(__x86_64__)
-+#include <emmintrin.h>
-+#endif
- #define COSMO_MEMCHR_SSE 1
- #else
- #define COSMO_MEMCHR_SSE 0
 diff --git a/libc/str/memmem.c b/libc/str/memmem.c
 --- a/libc/str/memmem.c
 +++ b/libc/str/memmem.c
-@@ -20,10 +20,14 @@
+@@ -19,8 +19,16 @@
+ #include "libc/intrin/likely.h"
  #include "libc/str/kmp.h"
  #include "libc/str/str.h"
- #if defined(__aarch64__) && defined(__ARM_NEON)
 -#include "third_party/aarch64/arm_neon.internal.h"
+-#include "third_party/intel/emmintrin.internal.h"
++#if defined(__aarch64__) && defined(__ARM_NEON)
 +#if defined(__aarch64__)
 +#include <arm_neon.h>
 +#endif
- #endif
- #if defined(__x86_64__) || defined(__i386__)
--#include "libc/isystem/emmintrin.h"
++#endif
++#if defined(__x86_64__) || defined(__i386__)
 +#if defined(__x86_64__)
 +#include <emmintrin.h>
 +#endif
- #endif
++#endif
  
  /**
+  * Searches for fixed-length substring in memory region.
 diff --git a/libc/str/strcasestr.c b/libc/str/strcasestr.c
 --- a/libc/str/strcasestr.c
 +++ b/libc/str/strcasestr.c
-@@ -22,10 +22,14 @@
+@@ -21,8 +21,16 @@
+ #include "libc/mem/alloca.h"
  #include "libc/runtime/stack.h"
  #include "libc/str/tab.h"
- #if defined(__aarch64__) && defined(__ARM_NEON)
 -#include "third_party/aarch64/arm_neon.internal.h"
+-#include "third_party/intel/immintrin.internal.h"
++#if defined(__aarch64__) && defined(__ARM_NEON)
 +#if defined(__aarch64__)
 +#include <arm_neon.h>
 +#endif
- #endif
- #if defined(__x86_64__) || defined(__i386__)
--#include "libc/isystem/immintrin.h"
++#endif
++#if defined(__x86_64__) || defined(__i386__)
 +#if defined(__x86_64__)
 +#include <immintrin.h>
 +#endif
- #endif
++#endif
  
  static int ToUpper(int c) {
+   return 'a' <= c && c <= 'z' ? c - ('a' - 'A') : c;
 diff --git a/libc/str/strstr.c b/libc/str/strstr.c
 --- a/libc/str/strstr.c
 +++ b/libc/str/strstr.c
-@@ -19,10 +19,14 @@
+@@ -18,8 +18,16 @@
+ ╚─────────────────────────────────────────────────────────────────────────────*/
  #include "libc/str/str.h"
  #include "libc/str/kmp.h"
- #if defined(__aarch64__) && defined(__ARM_NEON)
 -#include "third_party/aarch64/arm_neon.internal.h"
+-#include "third_party/intel/immintrin.internal.h"
++#if defined(__aarch64__) && defined(__ARM_NEON)
 +#if defined(__aarch64__)
 +#include <arm_neon.h>
 +#endif
- #endif
- #if defined(__x86_64__) || defined(__i386__)
--#include "libc/isystem/immintrin.h"
++#endif
++#if defined(__x86_64__) || defined(__i386__)
 +#if defined(__x86_64__)
 +#include <immintrin.h>
 +#endif
- #endif
++#endif
  
  /**
+  * Searches for substring.
 diff --git a/libc/str/tprecode16to8.c b/libc/str/tprecode16to8.c
 --- a/libc/str/tprecode16to8.c
 +++ b/libc/str/tprecode16to8.c
-@@ -21,10 +21,14 @@
+@@ -20,8 +20,16 @@
+ #include "libc/fmt/conv.h"
  #include "libc/str/str.h"
  #include "libc/str/utf16.h"
- #if defined(__aarch64__)
 -#include "third_party/aarch64/arm_neon.internal.h"
+-#include "third_party/intel/emmintrin.internal.h"
++#if defined(__aarch64__)
 +#if defined(__aarch64__)
 +#include <arm_neon.h>
 +#endif
- #endif
- #if defined(__x86_64__) || defined(__i386__)
--#include "libc/isystem/emmintrin.h"
++#endif
++#if defined(__x86_64__) || defined(__i386__)
 +#if defined(__x86_64__)
 +#include <emmintrin.h>
 +#endif
- #endif
++#endif
  
  #if !IsModeDbg()
+ #if defined(__x86_64__)
 diff --git a/libc/str/tprecode8to16.c b/libc/str/tprecode8to16.c
 --- a/libc/str/tprecode8to16.c
 +++ b/libc/str/tprecode8to16.c
-@@ -24,10 +24,14 @@
+@@ -16,15 +16,23 @@
+ │ TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR             │
+ │ PERFORMANCE OF THIS SOFTWARE.                                                │
+ ╚─────────────────────────────────────────────────────────────────────────────*/
+-#include <arm_neon.h>
+ #include <stdint.h>
+ #include <string.h>
+ #include "libc/dce.h"
+ #include "libc/str/str.h"
+ #include "libc/str/thompike.h"
  #include "libc/str/utf16.h"
- #if defined(__aarch64__)
- #include <arm_neon.h>
 -#include "third_party/aarch64/arm_neon.internal.h"
+-#include "third_party/intel/emmintrin.internal.h"
++#if defined(__aarch64__)
++#include <arm_neon.h>
 +#if defined(__aarch64__)
 +#include <arm_neon.h>
 +#endif
- #endif
- #if defined(__x86_64__) || defined(__i386__)
--#include "libc/isystem/emmintrin.h"
++#endif
++#if defined(__x86_64__) || defined(__i386__)
 +#if defined(__x86_64__)
 +#include <emmintrin.h>
 +#endif
- #endif
++#endif
  
  #if !IsModeDbg()
+ #if defined(__x86_64__)
 diff --git a/libc/tinymath/ceil.c b/libc/tinymath/ceil.c
 --- a/libc/tinymath/ceil.c
 +++ b/libc/tinymath/ceil.c
@@ -524,7 +624,7 @@ diff --git a/libc/tinymath/ceil.c b/libc/tinymath/ceil.c
  #include "libc/runtime/fenv.h"
  #include "libc/tinymath/internal.h"
  #ifndef __llvm__
--#include "libc/isystem/smmintrin.h"
+-#include "third_party/intel/smmintrin.internal.h"
 +#if defined(__x86_64__)
 +#include <smmintrin.h>
 +#endif
@@ -538,7 +638,7 @@ diff --git a/libc/tinymath/ceilf.c b/libc/tinymath/ceilf.c
  #include "libc/math.h"
  #include "libc/tinymath/internal.h"
  #ifndef __llvm__
--#include "libc/isystem/smmintrin.h"
+-#include "third_party/intel/smmintrin.internal.h"
 +#if defined(__x86_64__)
 +#include <smmintrin.h>
 +#endif
@@ -552,7 +652,7 @@ diff --git a/libc/tinymath/floor.c b/libc/tinymath/floor.c
  #include "libc/runtime/fenv.h"
  #include "libc/tinymath/internal.h"
  #ifndef __llvm__
--#include "libc/isystem/smmintrin.h"
+-#include "third_party/intel/smmintrin.internal.h"
 +#if defined(__x86_64__)
 +#include <smmintrin.h>
 +#endif
@@ -566,7 +666,7 @@ diff --git a/libc/tinymath/floorf.c b/libc/tinymath/floorf.c
  #include "libc/math.h"
  #include "libc/tinymath/internal.h"
  #ifndef __llvm__
--#include "libc/isystem/smmintrin.h"
+-#include "third_party/intel/smmintrin.internal.h"
 +#if defined(__x86_64__)
 +#include <smmintrin.h>
 +#endif
@@ -580,7 +680,7 @@ diff --git a/libc/tinymath/trunc.c b/libc/tinymath/trunc.c
  #include "libc/math.h"
  #include "libc/tinymath/internal.h"
  #ifndef __llvm__
--#include "libc/isystem/smmintrin.h"
+-#include "third_party/intel/smmintrin.internal.h"
 +#if defined(__x86_64__)
 +#include <smmintrin.h>
 +#endif
@@ -594,7 +694,7 @@ diff --git a/libc/tinymath/truncf.c b/libc/tinymath/truncf.c
  #include "libc/math.h"
  #include "libc/tinymath/internal.h"
  #ifndef __llvm__
--#include "libc/isystem/smmintrin.h"
+-#include "third_party/intel/smmintrin.internal.h"
 +#if defined(__x86_64__)
 +#include <smmintrin.h>
 +#endif
@@ -608,7 +708,7 @@ diff --git a/libc/x/utf16to8.c b/libc/x/utf16to8.c
  #include "libc/str/thompike.h"
  #include "libc/str/utf16.h"
  #include "libc/x/x.h"
--#include "libc/isystem/emmintrin.h"
+-#include "third_party/intel/emmintrin.internal.h"
 +#if defined(__x86_64__)
 +#include <emmintrin.h>
 +#endif
@@ -622,73 +722,40 @@ diff --git a/libc/x/utf8to32.c b/libc/x/utf8to32.c
  #include "libc/str/thompike.h"
  #include "libc/str/utf16.h"
  #include "libc/x/x.h"
--#include "libc/isystem/emmintrin.h"
+-#include "third_party/intel/emmintrin.internal.h"
 +#if defined(__x86_64__)
 +#include <emmintrin.h>
 +#endif
  
  /**
   * Transcodes UTF-8 to UTF-32.
-diff --git a/dsp/core/sad16x8n.c b/dsp/core/sad16x8n.c
---- a/dsp/core/sad16x8n.c
-+++ b/dsp/core/sad16x8n.c
-@@ -19,8 +19,12 @@
- #include "dsp/core/core.h"
- #include "libc/limits.h"
- #include "libc/macros.h"
--#include "third_party/aarch64/arm_neon.internal.h"
--#include "libc/isystem/emmintrin.h"
-+#if defined(__aarch64__)
-+#include <arm_neon.h>
-+#endif
-+#if defined(__x86_64__)
-+#include <emmintrin.h>
-+#endif
+diff --git a/test/libc/str/crc32z_test.c b/test/libc/str/crc32z_test.c
+--- a/test/libc/str/crc32z_test.c
++++ b/test/libc/str/crc32z_test.c
+@@ -30,7 +30,7 @@
+ #include "libc/testlib/testlib.h"
+ #include "third_party/aarch64/arm_acle.internal.h"
+ #include "third_party/aarch64/arm_neon.internal.h"
+-#include "third_party/intel/immintrin.internal.h"
++#include "libc/isystem/immintrin.h"
+ #include "third_party/zlib/zlib.h"
  
- /**
-  * Mixes audio.
-diff --git a/dsp/scale/cdecimate2xuint8x8.c b/dsp/scale/cdecimate2xuint8x8.c
---- a/dsp/scale/cdecimate2xuint8x8.c
-+++ b/dsp/scale/cdecimate2xuint8x8.c
-@@ -19,7 +19,9 @@
- #include "libc/macros.h"
- #include "libc/nexgen32e/x86feature.h"
- #include "libc/str/str.h"
--#include "libc/isystem/immintrin.h"
-+#if defined(__x86_64__)
-+#include <immintrin.h>
-+#endif
- 
- /**
-  * Performs 2D Motion Picture Convolution Acceleration by Leveraging SSSE3.
-diff --git a/dsp/tty/internal.h b/dsp/tty/internal.h
---- a/dsp/tty/internal.h
-+++ b/dsp/tty/internal.h
-@@ -2,7 +2,9 @@
- #define COSMOPOLITAN_DSP_TTY_INTERNAL_H_
- #include "dsp/tty/quant.h"
- #include "dsp/tty/ttyrgb.h"
--#include "third_party/intel/xmmintrin.internal.h"
-+#if defined(__x86_64__)
-+#include <xmmintrin.h>
-+#endif
- COSMOPOLITAN_C_START_
- 
- struct TtyRgb rgb2tty24f_(ttyrgb_m128);
-diff --git a/dsp/tty/rgb2xterm24f.c b/dsp/tty/rgb2xterm24f.c
---- a/dsp/tty/rgb2xterm24f.c
-+++ b/dsp/tty/rgb2xterm24f.c
-@@ -19,7 +19,9 @@
- #include "dsp/tty/quant.h"
- #include "libc/macros.h"
- #include "libc/math.h"
--#include "third_party/intel/xmmintrin.internal.h"
-+#if defined(__x86_64__)
-+#include <xmmintrin.h>
-+#endif
- 
- struct TtyRgb rgb2tty24f_(ttyrgb_m128 rgb) {
- #ifdef __x86_64__
+ #define FANATICS "Fanatics"
+diff --git a/third_party/xxhash/xxh_x86dispatch.c b/third_party/xxhash/xxh_x86dispatch.c
+--- a/third_party/xxhash/xxh_x86dispatch.c
++++ b/third_party/xxhash/xxh_x86dispatch.c
+@@ -179,9 +179,9 @@
+  * @brief Like @ref XXH_TARGET_SSE2, but for AVX512.
+  */
+ #if defined(__GNUC__)
+-#include "third_party/intel/emmintrin.internal.h" /* SSE2 */
++#include "libc/isystem/emmintrin.h" /* SSE2 */
+ #  if XXH_DISPATCH_AVX2 || XXH_DISPATCH_AVX512
+-#include "third_party/intel/immintrin.internal.h" /* AVX2, AVX512F */
++#include "libc/isystem/immintrin.h" /* AVX2, AVX512F */
+ #  endif
+ #  define XXH_TARGET_SSE2 __attribute__((__target__("sse2")))
+ #  define XXH_TARGET_AVX2 __attribute__((__target__("avx2")))
 diff --git a/third_party/zlib/adler32_simd.c b/third_party/zlib/adler32_simd.c
 --- a/third_party/zlib/adler32_simd.c
 +++ b/third_party/zlib/adler32_simd.c
@@ -827,8 +894,8 @@ diff --git a/third_party/zlib/crc_folding.c b/third_party/zlib/crc_folding.c
  #include "libc/limits.h"
  #include "libc/literal.h"
  #include "libc/str/str.h"
--#include "libc/isystem/emmintrin.h"
--#include "libc/isystem/immintrin.h"
+-#include "third_party/intel/emmintrin.internal.h"
+-#include "third_party/intel/immintrin.internal.h"
 -#include "third_party/intel/wmmintrin.internal.h"
 +#if defined(__x86_64__)
 +#include <emmintrin.h>

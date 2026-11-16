@@ -1,6 +1,6 @@
 load("@llvm//runtimes/cosmo/source:headers.bzl", "cosmopolitan_sdk_headers")
 load("@llvm//runtimes/cosmo/source:runtime.bzl", "cosmo_sdk_tool", "cosmo_static_library", "cosmo_zip_assets")
-load("@llvm//runtimes/cosmo/source:sources.bzl", "ZIP_ASSETS", "libcosmo_sources", "libcxx_sources")
+load("@llvm//runtimes/cosmo/source:sources.bzl", "libcosmo_sources", "libcxx_sources", "zip_assets")
 load("@llvm//runtimes/cosmo/source:startup.bzl", "cosmo_startup_files")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 
@@ -42,7 +42,7 @@ cosmo_startup_files(headers = ":source_headers")
 
 cosmopolitan_sdk_headers()
 
-cosmo_zip_assets(srcs = ZIP_ASSETS)
+cosmo_zip_assets(srcs = zip_assets())
 
 cosmo_static_library(
     name = "cosmo",
