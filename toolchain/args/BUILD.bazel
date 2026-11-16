@@ -161,18 +161,15 @@ cc_args(
     requires_any_of = ["//toolchain/features/header_modules:header_module_compile"],
 )
 
-# -nostdinc++ keeps the SDK originals out of the search path. Finding both
+# Explicit C++ roots replace Darwin's SDK libc++ discovery. Finding both
 # copies would break the C wrappers' include_next chain because their shared
 # include guards suppress the second copy.
 cc_args(
     name = "macos_cxxstdlib_headers_include_search_paths",
     actions = _CXX_COMPILE_ACTIONS,
     args = [
-        "-nostdinc++",
-        "-isystem",
-        "{cxx_public_headers_include_search_path}",
-        "-isystem",
-        "{cxx_detail_headers_include_search_path}",
+        "-stdlib++-isystem{cxx_public_headers_include_search_path}",
+        "-stdlib++-isystem{cxx_detail_headers_include_search_path}",
     ],
     # Keep data in the same order as the arguments.
     # do not sort
