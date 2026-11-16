@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Google <noreply@google.com>
+Date: Thu, 30 Jan 2025 00:00:00 +0000
+Subject: [PATCH] Make pt_blkmask atomic for C11 atomics
+
+Clang's __c11 atomic builtins require the pointee type to be `_Atomic`.
+The signal worker uses `atomic_load_explicit` on `pt_blkmask`, so mark
+the field atomic to keep the build happy.
+
+---
+ libc/thread/posixthread.internal.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libc/thread/posixthread.internal.h b/libc/thread/posixthread.internal.h
+index 6f41fd69..5825a45a 100644
+diff --git a/libc/thread/posixthread.internal.h b/libc/thread/posixthread.internal.h
+--- a/libc/thread/posixthread.internal.h
++++ b/libc/thread/posixthread.internal.h
+@@ -82,7 +82,7 @@ struct PosixThread {
+   void *pt_val;               // start param / return val
+   char *pt_tls;               // bottom of tls allocation
+   struct CosmoTib *tib;       // middle of tls allocation
+   struct Dll list;            // list of threads
+   struct _pthread_cleanup_buffer *pt_cleanup;
+-  uint64_t pt_blkmask;
++  _Atomic(uint64_t) pt_blkmask;
+   int64_t pt_event;
+   locale_t pt_locale;
+   intptr_t pt_exiter[5];
+-- 
+2.34.1
+

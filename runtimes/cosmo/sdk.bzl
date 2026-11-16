@@ -1,4 +1,5 @@
 load("//:http_bsdtar_archive.bzl", "http_bsdtar_archive")
+load("//runtimes/cosmo/source:headers.bzl", "cosmopolitan_source")
 
 _COSMOPOLITAN_VERSION = "4.0.2"
 
@@ -18,6 +19,7 @@ def _cosmopolitan_impl(ctx):
             "bin/apelink",
             "bin/fixupobj",
             "bin/pecheck",
+            "bin/zipobj",
             "bin/*-linux-cosmo-ld",
             "*-linux-cosmo/lib/*.a",
             "*-linux-cosmo/lib/*.lds",
@@ -26,13 +28,54 @@ def _cosmopolitan_impl(ctx):
         ],
         excludes = ["*-linux-cosmo/lib/*/*"],
     )
+    cosmopolitan_source(
+        name = "cosmopolitan_source",
+        build_file = Label("//runtimes/cosmo/source:cosmopolitan.BUILD.bazel"),
+        sha256 = "e466106b18064e0c996ef64d261133af867bccd921ad14e54975d89aa17a8717",
+        strip_prefix = "cosmopolitan-" + _COSMOPOLITAN_VERSION,
+        urls = ["https://github.com/jart/cosmopolitan/releases/download/{0}/cosmopolitan-{0}.tar.gz".format(_COSMOPOLITAN_VERSION)],
+        patches = [
+            "//runtimes/cosmo/source/patches:make-pt_blkmask-atomic.patch",
+            "//runtimes/cosmo/source/patches:memchr-sse2.patch",
+            "//runtimes/cosmo/source/patches:memchr-guard-mmx-builtins.patch",
+            "//runtimes/cosmo/source/patches:musl-errno-runtime-cases.patch",
+            "//runtimes/cosmo/source/patches:nsync-atomic-pointer-cast.patch",
+            "//runtimes/cosmo/source/patches:musl-lookup-name-errno-runtime.patch",
+            "//runtimes/cosmo/source/patches:clang-intrin-wrappers.patch",
+            "//runtimes/cosmo/source/patches:disable-mmx-intrinsics.patch",
+            "//runtimes/cosmo/source/patches:disable-tmmintrin-mmx.patch",
+            "//runtimes/cosmo/source/patches:tprecode8to16-conditional-neon.patch",
+            "//runtimes/cosmo/source/patches:musl-getnameinfo-af-constants.patch",
+            "//runtimes/cosmo/source/patches:arm64-clang-compat.patch",
+            "//runtimes/cosmo/source/patches:arm64-fenv-demangle.patch",
+            "//runtimes/cosmo/source/patches:brain16-clang-fallback.patch",
+            "//runtimes/cosmo/source/patches:auto-disable-mmx-when-no-builtins.patch",
+            "//runtimes/cosmo/source/patches:arm64-build-fixes.patch",
+            "//runtimes/cosmo/source/patches:demangle-jmpbuf-x86.patch",
+            "//runtimes/cosmo/source/patches:xmmintrin-sse-without-mmx.patch",
+            "//runtimes/cosmo/source/patches:guard-avx512-popcnt-builtins.patch",
+            "//runtimes/cosmo/source/patches:str-guard-arch-intrinsics.patch",
+            "//runtimes/cosmo/source/patches:pthread-arm64-setjmp-constraints.patch",
+            "//runtimes/cosmo/source/patches:rdseed-guard-nonx86.patch",
+            "//runtimes/cosmo/source/patches:rdrand-guard-nonx86.patch",
+            "//runtimes/cosmo/source/patches:aarch64-syscall-tls.patch",
+            "//runtimes/cosmo/source/patches:dlmalloc-atomic-heap-pointers.patch",
+            "//runtimes/cosmo/source/patches:errno-register-convention.patch",
+            "//runtimes/cosmo/source/patches:clang-resource-intrinsics.patch",
+            "//runtimes/cosmo/source/patches:clang-builtins-and-assembly.patch",
+            "//runtimes/cosmo/source/patches:ctl-new-aliases.patch",
+            "//runtimes/cosmo/source/patches:openmp-runtime-signals.patch",
+            "//runtimes/cosmo/source/patches:aarch64-nt-import-binding.patch",
+        ],
+        patch_strip = 1,
+    )
     return ctx.extension_metadata(
         reproducible = True,
-        root_module_direct_deps = ["cosmopolitan_sdk"],
+        root_module_direct_deps = ["cosmopolitan_sdk", "cosmopolitan_source"],
         root_module_direct_dev_deps = [],
     )
 
 cosmopolitan = module_extension(
     implementation = _cosmopolitan_impl,
-    doc = "Imports the Cosmopolitan headers, runtimes, linkers, and APE tools from the upstream SDK.",
+    doc = "Imports the Cosmopolitan release SDK and sources for the Bazel SDK build.",
 )

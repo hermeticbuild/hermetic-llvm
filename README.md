@@ -401,9 +401,8 @@ Use `--platforms=@llvm//platforms:cosmo_x86_64` or
 `--platforms=@llvm//platforms:cosmo_aarch64` to build a static Cosmopolitan
 ELF with `cc_binary`. The Stage 0 Clang toolchain supports these targets on
 Linux and macOS hosts. Use `os = "cosmo"` when selecting these targets
-with the toolchain module extension. Cosmopolitan uses the published 4.0.2 SDK
-for libc, libc++, the startup objects, GNU BFD, `fixupobj`, and `apelink`.
-Building the Cosmopolitan SDK components from source is follow-up work.
+with the toolchain module extension. By default, Cosmopolitan uses the published
+4.0.2 SDK for libc, libc++, the startup objects, GNU BFD, `fixupobj`, and `apelink`.
 The Cosmopolitan target toolchain supports static linking without ThinLTO.
 
 Use `apify_binary` to package one or both architectures into a `.com` file.
@@ -441,6 +440,12 @@ Build `//runtimes/cosmo:llvm` with `--extra_toolchains=//toolchain:all` for
 `llvm.com`. It uses the same multicall command list as the LLVM prebuilts and
 contains both x86-64 and AArch64. Build `//runtimes/cosmo:llvm_distribution`
 for the archive with the Clang resource headers and the tool name symlinks.
+
+Add `--//runtimes/cosmo:source_sdk` to stage headers from the Cosmopolitan
+4.0.2 source release and build the CRT objects, linker scripts, `libcosmo.a`,
+and `libcxx.a` with the repository's Stage 1 LLVM. The SDK build uses the
+released GNU BFD linkers and APE bootstrap tools. `//runtimes/cosmo:llvm`
+packages `llvm.com` with the source-built `apelink.com` when this flag is set.
 
 Run commands as `sh bin/llvm.com clang --version` or
 `sh bin/llvm.com ld.lld --version` from the extracted archive. An installed

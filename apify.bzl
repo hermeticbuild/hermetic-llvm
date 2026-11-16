@@ -1,7 +1,7 @@
 """Packages Cosmopolitan ELF executables as an Actually Portable Executable."""
 
 def _apify_binary_impl(ctx):
-    apelink = ctx.file._apelink
+    apelink = ctx.file.apelink
     args = ctx.actions.args()
     args.add(apelink)
     args.add("-o", ctx.outputs.out)
@@ -41,7 +41,7 @@ _apify_binary = rule(
         "aarch64": attr.label(allow_single_file = True),
         "out": attr.output(mandatory = True),
         "x86_64": attr.label(allow_single_file = True),
-        "_apelink": attr.label(default = "@cosmopolitan_sdk//:bin/apelink", allow_single_file = True, cfg = "exec"),
+        "apelink": attr.label(default = "@cosmopolitan_sdk//:bin/apelink", allow_single_file = True, cfg = "exec"),
         "_arm_loader": attr.label(default = "@cosmopolitan_sdk//:bin/ape-aarch64.elf", allow_single_file = True),
         "_loader": attr.label(default = "//runtimes/cosmo:ape_loader", allow_single_file = True, cfg = "exec"),
         "_macos_arm_loader": attr.label(default = "@cosmopolitan_sdk//:bin/ape-m1.c", allow_single_file = True),
@@ -49,13 +49,14 @@ _apify_binary = rule(
     },
 )
 
-def apify_binary(name, *, x86_64 = None, aarch64 = None, **kwargs):
+def apify_binary(name, *, x86_64 = None, aarch64 = None, apelink = None, **kwargs):
     """Packages Cosmopolitan ELF files with apelink.
 
     Args:
         name: Rule name. The output is named <name>.com.
         x86_64: Optional binary target built for cosmo_x86_64.
         aarch64: Optional binary target built for cosmo_aarch64.
+        apelink: Optional apelink executable built for the execution platform.
         **kwargs: Common Bazel rule attributes.
     """
-    _apify_binary(name = name, x86_64 = x86_64, aarch64 = aarch64, out = name + ".com", **kwargs)
+    _apify_binary(name = name, x86_64 = x86_64, aarch64 = aarch64, apelink = apelink, out = name + ".com", **kwargs)

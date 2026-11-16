@@ -1,0 +1,21 @@
+diff --git a/libc/intrin/demangle.c b/libc/intrin/demangle.c
+--- a/libc/intrin/demangle.c
++++ b/libc/intrin/demangle.c
+@@ -33,15 +33,15 @@
+ #include <stdint.h>
+ #include "libc/runtime/runtime.h"
+ 
++typedef jmp_buf demangle_jmpbuf;
+ #if defined(__aarch64__)
+-#define DEMANGLE_JMPBUF jmp_buf
+ #define DEMANGLE_SETJMP(env) setjmp(env)
+ #define DEMANGLE_LONGJMP(env, val) longjmp(env, val)
+ #else
+-#define DEMANGLE_JMPBUF intptr_t[5]
+ #define DEMANGLE_SETJMP(env) __builtin_setjmp(env)
+ #define DEMANGLE_LONGJMP(env, val) __builtin_longjmp(env, val)
+ #endif
++#define DEMANGLE_JMPBUF demangle_jmpbuf
+ 
+ __notice(demangle_notice, "\
+ Cosmopolitan libelftc demangle (BSD-2)\n\

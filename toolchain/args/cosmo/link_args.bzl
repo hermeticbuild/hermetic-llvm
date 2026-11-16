@@ -3,7 +3,7 @@
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 
 def cosmo_link_args(cpu, common_page_size):
-    """Declares the released CRT, linker script, and BFD arguments."""
+    """Declares the CRT, linker script, and GNU BFD arguments."""
     sdk = "@cosmopolitan_sdk//:"
     bfd = sdk + cpu + "_bfd"
     args = [
@@ -15,21 +15,22 @@ def cosmo_link_args(cpu, common_page_size):
         "-Wl,-T,{script}",
         "-L{libs}",
     ]
-    libs = "@cosmopolitan_sdk//:" + cpu + "_libs"
+    artifacts = "@llvm//runtimes/cosmo:" + cpu
+    libs = artifacts + "_libs"
     format = {
-        "crt": sdk + cpu + "_crt",
+        "crt": artifacts + "_crt",
         "libs": libs,
-        "script": sdk + cpu + "_script",
+        "script": artifacts + "_script",
     }
     if cpu == "x86_64":
         args.append("{ape}")
-        format["ape"] = sdk + cpu + "_ape"
+        format["ape"] = artifacts + "_ape"
 
     cc_args(
         name = cpu + "_link",
         actions = ["@rules_cc//cc/toolchains/actions:link_executable_actions"],
         args = args + ["{crt}"],
-        data = [libs],
+        data = format.values(),
         format = format,
     )
 

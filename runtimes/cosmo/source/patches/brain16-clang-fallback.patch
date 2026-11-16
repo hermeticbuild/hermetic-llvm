@@ -1,0 +1,24 @@
+diff --git a/libc/intrin/brain16.c b/libc/intrin/brain16.c
+index 11111111..22222222 100644
+diff --git a/libc/intrin/brain16.c b/libc/intrin/brain16.c
+--- a/libc/intrin/brain16.c
++++ b/libc/intrin/brain16.c
+@@ -0,0 +1,6 @@
++#if defined(__clang__) && !defined(__FLT32_MANT_DIG__)
++typedef float _Float32;   // if you're not compiling with -std=c23 yet
++typedef double _Float64;
++typedef long double __float80 __attribute__((__mode__(__XF__)));
++#endif
++
+diff --git a/libc/intrin/float16.c b/libc/intrin/float16.c
+index 33333333..44444444 100644
+diff --git a/libc/intrin/float16.c b/libc/intrin/float16.c
+--- a/libc/intrin/float16.c
++++ b/libc/intrin/float16.c
+@@ -0,0 +1,6 @@
++#if defined(__clang__) && !defined(__FLT32_MANT_DIG__)
++typedef float _Float32;   // if you're not compiling with -std=c23 yet
++typedef double _Float64;
++typedef long double __float80 __attribute__((__mode__(__XF__)));
++#endif
++

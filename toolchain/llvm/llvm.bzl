@@ -592,8 +592,8 @@ def declare_llvm_targets(*, exec_os, exec_cpu, suffix = ""):
         name = "cosmo_target_headers",
         srcs = select({
             "@llvm//config:nostdincxx_enabled": [],
-            "//conditions:default": ["@cosmopolitan_sdk//:cxx_headers"],
-        }) + [":cosmo_intrinsics", "@cosmopolitan_sdk//:c_headers", "@llvm//toolchain/args/cosmo:normalize"],
+            "//conditions:default": ["@llvm//runtimes/cosmo:cxx_headers"],
+        }) + [":cosmo_intrinsics", "@llvm//runtimes/cosmo:c_headers", "@llvm//toolchain/args/cosmo:normalize"],
     )
 
     module_map(

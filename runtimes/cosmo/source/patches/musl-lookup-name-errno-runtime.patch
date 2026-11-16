@@ -1,0 +1,42 @@
+From 5c3f4b20a53d4c6796e9c6e4e2e3f81f2f8d5173 Mon Sep 17 00:00:00 2001
+From: David Zbarsky <dzbarsky@gmail.com>
+Date: Tue, 31 Dec 2024 13:30:00 -0500
+Subject: [PATCH] musl: avoid errno constants in lookup_name switch for cosmo
+
+Cosmopolitan exposes errno values as extern constants, which are not
+integer constant expressions. Clang rejects switching on them. Use a
+runtime variable and compare against the errno values instead.
+
+---
+ third_party/musl/lookup_name.c | 11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
+
+diff --git a/third_party/musl/lookup_name.c b/third_party/musl/lookup_name.c
+index 0e06275db..742f2a747 100644
+diff --git a/third_party/musl/lookup_name.c b/third_party/musl/lookup_name.c
+--- a/third_party/musl/lookup_name.c
++++ b/third_party/musl/lookup_name.c
+@@ -89,14 +89,13 @@ static int name_from_hosts(struct address buf[static MAXADDRS], char canon[stati]
+ 
+ 	/* open hosts definitions file */
+ 	FILE *f = fopen(etc_hosts_path, "rbe");
+-	if (!f) switch (errno) {
+-	case ENOENT:
+-	case ENOTDIR:
+-	case EACCES:
+-		return 0;
+-	default:
+-		return EAI_SYSTEM;
+-	}
++	if (!f) {
++		int err = errno;
++		if (err == ENOENT || err == ENOTDIR || err == EACCES) {
++			return 0;
++		}
++		return EAI_SYSTEM;
++	}
+ 
+ 	/* read hosts definitions file */
+ 	while (fgets(line, sizeof line, f) && cnt < MAXADDRS) {
+-- 
+2.47.0

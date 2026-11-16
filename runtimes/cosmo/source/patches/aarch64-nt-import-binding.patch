@@ -1,0 +1,37 @@
+diff --git a/libc/macros.h b/libc/macros.h
+--- a/libc/macros.h
++++ b/libc/macros.h
+@@ -57,7 +57,10 @@
+  .size	"\name",.-"\name"
+  .type	"\name",@function
+  .ifnb	\bnd
+-  .\bnd	"\name"
++  // AArch64 NT imports may already have declared this symbol weak.
++  .ifndef ".Lnt_weak.\name"
++   .\bnd	"\name"
++  .endif
+  .endif
+  .ifnb	\vis
+   .\vis	"\name"
+diff --git a/ape/idata.internal.h b/ape/idata.internal.h
+--- a/ape/idata.internal.h
++++ b/ape/idata.internal.h
+@@ -63,6 +63,7 @@
+ 	.globl	"\fn"
+ 	.balign	8
+ 	.weak	"\actual"
++	.set	".Lnt_weak.\actual",1
+ "\fn":	.quad	"\actual"
+ #endif
+ .endm
+diff --git a/libc/nt/ntdllimport.h b/libc/nt/ntdllimport.h
+--- a/libc/nt/ntdllimport.h
++++ b/libc/nt/ntdllimport.h
+@@ -45,6 +45,7 @@
+ __imp_\fn:
+ 	.quad	\name
+ 	.weak	\name
++	.set	".Lnt_weak.\name",1
+ #endif
+ .endm
+ 

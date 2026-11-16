@@ -1,0 +1,76 @@
+load("@llvm//runtimes/cosmo/source:headers.bzl", "cosmopolitan_sdk_headers")
+load("@llvm//runtimes/cosmo/source:runtime.bzl", "cosmo_sdk_tool", "cosmo_static_library", "cosmo_zip_assets")
+load("@llvm//runtimes/cosmo/source:sources.bzl", "ZIP_ASSETS", "libcosmo_sources", "libcxx_sources")
+load("@llvm//runtimes/cosmo/source:startup.bzl", "cosmo_startup_files")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+filegroup(
+    name = "source_headers",
+    srcs = glob(
+        [
+            "ape/**/*.h",
+            "libc/**/*.h",
+            "libc/**/*.inc",
+            "libc/**/*.s",
+            "ctl/**/*",
+            "dsp/**/*.h",
+            "net/**/*.h",
+            "net/**/*.inc",
+            "tool/**/*.h",
+            "tool/**/*.inc",
+            "third_party/**/*.h",
+            "third_party/**/*.inc",
+            "third_party/**/*.def",
+            "third_party/**/*.hpp",
+            "third_party/**/*.tbl",
+            "third_party/libcxx/**",
+        ],
+        allow_empty = True,
+        exclude = [
+            "**/test/**",
+            "third_party/libcxx/**/*.cpp",
+        ],
+    ) + ["third_party/openmp/ompt-specific.cpp"],
+)
+
+cc_library(
+    name = "headers",
+    textual_hdrs = [":source_headers"],
+)
+
+cosmo_startup_files(headers = ":source_headers")
+
+cosmopolitan_sdk_headers()
+
+cosmo_zip_assets(srcs = ZIP_ASSETS)
+
+cosmo_static_library(
+    name = "cosmo",
+    extra_objects = [":zip_objects"],
+    groups = libcosmo_sources(),
+)
+
+cosmo_static_library(
+    name = "cxx",
+    groups = libcxx_sources(),
+)
+
+[
+    cosmo_sdk_tool(
+        name = tool,
+        extra_srcs = sources,
+    )
+    for tool, sources in {
+        "apelink": ["tool/build/lib/parsesupportvector.c"],
+        "fixupobj": [],
+        "pecheck": [],
+        "zipobj": [
+            "tool/build/lib/elfwriter.c",
+            "tool/build/lib/elfwriter_cargoculting.c",
+            "tool/build/lib/elfwriter_yoink.c",
+            "tool/build/lib/elfwriter_zip.c",
+            "tool/build/lib/interner.c",
+            "tool/build/lib/stripcomponents.c",
+        ],
+    }.items()
+]

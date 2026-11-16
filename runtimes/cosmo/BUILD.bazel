@@ -1,6 +1,10 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load("//:apify.bzl", "apify_binary")
 load("//prebuilt/llvm:llvm_release.bzl", "llvm_release")
+load("//runtimes:defs.bzl", "stub_library")
 load("//toolchain/bootstrap:bootstrap_binary.bzl", "bootstrap_binary")
 load("//toolchain/runtimes:cc_runtime_binary.bzl", "cc_runtime_stage1_hosted_binary")
 load(":host_tools.bzl", "APE_LOADER")
@@ -37,7 +41,10 @@ alias(
 bzl_library(
     name = "sdk",
     srcs = ["sdk.bzl"],
-    deps = ["//:http_bsdtar_archive"],
+    deps = [
+        "//:http_bsdtar_archive",
+        "//runtimes/cosmo/source:headers",
+    ],
 )
 
 [
@@ -57,6 +64,7 @@ bzl_library(
 apify_binary(
     name = "llvm",
     aarch64 = ":llvm_aarch64",
+    apelink = ":sdk_apelink",
     tags = ["manual"],
     visibility = ["//visibility:public"],
     x86_64 = ":llvm_x86_64",
@@ -67,6 +75,148 @@ llvm_release(
     binary = ":llvm",
     binary_name = "llvm.com",
 )
+
+bool_flag(
+    name = "source_sdk",
+    build_setting_default = False,
+    scope = "universal",
+    visibility = ["//visibility:public"],
+)
+
+SDK_TOOL_NAMES = [
+    "apelink",
+    "fixupobj",
+    "pecheck",
+    "zipobj",
+]
+
+[
+    platform_transition_filegroup(
+        name = tool + "_" + cpu,
+        srcs = ["@cosmopolitan_source//:" + tool],
+        tags = ["manual"],
+        target_platform = "//platforms:cosmo_" + cpu,
+    )
+    for tool in SDK_TOOL_NAMES
+    for cpu in [
+        "aarch64",
+        "x86_64",
+    ]
+]
+
+[
+    apify_binary(
+        name = tool,
+        aarch64 = ":" + tool + "_aarch64",
+        tags = ["manual"],
+        visibility = ["//visibility:public"],
+        x86_64 = ":" + tool + "_x86_64",
+    )
+    for tool in SDK_TOOL_NAMES
+]
+
+config_setting(
+    name = "source_sdk_enabled",
+    flag_values = {":source_sdk": "true"},
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "sdk_apelink",
+    actual = select({
+        ":source_sdk_enabled": ":apelink",
+        "//conditions:default": "@cosmopolitan_sdk//:bin/apelink",
+    }),
+    visibility = ["//visibility:public"],
+)
+
+[
+    alias(
+        name = artifact,
+        actual = select({
+            ":source_sdk_enabled": "@cosmopolitan_source//:" + artifact,
+            "//conditions:default": "@cosmopolitan_sdk//:" + artifact,
+        }),
+        visibility = ["//visibility:public"],
+    )
+    for artifact in [
+        "c_headers",
+        "cxx_headers",
+        "aarch64_crt",
+        "aarch64_script",
+        "x86_64_ape",
+        "x86_64_crt",
+        "x86_64_script",
+    ]
+]
+
+COMPANION_LIBRARIES = [
+    "c",
+    "crypt",
+    "dl",
+    "gcc_s",
+    "gomp",
+    "m",
+    "pthread",
+    "resolv",
+    "rt",
+    "stdc++",
+    "unwind",
+]
+
+[
+    stub_library(
+        name = "stub_" + library,
+        out = "stubs/lib" + library + ".a",
+    )
+    for library in COMPANION_LIBRARIES
+]
+
+[
+    platform_transition_filegroup(
+        name = cpu + "_source_archives",
+        srcs = [
+            "@cosmopolitan_source//:cosmo",
+            "@cosmopolitan_source//:cxx",
+        ],
+        target_platform = "//platforms:linux_" + cpu + "_musl",
+    )
+    for cpu in [
+        "aarch64",
+        "x86_64",
+    ]
+]
+
+[
+    copy_to_directory(
+        name = cpu + "_source_libs",
+        srcs = [":" + cpu + "_source_archives"] + [
+            ":stub_" + library
+            for library in COMPANION_LIBRARIES
+        ],
+        include_external_repositories = ["**"],
+        root_paths = [package_name() + "/stubs"],
+    )
+    for cpu in [
+        "aarch64",
+        "x86_64",
+    ]
+]
+
+[
+    alias(
+        name = cpu + "_libs",
+        actual = select({
+            ":source_sdk_enabled": ":" + cpu + "_source_libs",
+            "//conditions:default": "@cosmopolitan_sdk//:" + cpu + "_libs",
+        }),
+        visibility = ["//visibility:public"],
+    )
+    for cpu in [
+        "aarch64",
+        "x86_64",
+    ]
+]
 
 bzl_library(
     name = "host_tools",

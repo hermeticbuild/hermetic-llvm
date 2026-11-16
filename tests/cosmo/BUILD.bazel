@@ -33,6 +33,7 @@ cc_binary(
 apify_binary(
     name = "smoke",
     aarch64 = ":smoke_aarch64",
+    apelink = "//runtimes/cosmo:sdk_apelink",
     tags = ["manual"],
     x86_64 = ":smoke_x86_64",
 )

@@ -1,0 +1,81 @@
+diff --git a/third_party/aarch64/arm_neon.internal.h b/third_party/aarch64/arm_neon.internal.h
+--- a/third_party/aarch64/arm_neon.internal.h
++++ b/third_party/aarch64/arm_neon.internal.h
+@@ -1,6 +1,9 @@
+ #if defined(__aarch64__) && !(__ASSEMBLER__ + __LINKER__ + 0)
+ #ifndef _AARCH64_NEON_H_
+ #define _AARCH64_NEON_H_
++#if defined(__clang__)
++#include "third_party/aarch64/clang/arm_neon.h"
++#else
+ #pragma GCC push_options
+ #pragma GCC target ("+nothing+simd")
+ #pragma GCC aarch64 "arm_neon.h"
+@@ -24461,5 +24464,6 @@
+ #undef __aarch64_vdupq_laneq_u16
+ #undef __aarch64_vdupq_laneq_u32
+ #undef __aarch64_vdupq_laneq_u64
++#endif /* __clang__ */
+ #endif
+ #endif
+diff --git a/libc/runtime/pc.internal.h b/libc/runtime/pc.internal.h
+--- a/libc/runtime/pc.internal.h
++++ b/libc/runtime/pc.internal.h
+@@ -211,6 +211,7 @@
+   __invert_memory_area(mm, pml4t, ps, size, pte_flags | PAGE_REFC);
+ }
+ 
++#if defined(__x86_64__)
+ forceinline unsigned char inb(unsigned short port) {
+   unsigned char al;
+   asm volatile("inb\t%1,%0" : "=a"(al) : "dN"(port));
+@@ -242,6 +243,28 @@
+ 
+ #define __get_mm()     ((struct mman *)(BANE + 0x0500))
+ #define __get_mm_phy() ((struct mman *)0x0500)
++#else
++forceinline unsigned char inb(unsigned short port) {
++  (void)port;
++  return 0;
++}
+ 
++forceinline void outb(unsigned short port, unsigned char byte) {
++  (void)port;
++  (void)byte;
++}
++
++#define __clear_page(page)                          \
++  ({                                                \
++    uintptr_t Page = (uintptr_t)(page);             \
++    __builtin_memset((void *)Page, 0, 4096);        \
++    Page;                                           \
++  })
++
++#define __get_pml4t() ((uint64_t *)0)
++#define __get_mm() ((struct mman *)0)
++#define __get_mm_phy() ((struct mman *)0)
++#endif
++
+ #endif /* !(__ASSEMBLER__ + __LINKER__ + 0) */
+ #endif /* COSMOPOLITAN_LIBC_RUNTIME_PC_H_ */
+diff --git a/libc/thread/pthread_exit.c b/libc/thread/pthread_exit.c
+--- a/libc/thread/pthread_exit.c
++++ b/libc/thread/pthread_exit.c
+@@ -30,6 +30,7 @@
+ #include "libc/limits.h"
+ #include "libc/mem/gc.h"
+ #include "libc/mem/mem.h"
++#include "libc/intrin/setjmp.h"
+ #include "libc/runtime/internal.h"
+ #include "libc/runtime/runtime.h"
+ #include "libc/str/str.h"
+@@ -158,7 +159,7 @@
+   }
+ 
+   // this is a child thread
+-  __builtin_longjmp(pt->pt_exiter, 1);
++  longjmp(pt->pt_exiter, 1);
+ }
+ 
+ __weak_reference(pthread_exit, thr_exit);
+

@@ -1,0 +1,42 @@
+From e2a6f6a4b1ad3b5d9b0a7d45c8d3d5b3c4c3f1e1 Mon Sep 17 00:00:00 2001
+From: David Zbarsky <dzbarsky@gmail.com>
+Date: Thu, 2 Jan 2025 10:20:00 -0500
+Subject: [PATCH] musl: avoid errno constants in switch for cosmo build
+
+Cosmopolitan exposes errno values as extern constants, which are not
+integer constant expressions under Clang. The musl lookup_serv helper
+switches on errno, which fails to compile without Cosmopolitan's
+custom -fportcosmo flag (not available in this toolchain). Treat the
+errno values with runtime comparisons instead so the logic remains the
+same while keeping the code portable.
+
+---
+ third_party/musl/lookup_serv.c | 11 +++++------
+ 1 file changed, 5 insertions(+), 6 deletions(-)
+
+diff --git a/third_party/musl/lookup_serv.c b/third_party/musl/lookup_serv.c
+index 2aeb6f4c9..7f29a3b87 100644
+diff --git a/third_party/musl/lookup_serv.c b/third_party/musl/lookup_serv.c
+--- a/third_party/musl/lookup_serv.c
++++ b/third_party/musl/lookup_serv.c
+@@ -108,12 +108,11 @@ int __lookup_serv(struct service buf[static MAXSERVS],
+ 
+ 	/* open services definitions file */
+ 	FILE *f = fopen(etc_services_path, "rbe");
+-	if (!f) switch (errno) {
+-	case ENOENT:
+-	case ENOTDIR:
+-	case EACCES:
+-		return EAI_SERVICE;
+-	default:
++	if (!f) {
++		int err = errno;
++		if (err == ENOENT || err == ENOTDIR || err == EACCES) {
++			return EAI_SERVICE;
++		}
+ 		return EAI_SYSTEM;
+ 	}
+ 
+-- 
+2.47.0
+

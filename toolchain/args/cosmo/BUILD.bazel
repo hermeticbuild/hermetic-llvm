@@ -14,7 +14,7 @@ filegroup(
 cc_args(
     name = "compile",
     actions = ["@llvm//toolchain:source_compile_actions"],
-    allowlist_include_directories = ["@cosmopolitan_sdk//:c_headers"],
+    allowlist_include_directories = ["@llvm//runtimes/cosmo:c_headers"],
     args = [
         "-isystem",
         "{headers}",
@@ -35,10 +35,10 @@ cc_args(
     }),
     data = [
         ":normalize",
-        "@cosmopolitan_sdk//:c_headers",
+        "@llvm//runtimes/cosmo:c_headers",
     ],
     format = {
-        "headers": "@cosmopolitan_sdk//:c_headers",
+        "headers": "@llvm//runtimes/cosmo:c_headers",
         "normalize": ":normalize",
     },
 )
@@ -50,7 +50,7 @@ cc_args(
         "-isystem",
         "{headers}/third_party/libcxx",
     ],
-    format = {"headers": "@cosmopolitan_sdk//:c_headers"},
+    format = {"headers": "@llvm//runtimes/cosmo:c_headers"},
 )
 
 cc_args(

@@ -1,0 +1,18 @@
+diff --git a/libc/calls/rdrand.c b/libc/calls/rdrand.c
+--- a/libc/calls/rdrand.c
++++ b/libc/calls/rdrand.c
+@@ -64,6 +64,7 @@
+  * @vforksafe
+  */
+ uint64_t rdrand(void) {
++#ifdef __x86_64__
+   int i;
+   char cf;
+   uint64_t x;
+@@ -78,5 +79,6 @@
+       asm volatile("pause");
+     }
+   }
++#endif
+   return rdrand_failover();
+ }

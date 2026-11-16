@@ -1,0 +1,60 @@
+diff --git a/libc/intrin/pthread_pause_np.c b/libc/intrin/pthread_pause_np.c
+--- a/libc/intrin/pthread_pause_np.c
++++ b/libc/intrin/pthread_pause_np.c
+@@ -17,5 +17,7 @@
+-#ifdef _MSC_VER
+-#include <intrin.h>
+-#else
+-#include <xmmintrin.h>
+-#endif
++#if defined(__x86_64__) || defined(__i386__)
++#ifdef _MSC_VER
++#include <intrin.h>
++#else
++#include <xmmintrin.h>
++#endif
++#endif
+
+diff --git a/libc/intrin/brain16.c b/libc/intrin/brain16.c
+--- a/libc/intrin/brain16.c
++++ b/libc/intrin/brain16.c
+@@ -1,5 +1,12 @@
+-#if defined(__clang__) && !defined(__FLT32_MANT_DIG__)
+-typedef float _Float32;   // if you're not compiling with -std=c23 yet
+-typedef double _Float64;
+-typedef long double __float80 __attribute__((__mode__(__XF__)));
+-#endif
++#if defined(__clang__) && !defined(__FLT32_MANT_DIG__)
++typedef float _Float32;   // if you're not compiling with -std=c23 yet
++typedef double _Float64;
++#endif
++#if defined(__x86_64__) || defined(__i386__)
++typedef long double __float80 __attribute__((__mode__(__XF__)));
++#else
++typedef long double __float80;
++#endif
++#if !defined(__FLT128_MANT_DIG__)
++typedef long double _Float128;
++#endif
+
+diff --git a/libc/intrin/float16.c b/libc/intrin/float16.c
+--- a/libc/intrin/float16.c
++++ b/libc/intrin/float16.c
+@@ -1,5 +1,12 @@
+-#if defined(__clang__) && !defined(__FLT32_MANT_DIG__)
+-typedef float _Float32;   // if you're not compiling with -std=c23 yet
+-typedef double _Float64;
+-typedef long double __float80 __attribute__((__mode__(__XF__)));
+-#endif
++#if defined(__clang__) && !defined(__FLT32_MANT_DIG__)
++typedef float _Float32;   // if you're not compiling with -std=c23 yet
++typedef double _Float64;
++#endif
++#if defined(__x86_64__) || defined(__i386__)
++typedef long double __float80 __attribute__((__mode__(__XF__)));
++#else
++typedef long double __float80;
++#endif
++#if !defined(__FLT128_MANT_DIG__)
++typedef long double _Float128;
++#endif

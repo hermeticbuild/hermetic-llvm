@@ -1,0 +1,12 @@
+diff --git a/third_party/nsync/common.c b/third_party/nsync/common.c
+--- a/third_party/nsync/common.c
++++ b/third_party/nsync/common.c
+@@ -366,7 +366,7 @@ static bool free_waiters_populate (void) {
+ #else
+ 	(void)n;
+ #endif
+-	atomic_init (&free_waiters, prev);
++	atomic_init (&free_waiters, (uintptr_t)prev);
+ 	atomic_init (&all_waiters, prev);
+ 	for (struct Dll *e = dll_first (_pthread_list); e;
+ 	     e = dll_next (_pthread_list, e))

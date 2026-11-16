@@ -100,7 +100,7 @@ use_repo(
 )
 
 cosmopolitan = use_extension("//runtimes/cosmo:sdk.bzl", "cosmopolitan")
-use_repo(cosmopolitan, "cosmopolitan_sdk")
+use_repo(cosmopolitan, "cosmopolitan_sdk", "cosmopolitan_source")
 
 musl = use_extension("//runtimes/musl/extension:musl.bzl", "musl")
 use_repo(musl, "musl_libc")
