@@ -2,10 +2,10 @@
 
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 
-def cosmo_link_args(cpu, common_page_size):
+def cosmo_link_args(cpu):
     """Declares the CRT, linker script, and GNU BFD arguments."""
-    sdk = "@cosmopolitan_sdk//:"
-    bfd = sdk + cpu + "_bfd"
+    bfd = "@cosmopolitan_sdk//:" + cpu + "_bfd"
+    common_page_size = 4096 if cpu == "x86_64" else 16384
     args = [
         "-static",
         "-nostdlib",
@@ -16,10 +16,9 @@ def cosmo_link_args(cpu, common_page_size):
         "-L{libs}",
     ]
     artifacts = "@llvm//runtimes/cosmo:" + cpu
-    libs = artifacts + "_libs"
     format = {
         "crt": artifacts + "_crt",
-        "libs": libs,
+        "libs": artifacts + "_libs",
         "script": artifacts + "_script",
     }
     if cpu == "x86_64":
@@ -40,7 +39,7 @@ def cosmo_link_args(cpu, common_page_size):
         data = [bfd],
         env = {
             "COSMO_BFD": "{bfd}",
-            "COSMO_LINK_OUTPUT": "{output_execpath}",
+            "COSMO_FIXUP_OUTPUT": "{output_execpath}",
         } | select({
             "//config:nostdlibxx_enabled": {},
             "//conditions:default": {"COSMO_LIBCXX": "1"},

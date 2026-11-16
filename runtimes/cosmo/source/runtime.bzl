@@ -15,23 +15,21 @@ def _cosmo_archive_impl(ctx):
         for linker_input in dep[CcInfo].linking_context.linker_inputs.to_list():
             for library in linker_input.libraries:
                 objects.extend(library.objects or library.pic_objects)
-    objects = depset(objects).to_list()
 
     # Upstream runs fixupobj on compiler outputs before invoking ar. In
     # particular, x86-64 IFUNC resolvers need the relocations in the .o files.
-    fixed = []
+    fixed = [
+        ctx.actions.declare_file("{}/fixed/{}/{}".format(ctx.label.name, i, obj.basename))
+        for i, obj in enumerate(objects)
+    ]
+    tools = [ctx.file._loader, ctx.file._fixupobj]
     for i in range(0, len(objects), 64):
         batch = objects[i:i + 64]
-        outputs = [
-            ctx.actions.declare_file("{}/fixed/{}/{}".format(ctx.label.name, i + j, obj.basename))
-            for j, obj in enumerate(batch)
-        ]
+        outputs = fixed[i:i + 64]
         args = ctx.actions.args()
-        args.add(ctx.file._loader)
-        args.add(ctx.file._fixupobj)
+        args.add_all(tools)
         for src, dst in zip(batch, outputs):
-            args.add(src)
-            args.add(dst)
+            args.add_all([src, dst])
         ctx.actions.run_shell(
             command = """
 set -eu
@@ -49,12 +47,11 @@ done
 """,
             arguments = [args],
             inputs = batch,
-            tools = [ctx.file._loader, ctx.file._fixupobj],
+            tools = tools,
             outputs = outputs,
             mnemonic = "CosmopolitanFixObjects",
             use_default_shell_env = True,
         )
-        fixed.extend(outputs)
 
     archive = ctx.actions.declare_file("lib" + ctx.label.name + ".a")
     args = ctx.actions.args()

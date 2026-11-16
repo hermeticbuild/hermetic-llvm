@@ -31,7 +31,7 @@ def _cosmopolitan_impl(ctx):
     cosmopolitan_source(
         name = "cosmopolitan_source",
         build_file = Label("//runtimes/cosmo/source:cosmopolitan.BUILD.bazel"),
-        sdk_header = "@cosmopolitan_sdk//:include/stdio.h",
+        sdk_build_file = "@cosmopolitan_sdk//:BUILD.bazel",
         sha256 = "e466106b18064e0c996ef64d261133af867bccd921ad14e54975d89aa17a8717",
         strip_prefix = "cosmopolitan-" + _COSMOPOLITAN_VERSION,
         urls = ["https://github.com/jart/cosmopolitan/releases/download/{0}/cosmopolitan-{0}.tar.gz".format(_COSMOPOLITAN_VERSION)],

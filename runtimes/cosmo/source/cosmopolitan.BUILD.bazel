@@ -22,7 +22,6 @@ filegroup(
             "third_party/**/*.inc",
             "third_party/**/*.def",
             "third_party/**/*.hpp",
-            "third_party/**/*.tbl",
             "third_party/libcxx/**",
         ],
         allow_empty = True,

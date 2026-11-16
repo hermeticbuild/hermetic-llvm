@@ -51,10 +51,7 @@ def declare_llvm_targets(*, exec_os, exec_cpu, suffix = ""):
         srcs = ["bin"],
     )
 
-    native.filegroup(
-        name = "clangxx_file",
-        srcs = ["bin/clang++" + suffix],
-    )
+    clangxx = "bin/clang++" + suffix
 
     native.filegroup(
         name = "dsymutil_file",
@@ -71,13 +68,13 @@ def declare_llvm_targets(*, exec_os, exec_cpu, suffix = ""):
         src = "@llvm//tools/internal:header-parser",
         data = [
             ":builtin_resource_dir",
-            ":clangxx_file",
+            clangxx,
         ],
         env = {
             "LLVM_CLANGXX": "{clangxx}",
         },
         format = {
-            "clangxx": ":clangxx_file",
+            "clangxx": clangxx,
         },
         allowlist_include_directories = builtin_resource_allowlist_directories,
     )
@@ -144,11 +141,6 @@ def declare_llvm_targets(*, exec_os, exec_cpu, suffix = ""):
         "@rules_cc//cc/toolchains/actions:cpp_header_parsing": ":header_parser",
     } | _VALIDATE_STATIC_LIBRARY_TOOL
 
-    native.filegroup(
-        name = "clang_file",
-        srcs = ["bin/clang" + suffix],
-    )
-
     if exec_os != "windows":
         headers_directory(
             name = "cosmo_intrinsics",
@@ -159,8 +151,8 @@ def declare_llvm_targets(*, exec_os, exec_cpu, suffix = ""):
         name = "cosmo_tools",
         exec_os = exec_os,
         exec_cpu = exec_cpu,
-        clang = ":clang_file",
-        clangxx = ":clangxx_file",
+        clang = "bin/clang" + suffix,
+        clangxx = clangxx,
         ar = ":llvm-ar",
         strip = ":llvm-strip",
         resource_include_dir = ":cosmo_intrinsics",
@@ -407,7 +399,7 @@ def declare_llvm_targets(*, exec_os, exec_cpu, suffix = ""):
         name = "link-wrapper",
         src = "@llvm//tools/internal:link-wrapper",
         data = [
-            ":clangxx_file",
+            clangxx,
             ":dsymutil_file",
             ":strip_file",
             "bin/ld.lld" + suffix,
@@ -433,7 +425,7 @@ def declare_llvm_targets(*, exec_os, exec_cpu, suffix = ""):
             "LLVM_STRIP": "{strip}",
         },
         format = {
-            "clangxx": ":clangxx_file",
+            "clangxx": clangxx,
             "dsymutil": ":dsymutil_file",
             "llvm_bin": ":llvm_bin_directory",
             "llvm_ifs": "bin/llvm-ifs" + suffix,

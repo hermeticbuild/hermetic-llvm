@@ -48,6 +48,62 @@ _TINYMATH_FLAGS = [
     "-fno-finite-math-only",
 ]
 
+_SHARED_NEXGEN32E_ASM = [
+    "libc/nexgen32e/checkstackalign.S",
+    "libc/nexgen32e/gc.S",
+    "libc/nexgen32e/gclongjmp.S",
+    "libc/nexgen32e/kcp437.S",
+    "libc/nexgen32e/khalfcache3.S",
+    "libc/nexgen32e/ksha256.S",
+    "libc/nexgen32e/ksha512.S",
+    "libc/nexgen32e/ktensindex.S",
+    "libc/nexgen32e/longjmp.S",
+    "libc/nexgen32e/mcount.S",
+    "libc/nexgen32e/setjmp.S",
+    "libc/nexgen32e/zip.S",
+]
+
+_X86_64_INTRIN_ASM = [
+    "libc/intrin/fds_init.S",
+    "libc/intrin/getcpuidbrand.S",
+    "libc/intrin/interrupts.S",
+    "libc/intrin/kpollnames.S",
+    "libc/intrin/leaky.S",
+    "libc/intrin/maps_init.S",
+    "libc/intrin/pagesize_init.S",
+    "libc/intrin/restore.S",
+    "libc/intrin/stackchkguard.S",
+    "libc/intrin/sys_sched_yield.S",
+    "libc/intrin/sys_set_tls.S",
+]
+
+_SIZE_OPTIMIZED_SOURCES = [
+    "libc/str/getzipcdircomment.c",
+    "libc/str/getzipcdircommentsize.c",
+    "libc/str/getzipcdiroffset.c",
+    "libc/str/getzipcdirrecords.c",
+    "libc/str/getzipcfilecompressedsize.c",
+    "libc/str/getzipcfilemode.c",
+    "libc/str/getzipcfileoffset.c",
+    "libc/str/getzipcfiletimestamps.c",
+    "libc/str/getzipcfileuncompressedsize.c",
+    "libc/str/getzipeocd.c",
+    "libc/str/getziplfilecompressedsize.c",
+    "libc/str/getziplfileuncompressedsize.c",
+    "net/http/categorizeip.c",
+    "net/http/gethttpheadername.c",
+    "net/http/getipcategoryname.c",
+    "net/http/isafrinicip.c",
+    "net/http/isanonymousip.c",
+    "net/http/isapnicip.c",
+    "net/http/isarinip.c",
+    "net/http/isdodip.c",
+    "net/http/islacnicip.c",
+    "net/http/ismulticastip.c",
+    "net/http/isripeip.c",
+    "net/http/istestnetip.c",
+]
+
 def libcosmo_sources():
     return [
         (
@@ -119,51 +175,16 @@ def libcosmo_sources():
                 "libc/stdio/mt19937.c",
                 "libc/str/bcmp.c",
                 "libc/str/dosdatetimetounix.c",
-                "libc/str/getzipcdircomment.c",
-                "libc/str/getzipcdircommentsize.c",
-                "libc/str/getzipcdiroffset.c",
-                "libc/str/getzipcdirrecords.c",
-                "libc/str/getzipcfilecompressedsize.c",
-                "libc/str/getzipcfilemode.c",
-                "libc/str/getzipcfileoffset.c",
-                "libc/str/getzipcfiletimestamps.c",
-                "libc/str/getzipcfileuncompressedsize.c",
-                "libc/str/getzipeocd.c",
-                "libc/str/getziplfilecompressedsize.c",
-                "libc/str/getziplfileuncompressedsize.c",
                 "libc/str/iso8601.c",
                 "libc/str/iso8601us.c",
                 "libc/str/memset16.c",
                 "libc/str/wmemset.c",
                 "libc/sysv/errfun.S",
-                "net/http/categorizeip.c",
                 "net/http/formathttpdatetime.c",
-                "net/http/gethttpheadername.c",
-                "net/http/getipcategoryname.c",
-                "net/http/isafrinicip.c",
-                "net/http/isanonymousip.c",
-                "net/http/isapnicip.c",
-                "net/http/isarinip.c",
-                "net/http/isdodip.c",
-                "net/http/islacnicip.c",
-                "net/http/ismulticastip.c",
-                "net/http/isripeip.c",
-                "net/http/istestnetip.c",
                 "third_party/tz/localtime.c",
-            ]) + [
+            ] + _SIZE_OPTIMIZED_SOURCES) + [
                 "libc/dlopen/foreign_tramp.S",
-                "libc/nexgen32e/checkstackalign.S",
-                "libc/nexgen32e/gc.S",
-                "libc/nexgen32e/gclongjmp.S",
-                "libc/nexgen32e/kcp437.S",
-                "libc/nexgen32e/khalfcache3.S",
-                "libc/nexgen32e/ksha256.S",
-                "libc/nexgen32e/ksha512.S",
-                "libc/nexgen32e/ktensindex.S",
-                "libc/nexgen32e/longjmp.S",
-                "libc/nexgen32e/mcount.S",
-                "libc/nexgen32e/setjmp.S",
-                "libc/nexgen32e/zip.S",
+            ] + _SHARED_NEXGEN32E_ASM + [
                 "libc/nt/BCryptPrimitives/ProcessPrng.S",
                 "libc/nt/PowrProf/SetSuspendState.S",
                 "libc/proc/vfork.S",
@@ -185,20 +206,7 @@ def libcosmo_sources():
                     "libc/nexgen32e/*.S",
                     "libc/vga/*.S",
                     "third_party/compiler_rt/nexgen32e/*.S",
-                ], exclude = [
-                    "libc/nexgen32e/checkstackalign.S",
-                    "libc/nexgen32e/gc.S",
-                    "libc/nexgen32e/gclongjmp.S",
-                    "libc/nexgen32e/kcp437.S",
-                    "libc/nexgen32e/khalfcache3.S",
-                    "libc/nexgen32e/ksha256.S",
-                    "libc/nexgen32e/ksha512.S",
-                    "libc/nexgen32e/ktensindex.S",
-                    "libc/nexgen32e/longjmp.S",
-                    "libc/nexgen32e/mcount.S",
-                    "libc/nexgen32e/setjmp.S",
-                    "libc/nexgen32e/zip.S",
-                ]) + [
+                ], exclude = _SHARED_NEXGEN32E_ASM) + [
                     "libc/calls/getloadavg-nt.c",
                     "libc/calls/sigaction.c",
                     "libc/runtime/clone-openbsd.S",
@@ -213,98 +221,7 @@ def libcosmo_sources():
                 "@platforms//cpu:aarch64": [],
             }),
         ),
-        (
-            _ZLIB_AARCH64_FLAGS + [
-                "-O3",
-                "-DBUILD_NEON",
-                "-march=armv8-a+aes+crc",
-                "-std=gnu17",
-            ],
-            select({
-                "@platforms//cpu:x86_64": [],
-                "@platforms//cpu:aarch64": [
-                    "third_party/zlib/crc32_simd_neon.c",
-                    "third_party/zlib/deflate.c",
-                ],
-            }),
-        ),
-        (
-            _ZLIB_AARCH64_FLAGS + [
-                "-std=gnu17",
-            ],
-            select({
-                "@platforms//cpu:x86_64": [],
-                "@platforms//cpu:aarch64": native.glob([
-                    "third_party/zlib/*.c",
-                ], exclude = [
-                    "third_party/zlib/crc32_simd_neon.c",
-                    "third_party/zlib/deflate.c",
-                ]),
-            }),
-        ),
-        (
-            _ZLIB_X86_64_FLAGS + [
-                "-O3",
-                "-mpclmul",
-                "-mavx512f",
-                "-mvpclmulqdq",
-                "-UCRC32_SIMD_SSE42_PCLMUL",
-                "-DBUILD_AVX512",
-                "-std=gnu17",
-            ],
-            select({
-                "@platforms//cpu:x86_64": [
-                    "third_party/zlib/crc32_simd_avx512.c",
-                ],
-                "@platforms//cpu:aarch64": [],
-            }),
-        ),
-        (
-            _ZLIB_X86_64_FLAGS + [
-                "-O3",
-                "-msse4.2",
-                "-mpclmul",
-                "-UCRC32_SIMD_AVX512_PCLMUL",
-                "-DBUILD_SSE42",
-                "-std=gnu17",
-            ],
-            select({
-                "@platforms//cpu:x86_64": [
-                    "third_party/zlib/crc32_simd_sse42.c",
-                    "third_party/zlib/crc_folding.c",
-                ],
-                "@platforms//cpu:aarch64": [],
-            }),
-        ),
-        (
-            _ZLIB_X86_64_FLAGS + [
-                "-O3",
-                "-mssse3",
-                "-std=gnu17",
-            ],
-            select({
-                "@platforms//cpu:x86_64": [
-                    "third_party/zlib/adler32_simd.c",
-                ],
-                "@platforms//cpu:aarch64": [],
-            }),
-        ),
-        (
-            _ZLIB_X86_64_FLAGS + [
-                "-std=gnu17",
-            ],
-            select({
-                "@platforms//cpu:x86_64": native.glob([
-                    "third_party/zlib/*.c",
-                ], exclude = [
-                    "third_party/zlib/adler32_simd.c",
-                    "third_party/zlib/crc32_simd_avx512.c",
-                    "third_party/zlib/crc32_simd_sse42.c",
-                    "third_party/zlib/crc_folding.c",
-                ]),
-                "@platforms//cpu:aarch64": [],
-            }),
-        ),
+    ] + _zlib_source_groups() + [
         (
             _GENERAL_REGS_ONLY_FLAGS,
             native.glob(["libc/**/*.greg.c"], exclude = [
@@ -413,32 +330,7 @@ def libcosmo_sources():
             [
                 "-Os",
             ],
-            [
-                "libc/str/getzipcdircomment.c",
-                "libc/str/getzipcdircommentsize.c",
-                "libc/str/getzipcdiroffset.c",
-                "libc/str/getzipcdirrecords.c",
-                "libc/str/getzipcfilecompressedsize.c",
-                "libc/str/getzipcfilemode.c",
-                "libc/str/getzipcfileoffset.c",
-                "libc/str/getzipcfiletimestamps.c",
-                "libc/str/getzipcfileuncompressedsize.c",
-                "libc/str/getzipeocd.c",
-                "libc/str/getziplfilecompressedsize.c",
-                "libc/str/getziplfileuncompressedsize.c",
-                "net/http/categorizeip.c",
-                "net/http/gethttpheadername.c",
-                "net/http/getipcategoryname.c",
-                "net/http/isafrinicip.c",
-                "net/http/isanonymousip.c",
-                "net/http/isapnicip.c",
-                "net/http/isarinip.c",
-                "net/http/isdodip.c",
-                "net/http/islacnicip.c",
-                "net/http/ismulticastip.c",
-                "net/http/isripeip.c",
-                "net/http/istestnetip.c",
-            ],
+            _SIZE_OPTIMIZED_SOURCES,
         ),
         (
             [
@@ -549,17 +441,7 @@ def libcosmo_sources():
                 "libc/intrin/*.c",
             ], exclude = [
                 "**/*.greg.c",
-                "libc/intrin/fds_init.S",
-                "libc/intrin/getcpuidbrand.S",
-                "libc/intrin/interrupts.S",
-                "libc/intrin/kpollnames.S",
-                "libc/intrin/leaky.S",
-                "libc/intrin/maps_init.S",
-                "libc/intrin/pagesize_init.S",
-                "libc/intrin/restore.S",
-                "libc/intrin/stackchkguard.S",
-                "libc/intrin/sys_sched_yield.S",
-                "libc/intrin/sys_set_tls.S",
+            ] + _X86_64_INTRIN_ASM + [
                 "libc/intrin/bzero.c",
                 "libc/intrin/cursor.c",
                 "libc/intrin/memcmp.c",
@@ -574,19 +456,7 @@ def libcosmo_sources():
                 "libc/intrin/windowstimetotimeval.c",
                 "libc/intrin/x86.c",
             ]) + select({
-                "@platforms//cpu:x86_64": [
-                    "libc/intrin/fds_init.S",
-                    "libc/intrin/getcpuidbrand.S",
-                    "libc/intrin/interrupts.S",
-                    "libc/intrin/kpollnames.S",
-                    "libc/intrin/leaky.S",
-                    "libc/intrin/maps_init.S",
-                    "libc/intrin/pagesize_init.S",
-                    "libc/intrin/restore.S",
-                    "libc/intrin/stackchkguard.S",
-                    "libc/intrin/sys_sched_yield.S",
-                    "libc/intrin/sys_set_tls.S",
-                ],
+                "@platforms//cpu:x86_64": _X86_64_INTRIN_ASM,
                 "@platforms//cpu:aarch64": native.glob([
                     "libc/intrin/aarch64/*.S",
                 ]),
@@ -760,6 +630,41 @@ def libcosmo_sources():
         ),
     ]
 
+def _zlib_source_groups():
+    groups = []
+    for cpu, flags, variants in [
+        ("aarch64", _ZLIB_AARCH64_FLAGS, [
+            (
+                ["-O3", "-DBUILD_NEON", "-march=armv8-a+aes+crc"],
+                ["third_party/zlib/crc32_simd_neon.c", "third_party/zlib/deflate.c"],
+            ),
+        ]),
+        ("x86_64", _ZLIB_X86_64_FLAGS, [
+            (
+                ["-O3", "-mpclmul", "-mavx512f", "-mvpclmulqdq", "-UCRC32_SIMD_SSE42_PCLMUL", "-DBUILD_AVX512"],
+                ["third_party/zlib/crc32_simd_avx512.c"],
+            ),
+            (
+                ["-O3", "-msse4.2", "-mpclmul", "-UCRC32_SIMD_AVX512_PCLMUL", "-DBUILD_SSE42"],
+                ["third_party/zlib/crc32_simd_sse42.c", "third_party/zlib/crc_folding.c"],
+            ),
+            (
+                ["-O3", "-mssse3"],
+                ["third_party/zlib/adler32_simd.c"],
+            ),
+        ]),
+    ]:
+        platform = "@platforms//cpu:" + cpu
+        other_platform = "@platforms//cpu:" + ("x86_64" if cpu == "aarch64" else "aarch64")
+        for extra_flags, srcs in variants:
+            groups.append((flags + extra_flags + ["-std=gnu17"], select({platform: srcs, other_platform: []})))
+        excluded = [src for _, srcs in variants for src in srcs]
+        groups.append((flags + ["-std=gnu17"], select({
+            platform: native.glob(["third_party/zlib/*.c"], exclude = excluded),
+            other_platform: [],
+        })))
+    return groups
+
 def _libcxx_source_group():
     return (
         [
@@ -777,29 +682,21 @@ def libcxx_sources():
     return [_libcxx_source_group()]
 
 def zip_assets():
-    """Lists the files and directory records packaged by Cosmopolitan's SDK."""
+    """Selects Cosmopolitan's embedded ZIP assets.
+
+    Returns:
+        Source paths for files and paths ending in `/` for directory records.
+    """
+    zoneinfo_files = native.glob(["usr/share/zoneinfo/**"])
+    zoneinfo_paths = native.glob(["usr/share/zoneinfo/**"], exclude_directories = 0)
+    directories = [path + "/" for path in zoneinfo_paths if path not in zoneinfo_files]
     return [
         "dsp/audio/cosmoaudio/cosmoaudio.c",
         "dsp/audio/cosmoaudio/cosmoaudio.dll",
         "dsp/audio/cosmoaudio/cosmoaudio.h",
         "dsp/audio/cosmoaudio/miniaudio.h",
         "libc/runtime/.cosmo",
-        "usr/share/zoneinfo/",
-        "usr/share/zoneinfo/Africa/",
-        "usr/share/zoneinfo/America/",
-        "usr/share/zoneinfo/America/Argentina/",
-        "usr/share/zoneinfo/America/Indiana/",
-        "usr/share/zoneinfo/America/Kentucky/",
-        "usr/share/zoneinfo/America/North_Dakota/",
-        "usr/share/zoneinfo/Antarctica/",
-        "usr/share/zoneinfo/Asia/",
-        "usr/share/zoneinfo/Atlantic/",
-        "usr/share/zoneinfo/Australia/",
-        "usr/share/zoneinfo/Etc/",
-        "usr/share/zoneinfo/Europe/",
-        "usr/share/zoneinfo/Indian/",
-        "usr/share/zoneinfo/Pacific/",
-    ] + native.glob(["usr/share/zoneinfo/**"])
+    ] + directories + zoneinfo_files
 
 SDK_TOOL_SRCS = {
     "apelink": ["tool/build/lib/parsesupportvector.c"],

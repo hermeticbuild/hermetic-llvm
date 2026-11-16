@@ -61,20 +61,14 @@ cc_args(
         "@rules_cc//cc/toolchains/actions:cpp_compile",
         "@rules_cc//cc/toolchains/actions:linkstamp_compile",
     ],
-    env = {"COSMO_OBJECT_OUTPUT": "{output_file}"},
+    env = {"COSMO_FIXUP_OUTPUT": "{output_file}"},
     format = {"output_file": "@rules_cc//cc/toolchains/variables:output_file"},
     requires_not_none = "@rules_cc//cc/toolchains/variables:output_file",
 )
 
-cosmo_link_args(
-    common_page_size = 16384,
-    cpu = "aarch64",
-)
+cosmo_link_args("aarch64")
 
-cosmo_link_args(
-    common_page_size = 4096,
-    cpu = "x86_64",
-)
+cosmo_link_args("x86_64")
 
 cc_args_list(
     name = "toolchain_args",

@@ -7,15 +7,13 @@ if [ "${COSMO_INVOKE_BFD:-}" ]; then
     exec "$COSMO_APE_LOADER" "$COSMO_BFD" "$@"
 fi
 
-if [ "${COSMO_LINK_OUTPUT:-}" ]; then
+if [ "${COSMO_BFD:-}" ]; then
     COSMO_INVOKE_BFD=1 "$COSMO_CLANG" "--ld-path=$0" "$@" ${COSMO_LIBCXX:+-lcxx} -lcosmo
-    exec "$COSMO_APE_LOADER" "$COSMO_FIXUPOBJ" "$COSMO_LINK_OUTPUT"
+else
+    # Search the current Clang resource headers before the SDK's libc headers.
+    "$COSMO_CLANG" -nostdinc -isystem "$COSMO_RESOURCE_INCLUDE" "$@"
 fi
 
-# The SDK's intrinsics headers target an older Clang. Search the current
-# compiler's resource headers first and keep the SDK's libc headers available
-# to Clang's include_next directives.
-"$COSMO_CLANG" -nostdinc -isystem "$COSMO_RESOURCE_INCLUDE" "$@"
-if [ "${COSMO_OBJECT_OUTPUT:-}" ]; then
-    exec "$COSMO_APE_LOADER" "$COSMO_FIXUPOBJ" "$COSMO_OBJECT_OUTPUT"
+if [ "${COSMO_FIXUP_OUTPUT:-}" ]; then
+    exec "$COSMO_APE_LOADER" "$COSMO_FIXUPOBJ" "$COSMO_FIXUP_OUTPUT"
 fi

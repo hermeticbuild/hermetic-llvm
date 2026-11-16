@@ -5,15 +5,14 @@ load("@bazel_tools//tools/build_defs/repo:utils.bzl", "get_auth", "patch")
 
 def _copy_sdk_headers(ctx):
     # Use the released SDK's file names and the patched source's file contents.
-    include = ctx.path(ctx.attr.sdk_header).dirname
-    directories = [""]
+    include = ctx.path(ctx.attr.sdk_build_file).dirname.get_child("include")
+    directories = [(include, "")]
     for _ in range(10000):
-        prefix = directories.pop()
-        directory = include.get_child(prefix) if prefix else include
+        directory, prefix = directories.pop()
         for entry in directory.readdir(watch = "yes"):
             destination = prefix + entry.basename
             if entry.is_dir:
-                directories.append(destination + "/")
+                directories.append((entry, destination + "/"))
                 continue
 
             # tool/cosmocc/package.sh installs libc/isystem at the include
@@ -50,7 +49,7 @@ cosmopolitan_source = repository_rule(
         "build_file": attr.label(allow_single_file = True, mandatory = True),
         "patch_strip": attr.int(),
         "patches": attr.label_list(allow_files = True),
-        "sdk_header": attr.label(allow_single_file = True, mandatory = True),
+        "sdk_build_file": attr.label(allow_single_file = True, mandatory = True),
         "sha256": attr.string(mandatory = True),
         "strip_prefix": attr.string(mandatory = True),
         "urls": attr.string_list(mandatory = True),

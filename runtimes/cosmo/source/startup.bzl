@@ -2,6 +2,7 @@
 
 def _startup_file_impl(ctx):
     source_root = ctx.label.workspace_root or "."
+    linker_script = ctx.file.src.extension == "lds"
     args = ctx.actions.args()
     args.add("--target=" + ctx.attr.triple)
     args.add_all([
@@ -15,7 +16,7 @@ def _startup_file_impl(ctx):
         source_root + "/libc/isystem",
     ])
     args.add("-include", ctx.file.normalize)
-    if ctx.attr.linker_script:
+    if linker_script:
         args.add_all(["-E", "-P", "-x", "c", "-D__LINKER__"])
     else:
         args.add_all(["-c", "-Wa,--noexecstack"])
@@ -26,7 +27,7 @@ def _startup_file_impl(ctx):
         arguments = [args],
         inputs = [ctx.file.src, ctx.file.normalize] + ctx.files.headers,
         outputs = [ctx.outputs.out],
-        mnemonic = "CosmopolitanLinkerScript" if ctx.attr.linker_script else "CosmopolitanStartupObject",
+        mnemonic = "CosmopolitanLinkerScript" if linker_script else "CosmopolitanStartupObject",
     )
 
 _startup_file = rule(
@@ -34,7 +35,6 @@ _startup_file = rule(
     attrs = {
         "clang": attr.label(executable = True, cfg = "exec", mandatory = True),
         "headers": attr.label(allow_files = True, mandatory = True),
-        "linker_script": attr.bool(),
         "normalize": attr.label(allow_single_file = [".inc"], mandatory = True),
         "out": attr.output(mandatory = True),
         "src": attr.label(allow_single_file = [".S", ".lds"], mandatory = True),
@@ -52,7 +52,6 @@ def cosmo_stage1_tool(name, command):
         }),
         visibility = ["//visibility:private"],
     )
-    return name
 
 def cosmo_startup_files(headers):
     """Adds CRT objects, the x86-64 APE object, and both linker scripts.
@@ -62,40 +61,23 @@ def cosmo_startup_files(headers):
     """
 
     # Resolve the compiler after transitioning to the execution configuration.
-    clang = ":" + cosmo_stage1_tool("startup_clang", "clang")
-    for cpu, script in [("aarch64", "aarch64.lds"), ("x86_64", "ape.lds")]:
-        triple = cpu + "-unknown-linux-gnu"
-        _startup_file(
-            name = cpu + "_crt",
-            clang = clang,
-            headers = headers,
-            normalize = "libc/integral/normalize.inc",
-            out = "startup/" + cpu + "/crt.o",
-            src = "libc/crt/crt.S",
-            triple = triple,
-            visibility = ["//visibility:public"],
-        )
-        _startup_file(
-            name = cpu + "_script",
-            clang = clang,
-            headers = headers,
-            linker_script = True,
-            normalize = "libc/integral/normalize.inc",
-            out = "startup/" + cpu + "/" + script,
-            src = "ape/" + script,
-            triple = triple,
-            visibility = ["//visibility:public"],
-        )
+    cosmo_stage1_tool("startup_clang", "clang")
 
-    # The AArch64 linker consumes its own script and crt.o. Only the x86-64
-    # linker consumes the APE object from ape/ape.S.
-    _startup_file(
-        name = "x86_64_ape",
-        clang = clang,
-        headers = headers,
-        normalize = "libc/integral/normalize.inc",
-        out = "startup/x86_64/ape.o",
-        src = "ape/ape.S",
-        triple = "x86_64-unknown-linux-gnu",
-        visibility = ["//visibility:public"],
-    )
+    # Only the x86-64 linker consumes the APE object from ape/ape.S.
+    for cpu, name, src, out in [
+        ("aarch64", "crt", "libc/crt/crt.S", "crt.o"),
+        ("aarch64", "script", "ape/aarch64.lds", "aarch64.lds"),
+        ("x86_64", "crt", "libc/crt/crt.S", "crt.o"),
+        ("x86_64", "script", "ape/ape.lds", "ape.lds"),
+        ("x86_64", "ape", "ape/ape.S", "ape.o"),
+    ]:
+        _startup_file(
+            name = cpu + "_" + name,
+            clang = ":startup_clang",
+            headers = headers,
+            normalize = "libc/integral/normalize.inc",
+            out = "startup/" + cpu + "/" + out,
+            src = src,
+            triple = cpu + "-unknown-linux-gnu",
+            visibility = ["//visibility:public"],
+        )
