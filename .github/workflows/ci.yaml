@@ -126,6 +126,23 @@ jobs:
             --experimental_output_paths=strip \
             //...
 
+      - name: Check header search order
+        if: matrix.folder == 'e2e/rules_cc'
+        env:
+          USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
+        working-directory: e2e/rules_cc
+        shell: bash
+        run: |
+          bazel \
+            --bazelrc=$GITHUB_WORKSPACE/.github/workflows/ci.bazelrc \
+            --bazelrc=.bazelrc \
+            build \
+            --repo_env=BAZEL_MSVC_RUNTIME_VISUAL_STUDIO_EULA=1 \
+            --repo_env=BAZEL_WINDOWS_SDK_EULA=1 \
+            //header_order:all_precedence \
+            //header_order:c_precedence_macos_x86_64 \
+            //header_order:c_precedence_macos_aarch64
+
       - name: bazel coverage e2e (lcov)
         if: matrix.folder == 'e2e/rules_cc' && matrix.bazel_version != '8.x'
         env:
@@ -226,7 +243,8 @@ jobs:
               //:thin_lto_linkstatic_tests_shared_backends_test \
               //:thin_lto_all_linkstatic_shared_backends_test \
               //:fdo_optimize_test \
-              //:cs_fdo_optimize_test
+              //:cs_fdo_optimize_test \
+              //header_order:precedence
           fi
 
       - name: Check native Windows MSVC actions
@@ -272,7 +290,8 @@ jobs:
           bazel \
             --bazelrc=.bazelrc \
             build \
-            //:main_default
+            //:main_default \
+            //header_order:c_precedence
 
       # On macOS, the toolchain uses split copies of the SDK's libc++ headers
       # and links the system libc++ dylib. Check that nostdincxx and

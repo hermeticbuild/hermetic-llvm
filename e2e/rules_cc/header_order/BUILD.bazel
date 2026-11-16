@@ -1,0 +1,82 @@
+load("@bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+package(default_visibility = ["//:__pkg__"])
+
+# These sources compile with the configured C/C++ toolchain. Their wrappers use
+# include_next to reach the real builtin, libc, C++ library, and Windows SDK.
+cc_library(
+    name = "precedence",
+    srcs = [
+        "precedence.c",
+        "precedence.cc",
+    ],
+    hdrs = [
+        "include/stddef.h",
+        "include/stdlib.h",
+        "include/vector",
+        "include/windows.h",
+    ],
+    features = ["system_include_paths"],
+    includes = ["include"],
+)
+
+cc_library(
+    name = "c_precedence",
+    srcs = ["precedence.c"],
+    hdrs = [
+        "include/stddef.h",
+        "include/stdlib.h",
+        "include/windows.h",
+    ],
+    features = ["system_include_paths"],
+    includes = ["include"],
+)
+
+# Musl still places its ordinary -isystem libc paths before user headers.
+# macOS currently passes libc++ using -isystem before target includes, so
+# its target covers C only.
+_PLATFORMS = [
+    "linux_" + cpu
+    for cpu in [
+        "x86_64",
+        "aarch64",
+        "armv7",
+        "riscv64",
+        "s390x",
+    ]
+] + [
+    "windows_x86_64",
+    "windows_aarch64",
+    "windows_x86_64_msvc",
+    "windows_aarch64_msvc",
+]
+
+[
+    platform_transition_filegroup(
+        name = "precedence_" + platform,
+        srcs = [":precedence"],
+        tags = ["manual"],
+        target_platform = "@llvm//platforms:" + platform,
+    )
+    for platform in _PLATFORMS
+]
+
+filegroup(
+    name = "all_precedence",
+    srcs = [":precedence_" + platform for platform in _PLATFORMS],
+    tags = ["manual"],
+)
+
+[
+    platform_transition_filegroup(
+        name = "c_precedence_" + platform,
+        srcs = [":c_precedence"],
+        tags = ["manual"],
+        target_platform = "@llvm//platforms:" + platform,
+    )
+    for platform in [
+        "macos_x86_64",
+        "macos_aarch64",
+    ]
+]
