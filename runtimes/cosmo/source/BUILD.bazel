@@ -1,28 +1,27 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 
-exports_files([
-    "cosmopolitan.BUILD.bazel",
-    "sdk_headers.txt",
-])
-
-bzl_library(
-    name = "headers",
-    srcs = ["headers.bzl"],
-    visibility = ["//visibility:public"],
-    deps = ["//:directory"],
-)
+exports_files(["cosmopolitan.BUILD.bazel"])
 
 bzl_library(
     name = "runtime",
     srcs = ["runtime.bzl"],
     visibility = ["//visibility:public"],
     deps = [
-        ":startup",
         "//toolchain/runtimes:with_cfg_runtimes_common",
         "@rules_cc//cc:cc_binary",
         "@rules_cc//cc:cc_library",
         "@rules_cc//cc/common",
         "@with_cfg.bzl",
+    ],
+)
+
+bzl_library(
+    name = "headers",
+    srcs = ["headers.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@bazel_tools//tools/build_defs/repo:cache.bzl",
+        "@bazel_tools//tools/build_defs/repo:utils.bzl",
     ],
 )
 

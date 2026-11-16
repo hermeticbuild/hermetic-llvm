@@ -28,7 +28,7 @@ cc_binary(
     platform_transition_filegroup(
         name = "smoke" + suffix + "_" + cpu,
         srcs = [":smoke_elf"],
-        tags = ["manual"] if suffix else [],
+        tags = ["manual"],
         target_platform = "//platforms:cosmo_" + cpu + suffix,
     )
     for suffix in SMOKE_SUFFIXES

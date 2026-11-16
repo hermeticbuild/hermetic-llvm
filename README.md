@@ -407,7 +407,7 @@ The source SDK requires Stage 1 Linux toolchains. Registering
 `@llvm//toolchain:all` includes them. The source SDK uses the released GNU BFD
 linkers and APE bootstrap tools.
 
-The Stage 0 Clang toolchain supports these targets on Linux and macOS hosts.
+Stage 0 Clang compiles applications for all four platforms on Linux and macOS hosts.
 Use `os = "cosmo"` when selecting these targets with the toolchain module
 extension. The Cosmopolitan target toolchain supports static linking without
 ThinLTO.
@@ -443,7 +443,7 @@ loaders and does not require installing an APE `binfmt_misc` handler.
 
 #### LLVM multicall executable
 
-Build `//runtimes/cosmo:llvm` for `llvm.com` or
+From the hermetic-llvm checkout, build `//runtimes/cosmo:llvm` for `llvm.com` or
 `//prebuilt/llvm:llvm_distribution` for the archive with the Clang resource
 headers and the tool name symlinks. Pass `--extra_toolchains=//toolchain:all`
 for either target. Both build for `cosmo_x86_64_source` and

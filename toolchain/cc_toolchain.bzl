@@ -177,7 +177,8 @@ def cc_toolchain(
             ],
             "@platforms//os:uefi": [],
             "@platforms//os:none": [],
-            "//conditions:default": [],
+            "@platforms//os:wasi": [],
+            "@llvm//constraints/libc:cosmo": [],
         }) + [
             "@llvm//toolchain/features:hosted_dynamic_linker",
             "@llvm//toolchain/features:prefer_pic_for_opt_binaries",

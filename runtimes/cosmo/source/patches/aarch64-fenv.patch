@@ -1,0 +1,38 @@
+diff --git a/libc/intrin/feenableexcept.c b/libc/intrin/feenableexcept.c
+--- a/libc/intrin/feenableexcept.c
++++ b/libc/intrin/feenableexcept.c
+@@ -78,12 +78,14 @@
+ 
+ #elif defined(__aarch64__)
+ 
+-  unsigned fpcr = __builtin_aarch64_get_fpcr();
++  unsigned fpcr;
+   unsigned want = excepts << 8;
+-  unsigned fpcr2 = fpcr | want;
++  unsigned fpcr2;
++  asm volatile("mrs %0, fpcr" : "=r"(fpcr));
++  fpcr2 = fpcr | want;
+   if (fpcr != fpcr2) {
+-    __builtin_aarch64_set_fpcr(fpcr2);
+-    fpcr2 = __builtin_aarch64_get_fpsr();
++    asm volatile("msr fpcr, %0" : : "r"(fpcr2));
++    asm volatile("mrs %0, fpsr" : "=r"(fpcr2));
+     if ((fpcr2 & want) != want)
+       return -1;  // not supported by cpu
+   }
+diff --git a/libc/intrin/fedisableexcept.c b/libc/intrin/fedisableexcept.c
+--- a/libc/intrin/fedisableexcept.c
++++ b/libc/intrin/fedisableexcept.c
+@@ -80,10 +80,10 @@
+ 
+   unsigned fpcr;
+   unsigned fpcr2;
+-  fpcr = __builtin_aarch64_get_fpcr();
++  asm volatile("mrs %0, fpcr" : "=r"(fpcr));
+   fpcr2 = fpcr & ~(excepts << 8);
+   if (fpcr != fpcr2)
+-    __builtin_aarch64_set_fpcr(fpcr2);
++    asm volatile("msr fpcr, %0" : : "r"(fpcr2));
+   return (fpcr >> 8) & FE_ALL_EXCEPT;
+ 
+ #else

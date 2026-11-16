@@ -1,25 +1,24 @@
 diff --git a/libc/intrin/demangle.c b/libc/intrin/demangle.c
 --- a/libc/intrin/demangle.c
 +++ b/libc/intrin/demangle.c
-@@ -31,7 +31,18 @@
+@@ -31,6 +31,17 @@
  #include <stdbool.h>
  #include <stddef.h>
  #include <stdint.h>
 +#include "libc/runtime/runtime.h"
- 
++
++typedef jmp_buf demangle_jmpbuf;
 +#if defined(__aarch64__)
-+#define DEMANGLE_JMPBUF jmp_buf
 +#define DEMANGLE_SETJMP(env) setjmp(env)
 +#define DEMANGLE_LONGJMP(env, val) longjmp(env, val)
 +#else
-+#define DEMANGLE_JMPBUF intptr_t[5]
-+#define DEMANGLE_SETJMP(env) __builtin_setjmp(env)
-+#define DEMANGLE_LONGJMP(env, val) __builtin_longjmp(env, val)
++#define DEMANGLE_SETJMP(env) __builtin_setjmp((void **)(env))
++#define DEMANGLE_LONGJMP(env, val) __builtin_longjmp((void **)(env), val)
 +#endif
-+
++#define DEMANGLE_JMPBUF demangle_jmpbuf
+ 
  __notice(demangle_notice, "\
  Cosmopolitan libelftc demangle (BSD-2)\n\
- Copyright (c) 2007 Hyogeol Lee <hyogeollee@gmail.com>\n\
 @@ -194,7 +205,7 @@
  	int depth;
  	const char *cur;	/* current mangled name ptr */
@@ -101,41 +100,3 @@ diff --git a/libc/intrin/demangle.c b/libc/intrin/demangle.c
  		return demangle(ddata, buf, org, buflen);
  	return demangle_failure(buf, org, buflen);
  }
-diff --git a/libc/intrin/feenableexcept.c b/libc/intrin/feenableexcept.c
---- a/libc/intrin/feenableexcept.c
-+++ b/libc/intrin/feenableexcept.c
-@@ -78,12 +78,14 @@
- 
- #elif defined(__aarch64__)
- 
--  unsigned fpcr = __builtin_aarch64_get_fpcr();
-+  unsigned fpcr;
-   unsigned want = excepts << 8;
--  unsigned fpcr2 = fpcr | want;
-+  unsigned fpcr2;
-+  asm volatile("mrs %0, fpcr" : "=r"(fpcr));
-+  fpcr2 = fpcr | want;
-   if (fpcr != fpcr2) {
--    __builtin_aarch64_set_fpcr(fpcr2);
--    fpcr2 = __builtin_aarch64_get_fpsr();
-+    asm volatile("msr fpcr, %0" : : "r"(fpcr2));
-+    asm volatile("mrs %0, fpsr" : "=r"(fpcr2));
-     if ((fpcr2 & want) != want)
-       return -1;  // not supported by cpu
-   }
-diff --git a/libc/intrin/fedisableexcept.c b/libc/intrin/fedisableexcept.c
---- a/libc/intrin/fedisableexcept.c
-+++ b/libc/intrin/fedisableexcept.c
-@@ -80,10 +80,10 @@
- 
-   unsigned fpcr;
-   unsigned fpcr2;
--  fpcr = __builtin_aarch64_get_fpcr();
-+  asm volatile("mrs %0, fpcr" : "=r"(fpcr));
-   fpcr2 = fpcr & ~(excepts << 8);
-   if (fpcr != fpcr2)
--    __builtin_aarch64_set_fpcr(fpcr2);
-+    asm volatile("msr fpcr, %0" : : "r"(fpcr2));
-   return (fpcr >> 8) & FE_ALL_EXCEPT;
- 
- #else

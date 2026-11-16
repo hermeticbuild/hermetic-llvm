@@ -4,6 +4,7 @@ load("@bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
 load("//:apify.bzl", "apify_binary")
 load("//platforms:common.bzl", "COSMO_TARGET_CPUS")
 load("//runtimes:defs.bzl", "stub_library")
+load("//runtimes/cosmo/source:sources.bzl", "SDK_TOOL_SRCS")
 load("//toolchain/bootstrap:bootstrap_binary.bzl", "bootstrap_binary")
 load("//toolchain/runtimes:cc_runtime_binary.bzl", "cc_runtime_stage1_hosted_binary")
 load(":host_tools.bzl", "APE_LOADER")
@@ -66,13 +67,6 @@ apify_binary(
     x86_64 = ":llvm_x86_64",
 )
 
-SDK_TOOL_NAMES = [
-    "apelink",
-    "fixupobj",
-    "pecheck",
-    "zipobj",
-]
-
 [
     platform_transition_filegroup(
         name = tool + "_" + cpu,
@@ -80,7 +74,7 @@ SDK_TOOL_NAMES = [
         tags = ["manual"],
         target_platform = "//platforms:cosmo_" + cpu + "_source",
     )
-    for tool in SDK_TOOL_NAMES
+    for tool in SDK_TOOL_SRCS
     for cpu in COSMO_TARGET_CPUS
 ]
 
@@ -92,7 +86,7 @@ SDK_TOOL_NAMES = [
         visibility = ["//visibility:public"],
         x86_64 = ":" + tool + "_x86_64",
     )
-    for tool in SDK_TOOL_NAMES
+    for tool in SDK_TOOL_SRCS
 ]
 
 [

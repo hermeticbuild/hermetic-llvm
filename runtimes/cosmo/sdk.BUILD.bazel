@@ -12,7 +12,7 @@ headers_directory(
     path = "include/third_party/libcxx",
 )
 
-exports_files(glob([
+exports_files(["include/stdio.h"] + glob([
     "bin/*",
     "*-linux-cosmo/lib/*",
 ]))

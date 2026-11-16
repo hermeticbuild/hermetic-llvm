@@ -5,7 +5,6 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("@with_cfg.bzl", "with_cfg")
 load("//toolchain/runtimes:with_cfg_runtimes_common.bzl", "configure_builder_for_runtimes")
-load(":startup.bzl", "cosmo_stage1_tool")
 
 def _archive_priority(obj):
     return 1 if obj.basename.removesuffix(".o").removesuffix(".pic") in ["kprintf.greg", "personality"] else 0
@@ -177,7 +176,7 @@ def cosmo_static_library(name, groups, extra_objects = []):
         libraries.append(":" + library)
     _cosmo_static_library(
         name = name,
-        archiver = ":" + cosmo_stage1_tool(name + "_archiver", "llvm-ar"),
+        archiver = ":archive_llvm_ar",
         deps = libraries,
         extra_objects = extra_objects,
         visibility = ["//visibility:public"],

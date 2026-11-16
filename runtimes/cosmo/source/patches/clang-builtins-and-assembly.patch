@@ -1,17 +1,3 @@
-diff --git a/libc/intrin/demangle.c b/libc/intrin/demangle.c
---- a/libc/intrin/demangle.c
-+++ b/libc/intrin/demangle.c
-@@ -38,8 +38,8 @@
- #define DEMANGLE_SETJMP(env) setjmp(env)
- #define DEMANGLE_LONGJMP(env, val) longjmp(env, val)
- #else
--#define DEMANGLE_SETJMP(env) __builtin_setjmp(env)
--#define DEMANGLE_LONGJMP(env, val) __builtin_longjmp(env, val)
-+#define DEMANGLE_SETJMP(env) __builtin_setjmp((void **)(env))
-+#define DEMANGLE_LONGJMP(env, val) __builtin_longjmp((void **)(env), val)
- #endif
- #define DEMANGLE_JMPBUF demangle_jmpbuf
- 
 diff --git a/libc/runtime/winmain.greg.c b/libc/runtime/winmain.greg.c
 --- a/libc/runtime/winmain.greg.c
 +++ b/libc/runtime/winmain.greg.c

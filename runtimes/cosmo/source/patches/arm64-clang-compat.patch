@@ -58,24 +58,3 @@ diff --git a/libc/runtime/pc.internal.h b/libc/runtime/pc.internal.h
 +
  #endif /* !(__ASSEMBLER__ + __LINKER__ + 0) */
  #endif /* COSMOPOLITAN_LIBC_RUNTIME_PC_H_ */
-diff --git a/libc/thread/pthread_exit.c b/libc/thread/pthread_exit.c
---- a/libc/thread/pthread_exit.c
-+++ b/libc/thread/pthread_exit.c
-@@ -30,6 +30,7 @@
- #include "libc/limits.h"
- #include "libc/mem/gc.h"
- #include "libc/mem/mem.h"
-+#include "libc/intrin/setjmp.h"
- #include "libc/runtime/internal.h"
- #include "libc/runtime/runtime.h"
- #include "libc/str/str.h"
-@@ -158,7 +159,7 @@
-   }
- 
-   // this is a child thread
--  __builtin_longjmp(pt->pt_exiter, 1);
-+  longjmp(pt->pt_exiter, 1);
- }
- 
- __weak_reference(pthread_exit, thr_exit);
-

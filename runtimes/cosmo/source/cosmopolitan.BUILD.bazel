@@ -1,7 +1,7 @@
-load("@llvm//runtimes/cosmo/source:headers.bzl", "cosmopolitan_sdk_headers")
+load("@llvm//:directory.bzl", "headers_directory")
 load("@llvm//runtimes/cosmo/source:runtime.bzl", "cosmo_sdk_tool", "cosmo_static_library", "cosmo_zip_assets")
-load("@llvm//runtimes/cosmo/source:sources.bzl", "libcosmo_sources", "libcxx_sources", "zip_assets")
-load("@llvm//runtimes/cosmo/source:startup.bzl", "cosmo_startup_files")
+load("@llvm//runtimes/cosmo/source:sources.bzl", "SDK_TOOL_SRCS", "libcosmo_sources", "libcxx_sources", "zip_assets")
+load("@llvm//runtimes/cosmo/source:startup.bzl", "cosmo_stage1_tool", "cosmo_startup_files")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 
 filegroup(
@@ -40,7 +40,19 @@ cc_library(
 
 cosmo_startup_files(headers = ":source_headers")
 
-cosmopolitan_sdk_headers()
+headers_directory(
+    name = "c_headers",
+    path = "include",
+    visibility = ["//visibility:public"],
+)
+
+headers_directory(
+    name = "cxx_headers",
+    path = "include/third_party/libcxx",
+    visibility = ["//visibility:public"],
+)
+
+cosmo_stage1_tool("archive_llvm_ar", "llvm-ar")
 
 cosmo_zip_assets(srcs = zip_assets())
 
@@ -60,17 +72,5 @@ cosmo_static_library(
         name = tool,
         extra_srcs = sources,
     )
-    for tool, sources in {
-        "apelink": ["tool/build/lib/parsesupportvector.c"],
-        "fixupobj": [],
-        "pecheck": [],
-        "zipobj": [
-            "tool/build/lib/elfwriter.c",
-            "tool/build/lib/elfwriter_cargoculting.c",
-            "tool/build/lib/elfwriter_yoink.c",
-            "tool/build/lib/elfwriter_zip.c",
-            "tool/build/lib/interner.c",
-            "tool/build/lib/stripcomponents.c",
-        ],
-    }.items()
+    for tool, sources in SDK_TOOL_SRCS.items()
 ]

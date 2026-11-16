@@ -1,5 +1,53 @@
 """Source membership and compile options from Cosmopolitan 4.0.2 BUILD.mk."""
 
+_ZLIB_AARCH64_FLAGS = [
+    "-DADLER32_SIMD_NEON",
+    "-DCRC32_ARMV8_CRC32",
+    "-DDEFLATE_SLIDE_HASH_NEON",
+    "-DINFLATE_CHUNK_SIMD_NEON",
+    "-DINFLATE_CHUNK_READ_64LE",
+    "-ffunction-sections",
+    "-fdata-sections",
+]
+
+_ZLIB_X86_64_FLAGS = [
+    "-DADLER32_SIMD_SSSE3",
+    "-DCRC32_SIMD_SSE42_PCLMUL",
+    "-DCRC32_SIMD_AVX512_PCLMUL",
+    "-DDEFLATE_SLIDE_HASH_SSE2",
+    "-DINFLATE_CHUNK_SIMD_SSE2",
+    "-DINFLATE_CHUNK_READ_64LE",
+    "-ffunction-sections",
+    "-fdata-sections",
+]
+
+_GENERAL_REGS_ONLY_FLAGS = [
+    "-D__MGENERAL_REGS_ONLY__",
+    "-mgeneral-regs-only",
+    "-ffreestanding",
+    "-fno-stack-protector",
+    "-fno-optimize-sibling-calls",
+    "-fwrapv",
+]
+
+_LIBUNWIND_FLAGS = [
+    "-fexceptions",
+    "-ffunction-sections",
+    "-fdata-sections",
+    "-D_LIBUNWIND_USE_DLADDR=0",
+    "-D_LIBUNWIND_IS_BAREMETAL=1",
+]
+
+_TINYMATH_FLAGS = [
+    "-fmath-errno",
+    "-fsigned-zeros",
+    "-ftrapping-math",
+    "-frounding-math",
+    "-fno-reciprocal-math",
+    "-fno-associative-math",
+    "-fno-finite-math-only",
+]
+
 def libcosmo_sources():
     return [
         (
@@ -51,9 +99,8 @@ def libcosmo_sources():
                 "third_party/tz/*.c",
                 "tool/args/*.c",
             ], exclude = [
-                "libc/calls/getcwd.greg.c",
+                "**/*.greg.c",
                 "libc/calls/getloadavg-nt.c",
-                "libc/calls/getprogramexecutablename.greg.c",
                 "libc/calls/gettimeofday.c",
                 "libc/calls/pledge-linux.c",
                 "libc/calls/sigaction.c",
@@ -65,17 +112,8 @@ def libcosmo_sources():
                 "libc/calls/termios2host.c",
                 "libc/log/checkfail.c",
                 "libc/log/watch.c",
-                "libc/proc/execve-nt.greg.c",
                 "libc/runtime/cosmo2.c",
-                "libc/runtime/efimain.greg.c",
                 "libc/runtime/enable_tls.c",
-                "libc/runtime/ftraceinit.greg.c",
-                "libc/runtime/hook.greg.c",
-                "libc/runtime/interceptflag.greg.c",
-                "libc/runtime/metalprintf.greg.c",
-                "libc/runtime/opensymboltable.greg.c",
-                "libc/runtime/straceinit.greg.c",
-                "libc/runtime/winmain.greg.c",
                 "libc/stdio/dirstream.c",
                 "libc/stdio/fputc.c",
                 "libc/stdio/mt19937.c",
@@ -176,14 +214,7 @@ def libcosmo_sources():
             }),
         ),
         (
-            [
-                "-DADLER32_SIMD_NEON",
-                "-DCRC32_ARMV8_CRC32",
-                "-DDEFLATE_SLIDE_HASH_NEON",
-                "-DINFLATE_CHUNK_SIMD_NEON",
-                "-DINFLATE_CHUNK_READ_64LE",
-                "-ffunction-sections",
-                "-fdata-sections",
+            _ZLIB_AARCH64_FLAGS + [
                 "-O3",
                 "-DBUILD_NEON",
                 "-march=armv8-a+aes+crc",
@@ -198,14 +229,7 @@ def libcosmo_sources():
             }),
         ),
         (
-            [
-                "-DADLER32_SIMD_NEON",
-                "-DCRC32_ARMV8_CRC32",
-                "-DDEFLATE_SLIDE_HASH_NEON",
-                "-DINFLATE_CHUNK_SIMD_NEON",
-                "-DINFLATE_CHUNK_READ_64LE",
-                "-ffunction-sections",
-                "-fdata-sections",
+            _ZLIB_AARCH64_FLAGS + [
                 "-std=gnu17",
             ],
             select({
@@ -219,15 +243,7 @@ def libcosmo_sources():
             }),
         ),
         (
-            [
-                "-DADLER32_SIMD_SSSE3",
-                "-DCRC32_SIMD_SSE42_PCLMUL",
-                "-DCRC32_SIMD_AVX512_PCLMUL",
-                "-DDEFLATE_SLIDE_HASH_SSE2",
-                "-DINFLATE_CHUNK_SIMD_SSE2",
-                "-DINFLATE_CHUNK_READ_64LE",
-                "-ffunction-sections",
-                "-fdata-sections",
+            _ZLIB_X86_64_FLAGS + [
                 "-O3",
                 "-mpclmul",
                 "-mavx512f",
@@ -244,15 +260,7 @@ def libcosmo_sources():
             }),
         ),
         (
-            [
-                "-DADLER32_SIMD_SSSE3",
-                "-DCRC32_SIMD_SSE42_PCLMUL",
-                "-DCRC32_SIMD_AVX512_PCLMUL",
-                "-DDEFLATE_SLIDE_HASH_SSE2",
-                "-DINFLATE_CHUNK_SIMD_SSE2",
-                "-DINFLATE_CHUNK_READ_64LE",
-                "-ffunction-sections",
-                "-fdata-sections",
+            _ZLIB_X86_64_FLAGS + [
                 "-O3",
                 "-msse4.2",
                 "-mpclmul",
@@ -269,15 +277,7 @@ def libcosmo_sources():
             }),
         ),
         (
-            [
-                "-DADLER32_SIMD_SSSE3",
-                "-DCRC32_SIMD_SSE42_PCLMUL",
-                "-DCRC32_SIMD_AVX512_PCLMUL",
-                "-DDEFLATE_SLIDE_HASH_SSE2",
-                "-DINFLATE_CHUNK_SIMD_SSE2",
-                "-DINFLATE_CHUNK_READ_64LE",
-                "-ffunction-sections",
-                "-fdata-sections",
+            _ZLIB_X86_64_FLAGS + [
                 "-O3",
                 "-mssse3",
                 "-std=gnu17",
@@ -290,15 +290,7 @@ def libcosmo_sources():
             }),
         ),
         (
-            [
-                "-DADLER32_SIMD_SSSE3",
-                "-DCRC32_SIMD_SSE42_PCLMUL",
-                "-DCRC32_SIMD_AVX512_PCLMUL",
-                "-DDEFLATE_SLIDE_HASH_SSE2",
-                "-DINFLATE_CHUNK_SIMD_SSE2",
-                "-DINFLATE_CHUNK_READ_64LE",
-                "-ffunction-sections",
-                "-fdata-sections",
+            _ZLIB_X86_64_FLAGS + [
                 "-std=gnu17",
             ],
             select({
@@ -314,49 +306,15 @@ def libcosmo_sources():
             }),
         ),
         (
-            [
-                "-D__MGENERAL_REGS_ONLY__",
-                "-mgeneral-regs-only",
-                "-ffreestanding",
-                "-fno-stack-protector",
-                "-fno-optimize-sibling-calls",
-                "-fwrapv",
-            ],
-            [
-                "libc/calls/getcwd.greg.c",
-                "libc/calls/getprogramexecutablename.greg.c",
-                "libc/intrin/exit1.greg.c",
-                "libc/intrin/getsafesize.greg.c",
-                "libc/intrin/kntisinheritable.greg.c",
-                "libc/intrin/kprintf.greg.c",
-                "libc/intrin/prot2nt.greg.c",
-                "libc/intrin/stracef.greg.c",
-                "libc/intrin/sys_gettid.greg.c",
-                "libc/intrin/winerr.greg.c",
-                "libc/proc/execve-nt.greg.c",
-                "libc/runtime/efimain.greg.c",
-                "libc/runtime/ftraceinit.greg.c",
-                "libc/runtime/hook.greg.c",
-                "libc/runtime/interceptflag.greg.c",
-                "libc/runtime/metalprintf.greg.c",
-                "libc/runtime/opensymboltable.greg.c",
-                "libc/runtime/straceinit.greg.c",
-                "libc/runtime/winmain.greg.c",
-                "libc/sysv/describeos.greg.c",
-                "libc/sysv/strace.greg.c",
-                "libc/vga/tty-klog.greg.c",
-                "libc/vga/tty.greg.c",
-                "libc/vga/vga-init.greg.c",
-            ],
+            _GENERAL_REGS_ONLY_FLAGS,
+            native.glob(["libc/**/*.greg.c"], exclude = [
+                "libc/fmt/itoa64fixed16.greg.c",
+                "libc/fmt/itoa64radix16.greg.c",
+                "libc/intrin/mman.greg.c",
+            ]),
         ),
         (
-            [
-                "-D__MGENERAL_REGS_ONLY__",
-                "-mgeneral-regs-only",
-                "-ffreestanding",
-                "-fno-stack-protector",
-                "-fno-optimize-sibling-calls",
-                "-fwrapv",
+            _GENERAL_REGS_ONLY_FLAGS + [
                 "-O3",
             ],
             [
@@ -364,13 +322,7 @@ def libcosmo_sources():
             ],
         ),
         (
-            [
-                "-D__MGENERAL_REGS_ONLY__",
-                "-mgeneral-regs-only",
-                "-ffreestanding",
-                "-fno-stack-protector",
-                "-fno-optimize-sibling-calls",
-                "-fwrapv",
+            _GENERAL_REGS_ONLY_FLAGS + [
                 "-Os",
             ],
             [
@@ -378,13 +330,7 @@ def libcosmo_sources():
             ],
         ),
         (
-            [
-                "-D__MGENERAL_REGS_ONLY__",
-                "-mgeneral-regs-only",
-                "-ffreestanding",
-                "-fno-stack-protector",
-                "-fno-optimize-sibling-calls",
-                "-fwrapv",
+            _GENERAL_REGS_ONLY_FLAGS + [
                 "-fno-jump-tables",
             ],
             [
@@ -534,25 +480,14 @@ def libcosmo_sources():
             ]),
         ),
         (
-            [
-                "-fexceptions",
-                "-ffunction-sections",
-                "-fdata-sections",
-                "-D_LIBUNWIND_USE_DLADDR=0",
-                "-D_LIBUNWIND_IS_BAREMETAL=1",
-            ],
+            _LIBUNWIND_FLAGS,
             native.glob([
                 "third_party/libunwind/*.S",
                 "third_party/libunwind/*.c",
             ]),
         ),
         (
-            [
-                "-fexceptions",
-                "-ffunction-sections",
-                "-fdata-sections",
-                "-D_LIBUNWIND_USE_DLADDR=0",
-                "-D_LIBUNWIND_IS_BAREMETAL=1",
+            _LIBUNWIND_FLAGS + [
                 "-fno-rtti",
             ],
             [
@@ -566,7 +501,7 @@ def libcosmo_sources():
             native.glob([
                 "third_party/xed/*.c",
             ], exclude = [
-                "third_party/xed/x86ild.greg.c",
+                "**/*.greg.c",
             ]) + [
                 "libc/log/watch.c",
                 "third_party/puff/puff.c",
@@ -613,6 +548,7 @@ def libcosmo_sources():
                 "libc/intrin/*.S",
                 "libc/intrin/*.c",
             ], exclude = [
+                "**/*.greg.c",
                 "libc/intrin/fds_init.S",
                 "libc/intrin/getcpuidbrand.S",
                 "libc/intrin/interrupts.S",
@@ -626,17 +562,9 @@ def libcosmo_sources():
                 "libc/intrin/sys_set_tls.S",
                 "libc/intrin/bzero.c",
                 "libc/intrin/cursor.c",
-                "libc/intrin/exit1.greg.c",
-                "libc/intrin/getsafesize.greg.c",
-                "libc/intrin/kntisinheritable.greg.c",
-                "libc/intrin/kprintf.greg.c",
                 "libc/intrin/memcmp.c",
                 "libc/intrin/memmove.c",
-                "libc/intrin/mman.greg.c",
                 "libc/intrin/mmap.c",
-                "libc/intrin/prot2nt.greg.c",
-                "libc/intrin/stracef.greg.c",
-                "libc/intrin/sys_gettid.greg.c",
                 "libc/intrin/timespectowindowstime.c",
                 "libc/intrin/timevaltowindowstime.c",
                 "libc/intrin/tree.c",
@@ -644,7 +572,6 @@ def libcosmo_sources():
                 "libc/intrin/windowsdurationtotimeval.c",
                 "libc/intrin/windowstimetotimespec.c",
                 "libc/intrin/windowstimetotimeval.c",
-                "libc/intrin/winerr.greg.c",
                 "libc/intrin/x86.c",
             ]) + select({
                 "@platforms//cpu:x86_64": [
@@ -674,8 +601,7 @@ def libcosmo_sources():
             native.glob([
                 "libc/sysv/*.c",
             ], exclude = [
-                "libc/sysv/describeos.greg.c",
-                "libc/sysv/strace.greg.c",
+                "**/*.greg.c",
             ]),
         ),
         (
@@ -699,21 +625,7 @@ def libcosmo_sources():
                 "third_party/double-conversion/dubble.c",
             ],
         ),
-        (
-            [
-                "-ffunction-sections",
-                "-fdata-sections",
-                "-fexceptions",
-                "-frtti",
-                "-DLIBCXX_BUILDING_LIBCXXABI",
-                "-D_LIBCPP_BUILDING_LIBRARY",
-            ],
-            native.glob([
-                "third_party/libcxx/*.cpp",
-                "third_party/libcxx/fs/*.cpp",
-                "third_party/libcxx/ryu/*.cpp",
-            ]),
-        ),
+        _libcxx_source_group(),
         (
             [
                 "-ffunction-sections",
@@ -742,29 +654,14 @@ def libcosmo_sources():
         (
             [
                 "-ffunction-sections",
-                "-fmath-errno",
-                "-fsigned-zeros",
-                "-ftrapping-math",
-                "-frounding-math",
-                "-fno-reciprocal-math",
-                "-fno-associative-math",
-                "-fno-finite-math-only",
-            ],
+            ] + _TINYMATH_FLAGS,
             [
                 "libc/tinymath/expl.c",
                 "libc/tinymath/loglq.c",
             ],
         ),
         (
-            [
-                "-fmath-errno",
-                "-fsigned-zeros",
-                "-ftrapping-math",
-                "-frounding-math",
-                "-fno-reciprocal-math",
-                "-fno-associative-math",
-                "-fno-finite-math-only",
-            ],
+            _TINYMATH_FLAGS,
             native.glob([
                 "libc/tinymath/*.c",
             ], exclude = [
@@ -778,14 +675,7 @@ def libcosmo_sources():
         (
             [
                 "-fno-builtin",
-                "-fmath-errno",
-                "-fsigned-zeros",
-                "-ftrapping-math",
-                "-frounding-math",
-                "-fno-reciprocal-math",
-                "-fno-associative-math",
-                "-fno-finite-math-only",
-            ],
+            ] + _TINYMATH_FLAGS,
             [
                 "libc/tinymath/lround.c",
                 "libc/tinymath/lroundf.c",
@@ -800,10 +690,9 @@ def libcosmo_sources():
                 "libc/fmt/*.c",
                 "libc/str/*.cc",
             ], exclude = [
+                "**/*.greg.c",
                 "libc/fmt/atoi.c",
                 "libc/fmt/formatint64thousands.c",
-                "libc/fmt/itoa64fixed16.greg.c",
-                "libc/fmt/itoa64radix16.greg.c",
                 "libc/fmt/wcstol.c",
                 "libc/fmt/wcstoul.c",
             ]),
@@ -871,24 +760,21 @@ def libcosmo_sources():
         ),
     ]
 
+def _libcxx_source_group():
+    return (
+        [
+            "-ffunction-sections",
+            "-fdata-sections",
+            "-fexceptions",
+            "-frtti",
+            "-DLIBCXX_BUILDING_LIBCXXABI",
+            "-D_LIBCPP_BUILDING_LIBRARY",
+        ],
+        native.glob(["third_party/libcxx/**/*.cpp"]),
+    )
+
 def libcxx_sources():
-    return [
-        (
-            [
-                "-ffunction-sections",
-                "-fdata-sections",
-                "-fexceptions",
-                "-frtti",
-                "-DLIBCXX_BUILDING_LIBCXXABI",
-                "-D_LIBCPP_BUILDING_LIBRARY",
-            ],
-            native.glob([
-                "third_party/libcxx/*.cpp",
-                "third_party/libcxx/fs/*.cpp",
-                "third_party/libcxx/ryu/*.cpp",
-            ]),
-        ),
-    ]
+    return [_libcxx_source_group()]
 
 def zip_assets():
     """Lists the files and directory records packaged by Cosmopolitan's SDK."""
@@ -914,3 +800,17 @@ def zip_assets():
         "usr/share/zoneinfo/Indian/",
         "usr/share/zoneinfo/Pacific/",
     ] + native.glob(["usr/share/zoneinfo/**"])
+
+SDK_TOOL_SRCS = {
+    "apelink": ["tool/build/lib/parsesupportvector.c"],
+    "fixupobj": [],
+    "pecheck": [],
+    "zipobj": [
+        "tool/build/lib/elfwriter.c",
+        "tool/build/lib/elfwriter_cargoculting.c",
+        "tool/build/lib/elfwriter_yoink.c",
+        "tool/build/lib/elfwriter_zip.c",
+        "tool/build/lib/interner.c",
+        "tool/build/lib/stripcomponents.c",
+    ],
+}
