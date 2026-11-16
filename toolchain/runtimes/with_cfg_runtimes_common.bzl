@@ -1,4 +1,4 @@
-def configure_builder_for_runtimes(builder, runtime_stage, linkmode = "static", sanitizers = False, inherit_asan = False):
+def configure_builder_for_runtimes(builder, runtime_stage, linkmode = "static", sanitizers = False, inherit_asan = False, inherit_msan = False):
     # The problem is that compiler-rt and start libs can only be compiled with
     # a specific set of flags and compilation mode. It is not safe to let the user
     # interfere with them using default command line flags.
@@ -36,7 +36,6 @@ def configure_builder_for_runtimes(builder, runtime_stage, linkmode = "static", 
     if sanitizers == False:
         builder.set(Label("//config:ubsan"), False)
         builder.set(Label("//config:cfi"), False)
-        builder.set(Label("//config:msan"), False)
         builder.set(Label("//config:dfsan"), False)
         builder.set(Label("//config:nsan"), False)
         builder.set(Label("//config:safestack"), False)
@@ -49,7 +48,6 @@ def configure_builder_for_runtimes(builder, runtime_stage, linkmode = "static", 
         builder.set(Label("//config:profile"), False)
         builder.set(Label("//config:host_ubsan"), False)
         builder.set(Label("//config:host_cfi"), False)
-        builder.set(Label("//config:host_msan"), False)
         builder.set(Label("//config:host_dfsan"), False)
         builder.set(Label("//config:host_nsan"), False)
         builder.set(Label("//config:host_safestack"), False)
@@ -64,5 +62,9 @@ def configure_builder_for_runtimes(builder, runtime_stage, linkmode = "static", 
         if not inherit_asan:
             builder.set(Label("//config:asan"), False)
             builder.set(Label("//config:host_asan"), False)
+
+        if not inherit_msan:
+            builder.set(Label("//config:msan"), False)
+            builder.set(Label("//config:host_msan"), False)
 
     return builder

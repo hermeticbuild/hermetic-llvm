@@ -1,4 +1,8 @@
 load("@llvm//toolchain/llvm:llvm.bzl", "declare_llvm_targets")
 
-# selects won't work here to choose between .exe and no suffix, so we have a separate BUILD file for Windows and non-Windows
-declare_llvm_targets()
+# The repository extension fills in the archive's execution identity. A target
+# select here would describe the consuming configuration, not this installation.
+declare_llvm_targets(
+    exec_cpu = "{exec_cpu}",
+    exec_os = "{exec_os}",
+)

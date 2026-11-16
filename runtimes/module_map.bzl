@@ -88,7 +88,9 @@ def _include_path_impl(ctx):
     textual_headers = []
 
     for src in ctx.attr.srcs:
-        if DirectoryInfo in src:
+        if IncludePathInfo in src:
+            textual_headers.append(src[IncludePathInfo].textual_headers)
+        elif DirectoryInfo in src:
             # Source directories are opaque even at execution time, but
             # `headers_directory` enumerates their files in a DirectoryInfo.
             textual_headers.append(src[DirectoryInfo].transitive_files)

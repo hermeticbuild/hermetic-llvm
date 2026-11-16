@@ -1,6 +1,54 @@
+load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@bazel_skylib//lib:selects.bzl", "selects")
+load("//runtimes:module_map.bzl", "include_path")
 
 package(default_visibility = ["//visibility:public"])
+
+# Public headers form the libc++ module. Implementation headers and C wrappers
+# remain textual.
+#
+# Copy SDK headers until Bazel can stage them alongside the SDK directory.
+# TODO(fmeum) Remove these copies once our minimum Bazel includes
+# https://github.com/bazelbuild/bazel/pull/31206
+copy_to_directory(
+    name = "macos_cxx_public_headers",
+    srcs = ["@macos_sdk//sysroot:libcxx_public_headers"],
+    include_external_repositories = ["*"],
+    root_paths = ["sysroot/usr/include/c++/v1"],
+)
+
+copy_to_directory(
+    name = "macos_cxx_detail_headers",
+    srcs = ["@macos_sdk//sysroot:libcxx_textual_headers"],
+    include_external_repositories = ["*"],
+    root_paths = ["sysroot/usr/include/c++/v1"],
+)
+
+filegroup(
+    name = "no_headers",
+)
+
+alias(
+    name = "public_headers_directory",
+    actual = select({
+        "@platforms//os:macos": ":macos_cxx_public_headers",
+        ":libstdcxx_linux": "//runtimes/libstdcxx:headers_include_search_directory",
+        ":libstdcxx_windows": ":libstdcxx_windows_unsupported",
+        "//conditions:default": "@llvm-project//libcxx:libcxx_public_headers_directory",
+    }),
+)
+
+alias(
+    name = "detail_headers_directory",
+    actual = select({
+        "@platforms//os:macos": ":macos_cxx_detail_headers",
+        # libstdc++ keeps all headers in public_headers_directory.
+        ":libstdcxx_linux": ":no_headers",
+        ":libstdcxx_windows": ":libstdcxx_windows_unsupported",
+        "//conditions:default": "@llvm-project//libcxx:libcxx_detail_headers_directory",
+    }),
+)
 
 config_setting(
     name = "libcxx_linux",
@@ -27,6 +75,17 @@ config_setting(
     ],
 )
 
+config_setting(
+    name = "msvcstl_windows_msvc",
+    constraint_values = [
+        "//constraints/cxxstdlib:msvcstl",
+        "//constraints/windows/abi:msvc",
+        "//constraints/windows/crt:ucrt",
+        "@platforms//os:windows",
+    ],
+    visibility = ["//visibility:private"],
+)
+
 selects.config_setting_group(
     name = "libstdcxx_linux",
     match_all = [
@@ -49,6 +108,7 @@ selects.config_setting_group(
 alias(
     name = "headers_include_search_directory",
     actual = select({
+        ":msvcstl_windows_msvc": "//runtimes/msvc:msvc_include",
         ":libstdcxx_linux": "//runtimes/libstdcxx:headers_include_search_directory",
         ":libstdcxx_windows": ":libstdcxx_windows_unsupported",
         "//conditions:default": "@llvm-project//libcxx:libcxx_headers_include_search_directory",
@@ -58,6 +118,7 @@ alias(
 alias(
     name = "abi_headers_include_search_directory",
     actual = select({
+        ":msvcstl_windows_msvc": "//runtimes:none",
         ":libstdcxx_linux": "//runtimes/libstdcxx:abi_headers_include_search_directory",
         ":libstdcxx_windows": ":libstdcxx_windows_unsupported",
         # The supported native Windows tuple uses libc++ with the Microsoft
@@ -70,10 +131,33 @@ alias(
 alias(
     name = "library_search_directory",
     actual = select({
+        ":msvcstl_windows_msvc": ":msvcstl_library_search_directory",
         ":libstdcxx_linux": "//runtimes/libstdcxx:libstdcxx_library_search_directory",
         ":libstdcxx_windows": ":libstdcxx_windows_unsupported",
         ":libcxx_windows_msvc_vcruntime": "//runtimes/libcxx:libcxx_msvc_library_search_directory",
         "//conditions:default": "//runtimes/libcxx:libcxx_library_search_directory",
+    }),
+)
+
+alias(
+    name = "msvcstl_library_search_directory",
+    actual = select({
+        "//toolchain/features/msvc:static_crt_config": "//runtimes/msvc:msvc_static_runtime_libraries",
+        "//conditions:default": "//runtimes/msvc:msvc_dynamic_runtime_libraries",
+    }),
+    visibility = ["//visibility:private"],
+)
+
+include_path(
+    name = "default_headers",
+    srcs = select({
+        "//config:nostdincxx_enabled": [],
+        "//conditions:default": [
+            # do not sort: preserve the existing module-map header order.
+            "public_headers_directory",
+            "detail_headers_directory",
+            "abi_headers_include_search_directory",
+        ],
     }),
 )
 
@@ -98,21 +182,39 @@ genrule(
 filegroup(
     name = "static_runtime_lib",
     srcs = select({
+        "//config:nostdlibxx_enabled": [],
+        "//conditions:default": ["static_stdlib_runtime_lib"],
+    }) + ["static_unwind_runtime_lib"],
+)
+
+# C++ library suppression must not remove the independently selected unwinder.
+# Keep explicit runtime targets usable as ordinary consumer dependencies.
+filegroup(
+    name = "static_unwind_runtime_lib",
+    srcs = select({
+        ":libstdcxx_linux": ["@llvm-project//libunwind:libunwind.static.gnu_link_name"],
+        ":libcxx_windows_msvc_vcruntime": [],
+        ":libcxx_linux": ["@llvm-project//libunwind:libunwind.static.gnu_link_name"],
+        ":libcxx_windows": ["@llvm-project//libunwind:libunwind.static.gnu_link_name"],
+        "//conditions:default": [],
+    }),
+)
+
+filegroup(
+    name = "static_stdlib_runtime_lib",
+    srcs = select({
         ":libstdcxx_linux": [
             ":libstdcxx_static_runtime_lib",
-            "@llvm-project//libunwind:libunwind.static.gnu_link_name",
         ],
         ":libstdcxx_windows": [":libstdcxx_windows_unsupported"],
         ":libcxx_windows_msvc_vcruntime": ["//runtimes/libcxx:libcxx.static"],
         ":libcxx_linux": [
             "@llvm-project//libcxx:libcxx.static.gnu_link_name",
             "@llvm-project//libcxxabi:libcxxabi.static.gnu_link_name",
-            "@llvm-project//libunwind:libunwind.static.gnu_link_name",
         ],
         ":libcxx_windows": [
             "@llvm-project//libcxx:libcxx.static.gnu_link_name",
             "@llvm-project//libcxxabi:libcxxabi.static.gnu_link_name",
-            "@llvm-project//libunwind:libunwind.static.gnu_link_name",
         ],
         "//conditions:default": [],
     }),
@@ -121,9 +223,25 @@ filegroup(
 filegroup(
     name = "dynamic_runtime_lib",
     srcs = select({
+        "//config:nostdlibxx_enabled": [],
+        "//conditions:default": ["dynamic_stdlib_runtime_lib"],
+    }) + ["dynamic_unwind_runtime_lib"],
+)
+
+filegroup(
+    name = "dynamic_unwind_runtime_lib",
+    srcs = select({
+        ":libstdcxx_linux": ["//runtimes/libunwind:libunwind.shared"],
+        ":libcxx_linux": ["@llvm-project//libunwind:libunwind.shared"],
+        "//conditions:default": [],
+    }),
+)
+
+filegroup(
+    name = "dynamic_stdlib_runtime_lib",
+    srcs = select({
         ":libstdcxx_linux": [
             ":libstdcxx_dynamic_runtime_lib",
-            "//runtimes/libunwind:libunwind.shared",
         ],
         ":libstdcxx_windows": [":libstdcxx_windows_unsupported"],
         # Windows MSVC libc++ is configuration-wide static even when ordinary
@@ -132,9 +250,13 @@ filegroup(
         ":libcxx_linux": [
             "@llvm-project//libcxx:libcxx.shared",
             "@llvm-project//libcxxabi:libcxxabi.shared",
-            "@llvm-project//libunwind:libunwind.shared",
         ],
         # TODO(zbarsky): windows?
         "//conditions:default": [],
     }),
+)
+
+bzl_library(
+    name = "libcxx_headers",
+    srcs = ["libcxx_headers.bzl"],
 )

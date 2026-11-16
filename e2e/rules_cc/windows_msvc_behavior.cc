@@ -1,4 +1,4 @@
-#include "windows_msvc_libcxx_behavior_support.h"
+#include "windows_msvc_behavior_support.h"
 
 #include <atomic>
 #include <condition_variable>
@@ -48,9 +48,13 @@ void operator delete(void* allocation, std::size_t) noexcept {
 int main() {
   // ISO wide %s consumes a narrow string; native MSVC mode consumes wchar_t*.
   // Pad and align the input so a wrong mode fails without reading past it.
-  alignas(wchar_t) const char narrow[8] = "wide";
+#ifdef _MSVC_STL_VERSION
+  const wchar_t input[] = L"wide";
+#else
+  alignas(wchar_t) const char input[8] = "wide";
+#endif
   wchar_t formatted[16];
-  if (std::swprintf(formatted, 16, L"%s:%d", narrow, 42) != 7 ||
+  if (std::swprintf(formatted, 16, L"%s:%d", input, 42) != 7 ||
       std::wstring(formatted) != L"wide:42") {
     return 8;
   }
@@ -66,14 +70,14 @@ int main() {
 
   std::exception_ptr captured;
   try {
-    throw std::runtime_error("libc++ exception");
+    throw std::runtime_error("C++ exception");
   } catch (...) {
     captured = std::current_exception();
   }
   try {
     std::rethrow_exception(captured);
   } catch (const std::runtime_error& error) {
-    if (std::string(error.what()) != "libc++ exception") {
+    if (std::string(error.what()) != "C++ exception") {
       return 2;
     }
   }

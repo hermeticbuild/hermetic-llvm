@@ -44,6 +44,15 @@ config_setting(
     flag_values = {"@llvm//config:runtimes_optimization_mode": "optimized"},
 )
 
+config_setting(
+    name = "windows_msvc_debug",
+    constraint_values = [
+        "@llvm//constraints/windows/abi:msvc",
+        "@platforms//os:windows",
+    ],
+    flag_values = {"@llvm//config:runtimes_optimization_mode": "debug"},
+)
+
 # diff_tests asserting the weak-symbol lists in weak_symbols.bzl stay in sync
 # with upstream's compiler-rt/lib/<name>/weak_symbols.txt (run on any platform).
 weak_symbols_in_sync_tests()
@@ -254,6 +263,7 @@ filegroup(
         "//conditions:default": [],
     }) + select({
         "@platforms//os:none": [],
+        "@platforms//os:wasi": [],
         "@platforms//os:uefi": [],
         "//conditions:default": [
             # Not Fuchsia and not a bare-metal build.
@@ -682,6 +692,7 @@ cc_library(
         "@platforms//os:windows": [],
         "@platforms//os:uefi": [],
         "@platforms//os:none": [],
+        "@platforms//os:wasi": [],
     }) + select({
         "@llvm//platforms/config:musl": [
             "@musl_libc//:musl_libc_headers",
@@ -698,6 +709,7 @@ cc_library(
         ],
         "@platforms//os:uefi": [],
         "@platforms//os:none": [],
+        "@platforms//os:wasi": [],
     }),
     includes = ["lib/builtins"],
     linkstatic = True,
@@ -772,6 +784,10 @@ cc_library(
         "//conditions:default": [],
     }),
     deps = select({
+        # Clang only defaults to outline atomics on Linux-like targets, so
+        # nothing calls the __aarch64_* helpers on macOS or Windows.
+        "@llvm//platforms/config:macos_aarch64": [],
+        "@llvm//platforms/config:windows_aarch64": [],
         "@platforms//cpu:aarch64": [
             ":builtins_aarch64_atomic",
         ],
@@ -795,7 +811,7 @@ CRT_CFLAGS = [
 
 CRT_DEFINES = [
     "CRT_HAS_INITFINI_ARRAY",
-    "CRT_USE_FRAME_REGISTRY",
+    "EH_USE_FRAME_REGISTRY",
 ]
 
 cc_library(
@@ -970,14 +986,23 @@ SANITIZER_COMMON_CFLAGS = select({
     "-fno-stack-protector",
     "-fvisibility=hidden",
     "-fno-lto",
-    "-O3",  # if not debug else -O1
-    "-gline-tables-only",
-    # "-g" # if debug
     "-fno-modules",
     "-Wno-gnu",
     "-Wno-variadic-macros",
     "-Wno-c99-extensions",
 ] + select({
+    # Let the shared runtime flags choose the MSVC optimization level.
+    ":windows_msvc_debug": ["-DSANITIZER_DEBUG=1"],
+    ":windows_msvc_optimized": [],
+    "@llvm//config:runtimes_optimization_mode_debug": [
+        "-DSANITIZER_DEBUG=1",
+        "-O1",
+    ],
+    "//conditions:default": ["-O3"],
+}) + select({
+    "@llvm//config:runtimes_optimization_mode_debug": [],
+    "//conditions:default": ["-gline-tables-only"],
+}) + select({
     # macOS uses the SDK libc++ on the default include path; don't strip it.
     "@platforms//os:macos": [],
     "//conditions:default": ["-nostdinc++"],
@@ -1492,6 +1517,7 @@ cc_unsanitized_library(
     copts = _INTERNAL_SYMBOLIZER_COPTS,
     cxxopts = _INTERNAL_SYMBOLIZER_CXXOPTS,
     dep = ":sanitizer_common_symbolizer_internal_impl",
+    disable_fission = True,
     # The symbolizer and its LLVM dependencies must produce full-LTO bitcode
     # for cc_internal_symbolizer_object's single-module link. Disable ThinLTO
     # on this dependency graph so application code can keep using ThinLTO.
@@ -3581,8 +3607,15 @@ cc_runtime_stage0_shared_library(
 
 # Standalone Scudo is selected on final executables through their malloc attribute.
 # Keep the runtime static and retained: its allocation entry points are weak.
-SCUDO_STANDALONE_COPTS = [
-    "-O3",
+SCUDO_STANDALONE_COPTS = select({
+    "@llvm//config:runtimes_optimization_mode_debug": [
+        "-O0",
+        "-g",
+        "-DSCUDO_DEBUG=1",
+        "-DSCUDO_ENABLE_HOOKS=1",
+    ],
+    "//conditions:default": ["-O3"],
+}) + [
     "-fno-lto",
     "-fvisibility=hidden",
     "-fno-exceptions",

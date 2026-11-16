@@ -15,6 +15,7 @@ _DEFAULT_SOURCE_PATCHES = [
     "//3rd_party/llvm-project/x.x/patches:lit_test_stub.patch",
     "//3rd_party/llvm-project/x.x/patches:lld-macho-thinlto-obj-path.patch",
     "//3rd_party/llvm-project/x.x/patches:llvm-bazel-msvc-trapping-math.patch",
+    "//3rd_party/llvm-project/x.x/patches:clang-modules-codegen-exclude-from-explicit-instantiation.patch",
 ]
 
 _BEFORE_23_SOURCE_PATCHES = [
@@ -87,6 +88,7 @@ _LLVM_23_SOURCE_PATCHES = [
     "//3rd_party/llvm-project/x.x/patches:clangd-multicall.patch",
     "//3rd_party/llvm-project/22.x/patches:bundle_resources_no_python.patch",
     "//3rd_party/llvm-project/x.x/patches:no_rules_python.patch",
+    "//3rd_party/llvm-project/23.x/patches:instrumentor-template.patch",
     "//3rd_party/llvm-project/x.x/patches:llvm-extra.patch",
     "//3rd_party/llvm-project/x.x/patches:llvm-cov-multicall.patch",
     "//3rd_party/llvm-project/x.x/patches:thinlto-roundtrip-before-codegen.patch",
@@ -98,11 +100,16 @@ _LLVM_PATCHES_BY_MAJOR = {
     22: _LLVM_22_SOURCE_PATCHES,
     23: _LLVM_23_SOURCE_PATCHES,
     # So that anyone can test with the next LLVM major easily.
-    # LLVM 24 already includes upstream arm64e.x1 support.
+    # LLVM 24 includes arm64e.x1 support, the instrumentor template rule and
+    # the fix for homing functions excluded from explicit instantiation.
     24: [
         patch
         for patch in _LLVM_23_SOURCE_PATCHES
-        if patch != "//3rd_party/llvm-project/x.x/patches:llvm-macho-arm64e-x1.patch"
+        if patch not in (
+            "//3rd_party/llvm-project/x.x/patches:llvm-macho-arm64e-x1.patch",
+            "//3rd_party/llvm-project/23.x/patches:instrumentor-template.patch",
+            "//3rd_party/llvm-project/x.x/patches:clang-modules-codegen-exclude-from-explicit-instantiation.patch",
+        )
     ],
 }
 
@@ -171,7 +178,10 @@ bzl_library(
 """)
     rctx.file(
         "version.bzl",
-        "LLVM_VERSION = {}\n".format(repr(rctx.attr.llvm_version)),
+        "LLVM_VERSION = {}\nLLVM_VERSION_MAJOR = {}\n".format(
+            repr(rctx.attr.llvm_version),
+            repr(str(_parse_llvm_major(rctx.attr.llvm_version))),
+        ),
     )
     return rctx.repo_metadata(reproducible = True)
 

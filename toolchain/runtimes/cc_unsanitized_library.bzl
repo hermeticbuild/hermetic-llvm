@@ -12,6 +12,7 @@ def _reset_sanitizers_impl(settings, attr):
         "//command_line_option:features": features,
         "//command_line_option:platforms": str(attr.platform) if attr.platform else settings["//command_line_option:platforms"],
         "@llvm-project//third-party:llvm_enable_zstd": False if attr.disable_zstd else settings["@llvm-project//third-party:llvm_enable_zstd"],
+        "//command_line_option:fission": [] if attr.disable_fission else settings["//command_line_option:fission"],
         "//config:ubsan": False,
         "//config:cfi": False,
         "//config:msan": False,
@@ -48,6 +49,7 @@ _reset_sanitizers = transition(
         "//command_line_option:copt",
         "//command_line_option:cxxopt",
         "//command_line_option:features",
+        "//command_line_option:fission",
         "//command_line_option:platforms",
         "@llvm-project//third-party:llvm_enable_zstd",
     ],
@@ -55,6 +57,7 @@ _reset_sanitizers = transition(
         "//command_line_option:copt",
         "//command_line_option:cxxopt",
         "//command_line_option:features",
+        "//command_line_option:fission",
         "//command_line_option:platforms",
         "@llvm-project//third-party:llvm_enable_zstd",
         "//config:ubsan",
@@ -117,6 +120,9 @@ cc_unsanitized_library = rule(
         ),
         "disable_thin_lto": attr.bool(
             doc = "Disable the inherited ThinLTO feature for dep and its transitive dependencies. Full LTO requires -flto in copts.",
+        ),
+        "disable_fission": attr.bool(
+            doc = "Compile without fission. Set when copts make the objects LTO bitcode, which never produce a .dwo.",
         ),
         "disable_zstd": attr.bool(),
         "platform": attr.label(),

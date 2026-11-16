@@ -52,7 +52,7 @@ def reference(arguments, family, user, root, language):
     if family == "musl":
         # Preserve the baseline -isystem categories and relative order. This
         # explicitly does not claim native user-system-header precedence.
-        assert len(musl_paths) == (4 if language == "c++" else 2), musl_paths
+        assert len(musl_paths) == (5 if language == "c++" else 2), musl_paths
         assert (Path(musl_paths[-2]) / "linux/types.h").is_file()
         assert (Path(musl_paths[-1]) / "stdlib.h").is_file()
         result += ["-nostdlibinc"]

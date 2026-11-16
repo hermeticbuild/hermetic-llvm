@@ -119,10 +119,13 @@ def cc_toolchain(
             "@llvm//toolchain/features:fdo_optimize",
             "@llvm//toolchain/features:cs_fdo_optimize",
             "@llvm//toolchain/features:skip_virtual_includes",
-            "@rules_cc//cc/toolchains/args/thin_lto:feature",
             "@llvm//toolchain/features:thin_lto_linkstatic_tests_use_shared_nonlto_backends",
             "@llvm//toolchain/features:thin_lto_all_linkstatic_use_shared_nonlto_backends",
         ] + select({
+            "@platforms//cpu:wasm32": ["@llvm//toolchain/features/wasm:feature"],
+            "@platforms//cpu:wasm64": ["@llvm//toolchain/features/wasm:feature"],
+            "//conditions:default": ["@rules_cc//cc/toolchains/args/thin_lto:feature"],
+        }) + select({
             "@platforms//os:linux": [
                 "@llvm//toolchain/features/interface_libraries:feature",
             ],
@@ -173,6 +176,7 @@ def cc_toolchain(
             ],
             "@platforms//os:uefi": [],
             "@platforms//os:none": [],
+            "@platforms//os:wasi": [],
         }) + [
             "@llvm//toolchain/features:hosted_dynamic_linker",
             "@llvm//toolchain/features:prefer_pic_for_opt_binaries",
@@ -304,6 +308,10 @@ def cc_toolchain(
             "@llvm//toolchain:runtimes_stage1": ["@llvm//toolchain/runtimes:toolchain_args"],
             "@llvm//toolchain:runtimes_stage1_hosted": ["@llvm//toolchain/runtimes:toolchain_args"],
             "//conditions:default": ["@llvm//toolchain:toolchain_args"],
+        }) + select({
+            "@llvm//constraints/windows/abi:msvc": ["@llvm//toolchain/features/msvc:configuration_validation_args"],
+            "@llvm//constraints/cxxstdlib:msvcstl": ["@llvm//toolchain/features/msvc:configuration_validation_args"],
+            "//conditions:default": [],
         }) + extra_args,
         # clang-cl header parsing remains a named unsupported boundary. It can
         # become true only with a dialect-correct parse-only action and proved
@@ -358,5 +366,6 @@ def cc_toolchain(
             "@platforms//os:macos": "macosx",
             "@platforms//os:uefi": "none",
             "@platforms//os:none": "none",
+            "@platforms//os:wasi": "wasi",
         }, no_match_error = "Unsupported target libc"),
     )

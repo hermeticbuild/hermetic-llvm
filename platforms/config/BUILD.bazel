@@ -27,6 +27,7 @@ bzl_library(
     visibility = ["//visibility:public"],
     deps = [
         "//constraints/libc:libc_versions",
+        "//constraints/wasi:variants",
         "//constraints/windows/abi:abis",
         "//platforms:common",
         "//toolchain:bootstrap_stages",

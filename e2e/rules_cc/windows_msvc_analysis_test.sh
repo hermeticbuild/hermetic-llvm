@@ -48,10 +48,17 @@ done
 
 expect_failure \
   windows-msvc-libstdcxx \
-  "Layer 1 MSVC ABI requires //constraints/cxxstdlib:libcxx" \
+  "MSVC ABI requires //constraints/cxxstdlib:libcxx or //constraints/cxxstdlib:msvcstl" \
   "${common_flags[@]}" \
   --platforms=//:windows_x86_64_msvc_libstdcxx_invalid \
   //:windows_msvc_crt_default_probe
+
+expect_failure \
+  windows-mingw-msvcstl \
+  "//constraints/cxxstdlib:msvcstl requires a Windows MSVC target" \
+  "${common_flags[@]}" \
+  --platforms=//:windows_x86_64_mingw_msvcstl_invalid \
+  //:main_default
 
 expect_failure \
   windows-msvc-missing-crt \

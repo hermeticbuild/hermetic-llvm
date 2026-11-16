@@ -32,6 +32,7 @@ cc_args(
     actions = ["@rules_cc//cc/toolchains/actions:source_compile_actions"],
     args = select({
         "@platforms//os:none": [],
+        "@platforms//os:wasi": [],
         "//conditions:default": ["-fstack-protector"],
     }),
 )

@@ -1,4 +1,5 @@
 load("@bazel_lib//lib:transitions.bzl", "platform_transition_binary")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
 load("@llvm//constraints/libc:libc_versions.bzl", "LIBCS")
 load("@llvm//platforms/distros/linux:constraints.bzl", "UBUNTU_20_04_CONSTRAINTS")
@@ -8,6 +9,7 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_qemu//qemu:qemu_binary.bzl", "qemu_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load(":crt.bzl", "static_crt_alias")
 load(":external_include_paths.bzl", "external_include_paths_alias")
 
 string_flag(
@@ -37,6 +39,18 @@ cc_binary(
     name = "main",
     srcs = ["test.cc"],
     deps = [":add"],
+)
+
+cc_library(
+    name = "main_in_dep_lib",
+    srcs = ["main_in_dep.c"],
+)
+
+# Keep every application object in an ordinary archive so that no eagerly
+# loaded object can supply the CRT startup library's default-library directive.
+cc_binary(
+    name = "main_in_dep",
+    deps = ["main_in_dep_lib"],
 )
 
 cc_binary(
@@ -118,6 +132,31 @@ PLATFORMS = [
     for platform in PLATFORMS
 ]
 
+[
+    platform_transition_binary(
+        name = "main_in_dep_" + platform,
+        binary = "main_in_dep",
+        tags = ["manual"],
+        target_platform = "@llvm//platforms:" + platform,
+    )
+    for platform in [
+        "windows_x86_64_msvc",
+        "windows_aarch64_msvc",
+    ]
+]
+
+[
+    static_crt_alias(
+        name = "main_in_dep_{}_static_crt".format(platform),
+        actual = "main_in_dep_" + platform,
+        tags = ["manual"],
+    )
+    for platform in [
+        "windows_x86_64_msvc",
+        "windows_aarch64_msvc",
+    ]
+]
+
 # The runtimes include their headers from external repositories, which clang-cl
 # needs in its own spelling.
 [
@@ -131,6 +170,21 @@ PLATFORMS = [
         "windows_aarch64_msvc",
     ]
 ]
+
+build_test(
+    name = "windows_msvc_cross_build_test",
+    tags = ["manual"],
+    targets = [
+        ":main_windows_x86_64_msvc",
+        ":main_windows_aarch64_msvc",
+        ":main_windows_x86_64_msvc_external_include_paths",
+        ":main_windows_aarch64_msvc_external_include_paths",
+        ":main_in_dep_windows_x86_64_msvc",
+        ":main_in_dep_windows_aarch64_msvc",
+        ":main_in_dep_windows_x86_64_msvc_static_crt",
+        ":main_in_dep_windows_aarch64_msvc_static_crt",
+    ],
+)
 
 platform(
     name = "linux_armv7_musl_vfpv4_d16",

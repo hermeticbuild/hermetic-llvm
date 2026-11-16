@@ -1,10 +1,12 @@
-#include "windows_msvc_libcxx_behavior_support.h"
+#include "windows_msvc_behavior_support.h"
 
 #include <atomic>
 #include <filesystem>
 
-#ifndef _LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS
-#error "Static Windows libc++ headers must configure visibility annotations"
+#if defined(EXPECT_MSVC_STL) && !defined(_MSVC_STL_VERSION)
+#error "Expected Microsoft STL headers"
+#elif !defined(EXPECT_MSVC_STL) && !defined(_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS)
+#error "Expected static libc++ headers with visibility annotations disabled"
 #endif
 
 namespace {

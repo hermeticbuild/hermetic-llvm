@@ -12,6 +12,18 @@ def _mingw_extension_impl(module_ctx):
         urls = ["https://github.com/mingw-w64/mingw-w64/archive/refs/tags/v14.0.0.tar.gz"],
         integrity = "sha256-1xzGRM1aN8M38nGfPgx52J6NjV+54pUqYtP6I2I9wTc=",
         strip_prefix = "mingw-w64-14.0.0",
+        patches = [
+            # Backports of upstream commits that silence -Wattribute-alias
+            # warnings emitted by Clang 23 when building the CRT. Drop when
+            # updating to a release that contains b43f781b.
+            "//runtimes/mingw:patches/0001-crt-Make-pragmas-for-ignoring-Wattribute-alias-into-.patch",
+            "//runtimes/mingw:patches/0002-crt-Enable-silencing-of-Wattribute-alias-warnings-on.patch",
+            "//runtimes/mingw:patches/0003-crt-Ignore-more-Wattribute-alias-warnings.patch",
+            # Fixes -Wextra-tokens warnings when generating .def files.
+            # Also submitted upstream to mingw-w64-public.
+            "//runtimes/mingw:patches/0004-crt-Fix-ifndef-F_X86_NATIVE-in-func.def.in.patch",
+        ],
+        patch_strip = 1,
         build_file = "//runtimes/mingw:mingw.BUILD.bazel",
     )
 

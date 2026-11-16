@@ -68,3 +68,18 @@ if ! grep -q "does not directly depend on a module exporting 'undeclared.h'" err
   cat error.log >&2
   exit 1
 fi
+
+# Bazel output directories can put headers past Windows' MAX_PATH limit of 260
+# characters.
+long_header=long.h
+while (( ${#PWD} + ${#long_header} < 300 )); do
+  long_header="long_directory_name/$long_header"
+done
+mkdir -p "$(dirname "$long_header")"
+printf 'typedef int long_int;\n' > "$long_header"
+printf '%s\n' "$long_header" > long.params
+"$generator" long.modulemap @long.params
+if ! grep -qF "textual header \"$long_header\" { size 22 }" long.modulemap; then
+  cat long.modulemap >&2
+  exit 1
+fi

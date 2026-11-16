@@ -164,12 +164,20 @@ for artifact_key in ${ARTIFACTS}; do
   esac
 
   case "${basename}" in
-    windows_msvc_libcxx_behavior_md.exe|windows_msvc_com_support_*_md.exe)
+    windows_msvc_behavior_md.exe|windows_msvc_com_support_*_md.exe)
       imports="$("${LLVM_READOBJ}" --coff-imports "${artifact}")"
       grep -Fq "Name: VCRUNTIME140.dll" <<<"${imports}" ||
         fail "/MD behavior binary does not import VCRuntime"
       grep -Fq "Name: api-ms-win-crt-" <<<"${imports}" ||
         fail "/MD behavior binary does not import UCRT"
+      if [[ "${basename}" == windows_msvc_behavior_md.exe ]]; then
+        if [[ "${MSVC_STDLIB}" == msvcstl ]]; then
+          grep -Fiq "Name: MSVCP140.dll" <<<"${imports}" ||
+            fail "/MD Microsoft STL behavior binary does not import MSVCP140"
+        elif grep -Fiq "Name: MSVCP140.dll" <<<"${imports}"; then
+          fail "/MD libc++ behavior binary imports MSVCP140"
+        fi
+      fi
       found_md=1
       ;;
     windows_msvc_legacy_stdio_md.exe)
@@ -177,17 +185,17 @@ for artifact_key in ${ARTIFACTS}; do
       grep -Fq "Name: api-ms-win-crt-" <<<"${imports}" ||
         fail "/MD legacy stdio binary does not import UCRT"
       ;;
-    windows_msvc_libcxx_behavior_mt.exe|windows_msvc_com_support_*_mt.exe|windows_msvc_legacy_stdio_mt.exe)
+    windows_msvc_behavior_mt.exe|windows_msvc_com_support_*_mt.exe|windows_msvc_legacy_stdio_mt.exe)
       imports="$("${LLVM_READOBJ}" --coff-imports "${artifact}")"
       if grep -Eq "Name: (MSVCP140|VCRUNTIME140|api-ms-win-crt-)" <<<"${imports}"; then
         fail "/MT behavior binary imports a dynamic Microsoft runtime"
       fi
       found_mt=1
       ;;
-    windows_msvc_libcxx_behavior_thinlto.exe)
+    windows_msvc_behavior_thinlto.exe)
       found_thinlto=1
       ;;
-    windows_msvc_libcxx_behavior_debug.exe)
+    windows_msvc_behavior_debug.exe)
       debug_executable="${artifact}"
       ;;
     windows_msvc_dll_behavior.exe)
@@ -216,12 +224,16 @@ for artifact_key in ${ARTIFACTS}; do
     *.if.lib)
       found_import_library=1
       ;;
-    windows_msvc_libcxx_behavior_support.lib)
+    windows_msvc_behavior_support.lib)
       "${LLVM_NM}" -u "${artifact}" | grep -Fq "__udivti3" ||
         fail "behavior archive does not exercise compiler-rt wide division"
       directives="$("${LLVM_READOBJ}" --coff-directives "${artifact}")"
       if grep -Fiq "defaultlib:libc++.lib" <<<"${directives}"; then
         fail "behavior archive contains a hidden libc++ auto-link directive"
+      fi
+      if [[ "${MSVC_STDLIB}" == msvcstl ]]; then
+        grep -Eiq 'defaultlib:(msvcprt|libcpmt)[.]lib' <<<"${directives}" ||
+          fail "behavior archive is missing the Microsoft STL COFF directive"
       fi
       ;;
   esac

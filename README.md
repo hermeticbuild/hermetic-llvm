@@ -51,6 +51,48 @@ This ecosystem simplifies the process by cross-compiling all target-specific com
 
 ## Advanced Usage
 
+### Suppressing the default C++ standard library
+
+Two independent boolean build settings (Bazel 9+ only) follow Clang/GCC semantics:
+
+- `--@llvm//config:nostdincxx`: omit default C++ standard-library headers,
+  like `-nostdinc++`. Explicit header dependencies and include paths still work.
+- `--@llvm//config:nostdlibxx`: omit implicit C++ standard-library linkage,
+  like `-nostdlib++`. Explicit library dependencies and link options still work.
+
+Both default to `false` and declare `scope = "target"`: execution tools retain
+their default libraries unless explicitly configured by a transition. Set both
+when supplying a replacement C++ library, such as a privately built libc++.
+Keep replacement headers, libraries, and ABI configuration consistent.
+
+These settings do not suppress C/SDK or compiler builtin headers, the C runtime,
+startup objects, compiler-rt, or the separately selected unwinder. They do not
+change optimization policy or MSVC CRT selection (`/MT` versus `/MD`).
+On MSVC targets the library opt-out removes the toolchain's libc++ default
+library; it does not use the broader `/NODEFAULTLIB` or `/Zl` options.
+
+### Header checks and modules
+
+The toolchain supports the following opt-in features. Set `features` on a target or package to enable them selectively, or use the command-line flags below. Pass each feature as a separate `--features` flag.
+
+| Option | Purpose |
+| --- | --- |
+| `--features=parse_headers` | Check headers as standalone translation units to catch missing includes. |
+| `--features=layering_check` | Require direct dependencies for included headers and check access to private headers. |
+| `--process_headers_in_dependencies` | Run enabled header checks in dependencies too. This is off by default and does not enable `parse_headers` itself. |
+| `--features=use_header_modules` | Reuse compiled libc++ and dependency headers to reduce repeated parsing. Requires Bazel 9.3 or later. |
+| `features = ["header_modules"]` | Compile a library's headers into a module for consumers. Requires `use_header_modules` and headers that compile on their own. |
+
+For example, check headers and dependency declarations throughout a build with the following flags.
+
+```sh
+bazel build --features=parse_headers --features=layering_check --process_headers_in_dependencies //:app
+```
+
+Header parsing, module maps, and layering checks work with the Clang driver, including MinGW Windows targets. They are not implemented for MSVC/clang-cl targets.
+
+Compiled header modules can speed up incremental builds after the initial module build, but require compatible dependencies and currently do not work for Windows targets. See the [header module guide](toolchain/features/header_modules/README.md) for setup and limitations.
+
 ### Registering a subset of all toolchains
 
 Use the toolchain module extension:
@@ -174,6 +216,20 @@ If you wish to setup things manually, you will likely require a few flags:
 prebuilt; clang-cl still emits the MSVC target ABI. Source-built bootstrap
 stages also support native Windows execution. See "Windows" section.
 
+### WASI
+
+Wasm32 C programs are supported with statically linked wasi-libc.
+
+To target WASI Preview 1:
+`--platforms=@llvm//platforms:wasi_wasm32`
+
+Explicit variants are `wasi_wasm32_p1`, `wasi_wasm32_p1_threads`,
+`wasi_wasm32_p2`, and `wasi_wasm32_p3`. P2/P3 require LLVM 22+ and produce
+WebAssembly components. WASI C++ standard-library integration is not yet
+implemented in hermetic-llvm.
+
+On WASI, `--@llvm//config:ubsan=True` traps on undefined behavior without a diagnostic runtime.
+
 ### musl
 
 Only static linking against the latest version of musl is supported for now.
@@ -293,10 +349,31 @@ bazel build \
 
 MSVC targets default to the retail dynamic CRT (`/MD`). Select the retail static
 CRT (`/MT`) with
-`--features=-dynamic_link_msvcrt,static_link_msvcrt`. Debug CRT modes (`/MDd`
-and `/MTd`) are not supported. Sanitizers, coverage/FDO, header parsing, module
-maps, and layering checks are also not yet supported for MSVC targets; requests
-for unsupported features fail during analysis rather than being ignored.
+`--features=-dynamic_link_msvcrt --features=static_link_msvcrt`.
+Debug CRT modes (`/MDd` and `/MTd`) are not supported. Sanitizers, coverage/FDO,
+header parsing, module maps, and layering checks are also not yet supported for
+MSVC targets; requests for unsupported features fail during analysis rather than
+being ignored.
+
+To use Microsoft STL, derive a Windows MSVC platform and set the C++
+standard-library constraint to `msvcstl`.
+
+```starlark
+platform(
+    name = "windows_x86_64_msvcstl",
+    parents = ["@llvm//platforms:windows_x86_64_msvc"],
+    constraint_values = ["@llvm//constraints/cxxstdlib:msvcstl"],
+)
+```
+
+Build with `--platforms=//:windows_x86_64_msvcstl` and the same SDK
+acceptance flags as above. For ARM64, use
+`@llvm//platforms:windows_aarch64_msvc` as the parent.
+
+Microsoft STL uses native MSVC wide-stdio behavior. Its headers select the
+retail STL library through COFF directives using the configured CRT mode.
+Applications built with `/MD` need the matching Visual C++ redistributable at
+runtime.
 
 ### macOS notes
 

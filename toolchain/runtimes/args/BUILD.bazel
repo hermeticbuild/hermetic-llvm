@@ -32,6 +32,26 @@ cc_args(
     }),
 )
 
+# Lets --gc-sections drop unused parts of the static runtimes.
+cc_args(
+    name = "opt_function_and_data_sections",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:cpp_compile_actions",
+        "@rules_cc//cc/toolchains/actions:c_compile_actions",
+        "@rules_cc//cc/toolchains/actions:objc_compile",
+        "@rules_cc//cc/toolchains/actions:objcpp_compile",
+    ],
+    args = select({
+        "//constraints/windows/abi:msvc": ["/Gw"],
+        # ld64 dead-strips per symbol without separate sections.
+        "@platforms//os:macos": [],
+        "//conditions:default": [
+            "-ffunction-sections",
+            "-fdata-sections",
+        ],
+    }),
+)
+
 cc_args(
     name = "dbg_runtime_debug_define",
     actions = RUNTIME_SOURCE_COMPILE_ACTIONS,
@@ -72,6 +92,7 @@ cc_args_list(
         "//conditions:default": [
             ":opt_disable_assertions",
             ":opt_optimization_level",
+            ":opt_function_and_data_sections",
         ],
     }),
 )

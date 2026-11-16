@@ -14,6 +14,8 @@ def _internal_symbolizer_libcxx_transition_impl(settings, attr):
         "//command_line_option:copt": settings["//command_line_option:copt"] + attr.copts,
         "//command_line_option:cxxopt": settings["//command_line_option:cxxopt"] + attr.cxxopts,
         "//command_line_option:features": features + ["-thin_lto"],
+        # copts make these LTO bitcode, which never produces a .dwo.
+        "//command_line_option:fission": [],
         "//command_line_option:platforms": str(attr.platform),
     }
 
@@ -29,6 +31,7 @@ _internal_symbolizer_libcxx_transition = transition(
         "//command_line_option:copt",
         "//command_line_option:cxxopt",
         "//command_line_option:features",
+        "//command_line_option:fission",
         "//command_line_option:platforms",
     ],
 )

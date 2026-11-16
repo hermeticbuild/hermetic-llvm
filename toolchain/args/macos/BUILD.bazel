@@ -84,11 +84,13 @@ cc_args(
     actions = [
         "@rules_cc//cc/toolchains/actions:link_actions",
     ],
-    args = [
+    args = select({
+        "//config:nostdlibxx_enabled": ["-nostdlib++"],
         # The macOS toolchain has no resource directory, so add libc++ here.
         # This is incorrect for C links, but rules_cc cannot distinguish C links
         # from C++ links.
-        "-lc++",
+        "//conditions:default": ["-lc++"],
+    }) + [
         "-headerpad_max_install_names",
         "-Wl,-no_warn_duplicate_libraries",
     ],

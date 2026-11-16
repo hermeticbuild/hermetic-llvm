@@ -64,6 +64,17 @@ build_test(
     targets = [":hello_cgo_force_pic_x86_64_musl"],
 )
 
+platform_transition_binary(
+    name = "hello_cgo_windows_x86_64",
+    binary = ":hello_cgo",
+    target_platform = "@llvm//platforms:windows_x86_64",
+)
+
+build_test(
+    name = "hello_cgo_windows_x86_64_test",
+    targets = [":hello_cgo_windows_x86_64"],
+)
+
 # Build the cgo binary in the exec configuration
 genrule(
     name = "hello_cgo_exec_run",

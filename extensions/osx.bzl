@@ -68,6 +68,7 @@ def _host_macos_sdk_repository_impl(rctx):
     if not sdk_usr_lib.exists:
         fail("Host macOS SDK is missing usr/lib: {}".format(sdk_path))
 
+    rctx.symlink(sdk_path.get_child("SDKSettings.json"), "sysroot/SDKSettings.json")
     rctx.symlink(sdk_path.get_child("System"), "sysroot/System")
     rctx.symlink(sdk_path.get_child("usr"), "sysroot/usr")
     rctx.file("sysroot/BUILD.bazel", rctx.read(rctx.attr._build_file))
@@ -123,6 +124,9 @@ def _osx_extension_impl(mctx):
     # Users can extend the sysroot via `osx.frameworks` module extension tag.
 
     includes = [
+        # Clang reads the SDK version from this file and records it in the
+        # LC_BUILD_VERSION load command of linked binaries.
+        "SDKSettings.json",
         "usr/include/**",
         "usr/lib/libc++*",
     ]

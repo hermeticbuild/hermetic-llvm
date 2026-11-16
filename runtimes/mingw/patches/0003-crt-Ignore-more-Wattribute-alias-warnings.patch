@@ -1,0 +1,412 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Martin=20Storsj=C3=B6?= <martin@martin.st>
+Date: Fri, 28 Aug 2026 12:21:39 +0300
+Subject: [PATCH 3/3] crt: Ignore more -Wattribute-alias warnings
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Clang 23 added the -Wattribute-alias warning just like GCC has had
+since GCC 8.
+
+When the functions take pointers to different structs (even if they
+may have identical members), Clang 23 warns about this mismatch under
+-Wattribute-alias, while GCC doesn't.
+
+A different kind of case is __mingw_strtold, which is aliased to
+__strtod when long double and regular doubles have the same size.
+This codepath hasn't been regularly built with GCC, but Clang now
+warns about it.
+
+Signed-off-by: Martin Storsjö <martin@martin.st>
+(cherry picked from commit b43f781b916e8170b66bc4c6784123e53b283f8a)
+---
+ mingw-w64-crt/gdtoa/strtodnrp.c               | 5 +++++
+ mingw-w64-crt/misc/ftime32.c                  | 3 +++
+ mingw-w64-crt/misc/ftime64.c                  | 3 +++
+ mingw-w64-crt/misc/ftw32.c                    | 4 ++++
+ mingw-w64-crt/misc/ftw64i32.c                 | 4 ++++
+ mingw-w64-crt/stdio/_wfindfirst32.c           | 3 +++
+ mingw-w64-crt/stdio/msvcr110plus_fstat32.c    | 3 +++
+ mingw-w64-crt/stdio/msvcr110plus_fstat64i32.c | 3 +++
+ mingw-w64-crt/stdio/msvcr110plus_stat32.c     | 3 +++
+ mingw-w64-crt/stdio/msvcr110plus_stat64i32.c  | 3 +++
+ mingw-w64-crt/stdio/msvcr110plus_wstat32.c    | 3 +++
+ mingw-w64-crt/stdio/msvcr110plus_wstat64i32.c | 3 +++
+ mingw-w64-crt/stdio/msvcr110pre_fstat32.c     | 3 +++
+ mingw-w64-crt/stdio/msvcr110pre_fstat64i32.c  | 3 +++
+ mingw-w64-crt/stdio/msvcr110pre_stat32.c      | 3 +++
+ mingw-w64-crt/stdio/msvcr110pre_stat64i32.c   | 3 +++
+ mingw-w64-crt/stdio/msvcr110pre_wstat32.c     | 3 +++
+ mingw-w64-crt/stdio/msvcr110pre_wstat64i32.c  | 3 +++
+ 18 files changed, 58 insertions(+)
+
+diff --git a/mingw-w64-crt/gdtoa/strtodnrp.c b/mingw-w64-crt/gdtoa/strtodnrp.c
+index 9304866b..523e36e4 100644
+--- a/mingw-w64-crt/gdtoa/strtodnrp.c
++++ b/mingw-w64-crt/gdtoa/strtodnrp.c
+@@ -89,7 +89,12 @@ __mingw_strtod (const char * __restrict__ src, char ** __restrict__ endptr)
+ /* For systems other than x86, where long double == double, provide the
+  * long double functions as aliases to __strtod. */
+ 
++#undef Long
++#undef Bias
++#include "internal.h"
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_BEGIN
+ long double __cdecl
+ __mingw_strtold (const char * __restrict__ src, char ** __restrict__ endptr)
+   __attribute__((alias("__strtod")));
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_END
+ #endif
+diff --git a/mingw-w64-crt/misc/ftime32.c b/mingw-w64-crt/misc/ftime32.c
+index 2ff79bab..d0df00fa 100644
+--- a/mingw-w64-crt/misc/ftime32.c
++++ b/mingw-w64-crt/misc/ftime32.c
+@@ -7,6 +7,7 @@
+ #include <stdint.h>
+ #include <errno.h>
+ #include <sys/timeb.h>
++#include "internal.h"
+ 
+ int __cdecl ftime32(struct __timeb32 *tb32);
+ int __cdecl ftime32(struct __timeb32 *tb32)
+@@ -34,5 +35,7 @@ int __cdecl ftime32(struct __timeb32 *tb32)
+ 
+ /* On 32-bit systems is ftime ABI using 32-bit time_t */
+ #ifndef _WIN64
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_BEGIN
+ int __attribute__ ((alias("ftime32"))) __cdecl ftime(struct timeb *);
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_END
+ #endif
+diff --git a/mingw-w64-crt/misc/ftime64.c b/mingw-w64-crt/misc/ftime64.c
+index c30003b0..5928e998 100644
+--- a/mingw-w64-crt/misc/ftime64.c
++++ b/mingw-w64-crt/misc/ftime64.c
+@@ -5,6 +5,7 @@
+  */
+ 
+ #include <sys/timeb.h>
++#include "internal.h"
+ 
+ int __cdecl ftime64(struct __timeb64 *tb64);
+ int __cdecl ftime64(struct __timeb64 *tb64)
+@@ -15,5 +16,7 @@ int __cdecl ftime64(struct __timeb64 *tb64)
+ 
+ /* On 64-bit systems is ftime ABI using 64-bit time_t */
+ #ifdef _WIN64
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_BEGIN
+ int __attribute__ ((alias("ftime64"))) __cdecl ftime(struct timeb *);
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_END
+ #endif
+diff --git a/mingw-w64-crt/misc/ftw32.c b/mingw-w64-crt/misc/ftw32.c
+index 5eb9e374..cbfbeadc 100644
+--- a/mingw-w64-crt/misc/ftw32.c
++++ b/mingw-w64-crt/misc/ftw32.c
+@@ -9,11 +9,15 @@
+ #define STRUCT_STAT struct _stat32
+ #include "ftw.c"
+ 
++#include "internal.h"
++
+ /* On 32-bit systems is stat ABI compatible with stat32 */
+ #ifndef _WIN64
+ #undef nftw
+ #undef ftw
+ struct stat;
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_BEGIN
+ int __attribute__ ((alias ("nftw32"))) __cdecl nftw(const char *, int (*) (const char *, const struct stat *, int, struct FTW *), int, int);
+ int __attribute__ ((alias ("ftw32"))) __cdecl ftw(const char *, int (*) (const char *, const struct stat *, int), int);
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_END
+ #endif
+diff --git a/mingw-w64-crt/misc/ftw64i32.c b/mingw-w64-crt/misc/ftw64i32.c
+index 2ded6ec4..7cb8b46c 100644
+--- a/mingw-w64-crt/misc/ftw64i32.c
++++ b/mingw-w64-crt/misc/ftw64i32.c
+@@ -9,11 +9,15 @@
+ #define STRUCT_STAT struct _stat64i32
+ #include "ftw.c"
+ 
++#include "internal.h"
++
+ /* On 64-bit systems is stat ABI compatible with stat64i32 */
+ #ifdef _WIN64
+ #undef nftw
+ #undef ftw
+ struct stat;
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_BEGIN
+ int __attribute__ ((alias ("nftw64i32"))) __cdecl nftw(const char *, int (*) (const char *, const struct stat *, int, struct FTW *), int, int);
+ int __attribute__ ((alias ("ftw64i32"))) __cdecl ftw(const char *, int (*) (const char *, const struct stat *, int), int);
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_END
+ #endif
+diff --git a/mingw-w64-crt/stdio/_wfindfirst32.c b/mingw-w64-crt/stdio/_wfindfirst32.c
+index a22a9799..e6038ebd 100644
+--- a/mingw-w64-crt/stdio/_wfindfirst32.c
++++ b/mingw-w64-crt/stdio/_wfindfirst32.c
+@@ -1,5 +1,6 @@
+ #include <io.h>
+ #include <string.h>
++#include "internal.h"
+ 
+ intptr_t __cdecl _wfindfirst32(const wchar_t *_Filename, struct _wfinddata32_t *_FindData)
+ {
+@@ -20,6 +21,8 @@ intptr_t (__cdecl *__MINGW_IMP_SYMBOL(_wfindfirst32))(const wchar_t *, struct _w
+ 
+ #ifndef _WIN64
+ #undef _wfindfirst
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_BEGIN
+ intptr_t __attribute__ ((alias ("_wfindfirst32"))) __cdecl _wfindfirst(const char *, struct _wfinddata32_t *);
+ extern intptr_t __attribute__ ((alias (__MINGW64_STRINGIFY(__MINGW_IMP_SYMBOL(_wfindfirst32))))) (__cdecl *__MINGW_IMP_SYMBOL(_wfindfirst))(const char *, struct _wfinddata32_t *);
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_END
+ #endif
+diff --git a/mingw-w64-crt/stdio/msvcr110plus_fstat32.c b/mingw-w64-crt/stdio/msvcr110plus_fstat32.c
+index dfc57b2c..ea913953 100644
+--- a/mingw-w64-crt/stdio/msvcr110plus_fstat32.c
++++ b/mingw-w64-crt/stdio/msvcr110plus_fstat32.c
+@@ -7,6 +7,7 @@
+ #include <sys/stat.h>
+ #include <stdlib.h>
+ #include "__mingw_fix_stat.h"
++#include "internal.h"
+ 
+ int __cdecl fstat32(int fd, struct _stat32 *stat);
+ int __cdecl fstat32(int fd, struct _stat32 *stat)
+@@ -19,6 +20,8 @@ int (__cdecl *__MINGW_IMP_SYMBOL(fstat32))(int, struct _stat32 *) = fstat32;
+ #ifndef _WIN64
+ #undef stat
+ struct stat;
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_BEGIN
+ int __attribute__ ((alias ("fstat32"))) __cdecl fstat(int fd, struct stat *stat);
+ extern int __attribute__ ((alias (__MINGW64_STRINGIFY(__MINGW_IMP_SYMBOL(fstat32))))) (__cdecl *__MINGW_IMP_SYMBOL(fstat))(int fd, struct stat *stat);
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_END
+ #endif
+diff --git a/mingw-w64-crt/stdio/msvcr110plus_fstat64i32.c b/mingw-w64-crt/stdio/msvcr110plus_fstat64i32.c
+index 7b148281..f2290f47 100644
+--- a/mingw-w64-crt/stdio/msvcr110plus_fstat64i32.c
++++ b/mingw-w64-crt/stdio/msvcr110plus_fstat64i32.c
+@@ -7,6 +7,7 @@
+ #include <sys/stat.h>
+ #include <stdlib.h>
+ #include "__mingw_fix_stat.h"
++#include "internal.h"
+ 
+ int __cdecl fstat64i32(int fd, struct _stat64i32 *stat);
+ int __cdecl fstat64i32(int fd, struct _stat64i32 *stat)
+@@ -19,6 +20,8 @@ int (__cdecl *__MINGW_IMP_SYMBOL(fstat64i32))(int fd, struct _stat64i32 *) = fst
+ #ifdef _WIN64
+ #undef stat
+ struct stat;
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_BEGIN
+ int __attribute__ ((alias ("fstat64i32"))) __cdecl fstat(int fd, struct stat *stat);
+ extern int __attribute__ ((alias (__MINGW64_STRINGIFY(__MINGW_IMP_SYMBOL(fstat64i32))))) (__cdecl *__MINGW_IMP_SYMBOL(fstat))(int fd, struct stat *stat);
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_END
+ #endif
+diff --git a/mingw-w64-crt/stdio/msvcr110plus_stat32.c b/mingw-w64-crt/stdio/msvcr110plus_stat32.c
+index f936ef9f..e9fccb74 100644
+--- a/mingw-w64-crt/stdio/msvcr110plus_stat32.c
++++ b/mingw-w64-crt/stdio/msvcr110plus_stat32.c
+@@ -7,6 +7,7 @@
+ #include <sys/stat.h>
+ #include <stdlib.h>
+ #include "__mingw_fix_stat.h"
++#include "internal.h"
+ 
+ int __cdecl stat32(const char *_Filename, struct _stat32 *_Stat);
+ int __cdecl stat32(const char *_Filename, struct _stat32 *_Stat)
+@@ -23,6 +24,8 @@ int (__cdecl *__MINGW_IMP_SYMBOL(stat32))(const char *, struct _stat32 *) = stat
+ #ifndef _WIN64
+ #undef stat
+ struct stat;
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_BEGIN
+ int __attribute__ ((alias ("stat32"))) __cdecl stat(const char *name, struct stat *stat);
+ extern int __attribute__ ((alias (__MINGW64_STRINGIFY(__MINGW_IMP_SYMBOL(stat32))))) (__cdecl *__MINGW_IMP_SYMBOL(stat))(const char *name, struct stat *stat);
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_END
+ #endif
+diff --git a/mingw-w64-crt/stdio/msvcr110plus_stat64i32.c b/mingw-w64-crt/stdio/msvcr110plus_stat64i32.c
+index 89c3e050..7e321ad9 100644
+--- a/mingw-w64-crt/stdio/msvcr110plus_stat64i32.c
++++ b/mingw-w64-crt/stdio/msvcr110plus_stat64i32.c
+@@ -7,6 +7,7 @@
+ #include <sys/stat.h>
+ #include <stdlib.h>
+ #include "__mingw_fix_stat.h"
++#include "internal.h"
+ 
+ int __cdecl stat64i32(const char *_Filename, struct _stat64i32 *_Stat);
+ int __cdecl stat64i32(const char *_Filename, struct _stat64i32 *_Stat)
+@@ -23,6 +24,8 @@ int (__cdecl *__MINGW_IMP_SYMBOL(stat64i32))(const char *, struct _stat64i32 *)
+ #ifdef _WIN64
+ #undef stat
+ struct stat;
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_BEGIN
+ int __attribute__ ((alias ("stat64i32"))) __cdecl stat(const char *name, struct stat *stat);
+ extern int __attribute__ ((alias (__MINGW64_STRINGIFY(__MINGW_IMP_SYMBOL(stat64i32))))) (__cdecl *__MINGW_IMP_SYMBOL(stat))(const char *name, struct stat *stat);
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_END
+ #endif
+diff --git a/mingw-w64-crt/stdio/msvcr110plus_wstat32.c b/mingw-w64-crt/stdio/msvcr110plus_wstat32.c
+index 50e183cf..6b061717 100644
+--- a/mingw-w64-crt/stdio/msvcr110plus_wstat32.c
++++ b/mingw-w64-crt/stdio/msvcr110plus_wstat32.c
+@@ -7,6 +7,7 @@
+ #include <sys/stat.h>
+ #include <stdlib.h>
+ #include "__mingw_fix_stat.h"
++#include "internal.h"
+ 
+ int __cdecl wstat32(const wchar_t *_Filename, struct _stat32 *_Stat);
+ int __cdecl wstat32(const wchar_t *_Filename, struct _stat32 *_Stat)
+@@ -24,6 +25,8 @@ int (__cdecl *__MINGW_IMP_SYMBOL(wstat32))(const wchar_t *, struct _stat32 *) =
+ #undef stat
+ #undef wstat
+ struct stat;
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_BEGIN
+ int __attribute__ ((alias ("wstat32"))) __cdecl wstat(const wchar_t *name, struct stat *stat);
+ extern int __attribute__ ((alias (__MINGW64_STRINGIFY(__MINGW_IMP_SYMBOL(wstat32))))) (__cdecl *__MINGW_IMP_SYMBOL(wstat))(const wchar_t *name, struct stat *stat);
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_END
+ #endif
+diff --git a/mingw-w64-crt/stdio/msvcr110plus_wstat64i32.c b/mingw-w64-crt/stdio/msvcr110plus_wstat64i32.c
+index caf5ca79..1fa6c861 100644
+--- a/mingw-w64-crt/stdio/msvcr110plus_wstat64i32.c
++++ b/mingw-w64-crt/stdio/msvcr110plus_wstat64i32.c
+@@ -7,6 +7,7 @@
+ #include <sys/stat.h>
+ #include <stdlib.h>
+ #include "__mingw_fix_stat.h"
++#include "internal.h"
+ 
+ int __cdecl wstat64i32(const wchar_t *_Filename, struct _stat64i32 *_Stat);
+ int __cdecl wstat64i32(const wchar_t *_Filename, struct _stat64i32 *_Stat)
+@@ -24,6 +25,8 @@ int (__cdecl *__MINGW_IMP_SYMBOL(wstat64i32))(const wchar_t *, struct _stat64i32
+ #undef stat
+ #undef wstat
+ struct stat;
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_BEGIN
+ int __attribute__ ((alias ("wstat64i32"))) __cdecl wstat(const wchar_t *name, struct stat *stat);
+ extern int __attribute__ ((alias (__MINGW64_STRINGIFY(__MINGW_IMP_SYMBOL(wstat64i32))))) (__cdecl *__MINGW_IMP_SYMBOL(wstat))(const wchar_t *name, struct stat *stat);
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_END
+ #endif
+diff --git a/mingw-w64-crt/stdio/msvcr110pre_fstat32.c b/mingw-w64-crt/stdio/msvcr110pre_fstat32.c
+index cbc6dbbd..9abc36a3 100644
+--- a/mingw-w64-crt/stdio/msvcr110pre_fstat32.c
++++ b/mingw-w64-crt/stdio/msvcr110pre_fstat32.c
+@@ -9,6 +9,7 @@
+ #include <stdint.h>
+ #include <errno.h>
+ #include "__mingw_fix_stat.h"
++#include "internal.h"
+ 
+ /* For pre-msvcr110 builds, we cannot use _fstat32() as it does
+  * not signal EOVERFLOW when file size does not fit into the st_size field,
+@@ -45,6 +46,8 @@ int (__cdecl *__MINGW_IMP_SYMBOL(fstat32))(int, struct _stat32 *) = fstat32;
+ #ifndef _WIN64
+ #undef stat
+ struct stat;
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_BEGIN
+ int __attribute__ ((alias ("fstat32"))) __cdecl fstat(int fd, struct stat *stat);
+ extern int __attribute__ ((alias (__MINGW64_STRINGIFY(__MINGW_IMP_SYMBOL(fstat32))))) (__cdecl *__MINGW_IMP_SYMBOL(fstat))(int fd, struct stat *stat);
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_END
+ #endif
+diff --git a/mingw-w64-crt/stdio/msvcr110pre_fstat64i32.c b/mingw-w64-crt/stdio/msvcr110pre_fstat64i32.c
+index 6ca74be6..bdb8c3e1 100644
+--- a/mingw-w64-crt/stdio/msvcr110pre_fstat64i32.c
++++ b/mingw-w64-crt/stdio/msvcr110pre_fstat64i32.c
+@@ -9,6 +9,7 @@
+ #include <stdint.h>
+ #include <errno.h>
+ #include "__mingw_fix_stat.h"
++#include "internal.h"
+ 
+ /* For pre-msvcr110 builds, we cannot use _fstat64i32() as it does
+  * not signal EOVERFLOW when file size does not fit into the st_size field,
+@@ -45,6 +46,8 @@ int (__cdecl *__MINGW_IMP_SYMBOL(fstat64i32))(int, struct _stat64i32 *) = fstat6
+ #ifdef _WIN64
+ #undef stat
+ struct stat;
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_BEGIN
+ int __attribute__ ((alias ("fstat64i32"))) __cdecl fstat(int fd, struct stat *stat);
+ extern int __attribute__ ((alias (__MINGW64_STRINGIFY(__MINGW_IMP_SYMBOL(fstat64i32))))) (__cdecl *__MINGW_IMP_SYMBOL(fstat))(int fd, struct stat *stat);
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_END
+ #endif
+diff --git a/mingw-w64-crt/stdio/msvcr110pre_stat32.c b/mingw-w64-crt/stdio/msvcr110pre_stat32.c
+index 196c2de4..e165b7fb 100644
+--- a/mingw-w64-crt/stdio/msvcr110pre_stat32.c
++++ b/mingw-w64-crt/stdio/msvcr110pre_stat32.c
+@@ -9,6 +9,7 @@
+ #include <stdint.h>
+ #include <errno.h>
+ #include "__mingw_fix_stat.h"
++#include "internal.h"
+ 
+ /* For pre-msvcr110 builds, we cannot use _stat32() as it does
+  * not signal EOVERFLOW when file size does not fit into the st_size field,
+@@ -49,6 +50,8 @@ int (__cdecl *__MINGW_IMP_SYMBOL(stat32))(const char *, struct _stat32 *) = stat
+ #ifndef _WIN64
+ #undef stat
+ struct stat;
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_BEGIN
+ int __attribute__ ((alias ("stat32"))) __cdecl stat(const char *name, struct stat *stat);
+ extern int __attribute__ ((alias (__MINGW64_STRINGIFY(__MINGW_IMP_SYMBOL(stat32))))) (__cdecl *__MINGW_IMP_SYMBOL(stat))(const char *name, struct stat *stat);
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_END
+ #endif
+diff --git a/mingw-w64-crt/stdio/msvcr110pre_stat64i32.c b/mingw-w64-crt/stdio/msvcr110pre_stat64i32.c
+index 2a6cc9af..8713b12c 100644
+--- a/mingw-w64-crt/stdio/msvcr110pre_stat64i32.c
++++ b/mingw-w64-crt/stdio/msvcr110pre_stat64i32.c
+@@ -9,6 +9,7 @@
+ #include <stdint.h>
+ #include <errno.h>
+ #include "__mingw_fix_stat.h"
++#include "internal.h"
+ 
+ /* For pre-msvcr110 builds, we cannot use _stat64i32() as it does
+  * not signal EOVERFLOW when file size does not fit into the st_size field,
+@@ -49,6 +50,8 @@ int (__cdecl *__MINGW_IMP_SYMBOL(stat64i32))(const char *, struct _stat64i32 *)
+ #ifdef _WIN64
+ #undef stat
+ struct stat;
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_BEGIN
+ int __attribute__ ((alias ("stat64i32"))) __cdecl stat(const char *name, struct stat *stat);
+ extern int __attribute__ ((alias (__MINGW64_STRINGIFY(__MINGW_IMP_SYMBOL(stat64i32))))) (__cdecl *__MINGW_IMP_SYMBOL(stat))(const char *name, struct stat *stat);
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_END
+ #endif
+diff --git a/mingw-w64-crt/stdio/msvcr110pre_wstat32.c b/mingw-w64-crt/stdio/msvcr110pre_wstat32.c
+index b9848fff..e0b7ca15 100644
+--- a/mingw-w64-crt/stdio/msvcr110pre_wstat32.c
++++ b/mingw-w64-crt/stdio/msvcr110pre_wstat32.c
+@@ -9,6 +9,7 @@
+ #include <stdint.h>
+ #include <errno.h>
+ #include "__mingw_fix_stat.h"
++#include "internal.h"
+ 
+ /* For pre-msvcr110 builds, we cannot use _wstat32() as it does
+  * not signal EOVERFLOW when file size does not fit into the st_size field,
+@@ -50,6 +51,8 @@ int (__cdecl *__MINGW_IMP_SYMBOL(wstat32))(const wchar_t *, struct _stat32 *) =
+ #undef stat
+ #undef wstat
+ struct stat;
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_BEGIN
+ int __attribute__ ((alias ("wstat32"))) __cdecl wstat(const wchar_t *name, struct stat *stat);
+ extern int __attribute__ ((alias (__MINGW64_STRINGIFY(__MINGW_IMP_SYMBOL(wstat32))))) (__cdecl *__MINGW_IMP_SYMBOL(wstat))(const wchar_t *name, struct stat *stat);
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_END
+ #endif
+diff --git a/mingw-w64-crt/stdio/msvcr110pre_wstat64i32.c b/mingw-w64-crt/stdio/msvcr110pre_wstat64i32.c
+index a7611bfe..705dc518 100644
+--- a/mingw-w64-crt/stdio/msvcr110pre_wstat64i32.c
++++ b/mingw-w64-crt/stdio/msvcr110pre_wstat64i32.c
+@@ -9,6 +9,7 @@
+ #include <stdint.h>
+ #include <errno.h>
+ #include "__mingw_fix_stat.h"
++#include "internal.h"
+ 
+ /* For pre-msvcr110 builds, we cannot use _wstat64i32() as it does
+  * not signal EOVERFLOW when file size does not fit into the st_size field,
+@@ -50,6 +51,8 @@ int (__cdecl *__MINGW_IMP_SYMBOL(wstat64i32))(const wchar_t *, struct _stat64i32
+ #undef stat
+ #undef wstat
+ struct stat;
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_BEGIN
+ int __attribute__ ((alias ("wstat64i32"))) __cdecl wstat(const wchar_t *name, struct stat *stat);
+ extern int __attribute__ ((alias (__MINGW64_STRINGIFY(__MINGW_IMP_SYMBOL(wstat64i32))))) (__cdecl *__MINGW_IMP_SYMBOL(wstat))(const wchar_t *name, struct stat *stat);
++PRAGMA_DIAGNOSTIC_IGNORED_ATTRIBUTE_ALIAS_END
+ #endif

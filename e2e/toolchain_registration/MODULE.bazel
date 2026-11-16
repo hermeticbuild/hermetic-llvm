@@ -1,0 +1,15 @@
+module(name = "toolchain_registration")
+
+bazel_dep(name = "llvm", version = "")
+local_path_override(
+    module_name = "llvm",
+    path = "../..",
+)
+
+llvm = use_extension("@llvm//extensions:llvm.bzl", "llvm")
+
+# Registration must work without materializing the source repository.
+llvm.from_path(path = "missing-llvm-sources")
+use_repo(llvm, "llvm-project")
+
+register_toolchains("@llvm//toolchain:all", "//:toolchain")

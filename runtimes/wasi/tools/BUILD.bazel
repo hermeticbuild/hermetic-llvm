@@ -1,0 +1,29 @@
+load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
+load("//platforms:common.bzl", "SUPPORTED_EXECS")
+
+package(default_visibility = ["//visibility:public"])
+
+bzl_library(
+    name = "extensions",
+    srcs = ["extensions.bzl"],
+    deps = ["@bazel_tools//tools/build_defs/repo:http.bzl"],
+)
+
+# run_binary.tool transitions this target to the metadata action's execution
+# platform before selecting the executable. Tests also consume it in exec config.
+native_binary(
+    name = "wasm_tools",
+    src = select({
+        "//platforms/config:{}_{}".format(os, arch): "@wasm_tools_{}_{}//:wasm-tools{}".format(
+            os,
+            arch,
+            ".exe" if os == "windows" else "",
+        )
+        for os, arch in SUPPORTED_EXECS
+    }),
+    out = select({
+        "@platforms//os:windows": "wasm_tools.exe",
+        "//conditions:default": "wasm_tools",
+    }),
+)

@@ -54,6 +54,20 @@ selects.config_setting_group(
     ],
 )
 
+config_setting(
+    name = "_ubsan_disabled",
+    flag_values = {"//config:ubsan_selected_config": "false"},
+)
+
+# WASI uses trap instrumentation, which needs no diagnostic runtime.
+selects.config_setting_group(
+    name = "_ubsan_runtime_disabled",
+    match_any = [
+        ":_ubsan_disabled",
+        "@platforms//os:wasi",
+    ],
+)
+
 filegroup(
     name = "none",
     srcs = [],
@@ -212,10 +226,12 @@ alias(
     name = "crt_objects_directory",
     actual = select({
         "@platforms//os:linux": ":crt_objects_directory_linux",
+        "@platforms//os:wasi": "@wasi_libc//:crt_objects_directory",
         "@platforms//os:windows": ":crt_objects_directory_windows",
     }),
     target_compatible_with = select({
         "@platforms//os:linux": [],
+        "@platforms//os:wasi": [],
         "@platforms//os:windows": [],
         "@platforms//os:uefi": [],
         "//conditions:default": ["@platforms//:incompatible"],
@@ -250,13 +266,13 @@ resource_directory(
         },
         "//conditions:default": {},
     }) | select({
-        "//config:ubsan_enabled": {
+        ":_ubsan_runtime_disabled": {},
+        "//conditions:default": {
             "//runtimes/compiler-rt:clang_rt.ubsan_standalone.static": "libclang_rt.ubsan_standalone",
             "//runtimes/compiler-rt:clang_rt.ubsan_standalone_cxx.static": "libclang_rt.ubsan_standalone_cxx",
         } | ({
             "//runtimes/compiler-rt:clang_rt.ubsan_loop_detect.static": "libclang_rt.ubsan_loop_detect",
         } if int(LLVM_VERSION_MAJOR) >= 23 else {}),
-        "//conditions:default": {},
     }) | select({
         "//config:cfi_enabled": {
             "//runtimes/compiler-rt:clang_rt.cfi.static": "libclang_rt.cfi",
@@ -400,6 +416,7 @@ bzl_library(
     srcs = ["resource_directory.bzl"],  # keep
     visibility = ["//visibility:public"],
     deps = [
+        "//constraints/wasi:variants",
         "//constraints/windows/abi:abis",
         "@bazel_lib//lib:copy_file",
         "@bazel_lib//lib:copy_to_directory",
