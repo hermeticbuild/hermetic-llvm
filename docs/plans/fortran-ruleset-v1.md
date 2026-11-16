@@ -150,6 +150,7 @@ FortranInfo = provider(fields = {
     "direct_module_dirs": "depset[File] of this target's module trees",
     "transitive_module_dirs": "depset[File] of complete readable module closure",
     "module_manifests": "depset[File] describing logical module names and owners",
+    "module_validation": "File or None: successful validation of this module closure",
 })
 
 FortranToolchainInfo = provider(fields = {
@@ -191,7 +192,8 @@ An empty aggregator merges dependency linking contexts and Fortran module
 closures, adds no archive or runtime of its own, and permits `CcInfo`-only deps.
 An entirely empty aggregator has empty providers and no runtime. Its module
 compatibility is absent until it receives Fortran module inputs; otherwise a
-CC-only aggregator would impose an irrelevant compiler identity. Its CC compilation context does not
+CC-only aggregator would impose an irrelevant compiler identity. Its CC
+compilation context does not
 expose `.mod` paths as C/C++ include paths. C declarations for a `bind(c)` interface
 belong in an ordinary header-owning `cc_library` wrapper. Preserve dependency
 link contexts without exporting unrelated C header metadata from a Fortran node.
@@ -237,18 +239,28 @@ Alternative source models, in order of increasing complexity:
 
 Each source compile action owns a unique module-output tree and object output,
 with names derived from a collision-safe source path identity, not basename
-alone. The
-compiler adapter passes `-J <tree>` for Flang. Zero modules must still produce an
+alone. The compiler adapter passes `-J <tree>` for Flang. Zero modules must still produce an
 empty declared directory. A hermetic compile helper creates it, invokes the
 compiler, then writes a declared manifest from actual compiler outputs. Its
 implementation language is an implementation decision; no host Python or shell
 dependency is assumed by this spec.
 
-The manifest records compiler identity, owner label and source, logical module/submodule
-identity and compiler filename. Consumers validate their input manifests and
+The manifest records compiler identity, owner label and source, logical
+module/submodule identity and compiler filename. Consumers validate their input manifests and
 reject two different producers of the same module identity before invoking the
 compiler. Repeated traversal to the same producer in a diamond is deduplicated,
 not a conflict. Keep actual module trees as inputs; a manifest is not a substitute.
+
+Each library, including an empty aggregator, also registers a module-namespace
+validation action over its complete own-plus-dependency manifest closure. It
+produces a success stamp carried in default outputs and the normal validation
+output group, so building that library detects conflicting producers without a
+downstream compile. Consumers declare their dependencies' validation stamps as
+compile inputs. A library's own stamp follows its source compilations; it cannot
+be an input of those same actions because that would create a cycle. A CC-only
+or completely empty aggregator has no module namespace to validate. Include
+standalone conflicting-source and conflicting-aggregator builds in acceptance
+tests, not just collisions discovered by a later consumer.
 
 Flang names ordinary modules `<name>.mod` and submodules
 `<ancestor>-<submodule>.mod`. `.smod` is **not** a Fortran-standard filename
@@ -511,7 +523,7 @@ ruleset instead needs positive and negative contract tests from its first slice.
 |---|---|
 | Native entry | Fortran `PROGRAM` defines main and links/runs through CC toolchain; module-only source has no main; duplicate-main negative fixture; document unsupported library PROGRAM |
 | Runtime propagation | C main calls `bind(c)` Fortran using runtime operations; nested/diamond deps; omission of runtime fails a private negative fixture; pure C link has no Flang-RT |
-| Modules | Filename differs from module; zero/two modules; direct/transitive use; duplicate producer rejected; repeated same producer allowed; absent dependency fails |
+| Modules | Filename differs from module; zero/two modules; direct/transitive use; duplicate producers rejected when building the library or aggregator alone; repeated same producer allowed; absent dependency fails |
 | Submodules | Ancestor and nested parent dependencies; output naming matches adapter; no `.smod` assumption |
 | Source model | Many independent sources compile in parallel; sibling USE fails without target edge; split-target form passes; same-source multiple modules work; duplicate basenames stay distinct; empty aggregator preserves dependencies without adding runtime |
 | Preprocessing | `.F90` auto; lowercase forced on; explicit off; conditional modules; declared include invalidation; missing include fails |
