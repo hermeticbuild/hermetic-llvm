@@ -2,7 +2,10 @@
 
 load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
 
-_SearchInfo = provider(fields = ["search", "stderr", "preprocessed"])
+_SearchInfo = provider(
+    doc = "Files from a Clang verbose header search probe.",
+    fields = ["search", "stderr", "preprocessed"],
+)
 
 def _search_aspect_impl(target, ctx):
     compiles = [action for action in target.actions if action.mnemonic == "CppCompile"]
