@@ -50,7 +50,7 @@ toolchains.toolchain(
 )
 use_repo(toolchains, "default_rust_toolchains")
 
-register_toolchains("@default_rust_toolchains//:all")
+register_toolchains("@default_rust_toolchains//...")
 
 rules_rust_bindgen = use_extension(
     "@rules_rs//rs:rules_rust_bindgen.bzl",

@@ -1,0 +1,13 @@
+quote-search
+angle-search
+workspace-root
+generated-bin
+generated-llvm-root
+builtin
+user-system
+msvc-com
+msvc-vcruntime
+windows-ucrt
+windows-shared
+windows-um
+windows-winrt

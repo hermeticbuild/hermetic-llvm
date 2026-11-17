@@ -126,6 +126,24 @@ jobs:
             --experimental_output_paths=strip \
             //...
 
+      - name: Check header search order
+        if: matrix.folder == 'e2e/rules_cc'
+        env:
+          USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
+        working-directory: e2e/rules_cc
+        shell: bash
+        run: |
+          bazel \
+            --bazelrc=$GITHUB_WORKSPACE/.github/workflows/ci.bazelrc \
+            --bazelrc=.bazelrc \
+            test \
+            --repo_env=BAZEL_MSVC_RUNTIME_VISUAL_STUDIO_EULA=1 \
+            --repo_env=BAZEL_WINDOWS_SDK_EULA=1 \
+            //header_order:all_precedence \
+            //header_order:all_libcxx_c_wrappers \
+            //header_order:all_external_builtin_precedence \
+            //header_order:search_tests
+
       - name: bazel coverage e2e (lcov)
         if: matrix.folder == 'e2e/rules_cc' && matrix.bazel_version != '8.x'
         env:
@@ -195,6 +213,7 @@ jobs:
             if [[ "${RUNNER_ARCH}" == ARM64 ]]; then
               cpu=aarch64
             fi
+            # The Windows-target search goldens run in the Linux CI lane.
             test_targets+=(
               "//:windows_msvc_${cpu}_msvcstl_native_test"
               "//:windows_msvc_${cpu}_libcxx_native_test"
@@ -226,7 +245,10 @@ jobs:
               //:thin_lto_linkstatic_tests_shared_backends_test \
               //:thin_lto_all_linkstatic_shared_backends_test \
               //:fdo_optimize_test \
-              //:cs_fdo_optimize_test
+              //:cs_fdo_optimize_test \
+              //header_order:precedence \
+              //header_order:libcxx_c_wrappers \
+              @external_include_paths_test//:builtin_header_precedence
           fi
 
       - name: Check native Windows MSVC actions
@@ -262,7 +284,7 @@ jobs:
         with:
           api-key: ${{ github.ref == 'refs/heads/main' && secrets.BUILDBUDDY_CI_API_KEY || '' }}
 
-      - name: bazel build //:main_default
+      - name: bazel test native macOS headers
         id: bazel_test
         env:
           USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
@@ -271,8 +293,12 @@ jobs:
         run: |
           bazel \
             --bazelrc=.bazelrc \
-            build \
-            //:main_default
+            test \
+            //:main_default \
+            //header_order:precedence \
+            //header_order:libcxx_c_wrappers \
+            //header_order:search_c_macos_x86_64_test \
+            //header_order:search_cxx_macos_x86_64_test
 
       # On macOS, the toolchain uses split copies of the SDK's libc++ headers
       # and links the system libc++ dylib. Check that nostdincxx and

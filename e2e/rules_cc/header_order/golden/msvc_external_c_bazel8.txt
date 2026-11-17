@@ -1,0 +1,12 @@
+quote-search
+angle-search
+external-package-root
+generated-external-package
+external-user
+builtin
+msvc-com
+msvc-vcruntime
+windows-ucrt
+windows-shared
+windows-um
+windows-winrt

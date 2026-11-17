@@ -1,0 +1,11 @@
+quote-search
+workspace-root
+generated-bin
+angle-search
+user-system
+libstdcxx
+libstdcxx-host
+builtin
+linux-kernel
+glibc
+sanitizer

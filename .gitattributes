@@ -4,5 +4,6 @@ docs/*.md linguist-generated=true
 gazelle export-ignore
 internal_tools export-ignore
 e2e export-ignore
+e2e/rules_cc/header_order/search_capture.sh text eol=lf
 examples export-ignore
 tests export-ignore

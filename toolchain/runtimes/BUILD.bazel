@@ -184,8 +184,7 @@ cc_args_list(
         "//toolchain:hermetic_compile_flags",
         ":hermetic_link_flags",
 
-        # Keep external system include directories before the toolchain C and
-        # C++ system include directories below.
+        # User paths retain their driver-defined position relative to builtins.
         "//toolchain:windows_external_include_paths",
 
         # Windows compiler, ABI, CRT, object-format, and C++ runtime semantics.

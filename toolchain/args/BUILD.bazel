@@ -161,18 +161,15 @@ cc_args(
     requires_any_of = ["//toolchain/features/header_modules:header_module_compile"],
 )
 
-# -nostdinc++ keeps the SDK originals out of the search path. Finding both
+# Explicit C++ roots replace Darwin's SDK libc++ discovery. Finding both
 # copies would break the C wrappers' include_next chain because their shared
 # include guards suppress the second copy.
 cc_args(
     name = "macos_cxxstdlib_headers_include_search_paths",
     actions = _CXX_COMPILE_ACTIONS,
     args = [
-        "-nostdinc++",
-        "-isystem",
-        "{cxx_public_headers_include_search_path}",
-        "-isystem",
-        "{cxx_detail_headers_include_search_path}",
+        "-stdlib++-isystem{cxx_public_headers_include_search_path}",
+        "-stdlib++-isystem{cxx_detail_headers_include_search_path}",
     ],
     # Keep data in the same order as the arguments.
     # do not sort
@@ -186,22 +183,27 @@ cc_args(
     },
 )
 
-# //runtimes/cxxstdlib:libcxx_headers.bzl partitions the headers so
-# //toolchain/cc_runtimes:libcxx can use the public directory as hdrs.
-# Normal compilation searches both directories, including implementation
-# headers and C wrappers. We use this layout even without modules to avoid
-# maintaining separate include paths for module and textual builds.
+# //runtimes/cxxstdlib:libcxx_headers.bzl splits public and detail headers.
 cc_args(
     name = "split_cxxstdlib_headers_include_search_paths",
     actions = _CXX_COMPILE_ACTIONS,
-    args = [
-        "-isystem",
-        "{cxx_public_headers_include_search_path}",
-        "-isystem",
-        "{cxx_detail_headers_include_search_path}",
-        "-isystem",
-        "{cxxstdlib_abi_headers_include_search_path}",
-    ],
+    # Keep musl's C++ -> C -> builtin order. Other targets use the driver
+    # category so user headers and libc++ wrappers retain their precedence.
+    args = select({
+        "//platforms/config:musl": [
+            "-isystem",
+            "{cxx_public_headers_include_search_path}",
+            "-isystem",
+            "{cxx_detail_headers_include_search_path}",
+            "-isystem",
+            "{cxxstdlib_abi_headers_include_search_path}",
+        ],
+        "//conditions:default": [
+            "-stdlib++-isystem{cxx_public_headers_include_search_path}",
+            "-stdlib++-isystem{cxx_detail_headers_include_search_path}",
+            "-stdlib++-isystem{cxxstdlib_abi_headers_include_search_path}",
+        ],
+    }),
     # Keep data in the same order as the arguments.
     # do not sort
     data = [
@@ -216,15 +218,22 @@ cc_args(
     },
 )
 
+# libstdc++ retains its single directory.
 cc_args(
     name = "default_cxxstdlib_headers_include_search_paths",
     actions = _CXX_COMPILE_ACTIONS,
-    args = [
-        "-isystem",
-        "{cxxstdlib_headers_include_search_path}",
-        "-isystem",
-        "{cxxstdlib_abi_headers_include_search_path}",
-    ],
+    args = select({
+        "//platforms/config:musl": [
+            "-isystem",
+            "{cxxstdlib_headers_include_search_path}",
+            "-isystem",
+            "{cxxstdlib_abi_headers_include_search_path}",
+        ],
+        "//conditions:default": [
+            "-stdlib++-isystem{cxxstdlib_headers_include_search_path}",
+            "-stdlib++-isystem{cxxstdlib_abi_headers_include_search_path}",
+        ],
+    }),
     # Keep data in the same order as the arguments.
     # do not sort
     data = [
@@ -244,11 +253,9 @@ cc_args(
         "//toolchain/args/windows/msvc:msvcstl_default_headers": [
             "/imsvc{cxxstdlib_headers_include_search_path}",
         ],
-        # /imsvc comes after implicit builtins. libc++ wrappers must precede
-        # them, so use the Clang system-include category instead.
+        # Let the driver place libc++ wrappers before builtin and C headers.
         "//toolchain:runtimes_all": [
-            "/clang:-isystem",
-            "/clang:{cxxstdlib_headers_include_search_path}",
+            "/clang:-stdlib++-isystem{cxxstdlib_headers_include_search_path}",
         ],
         "//conditions:default": [],
     }),
