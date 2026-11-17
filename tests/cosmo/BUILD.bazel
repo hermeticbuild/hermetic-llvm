@@ -5,6 +5,7 @@ load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//:apify.bzl", "apify_binary")
 load("//:defs.bzl", "exec_test")
 load("//platforms:common.bzl", "COSMO_TARGET_CPUS")
+load("//prebuilt/cosmo:apify.bzl", "apify_with_source_loaders")
 
 SMOKE_SUFFIXES = [
     "",
@@ -36,10 +37,10 @@ cc_binary(
 ]
 
 [
-    apify_binary(
+    (apify_with_source_loaders if suffix else apify_binary)(
         name = "smoke" + suffix,
         aarch64 = ":smoke" + suffix + "_aarch64",
-        apelink = "//runtimes/cosmo:apelink" if suffix else None,
+        apelink = "//prebuilt/cosmo:apelink" if suffix else None,
         tags = ["manual"],
         x86_64 = ":smoke" + suffix + "_x86_64",
     )

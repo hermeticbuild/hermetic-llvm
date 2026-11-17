@@ -684,6 +684,7 @@ def libcxx_sources():
 SDK_TOOL_SRCS = {
     "apelink": ["tool/build/lib/parsesupportvector.c"],
     "fixupobj": [],
+    "objbincopy": [],
     "pecheck": [],
     "zipobj": [
         "tool/build/lib/elfwriter.c",

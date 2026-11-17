@@ -26,6 +26,13 @@ bzl_library(
 )
 
 bzl_library(
+    name = "loaders",
+    srcs = ["loaders.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [":startup"],
+)
+
+bzl_library(
     name = "sources",
     srcs = ["sources.bzl"],
     visibility = ["//visibility:public"],

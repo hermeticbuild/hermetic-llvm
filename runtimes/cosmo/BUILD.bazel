@@ -1,10 +1,9 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
-load("//:apify.bzl", "apify_binary")
 load("//platforms:common.bzl", "COSMO_TARGET_CPUS")
+load("//prebuilt/cosmo:apify.bzl", "apify_with_source_loaders")
 load("//runtimes:defs.bzl", "stub_library")
-load("//runtimes/cosmo/source:sources.bzl", "SDK_TOOL_SRCS")
 load("//toolchain/bootstrap:bootstrap_binary.bzl", "bootstrap_binary")
 load("//toolchain/runtimes:cc_runtime_binary.bzl", "cc_runtime_stage1_hosted_binary")
 load(":host_tools.bzl", "APE_LOADER")
@@ -58,35 +57,28 @@ bzl_library(
     for cpu in COSMO_TARGET_CPUS
 ]
 
-apify_binary(
+apify_with_source_loaders(
     name = "llvm",
     aarch64 = ":llvm_aarch64",
-    apelink = ":apelink",
+    apelink = "//prebuilt/cosmo:apelink",
     tags = ["manual"],
     visibility = ["//visibility:public"],
     x86_64 = ":llvm_x86_64",
 )
 
 [
-    platform_transition_filegroup(
-        name = tool + "_" + cpu,
-        srcs = ["@cosmopolitan_source//:" + tool],
-        tags = ["manual"],
-        target_platform = "//platforms:cosmo_" + cpu + "_source",
-    )
-    for tool in SDK_TOOL_SRCS
-    for cpu in COSMO_TARGET_CPUS
-]
-
-[
-    apify_binary(
+    alias(
         name = tool,
-        aarch64 = ":" + tool + "_aarch64",
+        actual = "//prebuilt/cosmo:" + tool,
         tags = ["manual"],
         visibility = ["//visibility:public"],
-        x86_64 = ":" + tool + "_x86_64",
     )
-    for tool in SDK_TOOL_SRCS
+    for tool in [
+        "apelink",
+        "fixupobj",
+        "pecheck",
+        "zipobj",
+    ]
 ]
 
 [

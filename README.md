@@ -441,13 +441,23 @@ apify_binary(
 Build `//:hello` and run `sh bazel-bin/hello.com`. This uses the embedded APE
 loaders and does not require installing an APE `binfmt_misc` handler.
 
+#### APE loaders and tools
+
+Build `//prebuilt/cosmo` with `--extra_toolchains=//toolchain:all` from the
+hermetic-llvm checkout. The archive contains the x86-64 and AArch64 ELF
+loaders, both macOS loaders, and the `apelink`, `fixupobj`, `objbincopy`,
+`pecheck`, and `zipobj` APEs built from Cosmopolitan 4.0.2 source. The build
+uses the released GNU BFD linkers and APE bootstrap tools to build the first
+`libcosmo.a` and package the tools that prepare the source-built loaders.
+
 #### LLVM multicall executable
 
 From the hermetic-llvm checkout, build `//runtimes/cosmo:llvm` for `llvm.com` or
 `//prebuilt/llvm:llvm_distribution` for the archive with the Clang resource
 headers and the tool name symlinks. Pass `--extra_toolchains=//toolchain:all`
 for either target. Both build for `cosmo_x86_64_source` and
-`cosmo_aarch64_source` and use the source-built `apelink.com` to combine them.
+`cosmo_aarch64_source` and use the source-built `apelink.com` and APE loaders
+from `//prebuilt/cosmo` to combine them.
 
 Run commands as `sh bin/llvm.com clang --version` or
 `sh bin/llvm.com ld.lld --version` from the extracted archive. An installed

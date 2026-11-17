@@ -1,0 +1,116 @@
+load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load("@bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
+load("@tar.bzl", "tar")
+load("//:apify.bzl", "apify_binary")
+load("//platforms:common.bzl", "COSMO_TARGET_CPUS")
+load("//prebuilt:mtree.bzl", "mtree")
+load("//runtimes/cosmo/source:sources.bzl", "SDK_TOOL_SRCS")
+load("//toolchain/runtimes:cc_runtime_binary.bzl", "cc_runtime_stage1_hosted_binary")
+load(":apify.bzl", "apify_with_source_loaders")
+
+[
+    platform_transition_filegroup(
+        name = tool + "_" + cpu,
+        srcs = ["@cosmopolitan_source//:" + tool],
+        tags = ["manual"],
+        target_platform = "//platforms:cosmo_" + cpu + "_source",
+    )
+    for tool in SDK_TOOL_SRCS
+    for cpu in COSMO_TARGET_CPUS
+]
+
+# These tools prepare the loader files, so their first APEs embed the released loaders.
+[
+    apify_binary(
+        name = "bootstrap_" + tool,
+        aarch64 = ":" + tool + "_aarch64",
+        tags = ["manual"],
+        visibility = ["@cosmopolitan_source//:__pkg__"],
+        x86_64 = ":" + tool + "_x86_64",
+    )
+    for tool in [
+        "fixupobj",
+        "objbincopy",
+    ]
+]
+
+[
+    apify_with_source_loaders(
+        name = tool,
+        aarch64 = ":" + tool + "_aarch64",
+        apelink = None if tool == "apelink" else ":apelink",
+        tags = ["manual"],
+        visibility = ["//visibility:public"],
+        x86_64 = ":" + tool + "_x86_64",
+    )
+    for tool in SDK_TOOL_SRCS
+]
+
+cc_runtime_stage1_hosted_binary(
+    name = "ape-macos-arm64_binary",
+    srcs = ["@cosmopolitan_source//:ape/ape-m1.c"],
+    copts = ["-O2"],
+    tags = ["manual"],
+    target_compatible_with = [
+        "@platforms//cpu:aarch64",
+        "@platforms//os:macos",
+    ],
+)
+
+platform_transition_filegroup(
+    name = "ape-aarch64.macho",
+    srcs = [":ape-macos-arm64_binary"],
+    tags = ["manual"],
+    target_platform = "//platforms:macos_aarch64",
+    visibility = ["//visibility:public"],
+)
+
+LOADER_FILES = {
+    "ape-aarch64.elf": "@cosmopolitan_source//:ape-aarch64.elf",
+    "ape-m1.c": "@cosmopolitan_source//:ape/ape-m1.c",
+    "ape-x86_64.elf": "@cosmopolitan_source//:ape-x86_64.elf",
+    "ape-x86_64.macho": "@cosmopolitan_source//:ape-x86_64.macho",
+}
+
+[
+    alias(
+        name = name,
+        actual = loader,
+        tags = ["manual"],
+        visibility = ["//visibility:public"],
+    )
+    for name, loader in LOADER_FILES.items()
+]
+
+FILES = {
+    ":" + file: "bin/" + file
+    for file in SDK_TOOL_SRCS.keys() + LOADER_FILES.keys() + ["ape-aarch64.macho"]
+} | {
+    "@cosmopolitan_source//:LICENSE": "LICENSE",
+}
+
+mtree(
+    name = "cosmo_mtree",
+    files = FILES,
+    modes = {
+        "LICENSE": "0644",
+        "bin/ape-m1.c": "0644",
+    },
+    tags = ["manual"],
+)
+
+tar(
+    name = "cosmo",
+    srcs = FILES.keys(),
+    compress = "zstd",
+    mtree = ":cosmo_mtree",
+    tags = ["manual"],
+    visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "apify",
+    srcs = ["apify.bzl"],
+    visibility = ["//visibility:public"],
+    deps = ["//:apify"],
+)
