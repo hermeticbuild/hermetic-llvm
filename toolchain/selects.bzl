@@ -33,7 +33,11 @@ def platform_llvm_binary(binary):
     return select(binaries)
 
 def platform_flang_binary():
-    """Select the execution Flang from the chosen LLVM bootstrap generation."""
+    """Select the execution Flang from the chosen LLVM bootstrap generation.
+
+    Returns:
+        A select of the Flang executable for the execution platform and bootstrap stage.
+    """
     binaries = {
         _platform_bootstrap_stage(exec_os, exec_cpu, "stage0_prebuilt_seed"): Label(
             "@flang-toolchain-minimal-%s-%s//:bin/flang%s" % (
