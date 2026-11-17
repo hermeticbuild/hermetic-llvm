@@ -1,0 +1,36 @@
+load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@llvm-project//:vars.bzl", "LLVM_VERSION_MAJOR")
+load("//toolchain/args:llvm_target_triple.bzl", "LLVM_TARGET_TRIPLE")
+load(":intrinsic_modules.bzl", "FLANG_MODULE_SOURCES", "intrinsic_modules")
+
+_TARGET_COMPATIBILITY = [
+    "@platforms//os:linux",
+    "@platforms//cpu:x86_64",
+    "//constraints/libc:musl",
+] + ([] if int(LLVM_VERSION_MAJOR) == 23 else ["@platforms//:incompatible"])
+
+intrinsic_modules(
+    name = "_generated_intrinsic_modules",
+    srcs = FLANG_MODULE_SOURCES,
+    hdrs = ["@llvm-project//flang:include/flang/Runtime/magic-numbers.h"],
+    tags = ["manual"],
+    target_compatible_with = _TARGET_COMPATIBILITY,
+    target_triple = LLVM_TARGET_TRIPLE,
+)
+
+copy_to_directory(
+    name = "intrinsic_modules",
+    srcs = ["_generated_intrinsic_modules"],
+    root_paths = ["runtimes/flang/_generated_intrinsic_modules"],
+    tags = ["manual"],
+    target_compatible_with = _TARGET_COMPATIBILITY,
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "runtime",
+    actual = "@llvm-project//flang-rt:runtime",
+    tags = ["manual"],
+    target_compatible_with = _TARGET_COMPATIBILITY,
+    visibility = ["//visibility:public"],
+)

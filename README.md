@@ -507,6 +507,13 @@ after both sets of archives pass their build and checksum checks. Earlier LLVM
 versions continue to publish LLVM prebuilts alone. Flang archives are not
 standalone Fortran toolchains.
 
+For LLVM 23 on Linux x86_64 musl, `@llvm//runtimes/flang:intrinsic_modules`
+builds the target's intrinsic `.mod` files as a directory, and
+`@llvm//runtimes/flang:runtime` provides Flang-RT as `CcInfo`. Fetch their
+source with `--repo_env=HERMETIC_LLVM_INCLUDE_FLANG=1`. A Fortran rule must
+declare the module directory as a compile input and pass the runtime's linking
+context to `cc_common.link`; the CC toolchain does not add Flang-RT implicitly.
+
 ## Roadmap
 
 See https://github.com/hermeticbuild/hermetic-llvm/milestone/1
