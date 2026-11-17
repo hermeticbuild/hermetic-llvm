@@ -105,7 +105,6 @@ platform_transition_filegroup(
     target_platform = "@llvm//platforms:linux_x86_64",
 )
 
-# Musl still places its ordinary -isystem libc paths before user headers.
 _PLATFORMS = [
     "linux_" + cpu
     for cpu in [
@@ -122,13 +121,6 @@ _PLATFORMS = [
     "windows_aarch64_msvc",
     "macos_x86_64",
     "macos_aarch64",
-]
-
-_NONE_PLATFORMS = [
-    "none_bpfeb",
-    "none_bpfel",
-    "none_wasm32",
-    "none_wasm64",
 ]
 
 [
@@ -185,182 +177,27 @@ filegroup(
     tags = ["manual"],
 )
 
-[
-    platform_transition_filegroup(
-        name = "search_output_external_" + platform,
-        srcs = [":search_output_external"],
-        tags = ["manual"],
-        target_platform = "@llvm//platforms:" + platform,
-    )
-    for platform in _MSVC_PLATFORMS
-]
-
-[
-    diff_test(
-        name = "search_external_" + platform + "_test",
-        file1 = ":search_output_external_" + platform,
-        file2 = "golden/msvc_external_c" + ("" if bazel_features.cc.supports_starlarkified_toolchains else "_bazel8") + ".txt",
-        tags = ["manual"],
-    )
-    for platform in _MSVC_PLATFORMS
-]
-
-[
-    platform_transition_filegroup(
-        name = "search_output_" + language + "_" + platform,
-        srcs = [":search_output_" + language],
-        tags = ["manual"],
-        target_platform = "@llvm//platforms:" + platform,
-    )
-    for platform in _PLATFORMS + _NONE_PLATFORMS
-    for language in [
-        "c",
-        "cxx",
-    ]
-]
-
-filegroup(
-    name = "all_search_outputs",
-    srcs = [
-        ":search_output_" + language + "_" + platform
-        for platform in _PLATFORMS + _NONE_PLATFORMS
-        for language in [
-            "c",
-            "cxx",
-        ]
-    ],
+platform_transition_filegroup(
+    name = "search_output_external_windows_x86_64_msvc",
+    srcs = [":search_output_external"],
     tags = ["manual"],
-)
-
-_SEARCH_FAMILIES = {
-    "linux_x86_64": "gnu",
-    "linux_aarch64": "gnu",
-    "linux_armv7": "gnu",
-    "linux_riscv64": "gnu",
-    "linux_s390x": "gnu",
-    "windows_x86_64": "mingw",
-    "windows_aarch64": "mingw",
-    "windows_x86_64_msvc": "msvc",
-    "windows_aarch64_msvc": "msvc",
-    "macos_x86_64": "macos",
-    "macos_aarch64": "macos",
-    "none_bpfeb": "none",
-    "none_bpfel": "none",
-    "none_wasm32": "none",
-    "none_wasm64": "none",
-}
-
-_BAZEL8_SEARCH_FAMILIES = [
-    "gnu",
-    "macos",
-    "mingw",
-    "msvc",
-]
-
-[
-    diff_test(
-        name = "search_" + language + "_" + platform + "_test",
-        failure_message = "Clang's effective " + language + " header search order changed for " + platform,
-        file1 = ":search_output_" + language + "_" + platform,
-        file2 = "golden/" + family + "_" + language + ("_bazel8" if family in _BAZEL8_SEARCH_FAMILIES and not bazel_features.cc.supports_starlarkified_toolchains else "") + ".txt",
-        tags = ["manual"],
-    )
-    for platform, family in _SEARCH_FAMILIES.items()
-    for language in [
-        "c",
-        "cxx",
-    ]
-]
-
-test_suite(
-    name = "search_tests",
-    tags = ["manual"],
-    tests = [
-        ":search_" + language + "_" + platform + "_test"
-        for platform in _SEARCH_FAMILIES
-        for language in [
-            "c",
-            "cxx",
-        ]
-    ] + [
-        ":search_" + language + "_windows_" + cpu + "_msvcstl_test"
-        for cpu in [
-            "x86_64",
-            "aarch64",
-        ]
-        for language in [
-            "c",
-            "cxx",
-        ]
-    ] + [
-        ":search_" + language + "_linux_x86_64_libstdcxx_test"
-        for language in [
-            "c",
-            "cxx",
-        ]
-    ] + [":search_cuda_host_linux_x86_64_test"] + [
-        ":search_external_" + platform + "_test"
-        for platform in _MSVC_PLATFORMS
-    ],
+    target_platform = "@llvm//platforms:windows_x86_64_msvc",
 )
 
 diff_test(
-    name = "search_cuda_host_linux_x86_64_test",
-    file1 = ":search_output_cuda_host_linux_x86_64",
-    file2 = "golden/gnu_cuda_host" + ("" if bazel_features.cc.supports_starlarkified_toolchains else "_bazel8") + ".txt",
+    name = "search_external_windows_x86_64_msvc_test",
+    file1 = ":search_output_external_windows_x86_64_msvc",
+    file2 = "golden/msvc_external_c" + ("" if bazel_features.cc.supports_starlarkified_toolchains else "_bazel8") + ".txt",
     tags = ["manual"],
 )
 
-# The matching root-package platforms are private. These test-only variants
-# carry the same constraints so the search matrix can transition to MSVC STL.
-[
-    platform(
-        name = "windows_" + cpu + "_msvcstl",
-        constraint_values = ["@llvm//constraints/cxxstdlib:msvcstl"],
-        parents = ["@llvm//platforms:windows_" + cpu + "_msvc"],
-    )
-    for cpu in [
-        "x86_64",
-        "aarch64",
-    ]
-]
+# These variants have distinct C++ search roots.
+platform(
+    name = "windows_x86_64_msvcstl",
+    constraint_values = ["@llvm//constraints/cxxstdlib:msvcstl"],
+    parents = ["@llvm//platforms:windows_x86_64_msvc"],
+)
 
-[
-    platform_transition_filegroup(
-        name = "search_output_" + language + "_windows_" + cpu + "_msvcstl",
-        srcs = [":search_output_" + language],
-        tags = ["manual"],
-        target_platform = ":windows_" + cpu + "_msvcstl",
-    )
-    for cpu in [
-        "x86_64",
-        "aarch64",
-    ]
-    for language in [
-        "c",
-        "cxx",
-    ]
-]
-
-[
-    diff_test(
-        name = "search_" + language + "_windows_" + cpu + "_msvcstl_test",
-        file1 = ":search_output_" + language + "_windows_" + cpu + "_msvcstl",
-        file2 = "golden/msvcstl_" + language + ".txt",
-        tags = ["manual"],
-    )
-    for cpu in [
-        "x86_64",
-        "aarch64",
-    ]
-    for language in [
-        "c",
-        "cxx",
-    ]
-]
-
-# A single GNU CPU covers libstdc++'s distinct C++ root composition. This
-# mirrors the root module's private linux_x86_64_libstdcxx platform.
 platform(
     name = "linux_x86_64_libstdcxx",
     constraint_values = [
@@ -371,50 +208,41 @@ platform(
     ],
 )
 
-[
-    platform_transition_filegroup(
-        name = "search_output_" + language + "_linux_x86_64_libstdcxx",
-        srcs = [":search_output_" + language],
-        tags = ["manual"],
-        target_platform = ":linux_x86_64_libstdcxx",
-    )
-    for language in [
-        "c",
-        "cxx",
-    ]
-]
-
-[
-    diff_test(
-        name = "search_" + language + "_linux_x86_64_libstdcxx_test",
-        file1 = ":search_output_" + language + "_linux_x86_64_libstdcxx",
-        file2 = "golden/libstdcxx_" + language + ".txt",
-        tags = ["manual"],
-    )
-    for language in [
-        "c",
-        "cxx",
-    ]
+# One representative per driver behavior and configured header-root set.
+# BPF and WebAssembly use different Clang toolchains despite sharing a golden.
+_SEARCH_CASES = [
+    ("linux_x86_64", "@llvm//platforms:linux_x86_64", "gnu"),
+    ("windows_x86_64", "@llvm//platforms:windows_x86_64", "mingw"),
+    ("windows_x86_64_msvc", "@llvm//platforms:windows_x86_64_msvc", "msvc"),
+    ("macos_x86_64", "@llvm//platforms:macos_x86_64", "macos"),
+    ("none_bpfel", "@llvm//platforms:none_bpfel", "none"),
+    ("none_wasm32", "@llvm//platforms:none_wasm32", "none"),
+    ("windows_x86_64_msvcstl", ":windows_x86_64_msvcstl", "msvcstl"),
+    ("linux_x86_64_libstdcxx", ":linux_x86_64_libstdcxx", "libstdcxx"),
 ]
 
 # Musl's C-before-builtin order is intentional. Its current C paths precede
 # target includes, so these desired-order tests stay manual until that is fixed.
-_MUSL_PLATFORMS = ["linux_" + cpu + "_musl" for cpu in [
-    "x86_64",
-    "aarch64",
-    "armv7",
-    "riscv64",
-    "s390x",
-]]
+_MUSL_SEARCH_CASES = [
+    ("linux_x86_64_musl", "@llvm//platforms:linux_x86_64_musl", "musl"),
+]
+
+_BAZEL8_SEARCH_FAMILIES = [
+    "gnu",
+    "macos",
+    "mingw",
+    "msvc",
+    "musl",
+]
 
 [
     platform_transition_filegroup(
-        name = "search_output_" + language + "_" + platform,
+        name = "search_output_" + language + "_" + name,
         srcs = [":search_output_" + language],
         tags = ["manual"],
-        target_platform = "@llvm//platforms:" + platform,
+        target_platform = target_platform,
     )
-    for platform in _MUSL_PLATFORMS
+    for name, target_platform, _ in _SEARCH_CASES + _MUSL_SEARCH_CASES
     for language in [
         "c",
         "cxx",
@@ -423,24 +251,48 @@ _MUSL_PLATFORMS = ["linux_" + cpu + "_musl" for cpu in [
 
 [
     diff_test(
-        name = "search_" + language + "_" + platform + "_test",
-        file1 = ":search_output_" + language + "_" + platform,
-        file2 = "golden/musl_" + language + ("" if bazel_features.cc.supports_starlarkified_toolchains else "_bazel8") + ".txt",
+        name = "search_" + language + "_" + name + "_test",
+        failure_message = "Clang's effective " + language + " header search order changed for " + name,
+        file1 = ":search_output_" + language + "_" + name,
+        file2 = "golden/" + family + "_" + language + ("_bazel8" if family in _BAZEL8_SEARCH_FAMILIES and not bazel_features.cc.supports_starlarkified_toolchains else "") + ".txt",
         tags = ["manual"],
     )
-    for platform in _MUSL_PLATFORMS
+    for name, _, family in _SEARCH_CASES + _MUSL_SEARCH_CASES
     for language in [
         "c",
         "cxx",
     ]
 ]
+
+diff_test(
+    name = "search_cuda_host_linux_x86_64_test",
+    file1 = ":search_output_cuda_host_linux_x86_64",
+    file2 = "golden/gnu_cuda_host" + ("" if bazel_features.cc.supports_starlarkified_toolchains else "_bazel8") + ".txt",
+    tags = ["manual"],
+)
+
+test_suite(
+    name = "search_tests",
+    tags = ["manual"],
+    tests = [
+        ":search_" + language + "_" + name + "_test"
+        for name, _, _ in _SEARCH_CASES
+        for language in [
+            "c",
+            "cxx",
+        ]
+    ] + [
+        ":search_cuda_host_linux_x86_64_test",
+        ":search_external_windows_x86_64_msvc_test",
+    ],
+)
 
 test_suite(
     name = "musl_search_tests",
     tags = ["manual"],
     tests = [
-        ":search_" + language + "_" + platform + "_test"
-        for platform in _MUSL_PLATFORMS
+        ":search_" + language + "_" + name + "_test"
+        for name, _, _ in _MUSL_SEARCH_CASES
         for language in [
             "c",
             "cxx",

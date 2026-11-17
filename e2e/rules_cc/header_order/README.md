@@ -34,16 +34,18 @@ The order *within* a category comes from this repository's component choices
 in `toolchain/args/BUILD.bazel`, `toolchain/args/linux/BUILD.bazel`, and
 `toolchain/args/windows/{mingw,msvc}/BUILD.bazel`.
 
-The active suite covers five GNU CPUs, two MinGW CPUs, two MSVC CPUs with both
-libc++ and Microsoft STL, two Darwin CPUs, four bare-metal targets, one GNU
-libstdc++ configuration, one CUDA host preprocessing configuration, and the
-MSVC external-include category. C and C++ use separate goldens where their
-lists differ. One GNU libstdc++ CPU is enough to check its distinct C++ root
-composition; the five default GNU CPUs check architecture-specific C roots.
-The CUDA case checks host preprocessing and does not claim device compilation.
+The active suite captures one representative target for each search behavior:
+GNU, MinGW, MSVC with libc++, Darwin, BPF, and WebAssembly, plus GNU with
+libstdc++, MSVC with Microsoft STL, CUDA host preprocessing, and the MSVC
+external-include category. BPF and WebAssembly use different Clang toolchains
+even though their expected lists match. C and C++ use separate goldens where
+their lists differ. The compile fixtures still cover every supported GNU,
+MinGW, MSVC, and Darwin CPU, so architecture-specific headers and
+`#include_next` chains are checked. The CUDA case checks host preprocessing
+and does not claim device compilation.
 
 Musl's C-before-builtin placement is intentional, but its current `-isystem`
-C components appear **before** target system includes. The ten
+C components appear **before** target system includes. The two
 `musl_search_tests` compare against the desired user-first order and are
 marked `manual`; they currently fail for that known defect. Remove the manual
 exclusion and include them in `search_tests` after the musl ordering fix.

@@ -291,18 +291,14 @@ jobs:
         working-directory: ${{ matrix.folder }}
         shell: bash
         run: |
-          cpu=x86_64
-          if [[ "${RUNNER_ARCH}" == ARM64 ]]; then
-            cpu=aarch64
-          fi
           bazel \
             --bazelrc=.bazelrc \
             test \
             //:main_default \
             //header_order:precedence \
             //header_order:libcxx_c_wrappers \
-            "//header_order:search_c_macos_${cpu}_test" \
-            "//header_order:search_cxx_macos_${cpu}_test"
+            //header_order:search_c_macos_x86_64_test \
+            //header_order:search_cxx_macos_x86_64_test
 
       # On macOS, the toolchain uses split copies of the SDK's libc++ headers
       # and links the system libc++ dylib. Check that nostdincxx and
