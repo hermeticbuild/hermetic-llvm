@@ -57,16 +57,33 @@ jobs:
     runs-on: ubuntu-latest
     environment: release
     outputs:
+      enabled: ${{ steps.flang_support.outputs.enabled }}
       version: ${{ steps.build_and_package.outputs.version }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
+      - name: Check Flang support
+        id: flang_support
+        run: |
+          llvm_major=$(sed -nE 's/^LLVM_VERSION = "([0-9]+)\..*"$/\1/p' MODULE.bazel)
+          if [[ ! "$llvm_major" =~ ^[0-9]+$ ]]; then
+            echo "Could not determine LLVM major version" >&2
+            exit 1
+          fi
+          if (( 10#$llvm_major >= 23 )); then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: ./.github/actions/buildbuddy-api-key
+        if: steps.flang_support.outputs.enabled == 'true'
         with:
           api-key: ${{ secrets.BUILDBUDDY_RELEASE_API_KEY }}
           required: true
 
       - name: Mount bazel caches
+        if: steps.flang_support.outputs.enabled == 'true'
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
@@ -76,10 +93,12 @@ jobs:
             flang-prebuilt-bazel-${{ runner.os }}
 
       - name: Build and package Flang prebuilts
+        if: steps.flang_support.outputs.enabled == 'true'
         id: build_and_package
         run: bash .github/workflows/flang-prebuilt.sh
 
       - name: Upload workflow artifacts
+        if: steps.flang_support.outputs.enabled == 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: flang-toolchain-${{ steps.build_and_package.outputs.version }}
@@ -98,22 +117,40 @@ jobs:
           path: staging/llvm
 
       - name: Download Flang prebuilts
+        if: needs.flang.outputs.enabled == 'true'
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: flang-toolchain-${{ needs.flang.outputs.version }}
           path: staging/flang
 
       - name: Verify and combine release artifacts
+        id: assemble
+        env:
+          LLVM_VERSION: ${{ needs.llvm.outputs.version }}
+          FLANG_VERSION: ${{ needs.flang.outputs.version }}
+          FLANG_ENABLED: ${{ needs.flang.outputs.enabled }}
         run: |
           set -euo pipefail
-          if [[ "${{ needs.llvm.outputs.version }}" != "${{ needs.flang.outputs.version }}" ]]; then
-            echo "LLVM and Flang versions differ" >&2
+          if [[ -z "$LLVM_VERSION" || ( "$FLANG_ENABLED" != "true" && "$FLANG_ENABLED" != "false" ) ]]; then
+            echo "Missing LLVM version or Flang support decision" >&2
             exit 1
           fi
           (cd staging/llvm && shasum -a 256 -c SHA256.txt)
-          (cd staging/flang && shasum -a 256 -c SHA256.txt)
+          if [[ "$FLANG_ENABLED" == "true" ]]; then
+            if [[ "$LLVM_VERSION" != "$FLANG_VERSION" ]]; then
+              echo "LLVM and Flang versions differ" >&2
+              exit 1
+            fi
+            (cd staging/flang && shasum -a 256 -c SHA256.txt)
+          fi
           mkdir release
-          cp staging/llvm/*.tar.zst staging/flang/*.tar.zst release/
+          cp staging/llvm/*.tar.zst release/
+          if [[ "$FLANG_ENABLED" == "true" ]]; then
+            cp staging/flang/*.tar.zst release/
+            echo "name=LLVM and Flang prebuilts $LLVM_VERSION" >> "$GITHUB_OUTPUT"
+          else
+            echo "name=LLVM prebuilts $LLVM_VERSION" >> "$GITHUB_OUTPUT"
+          fi
           (cd release && shasum -a 256 *.tar.zst > SHA256.txt)
 
       - name: Attest release artifacts
@@ -143,7 +180,7 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           target_commitish: ${{ github.sha }}
-          name: LLVM and Flang prebuilts ${{ needs.llvm.outputs.version }}
+          name: ${{ steps.assemble.outputs.name }}
           files: |
             release/*.tar.zst
             release/SHA256.txt
