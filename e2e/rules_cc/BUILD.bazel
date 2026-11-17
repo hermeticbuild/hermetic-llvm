@@ -1445,6 +1445,18 @@ cc_library(
     srcs = ["duplicate_symbol_b.cc"],
 )
 
+# cc_library archives the two objects without cc_static_library's validation.
+# The test runs the same validator against this archive in one Bazel invocation.
+cc_library(
+    name = "duplicate_symbol_archive",
+    srcs = [
+        "duplicate_symbol_a.cc",
+        "duplicate_symbol_b.cc",
+    ],
+    linkstatic = True,
+    tags = ["manual"],
+)
+
 cc_static_library(
     name = "duplicate_symbol_lib",
     tags = ["manual"],
@@ -1472,18 +1484,22 @@ cc_static_library(
 
 cc_test(
     name = "duplicate_static_library_validator_test",
-    size = "large",
+    size = "small",
     srcs = ["duplicate_static_library_failure_test.cc"],
     data = [
-        ".bazelrc",
-        "BUILD.bazel",
-        "duplicate_symbol_a.cc",
-        "duplicate_symbol_b.cc",
+        ":duplicate_symbol_archive",
+        ":static_library_probe",
+        "@llvm//tools:c++filt",
+        "@llvm//tools:llvm-nm",
+        "@llvm//tools/internal:static-library-validator",
     ],
-    env_inherit = [
-        "PATH",
-        "RUNNER_TEMP",
-    ],
+    env = {
+        "DUPLICATE_ARCHIVE": "$(rlocationpath :duplicate_symbol_archive)",
+        "VALID_ARCHIVE": "$(rlocationpath :static_library_probe)",
+        "VALIDATOR": "$(rlocationpath @llvm//tools/internal:static-library-validator)",
+        "CXXFILT": "$(rlocationpath @llvm//tools:c++filt)",
+        "NM": "$(rlocationpath @llvm//tools:llvm-nm)",
+    },
     exec_properties = {"test.local": "1"},
     target_compatible_with = _VALIDATE_STATIC_LIBRARY_COMPATIBLE,
     deps = ["@bazel_tools//tools/cpp/runfiles"],

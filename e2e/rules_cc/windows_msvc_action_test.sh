@@ -415,7 +415,9 @@ assert_contains "${action_dir}/archive.txt" "windows_msvc_behavior_support.lib"
 assert_command_absent "${action_dir}/archive.txt" "llvm-ar"
 assert_absent "${action_dir}/staged-runtime-validation.txt" "Mnemonic: ValidateStaticLibrary"
 assert_contains "${action_dir}/complete-runtime-validation.txt" "Mnemonic: ValidateStaticLibrary"
-assert_contains "${action_dir}/complete-runtime-validation.txt" "static-library-validator"
+assert_matches "${action_dir}/complete-runtime-validation.txt" 'Command Line: \(exec .*static-library-validator'
+assert_matches "${action_dir}/complete-runtime-validation.txt" 'LLVM_NM=.*bin/llvm-nm'
+assert_matches "${action_dir}/complete-runtime-validation.txt" 'LLVM_CXXFILT=.*bin/c\+\+filt'
 
 assert_contains "${action_dir}/link.txt" "bin/clang-cl"
 assert_contains "${action_dir}/link.txt" "bin/lld-link"

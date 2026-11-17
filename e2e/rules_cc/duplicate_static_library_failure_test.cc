@@ -2,28 +2,23 @@
 #include <stdlib.h>
 
 #include <fstream>
+#include <iterator>
+#include <memory>
 #include <string>
 
 #include "tools/cpp/runfiles/runfiles.h"
 
 #if defined(_WIN32)
-#include <direct.h>
-#include <process.h>
-#include <stdlib.h>
-#define chdir _chdir
-#define getcwd _getcwd
-#define getpid _getpid
-#define PATH_SEP "\\"
-#define REDIRECT " > "
+#include <io.h>
+#define ACCESS _access
 #else
 #include <unistd.h>
-#define PATH_SEP "/"
-#define REDIRECT " > "
+#define ACCESS access
 #endif
 
 using bazel::tools::cpp::runfiles::Runfiles;
 
-static std::string RequiredEnv(const char *name) {
+static const char *RequiredEnv(const char *name) {
   const char *value = getenv(name);
   if (value == nullptr || value[0] == '\0') {
     fprintf(stderr, "required env var %s is not set\n", name);
@@ -32,13 +27,14 @@ static std::string RequiredEnv(const char *name) {
   return value;
 }
 
-static bool FileContains(const std::string &path, const char *needle) {
-  std::ifstream file(path);
-  std::string line;
-  while (std::getline(file, line)) {
-    if (line.find(needle) != std::string::npos) return true;
+static std::string Resolve(const Runfiles &runfiles, const char *name) {
+  std::string path = runfiles.Rlocation(RequiredEnv(name));
+  if (path.empty() || ACCESS(path.c_str(), 0) != 0) {
+    fprintf(stderr, "could not find %s in runfiles: %s\n", name,
+            path.c_str());
+    exit(2);
   }
-  return false;
+  return path;
 }
 
 static void SetEnv(const char *name, const std::string &value) {
@@ -52,120 +48,73 @@ static void SetEnv(const char *name, const std::string &value) {
   }
 }
 
-static void ClearEnv(const char *name) {
-#if defined(_WIN32)
-  if (_putenv_s(name, "") != 0) {
-#else
-  if (unsetenv(name) != 0) {
-#endif
-    perror("unsetenv");
-    exit(2);
-  }
+static std::string ReadFile(const std::string &path) {
+  std::ifstream file(path);
+  return std::string(std::istreambuf_iterator<char>(file),
+                     std::istreambuf_iterator<char>());
 }
 
-static std::string SourceDir() {
+static int Validate(const std::string &validator, const std::string &archive,
+                    const std::string &stamp, const std::string &log) {
+  std::string command = "\"" + validator + "\" \"" + archive + "\" \"" +
+                        stamp + "\" >\"" + log + "\" 2>&1";
+#if defined(_WIN32)
+  // cmd.exe needs another pair of quotes when the executable path is quoted.
+  command = "\"" + command + "\"";
+#endif
+  return system(command.c_str());
+}
+
+int main() {
   std::string error;
   std::unique_ptr<Runfiles> runfiles(Runfiles::CreateForTest(&error));
   if (runfiles == nullptr) {
     fprintf(stderr, "failed to create runfiles: %s\n", error.c_str());
-    exit(2);
-  }
-  std::string path =
-      runfiles->Rlocation(RequiredEnv("TEST_WORKSPACE") + "/BUILD.bazel");
-  if (path.empty()) {
-    fprintf(stderr, "failed to find BUILD.bazel in runfiles\n");
-    exit(2);
-  }
-  size_t slash = path.find_last_of("/\\");
-  if (slash == std::string::npos) {
-    fprintf(stderr, "failed to determine source directory from %s\n",
-            path.c_str());
-    exit(2);
-  }
-  return path.substr(0, slash);
-}
-
-static std::string NestedBazelArgs() {
-#if defined(_WIN32)
-  // Do not let the inner Bazel inherit TEST_TMPDIR as its output root. Bazel
-  // nests another full output tree under it, and on Windows that is enough to
-  // push tool paths past what lld can handle.
-  // GitHub Actions sets RUNNER_TEMP on D:. Prefer RUNNER_TEMP because
-  // extracting LLVM 23 in TEMP on C: exhausts C:.
-  const char *tmp = getenv("RUNNER_TEMP");
-  if (tmp == nullptr || tmp[0] == '\0') {
-    tmp = getenv("TEMP");
-  }
-  if (tmp == nullptr || tmp[0] == '\0') {
-    tmp = getenv("TMP");
-  }
-  if (tmp == nullptr || tmp[0] == '\0') {
-    tmp = getenv("TEST_TMPDIR");
-  }
-  if (tmp == nullptr || tmp[0] == '\0') {
-    fprintf(stderr, "no temporary directory available for nested bazel\n");
-    exit(2);
-  }
-  return " --output_user_root=\"" + std::string(tmp) +
-         PATH_SEP + "duplicate_static_library_validator_" +
-         std::to_string(getpid()) + "\"";
-#else
-  return "";
-#endif
-}
-
-int main() {
-  std::string log = RequiredEnv("TEST_TMPDIR") + PATH_SEP +
-                    "duplicate_static_library.log";
-  const char *bazel_bin = getenv("BAZEL_BIN");
-  if (bazel_bin == nullptr || bazel_bin[0] == '\0') {
-#if defined(_WIN32)
-    bazel_bin = "bazel.exe";
-#else
-    bazel_bin = "bazel";
-#endif
-  }
-
-  std::string source_dir = SourceDir();
-  if (chdir(source_dir.c_str()) != 0) {
-    perror("chdir");
     return 2;
   }
-  SetEnv("HOME", RequiredEnv("TEST_TMPDIR"));
-  // Bazel also treats TEST_TMPDIR as a default output root. Leave HOME pointing
-  // at the test's private directory, but keep the nested Bazel from growing its
-  // output base inside the outer test's temp directory.
-  ClearEnv("TEST_TMPDIR");
 
-  std::string command = std::string(bazel_bin) + NestedBazelArgs() +
-                        " --bazelrc=.bazelrc build --color=yes --curses=yes"
-                        " --experimental_remote_downloader="
-                        " //:duplicate_symbol_lib" +
-                        REDIRECT + "\"" + log + "\" 2>&1";
-  int status = system(command.c_str());
-  if (status == 0) {
-    fprintf(stderr,
-            "Expected duplicate_symbol_lib to fail duplicate symbol "
-            "validation, but build succeeded.\n");
+  const std::string validator = Resolve(*runfiles, "VALIDATOR");
+  const std::string nm = Resolve(*runfiles, "NM");
+  const std::string cxxfilt = Resolve(*runfiles, "CXXFILT");
+  const std::string duplicate = Resolve(*runfiles, "DUPLICATE_ARCHIVE");
+  const std::string valid = Resolve(*runfiles, "VALID_ARCHIVE");
+  const std::string tmpdir = RequiredEnv("TEST_TMPDIR");
+#if defined(_WIN32)
+  const char *separator = "\\";
+#else
+  const char *separator = "/";
+#endif
+  const std::string stamp = tmpdir + separator + "validation.txt";
+  const std::string log = tmpdir + separator + "validation.log";
+
+  SetEnv("LLVM_NM", nm);
+  SetEnv("LLVM_CXXFILT", cxxfilt);
+#if defined(__APPLE__)
+  SetEnv("DARWIN_TARGET", "1");
+#endif
+
+  if (Validate(validator, duplicate, stamp, log) == 0) {
+    fprintf(stderr, "duplicate archive unexpectedly passed validation\n");
+    return 1;
+  }
+  std::string output = ReadFile(log);
+  if (output.find("Duplicate symbols found") == std::string::npos ||
+      output.find("duplicated_function") == std::string::npos ||
+      output.find("duplicate_symbol_a") == std::string::npos ||
+      output.find("duplicate_symbol_b") == std::string::npos ||
+      ACCESS(stamp.c_str(), 0) == 0) {
+    fprintf(stderr, "unexpected duplicate archive result:\n%s\n", output.c_str());
     return 1;
   }
 
-  if (!FileContains(log, "Duplicate symbols found")) {
-    fprintf(stderr, "Build failed, but duplicate symbol message not found.\n");
-    char cwd[4096];
-    if (getcwd(cwd, sizeof(cwd)) != nullptr) {
-      fprintf(stderr, "cwd: %s\n", cwd);
-    }
-    fprintf(stderr, "command: %s\n", command.c_str());
-    std::ifstream file(log);
-    std::string line;
-    while (std::getline(file, line)) {
-      fprintf(stderr, "%s\n", line.c_str());
-    }
+  if (Validate(validator, valid, stamp, log) != 0 ||
+      ACCESS(stamp.c_str(), 0) != 0) {
+    fprintf(stderr, "valid archive failed validation:\n%s\n",
+            ReadFile(log).c_str());
     return 1;
   }
 
-  printf("duplicate_static_library_validator_test: detected duplicate "
-         "symbols as expected.\n");
+  printf("static library validator accepted a valid archive and rejected "
+         "duplicate symbols\n");
   return 0;
 }
