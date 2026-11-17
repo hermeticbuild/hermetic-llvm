@@ -1,0 +1,85 @@
+diff --git a/flang-rt/lib/runtime/BUILD.bazel b/flang-rt/lib/runtime/BUILD.bazel
+--- a/flang-rt/lib/runtime/BUILD.bazel
++++ b/flang-rt/lib/runtime/BUILD.bazel
+@@ -14,17 +14,42 @@
+ 
+ licenses(["notice"])
+ 
+-# Generate config.h from flang-rt/cmake/config.h.cmake.in. Values match what
+-# CMake autodetects on a typical Linux glibc host.
++# Hermetic LLVM builds target intrinsic modules from these sources.
++exports_files(
++    [
++        "__fortran_builtins.f90",
++        "__fortran_ieee_exceptions.f90",
++        "__fortran_type_info.f90",
++        "flang_debug.f90",
++        "iso_fortran_env_impl.f90",
++        "iso_fortran_env.f90",
++        "ieee_arithmetic.f90",
++        "ieee_exceptions.f90",
++        "ieee_features.f90",
++        "iso_c_binding.f90",
++    ],
++    visibility = ["@llvm//runtimes/flang:__pkg__"],
++)
++
++# musl does not provide execinfo.h. The generated configuration must follow
++# the target libc, rather than the machine running Bazel.
+ expand_template(
+     name = "config_h_gen",
+     out = "config.h",
+-    substitutions = {
+-        "#cmakedefine HAVE_BACKTRACE ${HAVE_BACKTRACE}": "#define HAVE_BACKTRACE 1",
+-        "#cmakedefine01 HAVE_DECL_STRERROR_S": "#define HAVE_DECL_STRERROR_S 0",
+-        "#cmakedefine01 HAVE_STRERROR_R": "#define HAVE_STRERROR_R 1",
+-        "#define BACKTRACE_HEADER <${BACKTRACE_HEADER}>": "#define BACKTRACE_HEADER <execinfo.h>",
+-    },
++    substitutions = select({
++        "@llvm//platforms/config:musl": {
++            "#cmakedefine HAVE_BACKTRACE ${HAVE_BACKTRACE}": "/* #undef HAVE_BACKTRACE */",
++            "#cmakedefine01 HAVE_DECL_STRERROR_S": "#define HAVE_DECL_STRERROR_S 0",
++            "#cmakedefine01 HAVE_STRERROR_R": "#define HAVE_STRERROR_R 1",
++            "#define BACKTRACE_HEADER <${BACKTRACE_HEADER}>": "/* no backtrace header on musl */",
++        },
++        "//conditions:default": {
++            "#cmakedefine HAVE_BACKTRACE ${HAVE_BACKTRACE}": "#define HAVE_BACKTRACE 1",
++            "#cmakedefine01 HAVE_DECL_STRERROR_S": "#define HAVE_DECL_STRERROR_S 0",
++            "#cmakedefine01 HAVE_STRERROR_R": "#define HAVE_STRERROR_R 1",
++            "#define BACKTRACE_HEADER <${BACKTRACE_HEADER}>": "#define BACKTRACE_HEADER <execinfo.h>",
++        },
++    }),
+     template = "//flang-rt:cmake/config.h.cmake.in",
+ )
+ 
+@@ -49,3 +74,5 @@
+ cc_library(
+     name = "flang_rt.runtime",
++    # Packaged runtime archives must contain machine code even in release mode.
++    features = ["-thin_lto"],
+     srcs = glob(
+@@ -66,6 +93,9 @@
+     copts = [
+         "-fno-exceptions",
+         "-fno-rtti",
++        # Match AddFlangRT.cmake: the STL override precedes standard headers.
++        "-include",
++        "$(location :stl-overrides.h)",
+     ],
+     deps = [
+         ":runtime_config",
+diff --git a/flang/BUILD.bazel b/flang/BUILD.bazel
+--- a/flang/BUILD.bazel
++++ b/flang/BUILD.bazel
+@@ -20,3 +20,11 @@
+ exports_files(["LICENSE.TXT"])
+ 
++# The target intrinsic-module action needs this Fortran preprocessor input.
++exports_files(
++    [
++        "include/flang/Runtime/magic-numbers.h",
++    ],
++    visibility = ["@llvm//runtimes/flang:__pkg__"],
++)
++
+ expand_template(

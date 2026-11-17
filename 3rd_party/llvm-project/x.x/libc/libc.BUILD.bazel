@@ -1,6 +1,16 @@
 load("@llvm-project//:vars.bzl", "LLVM_VERSION_MAJOR")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 
+# Flang-RT's RPC adapter needs these libc implementation headers.
+exports_files(
+    [
+        "shared/rpc.h",
+        "shared/rpc_dispatch.h",
+        "shared/rpc_util.h",
+    ],
+    visibility = ["//flang-rt:__pkg__"],
+)
+
 # Only the subset of headers required to build libc++.
 #
 # See project hand-in-hand.
