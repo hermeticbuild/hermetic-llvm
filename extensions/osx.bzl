@@ -152,6 +152,7 @@ def _osx_extension_impl(mctx):
     for framework in frameworks:
         includes.append("System/Library/Frameworks/%s.framework/**" % framework)
         includes.append("System/Library/PrivateFrameworks/%s.framework/**" % framework)
+        includes.append("System/Cryptexes/OS/System/Library/Frameworks/%s.framework/**" % framework)
 
     # The following directories are unused, deprecated, or private headers.
     # These components:
