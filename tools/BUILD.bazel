@@ -1,5 +1,5 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
-load("@llvm//toolchain:selects.bzl", "platform_llvm_binary")
+load("@llvm//toolchain:selects.bzl", "platform_flang_binary", "platform_llvm_binary")
 load("@llvm//tools:defs.bzl", "TOOLCHAIN_BINARIES")
 load("@rules_python//python:defs.bzl", "py_binary")
 
@@ -13,6 +13,12 @@ package(default_visibility = ["//visibility:public"])
     )
     for tool in TOOLCHAIN_BINARIES
 ]
+
+alias(
+    name = "flang",
+    actual = platform_flang_binary(),
+    tags = ["manual"],
+)
 
 py_binary(
     name = "update_osx_sdk",

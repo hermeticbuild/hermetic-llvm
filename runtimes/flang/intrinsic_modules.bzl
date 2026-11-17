@@ -50,7 +50,7 @@ intrinsic_modules = rule(
         "hdrs": attr.label_list(allow_files = [".h"]),
         "target_triple": attr.string_list(mandatory = True),
         "compiler": attr.label(
-            default = "@llvm-project//flang/tools/flang-driver:flang",
+            default = "@llvm//tools:flang",
             executable = True,
             allow_single_file = True,
             cfg = "exec",

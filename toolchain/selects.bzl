@@ -32,6 +32,31 @@ def platform_llvm_binary(binary):
     )
     return select(binaries)
 
+def platform_flang_binary():
+    """Select the execution Flang from the chosen LLVM bootstrap generation."""
+    binaries = {
+        _platform_bootstrap_stage(exec_os, exec_cpu, "stage0_prebuilt_seed"): Label(
+            "@flang-toolchain-minimal-%s-%s//:bin/flang%s" % (
+                "darwin" if exec_os == "macos" else exec_os,
+                "amd64" if exec_cpu == "x86_64" else "arm64",
+                ".exe" if exec_os == "windows" else "",
+            ),
+        )
+        for exec_os, exec_cpu in SUPPORTED_EXECS
+    }
+
+    # Flang has a source-backed ThinLTO build, but no Flang FDO profile. All
+    # source bootstrap modes therefore select the same LTO executable.
+    source_flang = Label("@llvm//prebuilt/flang:flang")
+    for stage in [
+        "bootstrap_stage1_from_source",
+        "bootstrap_stage2_lto_and_fdo_instrumented",
+        "bootstrap_stage3_lto_and_fdo_applied",
+    ]:
+        binaries["@llvm//toolchain:" + stage] = source_flang
+
+    return select(binaries)
+
 def platform_extra_binary(binary):
     return select({
         "@llvm//platforms/config:macos_x86_64": Label("@toolchain-extra-prebuilts-darwin-amd64//:%s" % binary),
