@@ -13,6 +13,7 @@ bzl_library(
     visibility = ["//visibility:public"],
     deps = [
         "//private:llvm_project_archive",
+        "//private:llvm_project_common",
         "//private:llvm_project_from_git",
         "//private:llvm_project_from_path",
         "@bazel_skylib//lib:structs",
