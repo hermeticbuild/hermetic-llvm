@@ -8,7 +8,8 @@ def cc_toolchain(
         tool_map,
         module_map = None,
         extra_args = None,
-        supports_gnu_param_file_quoting = False):
+        supports_gnu_param_file_quoting = False,
+        requires_compiler_param_files = False):
     extra_args = extra_args or []
 
     # Link and archive response files share a quoting feature. Enable the GNU
@@ -16,6 +17,14 @@ def cc_toolchain(
     gnu_quoting_features = [
         "@llvm//toolchain/features:gcc_quoting_for_param_files",
     ] if supports_gnu_param_file_quoting else []
+
+    # The execution OS, not the target, bounds compile command-line length.
+    # clang's GNU driver reads response files with GNU quoting on every host,
+    # so this needs no quoting feature of its own. clang-cl always enables
+    # these features through its protocol composition.
+    compiler_param_file_features = [
+        "@llvm//toolchain/features:compiler_param_file_features",
+    ] if requires_compiler_param_files else []
     cc_feature_set(
         name = name + "_msvc_known_features",
         all_of = [
@@ -215,7 +224,7 @@ def cc_toolchain(
 
     cc_feature_set(
         name = name + "_generic_selected_known_features",
-        all_of = gnu_quoting_features + select({
+        all_of = compiler_param_file_features + gnu_quoting_features + select({
             "@llvm//toolchain:runtimes_none": [
                 "@llvm//toolchain/features:external_include_paths",
                 "@llvm//toolchain/features:fdo_optimize",
@@ -237,7 +246,7 @@ def cc_toolchain(
 
     cc_feature_set(
         name = name + "_generic_selected_enabled_features",
-        all_of = gnu_quoting_features + select({
+        all_of = compiler_param_file_features + gnu_quoting_features + select({
             "@llvm//toolchain:runtimes_none": [name + "_generic_runtimes_only_enabled_features"],
             "@llvm//toolchain:runtimes_stage1": [name + "_generic_runtimes_only_enabled_features"],
             "@llvm//toolchain:runtimes_stage1_hosted": [name + "_generic_runtimes_only_enabled_features"],

@@ -619,6 +619,7 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
             cc_toolchain(
                 name = cc_toolchain_name,
                 supports_gnu_param_file_quoting = exec_os in ["linux", "macos"],
+                requires_compiler_param_files = exec_os == "windows",
                 extra_args = select({
                     "@platforms//os:uefi": [],
                     "//conditions:default": [cc_toolchain_name + "_resource_directory_args"],

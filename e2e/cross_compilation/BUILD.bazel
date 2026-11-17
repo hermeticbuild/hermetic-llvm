@@ -171,6 +171,52 @@ PLATFORMS = [
     ]
 ]
 
+# The padding defines take the compile command line past both the 32,767-
+# character CreateProcessW limit and Bazel's default --min_param_file_size, so
+# building this on a Windows host only works when the compile goes through a
+# param file, whichever OS it targets.
+cc_binary(
+    name = "long_command_line",
+    srcs = ["long_command_line.cc"],
+    local_defines = [
+        "PARAM_FILE_PADDING_%d=%s" % (
+            i,
+            "x" * 64,
+        )
+        for i in range(1000, 1512)
+    ] + [
+        # Bazel tokenizes defines like a Bourne shell, so these spell the
+        # C string literals "two words" and "it's \"quoted\"".
+        "PARAM_FILE_SPACES='\"two words\"'",
+        "PARAM_FILE_QUOTES='\"it'\\''s \\\"quoted\\\"\"'",
+    ],
+    tags = ["manual"],
+)
+
+LONG_COMMAND_LINE_PLATFORMS = [
+    "linux_x86_64",
+    "macos_aarch64",
+    "windows_amd64",
+]
+
+[
+    platform_transition_binary(
+        name = "long_command_line_" + platform,
+        binary = ":long_command_line",
+        tags = ["manual"],
+        target_platform = "@llvm//platforms:" + platform,
+    )
+    for platform in LONG_COMMAND_LINE_PLATFORMS
+]
+
+build_test(
+    name = "long_command_line_build_test",
+    targets = [
+        ":long_command_line_" + platform
+        for platform in LONG_COMMAND_LINE_PLATFORMS
+    ],
+)
+
 build_test(
     name = "windows_msvc_cross_build_test",
     tags = ["manual"],
