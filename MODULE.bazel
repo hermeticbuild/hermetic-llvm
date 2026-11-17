@@ -58,6 +58,18 @@ use_repo(
     "llvm-toolchain-minimal-windows-arm64",
 )
 
+flang_toolchain_minimal = use_extension("//extensions:flang_toolchain_minimal.bzl", "flang_toolchain_minimal")
+flang_toolchain_minimal.index(file = "//extensions:flang_toolchain_minimal_index.json")
+use_repo(
+    flang_toolchain_minimal,
+    "flang-toolchain-minimal-darwin-amd64",
+    "flang-toolchain-minimal-darwin-arm64",
+    "flang-toolchain-minimal-linux-amd64",
+    "flang-toolchain-minimal-linux-arm64",
+    "flang-toolchain-minimal-windows-amd64",
+    "flang-toolchain-minimal-windows-arm64",
+)
+
 TOOLCHAIN_EXTRAS_SHA256 = {
     "darwin-amd64": "896012903967bb0e9993ce9348e2f18dae67149bd673a186cf89ece9f64bd060",
     "darwin-arm64": "7df5f768ec8e82cd9847df90dac9b9cb1bc2a6628669487475adf341b58854eb",
