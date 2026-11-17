@@ -84,7 +84,10 @@ LOADER_FILES = {
 
 FILES = {
     ":" + file: "bin/" + file
-    for file in SDK_TOOL_SRCS.keys() + LOADER_FILES.keys() + ["ape-aarch64.macho"]
+    for file in SDK_TOOL_SRCS.keys() + ["ape-aarch64.macho"]
+} | {
+    loader: "bin/" + name
+    for name, loader in LOADER_FILES.items()
 } | {
     "@cosmopolitan_source//:LICENSE": "LICENSE",
 }
