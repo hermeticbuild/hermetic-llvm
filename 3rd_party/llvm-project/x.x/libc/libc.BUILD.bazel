@@ -164,3 +164,56 @@ cc_library(
     includes = ["."],
     visibility = ["//visibility:public"],
 )
+
+# LLVM libc's string functions that replace musl's implementations with
+# --@llvm//config:musl_llvm_libc_string_functions. LLVM 21 lacks the vectorized
+# strlen.
+filegroup(
+    name = "musl_string_functions_srcs",
+    srcs = [
+        "src/string/memcmp.cpp",
+        "src/strings/bcmp.cpp",
+    ] + (
+        ["src/string/strlen.cpp"] if int(LLVM_VERSION_MAJOR) >= 22 else []
+    ),
+    visibility = ["@llvm//runtimes/musl:__pkg__"],
+)
+
+cc_library(
+    name = "musl_string_functions_headers",
+    hdrs = glob([
+        "hdr/**/*.h",
+        "include/llvm-libc-macros/**/*.h",
+        "include/llvm-libc-types/**/*.h",
+        "src/__support/**/*.h",
+        "src/string/**/*.h",
+        "src/strings/**/*.h",
+    ]),
+    features = ["-parse_headers"],
+    includes = ["."],
+)
+
+cc_library(
+    name = "musl_string_functions",
+    srcs = [":musl_string_functions_srcs"],
+    copts = [
+        "-ffreestanding",
+        "-fno-builtin",
+        "-fno-exceptions",
+        "-fno-rtti",
+        "-fno-lax-vector-conversions",
+        "-fno-unwind-tables",
+        "-fno-asynchronous-unwind-tables",
+    ],
+    implementation_deps = [
+        ":musl_string_functions_headers",
+        "@musl_libc//:musl_libc_headers",
+    ],
+    local_defines = [
+        "LIBC_NAMESPACE=__llvm_libc_musl",
+        # Defines the C symbols, such as memcmp.
+        "LIBC_COPT_PUBLIC_PACKAGING",
+        "LIBC_COPT_STRING_LENGTH_IMPL=clang_vector",
+    ],
+    visibility = ["@llvm//runtimes/musl:__pkg__"],
+)
