@@ -501,9 +501,10 @@ binaries.
 Flang host compiler archives are built by `//prebuilt/flang:all` for the same
 execution platforms. They contain the ThinLTO-built `flang` executable and its
 licenses, not target intrinsic modules, Flang-RT, a linker, or a target sysroot.
-The dedicated `flang-<LLVM version>-r<revision>` release branches publish one
-archive per execution platform after the source version is selected in
-`MODULE.bazel`. These archives are not standalone Fortran toolchains.
+The `llvm-<LLVM version>-<revision>` release branches build both LLVM and
+Flang from the same commit. The release is published only after both sets of
+archives pass their build and checksum checks. These archives are not
+standalone Fortran toolchains.
 
 ## Roadmap
 

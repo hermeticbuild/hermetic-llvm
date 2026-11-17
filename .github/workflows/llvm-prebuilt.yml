@@ -17,12 +17,14 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  release:
+  llvm:
     runs-on: ubuntu-latest
     # The release BuildBuddy API key belongs to a separate BuildBuddy org, so
     # release builds only consume cache entries written by release builds. It
     # is an environment secret so that only release branches can use it.
     environment: release
+    outputs:
+      version: ${{ steps.build_and_package.outputs.version }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
@@ -49,6 +51,70 @@ jobs:
         with:
           name: llvm-toolchain-minimal-${{ steps.build_and_package.outputs.version }}
           path: release/*
+          if-no-files-found: error
+
+  flang:
+    runs-on: ubuntu-latest
+    environment: release
+    outputs:
+      version: ${{ steps.build_and_package.outputs.version }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - uses: ./.github/actions/buildbuddy-api-key
+        with:
+          api-key: ${{ secrets.BUILDBUDDY_RELEASE_API_KEY }}
+          required: true
+
+      - name: Mount bazel caches
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cache/bazel-repo
+          key: flang-prebuilt-bazel-${{ runner.os }}-${{ github.ref_name }}
+          restore-keys: |
+            flang-prebuilt-bazel-${{ runner.os }}
+
+      - name: Build and package Flang prebuilts
+        id: build_and_package
+        run: bash .github/workflows/flang-prebuilt.sh
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: flang-toolchain-${{ steps.build_and_package.outputs.version }}
+          path: release/*
+          if-no-files-found: error
+
+  release:
+    needs: [llvm, flang]
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - name: Download LLVM prebuilts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: llvm-toolchain-minimal-${{ needs.llvm.outputs.version }}
+          path: staging/llvm
+
+      - name: Download Flang prebuilts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: flang-toolchain-${{ needs.flang.outputs.version }}
+          path: staging/flang
+
+      - name: Verify and combine release artifacts
+        run: |
+          set -euo pipefail
+          if [[ "${{ needs.llvm.outputs.version }}" != "${{ needs.flang.outputs.version }}" ]]; then
+            echo "LLVM and Flang versions differ" >&2
+            exit 1
+          fi
+          (cd staging/llvm && shasum -a 256 -c SHA256.txt)
+          (cd staging/flang && shasum -a 256 -c SHA256.txt)
+          mkdir release
+          cp staging/llvm/*.tar.zst staging/flang/*.tar.zst release/
+          (cd release && shasum -a 256 *.tar.zst > SHA256.txt)
 
       - name: Attest release artifacts
         id: attest
@@ -62,13 +128,13 @@ jobs:
         run: |
           mv \
             "${{ steps.attest.outputs.bundle-path }}" \
-            "release/llvm-toolchain-minimal-${{ steps.build_and_package.outputs.version }}.attestation.jsonl"
+            "release/llvm-toolchain-minimal-${{ needs.llvm.outputs.version }}.attestation.jsonl"
 
       - name: Upload attestation bundle artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: llvm-toolchain-minimal-${{ steps.build_and_package.outputs.version }}.attestation
-          path: release/llvm-toolchain-minimal-${{ steps.build_and_package.outputs.version }}.attestation.jsonl
+          name: llvm-toolchain-minimal-${{ needs.llvm.outputs.version }}.attestation
+          path: release/llvm-toolchain-minimal-${{ needs.llvm.outputs.version }}.attestation.jsonl
           if-no-files-found: error
 
       - name: Publish release
@@ -77,7 +143,7 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           target_commitish: ${{ github.sha }}
-          name: LLVM prebuilts ${{ steps.build_and_package.outputs.version }}
+          name: LLVM and Flang prebuilts ${{ needs.llvm.outputs.version }}
           files: |
             release/*.tar.zst
             release/SHA256.txt

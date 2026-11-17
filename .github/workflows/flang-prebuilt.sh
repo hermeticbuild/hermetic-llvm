@@ -18,12 +18,13 @@ PY
 )
 
 BRANCH_NAME="${GITHUB_REF_NAME:-$(git rev-parse --abbrev-ref HEAD)}"
-if [[ ! "${BRANCH_NAME}" =~ ^flang-([0-9]+\.[0-9]+\.[0-9]+)-r[1-9][0-9]*$ ]]; then
-  echo "Branch name must match flang-<LLVM version>-r<revision> (got ${BRANCH_NAME})" >&2
+if [[ ! "${BRANCH_NAME}" =~ ^llvm- ]]; then
+  echo "Branch name must start with 'llvm-' (got ${BRANCH_NAME})" >&2
   exit 1
 fi
 
-BASE_BRANCH_VERSION="${BASH_REMATCH[1]}"
+BRANCH_PAYLOAD="${BRANCH_NAME#llvm-}"
+BASE_BRANCH_VERSION="${BRANCH_PAYLOAD%-*}"
 
 if [[ "${BASE_BRANCH_VERSION}" != "${LLVM_VERSION}" ]]; then
   echo "Branch version '${BASE_BRANCH_VERSION}' does not match LLVM_VERSION '${LLVM_VERSION}'" >&2
