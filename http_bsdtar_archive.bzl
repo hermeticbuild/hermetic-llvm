@@ -183,6 +183,9 @@ def _http_bsdtar_archive_impl(rctx):
         rctx.file(keep_file, "")
         args.extend(["-C", add_prefix])
 
+    # bsdtar restores each entry's recorded owner when run as root, which
+    # fails in sandboxes without CAP_CHOWN. Extract as the running user.
+    args.append("--no-same-owner")
     args.extend(["-xf", archive])
 
     host_bsdtar = _host_bsdtar_label(rctx)
