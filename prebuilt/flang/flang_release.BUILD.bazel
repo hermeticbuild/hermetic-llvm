@@ -1,0 +1,4 @@
+exports_files(
+    ["bin/flang{suffix}"],
+    visibility = ["//visibility:public"],
+)

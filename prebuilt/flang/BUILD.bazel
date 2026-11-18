@@ -11,6 +11,15 @@ bootstrap_binary(
     tags = ["manual"],
 )
 
+bootstrap_binary(
+    name = "flang",
+    actual = "@llvm-project//flang/tools/flang-driver:flang.stripped",
+    source_backed = True,
+    symlink = False,
+    tags = ["manual"],
+    visibility = ["//tools:__pkg__"],
+)
+
 flang_release(name = "flang_release")
 
 flang_release(

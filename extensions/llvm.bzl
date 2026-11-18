@@ -97,6 +97,8 @@ _LLVM_23_SOURCE_PATCHES = [
     "//3rd_party/llvm-project/x.x/patches:llvm-bazel-libxml2.patch",
 ] + _DEFAULT_SOURCE_PATCHES
 
+_FLANG_RUNTIME_23_SOURCE_PATCH = "//3rd_party/llvm-project/23.x/patches:flang-runtime-build.patch"
+
 _LLVM_PATCHES_BY_MAJOR = {
     21: _LLVM_21_SOURCE_PATCHES,
     22: _LLVM_22_SOURCE_PATCHES,
@@ -174,7 +176,13 @@ def _source_archive_for_version(llvm_version, llvm_version_index, include_flang)
                 if source_patch != "//3rd_party/llvm-project/x.x/patches:llvm-macho-arm64e-x1.patch"
             ]
     if major == 23 and include_flang:
-        patches = patches + [_FLANG_23_SOURCE_PATCH]
+        patches = patches + [_FLANG_23_SOURCE_PATCH, _FLANG_RUNTIME_23_SOURCE_PATCH]
+
+    excludes = default_source_excludes()
+    if include_flang:
+        excludes = [exclude for exclude in excludes if exclude != "flang-rt"]
+    else:
+        excludes.append("flang")
 
     return struct(
         strip_prefix = source_info.get("strip_prefix", "llvm-project-{}.src".format(llvm_version)),
@@ -182,7 +190,7 @@ def _source_archive_for_version(llvm_version, llvm_version_index, include_flang)
         sha256 = source_info["sha256"],
         patch_args = ["-p1"],
         patches = patches,
-        excludes = default_source_excludes() + ([] if include_flang else ["flang"]),
+        excludes = excludes,
     )
 
 def _llvm_version_repository_impl(rctx):

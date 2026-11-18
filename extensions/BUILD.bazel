@@ -35,6 +35,19 @@ bzl_library(
 )
 
 bzl_library(
+    name = "flang_toolchain_minimal",
+    srcs = ["flang_toolchain_minimal.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@bazel_features//:features",
+        "@bazel_tools//tools/build_defs/repo:cache.bzl",
+        "@bazel_tools//tools/build_defs/repo:http.bzl",
+        "@bazel_tools//tools/build_defs/repo:utils.bzl",
+        "@llvm_version//:version",
+    ],
+)
+
+bzl_library(
     name = "osx",
     srcs = ["osx.bzl"],
     visibility = ["//visibility:public"],
