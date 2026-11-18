@@ -338,11 +338,6 @@ def declare_llvm_targets(*, exec_os, exec_cpu, suffix = ""):
             "@rules_cc//cc/toolchains/capabilities:supports_dynamic_linker",
             "@rules_cc//cc/toolchains/capabilities:supports_interface_shared_libraries",
         ],
-        env = {
-            # Presence suppresses clang-cl's Visual Studio library probing;
-            # /lldignoreenv prevents the child linker from consuming it.
-            "LIB": "__hermetic_llvm_empty_lib__",
-        },
         allowlist_include_directories = builtin_resource_allowlist_directories,
     )
 

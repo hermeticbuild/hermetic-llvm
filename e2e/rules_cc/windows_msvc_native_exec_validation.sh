@@ -41,11 +41,25 @@ assert_matches() {
   fi
 }
 
+# LIB, when set, may only name directories Bazel provides, never a host
+# Visual Studio or Windows SDK install.
 assert_hermetic_lib_env() {
   local file="$1"
-  if sed -n '/Environment:/p' "${file}" | grep -Fq 'LIB='; then
-    assert_contains "${file}" "LIB=__hermetic_llvm_empty_lib__"
-  fi
+  local lib
+  local entry
+  local entries
+  while IFS= read -r lib; do
+    IFS=';' read -ra entries <<<"${lib}"
+    for entry in "${entries[@]}"; do
+      case "${entry}" in
+        external/* | bazel-out/*) ;;
+        *)
+          show_report_context "${file}"
+          fail "${file} has a non-hermetic LIB entry: ${entry}"
+          ;;
+      esac
+    done
+  done < <(sed -n 's/.*Environment: .*[[ ]LIB=\([^,]*\).*/\1/p' "${file}")
 }
 
 case "${1:-${RUNNER_ARCH:-}}" in
@@ -140,6 +154,7 @@ for target_cpu in x86_64 aarch64; do
   assert_matches "${link_report}" 'bin[/\\]lld-link[.]exe'
   assert_contains "${link_report}" "/clang:/MACHINE:${target_machine}"
   assert_contains "${link_report}" "/clang:-fuse-ld=lld"
+  assert_matches "${link_report}" "LIB=[^,]*msvc_dynamic_runtime_libraries"
 done
 
 echo "Native Windows GNU/MinGW-built clang-cl MSVC action checks passed."

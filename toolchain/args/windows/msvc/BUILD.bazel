@@ -1,5 +1,6 @@
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
+load(":search_path.bzl", "search_path")
 
 package(default_visibility = ["//toolchain/args/windows:__pkg__"])
 
@@ -302,6 +303,53 @@ cc_args(
     },
 )
 
+alias(
+    name = "link_lib_cxxstdlib_directory",
+    actual = select({
+        "//config:nostdlibxx_enabled": "//runtimes:none",
+        "//conditions:default": "//runtimes/cxxstdlib:library_search_directory",
+    }),
+)
+
+# Library directories the link passes as /LIBPATH, for tools that read the
+# link environment instead of the command line. rules_rust, for example,
+# turns LIB into -LIBPATH arguments for rust-lld.
+search_path(
+    name = "link_lib_search_path",
+    directories = [
+        "//runtimes/msvc:winsdk_ucrt_lib",
+        "//runtimes/msvc:winsdk_um_lib",
+        "//runtimes/msvc:msvc_common_support_libraries",
+        "//runtimes/msvc:msvc_com_support_libraries",
+    ] + select({
+        "//toolchain/features/msvc:static_crt_config": ["//runtimes/msvc:msvc_static_runtime_libraries"],
+        "//conditions:default": ["//runtimes/msvc:msvc_dynamic_runtime_libraries"],
+    }) + select({
+        # Only complete-stage links see the C++ standard library; earlier
+        # runtime stages build it.
+        "//toolchain:runtimes_all": [":link_lib_cxxstdlib_directory"],
+        "//conditions:default": [],
+    }),
+)
+
+# A set LIB also stops clang-cl from probing for Visual Studio libraries.
+# /lldignoreenv keeps lld-link itself from reading it.
+cc_args(
+    name = "link_lib_env",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    data = [":link_lib_search_path"],
+    env = {"LIB": "{lib}"},
+    format = {"lib": ":link_lib_search_path"},
+)
+
+# Stage0 runtime links get no SDK or CRT directories, but LIB must still be
+# set to keep clang-cl from probing for Visual Studio.
+cc_args(
+    name = "empty_link_lib_env",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    env = {"LIB": "__hermetic_llvm_empty_lib__"},
+)
+
 cc_args(
     name = "sdk_library_case_overlay",
     actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
@@ -364,6 +412,7 @@ cc_args_list(
 cc_args_list(
     name = "normalized_default_libs",
     args = [
+        "link_lib_env",
         "sdk_library_search_paths",
         "common_support_library_search_paths",
         "com_support_library_search_paths",
@@ -388,7 +437,7 @@ cc_args_list(
 cc_args_list(
     name = "normalized_default_libs_for_runtime",
     args = select({
-        "//toolchain:runtimes_none": [],
+        "//toolchain:runtimes_none": [":empty_link_lib_env"],
         "//conditions:default": [":normalized_default_libs"],
     }),
     visibility = ["//visibility:public"],

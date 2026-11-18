@@ -49,6 +49,11 @@ load(":fdo_optimize_test.bzl", "cs_fdo_optimize_test", "fdo_optimize_test")
 load(":musl_header_generation_tests.bzl", "musl_header_generation_tests")
 load(":thin_lto_features_test.bzl", "thin_lto_features_test")
 load(":windows_msvc_artifacts.bzl", "windows_msvc_artifacts", "windows_msvc_native_test")
+load(
+    ":windows_msvc_link_lib_env_test.bzl",
+    "windows_msvc_dynamic_crt_link_lib_env_test",
+    "windows_msvc_static_crt_link_lib_env_test",
+)
 load(":windows_runtime_dynamic_libraries_test.bzl", "windows_runtime_dynamic_libraries_assertion")
 
 _VALIDATE_STATIC_LIBRARY_COMPATIBLE = validate_static_library_compatible()
@@ -1988,12 +1993,52 @@ _WINDOWS_MSVC_MT_ARTIFACTS = [
     for name, _, machine, stdlib in _WINDOWS_MSVC_ARTIFACT_CONFIGS
 ]
 
+cc_binary(
+    name = "windows_msvc_link_lib_env_binary",
+    srcs = ["main.cc"],
+    tags = ["manual"],
+)
+
+# Like the artifacts below, these need the Microsoft EULA repo_env flags.
+windows_msvc_dynamic_crt_link_lib_env_test(
+    name = "windows_msvc_dynamic_crt_link_lib_env_test",
+    expected_directories = [
+        "c/ucrt/x64",
+        "c/um/x64",
+        "libcxx_msvc_library_search_directory",
+        "msvc_com_support_libraries",
+        "msvc_common_support_libraries",
+        "msvc_dynamic_runtime_libraries",
+    ],
+    tags = ["manual"],
+    target_under_test = ":windows_msvc_link_lib_env_binary",
+    unexpected_directories = ["msvc_static_runtime_libraries"],
+)
+
+windows_msvc_static_crt_link_lib_env_test(
+    name = "windows_msvc_static_crt_link_lib_env_test",
+    expected_directories = [
+        "c/ucrt/x64",
+        "c/um/x64",
+        "libcxx_msvc_library_search_directory",
+        "msvc_com_support_libraries",
+        "msvc_common_support_libraries",
+        "msvc_static_runtime_libraries",
+    ],
+    tags = ["manual"],
+    target_under_test = ":windows_msvc_link_lib_env_binary",
+    unexpected_directories = ["msvc_dynamic_runtime_libraries"],
+)
+
 test_suite(
     name = "windows_msvc_artifacts_matrix",
     tags = ["manual"],
     tests = [
         name + "_test"
         for name, _, _, _ in _WINDOWS_MSVC_ARTIFACT_CONFIGS
+    ] + [
+        ":windows_msvc_dynamic_crt_link_lib_env_test",
+        ":windows_msvc_static_crt_link_lib_env_test",
     ],
 )
 
