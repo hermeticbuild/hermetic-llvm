@@ -164,27 +164,22 @@ cc_args(
 # Explicit C++ roots replace Darwin's SDK libc++ discovery. Finding both
 # copies would break the C wrappers' include_next chain because their shared
 # include guards suppress the second copy.
-# Keep SDK-provided ABI headers first; the LLVM ABI header directory provides
-# cxxabi.h when an SDK does not include it.
 cc_args(
     name = "macos_cxxstdlib_headers_include_search_paths",
     actions = _CXX_COMPILE_ACTIONS,
     args = [
         "-stdlib++-isystem{cxx_public_headers_include_search_path}",
         "-stdlib++-isystem{cxx_detail_headers_include_search_path}",
-        "-stdlib++-isystem{cxxstdlib_abi_headers_include_search_path}",
     ],
     # Keep data in the same order as the arguments.
     # do not sort
     data = [
         "//runtimes/cxxstdlib:public_headers_directory",
         "//runtimes/cxxstdlib:detail_headers_directory",
-        "//runtimes/cxxstdlib:abi_headers_include_search_directory",
     ],
     format = {
         "cxx_public_headers_include_search_path": "//runtimes/cxxstdlib:public_headers_directory",
         "cxx_detail_headers_include_search_path": "//runtimes/cxxstdlib:detail_headers_directory",
-        "cxxstdlib_abi_headers_include_search_path": "//runtimes/cxxstdlib:abi_headers_include_search_directory",
     },
 )
 
