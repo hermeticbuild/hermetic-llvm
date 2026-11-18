@@ -512,8 +512,8 @@ execution platform in the default bootstrap stage. Source bootstrap stages
 select a ThinLTO-built Flang executable and require
 `--repo_env=HERMETIC_LLVM_INCLUDE_FLANG=1`.
 The prebuilt path requires an indexed release for the selected LLVM version;
-there is no fallback to another version or to a source build. Until the first
-Flang release is published, only the source bootstrap path is available.
+there is no fallback to another version or to a source build. For LLVM versions
+without an indexed Flang release, only the source bootstrap path is available.
 
 For LLVM 23 on Linux x86_64 musl, `@llvm//runtimes/flang:intrinsic_modules`
 builds the target's intrinsic `.mod` files as a directory, and

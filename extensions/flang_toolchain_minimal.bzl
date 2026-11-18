@@ -53,7 +53,7 @@ def _release_repo_specs(index):
     release_key = index.get("latest_by_llvm_version", {}).get(LLVM_VERSION)
     if release_key == None:
         return None
-    if not release_key.startswith("flang-{}-r".format(LLVM_VERSION)):
+    if not release_key.startswith("llvm-{}-".format(LLVM_VERSION)):
         fail("Flang release {} does not match LLVM {}".format(release_key, LLVM_VERSION))
 
     archives = index["releases"][release_key]

@@ -1,4 +1,41 @@
 {
-  "latest_by_llvm_version": {},
-  "releases": {}
+  "latest_by_llvm_version": {
+    "23.1.6": "llvm-23.1.6-1"
+  },
+  "releases": {
+    "llvm-23.1.6-1": {
+      "darwin-amd64": {
+        "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-23.1.6-1/flang-toolchain-23.1.6-darwin-amd64.tar.zst",
+        "sha256": "2c2f51ae50533dc74ec91ca9d738a59540de023096092e064417f079ebbe76fb"
+      },
+      "darwin-arm64": {
+        "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-23.1.6-1/flang-toolchain-23.1.6-darwin-arm64.tar.zst",
+        "sha256": "1684919b1bc80fc0778309a12086f014e30161b266191a453d17694654ef4806"
+      },
+      "linux-amd64-musl": {
+        "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-23.1.6-1/flang-toolchain-23.1.6-linux-amd64-musl.tar.zst",
+        "sha256": "622b58f3dad4efa72babd604bdc0df3de90d670a1fcef7c5d7d79d6458948a08"
+      },
+      "linux-arm64-musl": {
+        "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-23.1.6-1/flang-toolchain-23.1.6-linux-arm64-musl.tar.zst",
+        "sha256": "1fa1b3006d764065e471bf056b11ed006ead94f1fc0ce8b4136ea388eb8d5d03"
+      },
+      "windows-amd64": {
+        "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-23.1.6-1/flang-toolchain-23.1.6-windows-amd64.tar.zst",
+        "sha256": "3ea677a73a5eaf0a9889fd264f1aed26030269db875980d39c5c43ebd40a805c"
+      },
+      "windows-arm64": {
+        "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-23.1.6-1/flang-toolchain-23.1.6-windows-arm64.tar.zst",
+        "sha256": "e796a2c1b8cb6c6e00c200833fa607dc28f47be57f62553fc0105ed6f5f506ad"
+      },
+      "windows-amd64-msvc": {
+        "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-23.1.6-1/flang-toolchain-23.1.6-windows-amd64-msvc.tar.zst",
+        "sha256": "c011926a5bd81eb71610faffba271105241f32ea1c891a0d23566d65e9f30519"
+      },
+      "windows-arm64-msvc": {
+        "url": "https://github.com/hermeticbuild/hermetic-llvm/releases/download/llvm-23.1.6-1/flang-toolchain-23.1.6-windows-arm64-msvc.tar.zst",
+        "sha256": "e3f99d0235946a94bb2857fb05bceb61fe2bb4c58381e0d2c0fa6bbec601930e"
+      }
+    }
+  }
 }
