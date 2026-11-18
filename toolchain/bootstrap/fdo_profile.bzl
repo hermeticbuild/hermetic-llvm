@@ -106,6 +106,8 @@ def _llvm_fdo_profile_workload_impl(ctx):
         compile_flags = _COMMON_COMPILE_FLAGS + _HOSTED_COMPILE_FLAGS
         link_flags = list(_HOSTED_LINK_FLAGS)
         if ctx.attr.target_platform.label == Label("//platforms:wasi_wasm32"):
+            compile_flags = [flag for flag in compile_flags if flag not in ("-pthread", "-DZSTD_MULTITHREAD")]
+            link_flags = [flag for flag in link_flags if flag != "-pthread"]
             compile_flags += [
                 "-D_WASI_EMULATED_SIGNAL",
                 "-D_WASI_EMULATED_PROCESS_CLOCKS",
