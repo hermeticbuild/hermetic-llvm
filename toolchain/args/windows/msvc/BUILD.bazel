@@ -1,3 +1,4 @@
+load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
 load(":search_path.bzl", "search_path")
@@ -441,4 +442,13 @@ cc_args_list(
         "//conditions:default": [":normalized_default_libs"],
     }),
     visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "search_path",
+    srcs = ["search_path.bzl"],
+    deps = [
+        "@bazel_skylib//rules:common_settings",
+        "@bazel_skylib//rules/directory:providers",
+    ],
 )
