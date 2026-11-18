@@ -3230,6 +3230,7 @@ cc_library(
             "@glibc//:gnu_libc_headers",
         ],
         "@platforms//os:macos": [],
+        ":windows_msvc": [],
         "@platforms//os:windows": [
             "@mingw//:mingw_headers",
         ],
