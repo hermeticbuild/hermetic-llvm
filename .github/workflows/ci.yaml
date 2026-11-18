@@ -229,14 +229,6 @@ jobs:
               //:cs_fdo_optimize_test
           fi
 
-      - name: Check native Windows compile param files
-        if: matrix.folder == 'e2e/cross_compilation'
-        env:
-          USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
-        working-directory: e2e/cross_compilation
-        shell: bash
-        run: ./windows_native_exec_param_files.sh
-
       - name: Check native Windows MSVC actions
         if: matrix.folder == 'e2e/rules_cc'
         env:

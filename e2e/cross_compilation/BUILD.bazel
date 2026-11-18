@@ -174,11 +174,12 @@ PLATFORMS = [
 # The padding defines take the compile command line past both the 32,767-
 # character CreateProcessW limit and Bazel's default --min_param_file_size, so
 # building this on a Windows host only works when the compile goes through a
-# param file, whichever OS it targets. CI executes remotely on Linux, so
-# windows_native_exec_param_files.sh checks the Windows host's compile actions.
+# param file, whichever OS it targets. CI otherwise executes remotely on Linux,
+# so this binary's actions are pinned to the Windows host.
 cc_binary(
     name = "long_command_line",
     srcs = ["long_command_line.cc"],
+    exec_compatible_with = ["@platforms//os:windows"],
     local_defines = [
         "PARAM_FILE_PADDING_%d=%s" % (
             i,
@@ -191,7 +192,10 @@ cc_binary(
         "PARAM_FILE_SPACES='\"two words\"'",
         "PARAM_FILE_QUOTES='\"it'\\''s \\\"quoted\\\"\"'",
     ],
-    tags = ["manual"],
+    tags = [
+        "manual",
+        "no-remote-exec",
+    ],
 )
 
 LONG_COMMAND_LINE_PLATFORMS = [
@@ -204,6 +208,11 @@ LONG_COMMAND_LINE_PLATFORMS = [
     platform_transition_binary(
         name = "long_command_line_" + platform,
         binary = ":long_command_line",
+        # Only a Windows host can execute :long_command_line's actions.
+        target_compatible_with = select({
+            "@platforms//os:windows": [],
+            "//conditions:default": ["@platforms//:incompatible"],
+        }),
         target_platform = "@llvm//platforms:" + platform,
     )
     for platform in LONG_COMMAND_LINE_PLATFORMS

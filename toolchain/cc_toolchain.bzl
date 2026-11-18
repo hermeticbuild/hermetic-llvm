@@ -20,8 +20,8 @@ def cc_toolchain(
 
     # The execution OS, not the target, bounds compile command-line length.
     # clang's GNU driver reads response files with GNU quoting on every host,
-    # so this needs no quoting feature of its own. clang-cl always enables
-    # these features through its protocol composition.
+    # so this needs no quoting feature of its own. MSVC toolchains already
+    # enable these features via //toolchain/features/clang_cl:enabled_features.
     compiler_param_file_features = [
         "@llvm//toolchain/features:compiler_param_file_features",
     ] if requires_compiler_param_files else []
