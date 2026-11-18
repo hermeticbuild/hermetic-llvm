@@ -38,6 +38,9 @@ def declare_toolchains(*, execs = SUPPORTED_EXECS, targets = SUPPORTED_TARGETS):
             module_map = platform_module_map(exec_os, exec_cpu),
             # llvm-ar's default response-file parser follows the execution OS.
             supports_gnu_param_file_quoting = exec_os in ["linux", "macos"],
+            # Windows process creation limits command lines to 32,767
+            # characters, whichever OS the action targets.
+            requires_compiler_param_files = exec_os == "windows",
             # Paths below describe the concrete execution filesystem. Keep
             # target semantics in //toolchain's ordered argument composition.
             extra_args = select({
