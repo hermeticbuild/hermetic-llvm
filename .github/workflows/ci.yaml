@@ -259,6 +259,25 @@ jobs:
         shell: bash
         run: ./windows_msvc_native_exec_validation.sh
 
+      # //tests/... only runs on Linux. The libc++ module includes the MinGW
+      # headers textually from different submodules.
+      - name: bazel test //tests/header_modules/...
+        if: matrix.folder == 'e2e/rules_cc'
+        env:
+          USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
+          MSYS2_ARG_CONV_EXCL: "*"
+        shell: bash
+        run: |
+          bazel \
+            --bazelrc=$GITHUB_WORKSPACE/.github/workflows/ci.bazelrc \
+            --bazelrc=.bazelrc \
+            --noexperimental_remote_repo_contents_cache \
+            test \
+            --repository_cache= \
+            --repo_contents_cache= \
+            --jobs=100 \
+            //tests/header_modules/...
+
   # macOS: smoke build (//:main_default) plus the supported sanitizer e2e tests.
   test_macos:
     strategy:
