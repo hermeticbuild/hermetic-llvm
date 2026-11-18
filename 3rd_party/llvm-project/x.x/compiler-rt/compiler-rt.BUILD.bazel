@@ -36,6 +36,15 @@ config_setting(
 )
 
 config_setting(
+    name = "windows_msvc_libcxx",
+    constraint_values = [
+        "@llvm//constraints/cxxstdlib:libcxx",
+        "@llvm//constraints/windows/abi:msvc",
+        "@platforms//os:windows",
+    ],
+)
+
+config_setting(
     name = "windows_msvc_optimized",
     constraint_values = [
         "@llvm//constraints/windows/abi:msvc",
@@ -960,6 +969,9 @@ cc_library(
             "@llvm-project//libcxx:headers",
             "@llvm-project//libcxxabi:headers",
             ":linux_libc_headers",
+        ],
+        ":windows_msvc_libcxx": [
+            "@llvm-project//libcxx:headers",
         ],
         "@platforms//os:windows": [
             "@llvm-project//libcxx:headers",

@@ -239,6 +239,16 @@ alias(
     visibility = ["//visibility:public"],
 )
 
+config_setting(
+    name = "fuzzer_windows_msvc_enabled",
+    constraint_values = [
+        "//constraints/cxxstdlib:libcxx",
+        "//constraints/windows/abi:msvc",
+        "@platforms//os:windows",
+    ],
+    flag_values = {"//config:fuzzer_selected_config": "true"},
+)
+
 resource_directory(
     name = "resource_directory_default",
     srcs = select({
@@ -254,6 +264,11 @@ resource_directory(
             "//runtimes/compiler-rt:clang_rt.builtins.static": "libclang_rt.builtins",
         },
     }) | select({
+        ":fuzzer_windows_msvc_enabled": {
+            "//runtimes/compiler-rt:clang_rt.fuzzer.static": "clang_rt.fuzzer",
+            "//runtimes/compiler-rt:clang_rt.fuzzer_no_main.static": "clang_rt.fuzzer_no_main",
+            "//runtimes/compiler-rt:clang_rt.fuzzer_interceptors.static": "clang_rt.fuzzer_interceptors",
+        },
         "//config:fuzzer_enabled": {
             "//runtimes/compiler-rt:clang_rt.fuzzer.static": "libclang_rt.fuzzer",
             "//runtimes/compiler-rt:clang_rt.fuzzer_no_main.static": "libclang_rt.fuzzer_no_main",

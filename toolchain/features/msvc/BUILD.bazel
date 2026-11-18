@@ -28,7 +28,6 @@ _UNSUPPORTED_FEATURES = [
     "fission",
     "fdo_optimize",
     "fully_static_link",
-    "fuzzer",
     "gcc_coverage_map_format",
     "llvm_coverage_map_format",
     "lsan",
@@ -94,6 +93,7 @@ msvc_configuration_validation(
     unsupported_build_settings = [
         "//config:" + sanitizer
         for sanitizer in SANITIZERS
+        if sanitizer != "fuzzer"
     ],
     unsupported_features = _UNSUPPORTED_FEATURES + ["supports_start_end_lib"],
 )
