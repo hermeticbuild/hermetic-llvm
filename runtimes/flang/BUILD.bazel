@@ -3,11 +3,7 @@ load("@llvm_version//:version.bzl", "LLVM_VERSION_MAJOR")
 load("//toolchain/args:llvm_target_triple.bzl", "LLVM_TARGET_TRIPLE")
 load(":intrinsic_modules.bzl", "FLANG_MODULE_SOURCES", "intrinsic_modules")
 
-_TARGET_COMPATIBILITY = [
-    "@platforms//os:linux",
-    "@platforms//cpu:x86_64",
-    "//constraints/libc:musl",
-] + ([] if int(LLVM_VERSION_MAJOR) == 23 else ["@platforms//:incompatible"])
+_TARGET_COMPATIBILITY = [] if int(LLVM_VERSION_MAJOR) == 23 else ["@platforms//:incompatible"]
 
 intrinsic_modules(
     name = "_generated_intrinsic_modules",
