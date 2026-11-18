@@ -58,6 +58,10 @@ def _extract(rctx, bsdtar, archive, includes, excludes, strip_components):
         "--no-fflags",
         "--no-mac-metadata",
         "--no-same-permissions",
+        # bsdtar restores each entry's recorded owner when run as root,
+        # which fails in sandboxes without CAP_CHOWN. Extract as the
+        # running user.
+        "--no-same-owner",
         "--no-acls",
         "-m",
     ])
