@@ -382,6 +382,12 @@ Cross-compiling to macOS from any host is supported.
 By default, the official macOS SDK is downloaded from Apple CDN and used hermetically.
 We use a cross-platform reimplementation of `pkgutil` to unpack SDK packages, which works on all hosts.
 
+macOS C++ headers come from the SDK by default. For a composed SDK without
+`usr/include/c++/v1`, set `--@llvm//config:macos_libcxx_headers=llvm` to use
+libc++ and libc++abi headers from the pinned LLVM source for macOS targets and
+macOS build tools. Both modes link Apple's system libc++; LLVM mode configures
+its headers for the Apple runtime's availability annotations.
+
 To use the non-hermetic macOS SDK installed locally use:
 
 ```starlark

@@ -123,7 +123,13 @@ cc_args_list(
 
         # Keep external -isystem directories before the toolchain C headers.
         "@rules_cc//cc/toolchains/args/external_include_paths:external_include_paths",
-
+    ] + select({
+        # Compiler-rt and other staged runtimes compile C++ before the
+        # complete toolchain is available. They need the selected source
+        # headers when the SDK intentionally omits libc++.
+        "//runtimes/cxxstdlib:macos_llvm_headers": ["//toolchain:macos_nostdincxx"],
+        "//conditions:default": [],
+    }) + [
         # TODO(cerisier): Explode this into specific args instead
         ":staged_platform_specific_args",
         # Runtime compilation explicitly selects its thread and target feature

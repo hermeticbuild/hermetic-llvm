@@ -204,6 +204,14 @@ cc_args_list(
     name = "macos_nostdincxx",
     args = select({
         "//config:nostdincxx_enabled": ["//toolchain/args:nostdincxx"],
+        "//conditions:default": ["macos_cxxstdlib_headers"],
+    }),
+)
+
+cc_args_list(
+    name = "macos_cxxstdlib_headers",
+    args = select({
+        "//config:macos_libcxx_headers_llvm": ["//toolchain/args:split_cxxstdlib_headers_include_search_paths"],
         "//conditions:default": ["//toolchain/args:macos_cxxstdlib_headers_include_search_paths"],
     }),
 )
