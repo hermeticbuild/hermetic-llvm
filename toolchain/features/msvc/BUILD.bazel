@@ -23,14 +23,12 @@ _LINK_ACTIONS = ["@rules_cc//cc/toolchains/actions:link_actions"]
 _UNSUPPORTED_FEATURES = [
     "asan",
     "cfi",
-    "coverage",
     "dfsan",
     "fission",
     "fdo_optimize",
     "fully_static_link",
     "fuzzer",
     "gcc_coverage_map_format",
-    "llvm_coverage_map_format",
     "lsan",
     "msan",
     "nsan",
@@ -49,11 +47,9 @@ _UNSUPPORTED_FEATURES = [
 ]
 
 _UNSUPPORTED_LEGACY_FEATURES = {
-    "coverage": "@rules_cc//cc/toolchains/features/legacy:coverage",
     "fdo_optimize": "@rules_cc//cc/toolchains/features/legacy:fdo_optimize",
     "fully_static_link": "@rules_cc//cc/toolchains/features/legacy:fully_static_link",
     "gcc_coverage_map_format": "@rules_cc//cc/toolchains/features/legacy:gcc_coverage_map_format",
-    "llvm_coverage_map_format": "@rules_cc//cc/toolchains/features/legacy:llvm_coverage_map_format",
     "per_object_debug_info": "@rules_cc//cc/toolchains/features/legacy:per_object_debug_info",
 }
 
@@ -250,6 +246,24 @@ cc_feature(
     feature_name = "msvc_interface_library",
 )
 
+# clang-cl adds clang_rt.profile.lib and /include:__llvm_profile_runtime itself;
+# the generic link args pass GNU -Wl, spellings that clang-cl rejects.
+cc_args(
+    name = "llvm_coverage_map_format_link_args",
+    actions = _LINK_ACTIONS,
+    args = ["-fprofile-instr-generate"],
+)
+
+cc_feature(
+    name = "llvm_coverage_map_format",
+    args = [
+        "//toolchain/args:llvm_coverage_map_format_compile_args",
+        ":llvm_coverage_map_format_link_args",
+    ],
+    overrides = "@rules_cc//cc/toolchains/features/legacy:llvm_coverage_map_format",
+    requires_any_of = ["//toolchain/features:coverage"],
+)
+
 cc_args(
     name = "pdb_args",
     actions = _LINK_ACTIONS,
@@ -265,9 +279,13 @@ cc_feature_set(
         ":dynamic_link_msvcrt",
         ":dynamic_linking_mode",
         ":interface_library",
+        ":llvm_coverage_map_format",
         ":static_link_msvcrt",
         ":static_linking_mode",
         ":supported_configuration",
+        "//toolchain/features:coverage",
+        "//toolchain/features:coverage_enabled",
+        "//toolchain/features:coverage_instrumented",
     ] + [
         ":unsupported_" + feature
         for feature in _UNSUPPORTED_FEATURES

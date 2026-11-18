@@ -160,6 +160,29 @@ bazel --bazelrc=.bazelrc aquery "${common_flags[@]}" \
   'mnemonic("CppLink", //:windows_msvc_behavior_debug)' \
   >"${action_dir}/pdb-opt-link-flags.txt"
 bazel --bazelrc=.bazelrc aquery "${common_flags[@]}" \
+  --collect_code_coverage \
+  --experimental_use_llvm_covmap \
+  --instrumentation_filter=//: \
+  --features=-compiler_param_file \
+  --output=commands \
+  'mnemonic("CppCompile", //:windows_msvc_behavior_md)' \
+  >"${action_dir}/coverage-compile.txt"
+bazel --bazelrc=.bazelrc aquery "${common_flags[@]}" \
+  --collect_code_coverage \
+  --experimental_use_llvm_covmap \
+  --instrumentation_filter=//: \
+  --include_param_files \
+  --output=text \
+  'mnemonic("CppLink", //:windows_msvc_behavior_md)' \
+  >"${action_dir}/coverage-link.txt"
+bazel --bazelrc=.bazelrc aquery "${common_flags[@]}" \
+  --collect_code_coverage \
+  --experimental_use_llvm_covmap \
+  --instrumentation_filter=//: \
+  --output=text \
+  'outputs(".*_resource_directory_default_staging/.*", deps(//:windows_msvc_behavior_md))' \
+  >"${action_dir}/coverage-resource-directory.txt"
+bazel --bazelrc=.bazelrc aquery "${common_flags[@]}" \
   --include_param_files \
   --output=text \
   'mnemonic("CppArchive", //:windows_msvc_behavior_support)' \
@@ -619,3 +642,10 @@ assert_contains "${action_dir}/dll-link.txt" "/clang:/DEF:"
 assert_contains "${action_dir}/dll-link.txt" "/clang:/IMPLIB:"
 assert_contains "${action_dir}/dll-link.txt" "/clang:/DLL"
 assert_contains "${action_dir}/dll-link.txt" ".if.lib"
+
+assert_contains "${action_dir}/coverage-compile.txt" "-fprofile-instr-generate"
+assert_contains "${action_dir}/coverage-compile.txt" "-fcoverage-mapping"
+assert_contains "${action_dir}/coverage-link.txt" "-fprofile-instr-generate"
+assert_absent "${action_dir}/coverage-link.txt" "-Wl,"
+assert_contains "${action_dir}/coverage-resource-directory.txt" "_resource_directory_default_staging/clang_rt.profile.lib"
+assert_absent "${action_dir}/coverage-resource-directory.txt" "libclang_rt.profile"

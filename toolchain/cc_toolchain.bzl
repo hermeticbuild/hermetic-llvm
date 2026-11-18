@@ -55,7 +55,7 @@ def cc_toolchain(
             # clang-cl-to-lld-link/COFF ThinLTO bridge.
             "@llvm//toolchain/features/clang_cl:known_features",
             # Target ABI: COFF link policy, CRT, validation, and explicit
-            # unsupported coverage/sanitizer/header-parsing boundaries.
+            # unsupported sanitizer/header-parsing boundaries.
             "@llvm//toolchain/features/msvc:abi_known_features",
         ] + select({
             "@llvm//toolchain:runtimes_none": [],
