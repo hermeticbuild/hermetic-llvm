@@ -105,6 +105,15 @@ def _llvm_fdo_profile_workload_impl(ctx):
     if ctx.attr.workload_kind == "hosted":
         compile_flags = _COMMON_COMPILE_FLAGS + _HOSTED_COMPILE_FLAGS
         link_flags = _HOSTED_LINK_FLAGS
+        if ctx.attr.target_platform.label == Label("//platforms:wasi_wasm32"):
+            compile_flags += [
+                "-D_WASI_EMULATED_SIGNAL",
+                "-D_WASI_EMULATED_PROCESS_CLOCKS",
+            ]
+            link_flags += [
+                "-lwasi-emulated-signal",
+                "-lwasi-emulated-process-clocks",
+            ]
     else:
         compile_flags = _COMMON_COMPILE_FLAGS + _FREESTANDING_COMPILE_FLAGS
         link_flags = []
