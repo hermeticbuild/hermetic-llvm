@@ -162,6 +162,17 @@ def _source_archive_for_version(llvm_version, llvm_version_index, include_flang)
         fail("Invalid llvm version index entry for '{}': expected keys 'url' and 'sha256'".format(llvm_version))
 
     patches = _LLVM_PATCHES_BY_MAJOR.get(major, [])
+    if major == 23:
+        version_parts = llvm_version.split("-")[0].split(".")
+        minor, patch = int(version_parts[1]), int(version_parts[2])
+
+        # LLVM 23.1.3 and later include llvm/llvm-project#222721.
+        if minor > 1 or (minor == 1 and patch >= 3):
+            patches = [
+                source_patch
+                for source_patch in patches
+                if source_patch != "//3rd_party/llvm-project/x.x/patches:llvm-macho-arm64e-x1.patch"
+            ]
     if major == 23 and include_flang:
         patches = patches + [_FLANG_23_SOURCE_PATCH]
 

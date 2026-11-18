@@ -31,12 +31,14 @@ rbe_platform_repository(
 http_archive(
     name = "llvm_fdo_zstd",
     build_file = "//toolchain/bootstrap:zstd_fdo.BUILD.bazel",
+    patch_args = ["-p1"],
+    patches = ["//toolchain/bootstrap:zstd-fdo-wasi-chown.patch"],
     sha256 = "7c42d56fac126929a6a85dbc73ff1db2411d04f104fae9bdea51305663a83fd0",
     strip_prefix = "zstd-1.5.2",
     urls = ["https://github.com/facebook/zstd/releases/download/v1.5.2/zstd-1.5.2.tar.gz"],
 )
 
-LLVM_VERSION = "23.1.2"
+LLVM_VERSION = "23.1.6"
 
 llvm = use_extension("//extensions:llvm.bzl", "llvm")
 llvm.version(llvm_version = LLVM_VERSION)

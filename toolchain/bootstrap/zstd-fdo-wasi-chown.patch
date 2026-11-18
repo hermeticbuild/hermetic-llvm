@@ -1,0 +1,8 @@
+diff --git a/programs/util.c b/programs/util.c
+--- a/programs/util.c
++++ b/programs/util.c
+@@ -196,3 +196,3 @@ int UTIL_setFileStat(const char *filename, const stat_t *statbuf)
+-#if !defined(_WIN32)
++#if !defined(_WIN32) && !defined(__wasi__)
+     res += chown(filename, statbuf->st_uid, statbuf->st_gid);  /* Copy ownership */
+ #endif
