@@ -1,7 +1,7 @@
 diff --git a/flang-rt/lib/runtime/BUILD.bazel b/flang-rt/lib/runtime/BUILD.bazel
 --- a/flang-rt/lib/runtime/BUILD.bazel
 +++ b/flang-rt/lib/runtime/BUILD.bazel
-@@ -14,17 +14,42 @@
+@@ -14,17 +14,47 @@
  
  licenses(["notice"])
  
@@ -24,8 +24,7 @@ diff --git a/flang-rt/lib/runtime/BUILD.bazel b/flang-rt/lib/runtime/BUILD.bazel
 +    visibility = ["@llvm//runtimes/flang:__pkg__"],
 +)
 +
-+# musl does not provide execinfo.h. The generated configuration must follow
-+# the target libc, rather than the machine running Bazel.
++# Configure runtime capabilities for the target, not the Bazel host.
  expand_template(
      name = "config_h_gen",
      out = "config.h",
@@ -36,6 +35,12 @@ diff --git a/flang-rt/lib/runtime/BUILD.bazel b/flang-rt/lib/runtime/BUILD.bazel
 -        "#define BACKTRACE_HEADER <${BACKTRACE_HEADER}>": "#define BACKTRACE_HEADER <execinfo.h>",
 -    },
 +    substitutions = select({
++        "@platforms//os:windows": {
++            "#cmakedefine HAVE_BACKTRACE ${HAVE_BACKTRACE}": "/* #undef HAVE_BACKTRACE */",
++            "#cmakedefine01 HAVE_DECL_STRERROR_S": "#define HAVE_DECL_STRERROR_S 1",
++            "#cmakedefine01 HAVE_STRERROR_R": "#define HAVE_STRERROR_R 0",
++            "#define BACKTRACE_HEADER <${BACKTRACE_HEADER}>": "/* no backtrace header on Windows */",
++        },
 +        "@llvm//platforms/config:musl": {
 +            "#cmakedefine HAVE_BACKTRACE ${HAVE_BACKTRACE}": "/* #undef HAVE_BACKTRACE */",
 +            "#cmakedefine01 HAVE_DECL_STRERROR_S": "#define HAVE_DECL_STRERROR_S 0",
@@ -52,20 +57,31 @@ diff --git a/flang-rt/lib/runtime/BUILD.bazel b/flang-rt/lib/runtime/BUILD.bazel
      template = "//flang-rt:cmake/config.h.cmake.in",
  )
  
-@@ -49,3 +74,5 @@
+@@ -49,3 +79,5 @@
  cc_library(
      name = "flang_rt.runtime",
 +    # Packaged runtime archives must contain machine code even in release mode.
 +    features = ["-thin_lto"],
      srcs = glob(
-@@ -66,6 +93,9 @@
-     copts = [
-         "-fno-exceptions",
-         "-fno-rtti",
-+        # Match AddFlangRT.cmake: the STL override precedes standard headers.
-+        "-include",
-+        "$(location :stl-overrides.h)",
-     ],
+@@ -66,6 +98,16 @@
+-    copts = [
+-        "-fno-exceptions",
+-        "-fno-rtti",
+-    ],
++    # Match AddFlangRT.cmake: the STL override precedes standard headers.
++    cxxopts = select({
++        "@llvm//constraints/windows/abi:msvc": [
++            "/EHs-c-",
++            "/GR-",
++            "/FI$(location :stl-overrides.h)",
++        ],
++        "//conditions:default": [
++            "-fno-exceptions",
++            "-fno-rtti",
++            "-include",
++            "$(location :stl-overrides.h)",
++        ],
++    }),
      deps = [
          ":runtime_config",
 diff --git a/flang/BUILD.bazel b/flang/BUILD.bazel
