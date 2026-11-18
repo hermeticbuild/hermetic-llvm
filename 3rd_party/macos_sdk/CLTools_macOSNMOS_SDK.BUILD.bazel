@@ -9,7 +9,10 @@ headers_directory(
 
 filegroup(
     name = "sysroot_without_libcxx_headers",
-    srcs = glob(["**"], exclude = ["usr/include/c++/v1/**"]),
+    srcs = glob(
+        ["**"],
+        exclude = ["usr/include/c++/v1/**"],
+    ),
     visibility = ["//visibility:public"],
 )
 
