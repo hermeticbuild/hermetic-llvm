@@ -259,10 +259,27 @@ jobs:
         shell: bash
         run: ./windows_msvc_native_exec_validation.sh
 
-      # //tests/... only runs on Linux. The libc++ module includes the MinGW
-      # headers textually from different submodules.
+  # //tests/... only runs on Linux. The libc++ module includes the MinGW
+  # headers textually from different submodules. This needs its own runner:
+  # the root module's LLVM sources don't fit on the disk next to e2e/rules_cc.
+  test_windows_header_modules:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, windows-11-arm]
+        bazel_version: [9.x]
+    runs-on: ${{ matrix.os }}
+    environment: ${{ github.ref == 'refs/heads/main' && 'ci' || '' }}
+    name: Test //tests/header_modules/... with Bazel ${{ matrix.bazel_version }} on ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: ./.github/actions/buildbuddy-api-key
+        with:
+          api-key: ${{ github.ref == 'refs/heads/main' && secrets.BUILDBUDDY_CI_API_KEY || '' }}
+
       - name: bazel test //tests/header_modules/...
-        if: matrix.folder == 'e2e/rules_cc'
         env:
           USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
           MSYS2_ARG_CONV_EXCL: "*"

@@ -11,6 +11,12 @@ package(features = [
 # Treat module warnings as toolchain configuration errors.
 _COPTS = ["-Werror"]
 
+# The remote executors only run Linux.
+_TEST_EXEC_PROPERTIES = select({
+    "@platforms//os:windows": {"test.no-remote": "1"},
+    "//conditions:default": {},
+})
+
 cc_library(
     name = "counter",
     srcs = ["counter.cc"],
@@ -29,6 +35,7 @@ cc_test(
     name = "main_test",
     srcs = ["main_test.cc"],
     copts = _COPTS,
+    exec_properties = _TEST_EXEC_PROPERTIES,
     deps = [":double_counter"],
 )
 
@@ -44,6 +51,7 @@ cc_test(
     name = "greeter_test",
     srcs = ["greeter_main.cc"],
     copts = _COPTS,
+    exec_properties = _TEST_EXEC_PROPERTIES,
     deps = [":greeter"],
 )
 
@@ -60,6 +68,7 @@ cc_test(
     name = "textual_greeter_test",
     srcs = ["greeter_main.cc"],
     copts = _COPTS,
+    exec_properties = _TEST_EXEC_PROPERTIES,
     features = ["-header_modules"],
     deps = [":textual_greeter"],
 )
@@ -84,6 +93,7 @@ cc_test(
     name = "item_store_test",
     srcs = ["item_store_main.cc"],
     copts = _COPTS,
+    exec_properties = _TEST_EXEC_PROPERTIES,
     features = _CODEGEN_FEATURES,
     deps = [
         ":greeter",
@@ -104,6 +114,7 @@ cc_test(
     dynamic_deps = [
         ":greeter_shared",
     ],
+    exec_properties = _TEST_EXEC_PROPERTIES,
     features = _CODEGEN_FEATURES,
     deps = [
         ":greeter",
