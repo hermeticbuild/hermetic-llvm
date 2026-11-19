@@ -95,16 +95,52 @@ cc_args(
     requires_not_none = "@rules_cc//cc/toolchains/variables:module_files",
 )
 
+# Like the module map arguments of rules_cc's layering_check and
+# use_module_maps features, but only for the actions that consume modules. C
+# compiles can't use them and would only parse the module maps, including the
+# toolchain's with every system header. layering_check still passes the module
+# maps to all compiles.
+cc_args(
+    name = "use_header_modules_module_name_args",
+    actions = _MODULE_CONSUMING_ACTIONS,
+    args = ["-fmodule-name={module_name}"],
+    format = {
+        "module_name": "@rules_cc//cc/toolchains/variables:module_name",
+    },
+    requires_not_none = "@rules_cc//cc/toolchains/variables:module_name",
+)
+
+cc_args(
+    name = "use_header_modules_module_map_file_args",
+    actions = _MODULE_CONSUMING_ACTIONS,
+    args = ["-fmodule-map-file={module_map_file}"],
+    format = {
+        "module_map_file": "@rules_cc//cc/toolchains/variables:module_map_file",
+    },
+    requires_not_none = "@rules_cc//cc/toolchains/variables:module_map_file",
+)
+
+cc_args(
+    name = "use_header_modules_dependent_module_map_files_args",
+    actions = _MODULE_CONSUMING_ACTIONS,
+    args = ["-fmodule-map-file={dependent_module_map_files}"],
+    format = {
+        "dependent_module_map_files": "@rules_cc//cc/toolchains/variables:dependent_module_map_files",
+    },
+    iterate_over = "@rules_cc//cc/toolchains/variables:dependent_module_map_files",
+    requires_not_none = "@rules_cc//cc/toolchains/variables:dependent_module_map_files",
+)
+
 cc_feature(
     name = "use_header_modules",
     args = [
-        "@rules_cc//cc/toolchains/args/layering_check:module_name_args",
-        "@rules_cc//cc/toolchains/args/layering_check:module_map_file_args",
+        ":use_header_modules_module_name_args",
+        ":use_header_modules_module_map_file_args",
+        ":use_header_modules_dependent_module_map_files_args",
         ":use_header_modules_args",
         ":use_header_modules_module_files_args",
     ],
     feature_name = "use_header_modules",
-    implies = ["@rules_cc//cc/toolchains/args/layering_check:use_module_maps"],
 )
 
 cc_feature_set(
