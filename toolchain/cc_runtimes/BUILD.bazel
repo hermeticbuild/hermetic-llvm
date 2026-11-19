@@ -1,7 +1,59 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load("//toolchain:selects.bzl", "platform_stage0_toolchain_target")
 load(":cc_runtimes.bzl", "cc_runtimes_library", "cc_runtimes_toolchain")
 
 package(default_visibility = ["//visibility:public"])
+
+# Compile Clang's x86 intrinsics headers once instead of in every module and
+# source file that includes them. For example, <windows.h> includes all
+# intrinsics headers on x86_64 MinGW targets. Modules that include their own
+# copy make every textual inclusion of the headers slower too.
+cc_runtimes_library(
+    name = "clang_x86_intrinsics",
+    exec_hdrs = [":exec_x86_intrinsics_headers"] + select({
+        "@platforms//os:windows": [":exec_windows_intrinsics_headers"],
+        "//conditions:default": [],
+    }),
+    features = [
+        "header_modules",
+        "use_header_modules",
+        "layering_check",
+    ],
+    tags = [
+        # Build only when a dependent target imports the module.
+        "manual",
+    ],
+)
+
+# Resolved in the exec configuration, these select the builtin headers of the
+# compiler that runs the compile actions.
+alias(
+    name = "exec_x86_intrinsics_headers",
+    actual = platform_stage0_toolchain_target(
+        "builtin_x86_intrinsics_headers",
+        default = ":no_headers",
+    ),
+    visibility = ["//visibility:private"],
+)
+
+alias(
+    name = "exec_windows_intrinsics_headers",
+    actual = platform_stage0_toolchain_target(
+        "builtin_windows_intrinsics_headers",
+        default = ":no_headers",
+    ),
+    visibility = ["//visibility:private"],
+)
+
+filegroup(
+    name = "no_headers",
+    visibility = ["//visibility:private"],
+)
+
+_X86_INTRINSICS = select({
+    "@platforms//cpu:x86_64": [":clang_x86_intrinsics"],
+    "//conditions:default": [],
+})
 
 # Compile libc++ once so importing modules don't embed conflicting copies.
 # The runtime dependency also adds it to each target's module map, which
@@ -22,6 +74,8 @@ cc_runtimes_library(
         # Build only when a dependent target imports the module.
         "manual",
     ],
+    # Import the intrinsics module instead of including a copy of the headers.
+    deps = _X86_INTRINSICS,
 )
 
 cc_runtimes_toolchain(
@@ -30,7 +84,7 @@ cc_runtimes_toolchain(
     runtimes = select({
         "//config:nostdincxx_enabled": [],
         "//conditions:default": [":libcxx"],
-    }),
+    }) + _X86_INTRINSICS,
 )
 
 bzl_library(

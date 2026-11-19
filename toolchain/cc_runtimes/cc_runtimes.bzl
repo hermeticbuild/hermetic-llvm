@@ -5,6 +5,10 @@ load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 
 def _cc_runtimes_library_impl(ctx):
+    hdrs = ctx.files.hdrs + ctx.files.exec_hdrs
+    if not hdrs:
+        return [DefaultInfo(), CcInfo()]
+
     cc_toolchain = find_cc_toolchain(ctx)
     feature_configuration = cc_common.configure_features(
         ctx = ctx,
@@ -17,7 +21,8 @@ def _cc_runtimes_library_impl(ctx):
         name = ctx.label.name,
         cc_toolchain = cc_toolchain,
         feature_configuration = feature_configuration,
-        public_hdrs = ctx.files.hdrs,
+        public_hdrs = hdrs,
+        compilation_contexts = [dep[CcInfo].compilation_context for dep in ctx.attr.deps],
     )
 
     # Link any object files produced by module code generation.
@@ -48,6 +53,18 @@ cc_runtimes_library = rule(
 
 It skips the `cc_runtimes` toolchain to avoid a dependency cycle.""",
     attrs = {
+        "deps": attr.label_list(
+            doc = "Other runtime libraries whose modules this library's headers import.",
+            providers = [CcInfo],
+        ),
+        "exec_hdrs": attr.label_list(
+            doc = """Like `hdrs`, but resolved for the execution platform.
+
+Use this for headers of the compiler installation, such as Clang's builtin
+headers, which the compiler finds in its own resource directory.""",
+            allow_files = True,
+            cfg = "exec",
+        ),
         "hdrs": attr.label_list(
             doc = "Public headers to compile when `header_modules` is enabled.",
             allow_files = True,

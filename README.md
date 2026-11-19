@@ -91,7 +91,7 @@ bazel build --features=parse_headers --features=layering_check --process_headers
 
 Header parsing, module maps, and layering checks work with the Clang driver, including MinGW Windows targets. They are not implemented for MSVC/clang-cl targets.
 
-Compiled header modules can speed up incremental builds after the initial module build, but require compatible dependencies and currently do not work for Windows targets. See the [header module guide](toolchain/features/header_modules/README.md) for setup and limitations.
+Compiled header modules can speed up incremental builds after the initial module build, but require compatible dependencies and currently do not work for Windows MSVC targets. See the [header module guide](toolchain/features/header_modules/README.md) for setup and limitations.
 
 ### Registering a subset of all toolchains
 

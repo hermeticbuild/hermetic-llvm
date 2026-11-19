@@ -10,7 +10,7 @@ Use Bazel 9.3 or later and enable module consumption for your build.
 bazel build --features=use_header_modules //:app
 ```
 
-The toolchain supplies the libc++ module automatically. Other libraries must opt in before their headers can be reused as modules. Add `header_modules` to your library's `features` to do this.
+The toolchain supplies modules for libc++ and, on x86_64, Clang's intrinsics headers automatically. Other libraries must opt in before their headers can be reused as modules. Add `header_modules` to your library's `features` to do this.
 
 ```starlark
 cc_library(
@@ -24,7 +24,7 @@ Only opt in libraries whose headers compile on their own. Keep this per target i
 
 ## Compatibility
 
-- Windows targets cannot currently use compiled libc++ modules. MinGW headers produce conflicting declarations during module compilation, and MSVC/clang-cl module support is not implemented. MinGW header parsing and layering checks work independently of compiled modules.
+- Windows MSVC targets cannot use compiled modules, since module support is not implemented for clang-cl. MinGW targets support them.
 - A target's language options must match those used to compile its dependency modules. Opt out targets with differing `-std=` or exception settings.
 - Protobuf 33.4's generated well-known-type modules fail with conflicting definitions. This is an unresolved compatibility issue. Disable modules for affected builds.
 
