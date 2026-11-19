@@ -1044,6 +1044,10 @@ cc_args(
         "-fprofile-instr-generate",
         "-fcoverage-mapping",
     ],
+    requires_any_of = [
+        "//toolchain/features:coverage_instrumented",
+        "//toolchain/features:coverage_instrumentation_unknown",
+    ],
 )
 
 cc_args(
@@ -1299,7 +1303,10 @@ cc_args(
 bzl_library(
     name = "resource_directory_args",
     srcs = ["resource_directory_args.bzl"],
-    deps = ["@rules_cc//cc/toolchains:toolchain_rules"],
+    deps = [
+        "@rules_cc//cc/toolchains:toolchain_rules",
+        "@rules_cc//cc/toolchains/impl:documented_api",
+    ],
 )
 
 bzl_library(

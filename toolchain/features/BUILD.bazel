@@ -1,6 +1,7 @@
 load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 load("@rules_cc//cc/toolchains:feature.bzl", "cc_feature")
+load("@rules_cc//cc/toolchains:feature_constraint.bzl", "cc_feature_constraint")
 load("@rules_cc//cc/toolchains:feature_set.bzl", "cc_feature_set")
 load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
 
@@ -603,12 +604,41 @@ cc_feature(
     feature_name = "generate_pdb_file",
 )
 
-# TODO: Remove after https://github.com/bazelbuild/rules_cc/pull/385
+# Requested whenever coverage is enabled. The toolchain has to define a feature
+# with this name, otherwise rules_cc adds its own legacy coverage,
+# llvm_coverage_map_format and gcc_coverage_map_format features, which clash
+# with the ones below.
 cc_feature(
-    name = "coverage_stub",
+    name = "coverage",
     overrides = "@rules_cc//cc/toolchains/features/legacy:coverage",
 )
 
+# Requested by rules_cc 0.2.26+ whenever coverage is enabled.
+# TODO: Override the rules_cc feature after https://github.com/bazelbuild/rules_cc/pull/988.
+cc_feature(
+    name = "coverage_enabled",
+    feature_name = "coverage_enabled",
+)
+
+# Requested by rules_cc 0.2.26+ only for targets that are instrumented for
+# coverage, i.e. that match --instrumentation_filter or have a direct dependency
+# that does.
+# TODO: Override the rules_cc feature after https://github.com/bazelbuild/rules_cc/pull/988.
+cc_feature(
+    name = "coverage_instrumented",
+    feature_name = "coverage_instrumented",
+)
+
+# Bazel 8 doesn't request coverage_enabled and coverage_instrumented, so
+# instrument every target there.
+cc_feature_constraint(
+    name = "coverage_instrumentation_unknown",
+    none_of = [":coverage_enabled"],
+)
+
+# Compile arguments of the coverage format features are restricted to
+# instrumented targets, while link arguments apply whenever coverage is enabled:
+# a binary that isn't instrumented itself can still link instrumented libraries.
 cc_feature(
     name = "llvm_coverage_map_format",
     args = [
@@ -616,7 +646,7 @@ cc_feature(
         "//toolchain/args:llvm_coverage_map_format_link_args",
     ],
     overrides = "@rules_cc//cc/toolchains/features/legacy:llvm_coverage_map_format",
-    requires_any_of = [":coverage_stub"],
+    requires_any_of = [":coverage"],
 )
 
 cc_feature(
@@ -626,7 +656,7 @@ cc_feature(
         ":gcc_coverage_map_format_link_args",
     ],
     overrides = "@rules_cc//cc/toolchains/features/legacy:gcc_coverage_map_format",
-    requires_any_of = [":coverage_stub"],
+    requires_any_of = [":coverage"],
 )
 
 cc_args(
@@ -635,6 +665,10 @@ cc_args(
     args = [
         "-fprofile-arcs",
         "-ftest-coverage",
+    ],
+    requires_any_of = [
+        ":coverage_instrumented",
+        ":coverage_instrumentation_unknown",
     ],
 )
 
@@ -744,7 +778,9 @@ cc_feature_set(
         ":fastbuild_stub",
         ":static_link_cpp_runtimes",
         ":parse_headers",
-        ":coverage_stub",
+        ":coverage",
+        ":coverage_enabled",
+        ":coverage_instrumented",
         ":llvm_coverage_map_format",
         ":gcc_coverage_map_format",
         ":fully_static_link",

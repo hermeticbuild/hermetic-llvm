@@ -45,6 +45,13 @@ load(
     "xray_cc_binary",
 )
 load(":bazel_version.bzl", "validate_static_library_compatible")
+load(
+    ":coverage_instrumentation_test.bzl",
+    "gcc_coverage_instrumented_test",
+    "gcc_coverage_not_instrumented_test",
+    "llvm_coverage_instrumented_test",
+    "llvm_coverage_not_instrumented_test",
+)
 load(":fdo_optimize_test.bzl", "cs_fdo_optimize_test", "fdo_optimize_test")
 load(":musl_header_generation_tests.bzl", "musl_header_generation_tests")
 load(":thin_lto_features_test.bzl", "thin_lto_features_test")
@@ -1800,6 +1807,30 @@ cc_test(
     }),
     deps = [":coverage_lib"],
 )
+
+# Checks that --instrumentation_filter limits which compile actions are
+# instrumented. Bazel 8 doesn't tell the toolchain which targets are
+# instrumented, so the toolchain instruments all of them there.
+_COVERAGE_INSTRUMENTATION_TEST_COMPATIBLE = select({
+    "@platforms//os:linux": [],
+    "@platforms//os:macos": [],
+    "//conditions:default": ["@platforms//:incompatible"],
+}) if bazel_features.cc.cc_common_is_in_rules_cc else ["@platforms//:incompatible"]
+
+[
+    test(
+        name = name,
+        tags = ["analysis"],
+        target_compatible_with = _COVERAGE_INSTRUMENTATION_TEST_COMPATIBLE,
+        target_under_test = ":coverage_lib_test",
+    )
+    for name, test in {
+        "gcc_coverage_instrumented_test": gcc_coverage_instrumented_test,
+        "gcc_coverage_not_instrumented_test": gcc_coverage_not_instrumented_test,
+        "llvm_coverage_instrumented_test": llvm_coverage_instrumented_test,
+        "llvm_coverage_not_instrumented_test": llvm_coverage_not_instrumented_test,
+    }.items()
+]
 
 assert_msvc_tuple_features()
 
