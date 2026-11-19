@@ -192,6 +192,20 @@ jobs:
         with:
           api-key: ${{ github.ref == 'refs/heads/main' && secrets.BUILDBUDDY_CI_API_KEY || '' }}
 
+      # On the x64 runners, C: holds Bazel's default output root under
+      # %USERPROFILE% but only has ~28 GB of free disk space, which isn't
+      # enough for e2e/rules_cc and //tests/header_modules/... together. D:
+      # has 150+ GB free. windows-11-arm has no D:, but ~125 GB free on C:.
+      - name: Put the Bazel output root on the D drive
+        shell: bash
+        run: |
+          if [[ -d /d/ ]]; then
+            echo "startup --output_user_root=D:/_bazel" >> "${HOME}/.bazelrc"
+            echo "Using D:/_bazel as the Bazel output root."
+          else
+            echo "No D: drive, keeping the default Bazel output root."
+          fi
+
       - name: bazel test //...
         id: bazel_test
         env:
@@ -259,27 +273,10 @@ jobs:
         shell: bash
         run: ./windows_msvc_native_exec_validation.sh
 
-  # //tests/... only runs on Linux. The libc++ module includes the MinGW
-  # headers textually from different submodules. This needs its own runner:
-  # the root module's LLVM sources don't fit on the disk next to e2e/rules_cc.
-  test_windows_header_modules:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-latest, windows-11-arm]
-        bazel_version: [9.x]
-    runs-on: ${{ matrix.os }}
-    environment: ${{ github.ref == 'refs/heads/main' && 'ci' || '' }}
-    name: Test //tests/header_modules/... with Bazel ${{ matrix.bazel_version }} on ${{ matrix.os }}
-
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: ./.github/actions/buildbuddy-api-key
-        with:
-          api-key: ${{ github.ref == 'refs/heads/main' && secrets.BUILDBUDDY_CI_API_KEY || '' }}
-
+      # //tests/... only runs on Linux. The libc++ module includes the MinGW
+      # headers textually from different submodules.
       - name: bazel test //tests/header_modules/...
+        if: matrix.folder == 'e2e/rules_cc'
         env:
           USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
           MSYS2_ARG_CONV_EXCL: "*"
