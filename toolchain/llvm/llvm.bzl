@@ -166,7 +166,7 @@ def declare_llvm_targets(*, exec_os, exec_cpu, suffix = ""):
     # MSVC ABI actions use the CL/LINK dialect directly. Keep this map separate
     # from MinGW so target ABI, never execution OS, selects the personality.
     MSVC_CONSTRUCTION_TOOLS = {
-        "@rules_cc//cc/toolchains/actions:assemble": ":clang-cl",
+        "@rules_cc//cc/toolchains/actions:assemble": ":msvc-assembler",
         "@rules_cc//cc/toolchains/actions:c_compile": ":clang-cl",
         "@rules_cc//cc/toolchains/actions:cpp_compile": ":clang-cl",
         "@rules_cc//cc/toolchains/actions:linkstamp_compile": ":clang-cl",
@@ -342,6 +342,27 @@ def declare_llvm_targets(*, exec_os, exec_cpu, suffix = ""):
             # Presence suppresses clang-cl's Visual Studio library probing;
             # /lldignoreenv prevents the child linker from consuming it.
             "LIB": "__hermetic_llvm_empty_lib__",
+        },
+        allowlist_include_directories = builtin_resource_allowlist_directories,
+    )
+
+    # Assembles MASM (.asm) sources with llvm-ml and all others with clang-cl.
+    cc_tool(
+        name = "msvc-assembler",
+        src = "@llvm//tools/internal:msvc-assembler",
+        data = [
+            ":builtin_resource_dir",
+            "bin/clang-cl" + suffix,
+            "bin/llvm-ml" + suffix,
+        ],
+        env = {
+            "LIB": "__hermetic_llvm_empty_lib__",
+            "LLVM_CLANG_CL": "{clang_cl}",
+            "LLVM_ML": "{llvm_ml}",
+        },
+        format = {
+            "clang_cl": "bin/clang-cl" + suffix,
+            "llvm_ml": "bin/llvm-ml" + suffix,
         },
         allowlist_include_directories = builtin_resource_allowlist_directories,
     )

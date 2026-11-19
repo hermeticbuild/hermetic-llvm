@@ -108,7 +108,7 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
     )
 
     MSVC_CONSTRUCTION_TOOLS = {
-        "@rules_cc//cc/toolchains/actions:assemble": prefix + "/clang-cl",
+        "@rules_cc//cc/toolchains/actions:assemble": prefix + "/msvc-assembler",
         "@rules_cc//cc/toolchains/actions:c_compile": prefix + "/clang-cl",
         "@rules_cc//cc/toolchains/actions:cpp_compile": prefix + "/clang-cl",
         "@rules_cc//cc/toolchains/actions:linkstamp_compile": prefix + "/clang-cl",
@@ -316,6 +316,33 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
         allowlist_include_directories = resource_allowlist_directories,
     )
 
+    bootstrap_binary(
+        name = prefix + "/bin/msvc-assembler",
+        actual = "@llvm//tools/internal:msvc-assembler",
+        **bootstrap_binary_kwargs
+    )
+
+    # Assembles MASM (.asm) sources with llvm-ml and all others with clang-cl.
+    cc_tool(
+        name = prefix + "/msvc-assembler",
+        src = prefix + "/bin/msvc-assembler",
+        data = [
+            prefix + "/clang_resource_directory",
+            prefix + "/bin/clang-cl",
+            prefix + "/bin/llvm-ml",
+        ],
+        env = {
+            "LIB": "__hermetic_llvm_empty_lib__",
+            "LLVM_CLANG_CL": "{clang_cl}",
+            "LLVM_ML": "{llvm_ml}",
+        },
+        format = {
+            "clang_cl": prefix + "/bin/clang-cl",
+            "llvm_ml": prefix + "/bin/llvm-ml",
+        },
+        allowlist_include_directories = resource_allowlist_directories,
+    )
+
     cc_tool(
         name = prefix + "/def-file-generator",
         src = "@llvm//tools/def_file_generator",
@@ -377,6 +404,7 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
     for tool in [
         "llvm",
         "llvm-ifs",
+        "llvm-ml",
         "llvm-nm",
         "llvm-readtapi",
     ]:

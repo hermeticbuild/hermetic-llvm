@@ -30,6 +30,9 @@ struct Derived final : Base {
 extern "C" int windows_msvc_assembly_value(void);
 extern "C" int windows_msvc_raw_assembly_value(void);
 extern "C" int windows_msvc_c_smoke(void);
+#if defined(_M_X64)
+extern "C" int windows_msvc_masm_value(void);
+#endif
 
 void* operator new(std::size_t size) {
   allocation_calls.fetch_add(1, std::memory_order_relaxed);
@@ -67,6 +70,11 @@ int main() {
       windows_msvc_c_smoke() != 42) {
     return 1;
   }
+#if defined(_M_X64)
+  if (windows_msvc_masm_value() != 42) {
+    return 1;
+  }
+#endif
 
   std::exception_ptr captured;
   try {
