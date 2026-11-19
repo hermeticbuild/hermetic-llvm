@@ -1,0 +1,52 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fabian Meumertzheim <fabian@meumertzhe.im>
+Date: Wed, 18 Nov 2026 14:04:57 +0100
+Subject: [PATCH] headers: Declare the float.h functions in math.h with
+ __MINGW_NOTHROW
+
+float.h declares _chgsign, _copysign, _logb, _nextafter, _scalb, _finite,
+_fpclass and _isnan with __MINGW_NOTHROW, but their copies in math.h
+lack it. The shared _SIGN_DEFINED guard usually hides the difference.
+
+With Clang modules and -fmodules-local-submodule-visibility, the guard
+defined by math.h isn't visible to a submodule that includes float.h, so
+both copies are parsed. In C++, the declarations from float.h then add
+an exception specification, which Clang rejects:
+
+  error: exception specification in declaration does not match previous
+  declaration
+
+This happens when compiling libc++ as a Clang module.
+
+Signed-off-by: Fabian Meumertzheim <fabian@meumertzhe.im>
+---
+ mingw-w64-headers/crt/math.h | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/mingw-w64-headers/crt/math.h b/mingw-w64-headers/crt/math.h
+index c0a0285..1825a33 100644
+--- a/mingw-w64-headers/crt/math.h
++++ b/mingw-w64-headers/crt/math.h
+@@ -291,14 +291,14 @@ extern "C" {
+  */
+ #ifndef _SIGN_DEFINED
+ #define _SIGN_DEFINED
+-  _CRTIMP double __cdecl _chgsign (double _X);
+-  _CRTIMP double __cdecl _copysign (double _Number,double _Sign);
+-  _CRTIMP double __cdecl _logb (double);
+-  _CRTIMP double __cdecl _nextafter (double, double);
+-  _CRTIMP double __cdecl _scalb (double, long);
+-  _CRTIMP int __cdecl _finite (double);
+-  _CRTIMP int __cdecl _fpclass (double);
+-  _CRTIMP int __cdecl _isnan (double);
++  _CRTIMP double __cdecl __MINGW_NOTHROW _chgsign (double _X);
++  _CRTIMP double __cdecl __MINGW_NOTHROW _copysign (double _Number,double _Sign);
++  _CRTIMP double __cdecl __MINGW_NOTHROW _logb (double);
++  _CRTIMP double __cdecl __MINGW_NOTHROW _nextafter (double, double);
++  _CRTIMP double __cdecl __MINGW_NOTHROW _scalb (double, long);
++  _CRTIMP int __cdecl __MINGW_NOTHROW _finite (double);
++  _CRTIMP int __cdecl __MINGW_NOTHROW _fpclass (double);
++  _CRTIMP int __cdecl __MINGW_NOTHROW _isnan (double);
+ #endif
+ 
+ /* END FLOAT.H COPY */

@@ -22,6 +22,8 @@ def _mingw_extension_impl(module_ctx):
             # Fixes -Wextra-tokens warnings when generating .def files.
             # Also submitted upstream to mingw-w64-public.
             "//runtimes/mingw:patches/0004-crt-Fix-ifndef-F_X86_NATIVE-in-func.def.in.patch",
+            # Fixes compiling libc++ as a header module.
+            "//runtimes/mingw:patches/0005-headers-Declare-the-float.h-functions-in-math.h-with.patch",
         ],
         patch_strip = 1,
         build_file = "//runtimes/mingw:mingw.BUILD.bazel",
