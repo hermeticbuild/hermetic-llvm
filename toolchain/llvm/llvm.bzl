@@ -34,6 +34,37 @@ def declare_llvm_targets(*, exec_os, exec_cpu, suffix = ""):
         visibility = ["//visibility:public"],
     )
 
+    # The x86 intrinsics headers that code includes directly, compiled into
+    # //toolchain/cc_runtimes:clang_x86_intrinsics. The headers they include,
+    # such as avx512fintrin.h, can't be included on their own.
+    native.filegroup(
+        name = "builtin_x86_intrinsics_headers",
+        srcs = native.glob(["lib/clang/*/include/" + header for header in [
+            "ammintrin.h",
+            "cpuid.h",
+            "emmintrin.h",
+            "immintrin.h",
+            "mmintrin.h",
+            "nmmintrin.h",
+            "pmmintrin.h",
+            "smmintrin.h",
+            "tmmintrin.h",
+            "wmmintrin.h",
+            "x86gprintrin.h",
+            "x86intrin.h",
+            "xmmintrin.h",
+        ]]),
+        visibility = ["//visibility:public"],
+    )
+
+    # Only Windows targets have intrin.h. Elsewhere, Clang's copy includes the
+    # next one on the search path.
+    native.filegroup(
+        name = "builtin_windows_intrinsics_headers",
+        srcs = native.glob(["lib/clang/*/include/intrin.h"]),
+        visibility = ["//visibility:public"],
+    )
+
     # The root covers non-header compiler resources recorded in dependency
     # files, such as sanitizer ignorelists under share/. The include child is
     # the actual builtin header search path exposed to toolchain consumers.

@@ -72,6 +72,29 @@ def platform_extra_binary(binary):
         "@llvm//platforms/config:windows_x86_64": Label("@toolchain-extra-prebuilts-windows-amd64//:%s" % binary),
     })
 
+def platform_stage0_toolchain_target(name, default):
+    """Selects a target of the Stage 0 toolchain for the current platform.
+
+    Resolve this in the exec configuration to get the target of the compiler
+    installation that runs the actions. Source-built bootstrap stages select
+    the default.
+
+    Args:
+        name: The name of the target in the toolchain repository.
+        default: The label to select for other bootstrap stages.
+
+    Returns:
+        A select of the target.
+    """
+    targets = {
+        _platform_bootstrap_stage(exec_os, exec_cpu, "stage0_prebuilt_seed"): Label(
+            "%s:%s" % (_tool_repo(exec_os, exec_cpu), name),
+        )
+        for exec_os, exec_cpu in SUPPORTED_EXECS
+    }
+    targets["//conditions:default"] = default
+    return select(targets)
+
 def platform_module_map(exec_os, exec_cpu):
     return Label(_tool_repo(exec_os, exec_cpu) + ":module_map")
 
