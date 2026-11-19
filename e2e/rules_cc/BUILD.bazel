@@ -91,7 +91,10 @@ _FDO_OPTIMIZE_COMPATIBLE = select({
 
 _WINDOWS_MSVC_RAW_ASSEMBLY_SRCS = select({
     "@llvm//platforms/config:windows_aarch64_msvc": ["windows_msvc_raw_assembly_aarch64.s"],
-    "@llvm//platforms/config:windows_x86_64_msvc": ["windows_msvc_raw_assembly_x86_64.s"],
+    "@llvm//platforms/config:windows_x86_64_msvc": [
+        "windows_msvc_masm_x86_64.asm",
+        "windows_msvc_raw_assembly_x86_64.s",
+    ],
     "//conditions:default": [],
 })
 

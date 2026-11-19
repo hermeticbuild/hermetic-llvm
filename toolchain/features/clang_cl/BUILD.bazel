@@ -338,9 +338,38 @@ cc_feature(
     overrides = "@rules_cc//cc/toolchains/features/legacy:compiler_output_flags",
 )
 
+# The assemble tool picks llvm-ml for MASM (.asm) sources, which can't read
+# clang-cl's arguments, so it gets the source and output paths separately.
+cc_args(
+    name = "assemble_source_env_args",
+    actions = _ASSEMBLE_ACTIONS,
+    env = {
+        "LLVM_ASSEMBLE_OUTPUT": "{output_file}",
+        "LLVM_ASSEMBLE_SOURCE": "{source_file}",
+    },
+    format = {
+        "output_file": "@rules_cc//cc/toolchains/variables:output_file",
+        "source_file": "@rules_cc//cc/toolchains/variables:source_file",
+    },
+    requires_not_none = "@rules_cc//cc/toolchains/variables:source_file",
+)
+
+# llvm-ml only assembles x86 MASM and defaults to 32-bit.
+cc_args(
+    name = "assemble_llvm_ml_x86_64_env_args",
+    actions = _ASSEMBLE_ACTIONS,
+    env = {"LLVM_ML_BITNESS": "64"},
+)
+
 cc_feature(
     name = "compiler_input",
-    args = [":compiler_input_args"],
+    args = [
+        ":compiler_input_args",
+        ":assemble_source_env_args",
+    ] + select({
+        "@platforms//cpu:x86_64": [":assemble_llvm_ml_x86_64_env_args"],
+        "//conditions:default": [],
+    }),
     overrides = "@rules_cc//cc/toolchains/features/legacy:compiler_input_flags",
 )
 
