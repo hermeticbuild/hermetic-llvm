@@ -59,17 +59,23 @@ _X86_INTRINSICS = select({
 # The runtime dependency also adds it to each target's module map, which
 # layering_check requires.
 #
-# Keep textual headers in the toolchain's module map, which records their
-# sizes for lazy lookup. Repeating them here would make rules_cc omit the
-# sizes and Clang stat every header when loading this module's map.
+# Declare libc++'s internal headers, such as __type_traits/*.h and the C
+# wrappers like stdlib.h, as submodules too, like libc++'s own module map does.
+# Under local submodule visibility, every public header's submodule would
+# otherwise compile its own copy of each internal header it includes. The
+# generated module map records the headers' sizes for lazy lookup.
 cc_runtimes_library(
     name = "libcxx",
-    hdrs = ["//runtimes/cxxstdlib:public_headers_directory"],
+    hdrs = [
+        "//runtimes/cxxstdlib:detail_headers_directory",
+        "//runtimes/cxxstdlib:public_headers_directory",
+    ],
     features = [
         "header_modules",
         "use_header_modules",
         "layering_check",
     ],
+    libcxx_module_map = True,
     tags = [
         # Build only when a dependent target imports the module.
         "manual",

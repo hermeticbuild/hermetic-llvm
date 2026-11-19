@@ -1,0 +1,33 @@
+Allow custom module maps in cc_common.compile
+
+Backport of https://github.com/bazelbuild/rules_cc/pull/991.
+
+diff --git a/cc/private/cc_common.bzl b/cc/private/cc_common.bzl
+index 8a289e3..c2ccc4c 100644
+--- a/cc/private/cc_common.bzl
++++ b/cc/private/cc_common.bzl
+@@ -494,11 +494,9 @@ def _compile(
+         separate_module_headers = _UNBOUND,
+         module_interfaces = _UNBOUND,
+         non_compilation_additional_inputs = _UNBOUND):
+-    if module_map != _UNBOUND or \
+-       additional_module_maps != _UNBOUND or \
++    if additional_module_maps != _UNBOUND or \
+        additional_exported_hdrs != _UNBOUND or \
+        propagate_module_map_to_compile_action != _UNBOUND or \
+-       do_not_generate_module_map != _UNBOUND or \
+        code_coverage_enabled != _UNBOUND or \
+        purpose != _UNBOUND or \
+        hdrs_checking_mode != _UNBOUND or \
+diff --git a/cc/private/cc_info.bzl b/cc/private/cc_info.bzl
+index 3ce9824..3cecaab 100644
+--- a/cc/private/cc_info.bzl
++++ b/cc/private/cc_info.bzl
+@@ -169,7 +169,6 @@ def create_module_map(*, file, name = None):
+     Returns:
+         A module map struct.
+     """
+-    check_private_api()
+     return _ModuleMapInfo(file = file, name = name)
+ 
+ def module_map_name_for_label(label):
