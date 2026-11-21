@@ -1,0 +1,254 @@
+diff --git a/libc/runtime/set_tls.c b/libc/runtime/set_tls.c
+--- a/libc/runtime/set_tls.c
++++ b/libc/runtime/set_tls.c
+@@ -59,6 +59,9 @@
+                  : "c"(MSR_IA32_GS_BASE), "a"((uint32_t)val),
+                    "d"((uint32_t)(val >> 32)));
+   }
++#elif defined(__aarch64__) && defined(__clang__)
++  // Cosmopolitan reserves x28 for TLS with -ffixed-x28.
++  asm volatile("mov\tx28,%0" : : "r"(tib) : "memory");
+ #elif defined(__aarch64__)
+   register long x28 asm("x28") = (long)tib;
+   asm volatile("" : "+r"(x28));
+diff --git a/libc/sysv/systemfive.S b/libc/sysv/systemfive.S
+--- a/libc/sysv/systemfive.S
++++ b/libc/sysv/systemfive.S
+@@ -19,6 +19,9 @@
+ #include "libc/dce.h"
+ #include "libc/macros.h"
+ #include "libc/thread/pt.internal.h"
++#include "libc/thread/tls.h"
++
++#ifdef __x86_64__
+ 
+ #define SIG_IGN 1
+ 
+@@ -424,3 +427,152 @@
+ _init_systemfive_done:
+ 	nop
+ 	.init.end 300,_init_systemfive,globl,hidden
++
++#elif defined(__aarch64__) && defined(__clang__)
++
++	.text
++	.p2align 2
++	.weak	_pthread_cancel_ack
++
++// `.scall` supplies x0-x5 and ordinals x8 (Linux), x9 (FreeBSD),
++// and x16 (XNU). Keep x0 and x1 intact on success for calls such as
++// XNU pipe that return two registers.
++systemfive:
++	.cfi_startproc
++	adrp	x10,__hostos
++	ldr	w10,[x10,:lo12:__hostos]
++#if SupportsXnu()
++	tst	w10,#_HOSTXNU
++	b.ne	.Lxnu
++#endif
++#if SupportsFreebsd()
++	tst	w10,#_HOSTFREEBSD
++	b.eq	1f
++	mov	x8,x9
++	b	.Lsysv
++1:
++#endif
++#if SupportsLinux()
++	tst	w10,#_HOSTLINUX
++	b.eq	.Lenosys
++#else
++	b	.Lenosys
++#endif
++.Lsysv:
++	cmp	x8,#0xfff
++	b.eq	.Lenosys
++	tbnz	x8,#11,.Lcancel_sysv
++.Lsyscall:
++	cmn	xzr,xzr			// Linux can preserve the carry flag.
++	svc	#0
++	b.cc	1f
++	neg	x0,x0			// BSD and XNU return positive errno with C set.
++1:
++	cmn	x0,#4095
++	b.lo	.Lreturn
++	b	_sysret
++.Lreturn:
++	ret
++.Lenosys:
++	adrp	x0,ENOSYS
++	ldr	w0,[x0,:lo12:ENOSYS]
++	neg	x0,x0
++	b	_sysret
++.Lcancel_sysv:
++	bic	x8,x8,#0x800
++	b	systemfive_cancellable
++#if SupportsXnu()
++.Lxnu:
++	cmp	x16,#0xfff
++	b.eq	.Lenosys
++	tbz	x16,#11,.Lsyscall
++	bic	x16,x16,#0x800
++	b	systemfive_cancellable
++#endif
++	.cfi_endproc
++	.endfn	systemfive,globl
++
++// Set x10 to the thread with cancellation enabled. Branch to the
++// supplied label if TLS, the thread, or pthread cancellation is absent.
++.macro	.cancelable_thread skip
++	adrp	x10,:got:_pthread_cancel_ack
++	ldr	x10,[x10,:got_lo12:_pthread_cancel_ack]
++	cbz	x10,\skip
++	cbz	x28,\skip
++	sub	x10,x28,#(COSMO_TIB_SIZE-COSMO_TIB_PTHREAD_OFFSET)
++	ldr	x10,[x10]
++	cbz	x10,\skip
++	ldr	w11,[x10,#PT_FLAGS_OFFSET]
++	tst	w11,#PT_NOCANCEL
++	b.ne	\skip
++.endm
++
++// pthread_cancel may redirect the saved PC from this interval to
++// systemfive_cancel. Keep sp and x30 unchanged throughout the interval.
++systemfive_cancellable:
++	.cfi_startproc
++	.cancelable_thread .Lcancellable_syscall
++	add	x11,x10,#PT_CANCELED_OFFSET
++	ldar	w11,[x11]
++	cbnz	w11,systemfive_cancel
++#if IsModeDbg()
++	ldr	w11,[x10,#PT_FLAGS_OFFSET]
++	tst	w11,#PT_INCANCEL
++	b.eq	.Lbad_cancel
++#endif
++.Lcancellable_syscall:
++	cmn	xzr,xzr
++	svc	#0
++systemfive_cancellable_end:
++	.globl	systemfive_cancellable_end
++	b.cc	1f
++	neg	x0,x0
++1:
++	cmn	x0,#4095
++	b.lo	.Lcancel_return
++	adrp	x10,EINTR
++	ldr	w10,[x10,:lo12:EINTR]
++	cmn	x0,x10
++	b.ne	.Lcancel_error
++	.cancelable_thread .Lcancel_error
++	add	x11,x10,#PT_CANCELED_OFFSET
++	ldar	w11,[x11]
++	cbnz	w11,systemfive_cancel
++.Lcancel_error:
++	b	_sysret
++.Lcancel_return:
++	ret
++	.cfi_endproc
++	.endfn	systemfive_cancellable,globl
++
++systemfive_cancel:
++	.cfi_startproc
++	b	_pthread_cancel_ack
++	.cfi_endproc
++	.endfn	systemfive_cancel,globl
++
++#if IsModeDbg()
++.Lbad_cancel:
++	.cfi_startproc
++	.weak	report_cancelation_point
++	adrp	x10,:got:report_cancelation_point
++	ldr	x10,[x10,:got_lo12:report_cancelation_point]
++	cbz	x10,.Lcancel_trap
++	mov	x0,x8
++	mov	x1,x16
++	stp	x29,x30,[sp,#-16]!
++	.cfi_def_cfa_offset 16
++	.cfi_offset x29,-16
++	.cfi_offset x30,-8
++	mov	x29,sp
++	blr	x10				// report_cancelation_point traps.
++	brk	#0
++	.cfi_restore x29
++	.cfi_restore x30
++	.cfi_def_cfa_offset 0
++.Lcancel_trap:
++	brk	#0
++	.cfi_endproc
++#endif
++
++#endif
+diff --git a/libc/sysv/sysv.c b/libc/sysv/sysv.c
+--- a/libc/sysv/sysv.c
++++ b/libc/sysv/sysv.c
+@@ -23,7 +23,17 @@
+ #include "libc/intrin/weaken.h"
+ #include "libc/thread/posixthread.internal.h"
+ #include "libc/thread/tls.h"
+-#ifndef __x86_64__
++#if defined(__aarch64__) && defined(__clang__)
++
++_Static_assert(sizeof(struct CosmoTib) == COSMO_TIB_SIZE, "systemfive TLS size");
++_Static_assert(offsetof(struct CosmoTib, tib_pthread) == COSMO_TIB_PTHREAD_OFFSET,
++               "systemfive TLS pthread offset");
++_Static_assert(offsetof(struct PosixThread, pt_flags) == PT_FLAGS_OFFSET,
++               "systemfive pthread flags offset");
++_Static_assert(offsetof(struct PosixThread, pt_canceled) == PT_CANCELED_OFFSET,
++               "systemfive pthread canceled offset");
++
++#elif !defined(__x86_64__)
+ 
+ // todo(jart): dismal llvm
+ register long x0 asm("x0");
+@@ -155,4 +165,4 @@
+   }
+ }
+ 
+-#endif /* __x86_64__ */
++#endif
+diff --git a/libc/thread/pt.internal.h b/libc/thread/pt.internal.h
+--- a/libc/thread/pt.internal.h
++++ b/libc/thread/pt.internal.h
+@@ -11,4 +11,7 @@
+ #define PT_EXITING        128
+ #define PT_OWNSIGALTSTACK 256
+ 
++#define PT_FLAGS_OFFSET    0
++#define PT_CANCELED_OFFSET 4
++
+ #endif /* COSMOPOLITAN_LIBC_THREAD_PT_H_ */
+diff --git a/libc/thread/tls.h b/libc/thread/tls.h
+--- a/libc/thread/tls.h
++++ b/libc/thread/tls.h
+@@ -2,6 +2,9 @@
+ #define COSMOPOLITAN_LIBC_THREAD_TLS_H_
+ 
+ #define TLS_ALIGNMENT 64
++
++#define COSMO_TIB_SIZE           1024
++#define COSMO_TIB_PTHREAD_OFFSET 0x28
+ 
+ #define TIB_FLAG_VFORKED 1
+ 
+@@ -65,13 +68,21 @@
+  *
+  * This can't be used in privileged functions.
+  */
+-forceinline pureconst struct CosmoTib *__get_tls(void) {
++#if !defined(__aarch64__) || !defined(__clang__)
++pureconst
++#endif
++forceinline struct CosmoTib *__get_tls(void) {
+ #ifdef __chibicc__
+   return 0;
+ #elif __x86_64__
+   struct CosmoTib *__tib;
+   __asm__("mov\t%%gs:0x30,%0" : "=r"(__tib));
+   return __tib;
++#elif defined(__aarch64__) && defined(__clang__)
++  // `__set_tls` can change x28 even within the calling function.
++  struct CosmoTib *__tls;
++  __asm__ volatile("mov\t%0,x28" : "=r"(__tls));
++  return __tls - 1;
+ #elif defined(__aarch64__)
+   register struct CosmoTib *__tls __asm__("x28");
+   return __tls - 1;

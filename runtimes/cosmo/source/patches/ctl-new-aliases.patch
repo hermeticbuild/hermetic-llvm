@@ -1,0 +1,18 @@
+diff --git a/ctl/new.cc b/ctl/new.cc
+--- a/ctl/new.cc
++++ b/ctl/new.cc
+@@ -21,6 +21,14 @@
+ #include "libc/mem/mem.h"
+ 
+ COSMOPOLITAN_C_START_
++
++static void* _ctl_alloc(size_t, size_t) noexcept __asm__("_ctl_alloc");
++static void* _ctl_alloc_nothrow(size_t, size_t, const ctl::nothrow_t&) __asm__("_ctl_alloc_nothrow");
++static void* _ctl_alloc1(size_t) noexcept __asm__("_ctl_alloc1");
++static void* _ctl_alloc1_nothrow(size_t, const ctl::nothrow_t&) noexcept __asm__("_ctl_alloc1_nothrow");
++static void* _ctl_ret(size_t, void*) noexcept __asm__("_ctl_ret");
++static void _ctl_free(void*) noexcept __asm__("_ctl_free");
++static void _ctl_nop(void*, void*) noexcept __asm__("_ctl_nop");
+ 
+ static void*
+ _ctl_alloc(size_t n, size_t a) noexcept

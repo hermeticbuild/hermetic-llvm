@@ -1,0 +1,168 @@
+load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
+load("//platforms:common.bzl", "COSMO_TARGET_CPUS")
+load("//prebuilt/cosmo:apify.bzl", "apify_with_source_loaders")
+load("//runtimes:defs.bzl", "stub_library")
+load("//toolchain/bootstrap:bootstrap_binary.bzl", "bootstrap_binary")
+load("//toolchain/runtimes:cc_runtime_binary.bzl", "cc_runtime_stage1_hosted_binary")
+load(":host_tools.bzl", "APE_LOADER")
+
+package(default_visibility = [
+    "//runtimes/cosmo:__pkg__",
+    "//toolchain:__subpackages__",
+])
+
+exports_files(["sdk.BUILD.bazel"])
+
+exports_files(
+    ["driver.sh"],
+    visibility = ["//visibility:public"],
+)
+
+cc_runtime_stage1_hosted_binary(
+    name = "ape-macos-arm64",
+    srcs = ["@cosmopolitan_sdk//:bin/ape-m1.c"],
+    copts = ["-O2"],
+    target_compatible_with = [
+        "@platforms//cpu:aarch64",
+        "@platforms//os:macos",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "ape_loader",
+    actual = APE_LOADER,
+    visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "sdk",
+    srcs = ["sdk.bzl"],
+    deps = [
+        "//:http_bsdtar_archive",
+        "//runtimes/cosmo/source:headers",
+    ],
+)
+
+[
+    bootstrap_binary(
+        name = "llvm_" + cpu,
+        actual = "@llvm-project//llvm:llvm",
+        cosmopolitan = True,
+        platform = "//platforms:cosmo_" + cpu + "_source",
+        tags = ["manual"],
+    )
+    for cpu in COSMO_TARGET_CPUS
+]
+
+apify_with_source_loaders(
+    name = "llvm",
+    aarch64 = ":llvm_aarch64",
+    apelink = "//prebuilt/cosmo:apelink",
+    tags = ["manual"],
+    visibility = ["//visibility:public"],
+    x86_64 = ":llvm_x86_64",
+)
+
+[
+    alias(
+        name = tool,
+        actual = "//prebuilt/cosmo:" + tool,
+        tags = ["manual"],
+        visibility = ["//visibility:public"],
+    )
+    for tool in [
+        "apelink",
+        "fixupobj",
+        "pecheck",
+        "zipobj",
+    ]
+]
+
+[
+    alias(
+        name = artifact,
+        actual = select({
+            "//constraints/libc:cosmo_source": "@cosmopolitan_source//:" + artifact,
+            "//conditions:default": "@cosmopolitan_sdk//:" + artifact,
+        }),
+        visibility = ["//visibility:public"],
+    )
+    for artifact in [
+        "c_headers",
+        "cxx_headers",
+        "aarch64_crt",
+        "aarch64_script",
+        "x86_64_ape",
+        "x86_64_crt",
+        "x86_64_script",
+    ]
+]
+
+COMPANION_LIBRARIES = [
+    "c",
+    "crypt",
+    "dl",
+    "gcc_s",
+    "gomp",
+    "m",
+    "pthread",
+    "resolv",
+    "rt",
+    "stdc++",
+    "unwind",
+]
+
+[
+    stub_library(
+        name = "stub_" + library,
+        out = "stubs/lib" + library + ".a",
+    )
+    for library in COMPANION_LIBRARIES
+]
+
+[
+    platform_transition_filegroup(
+        name = cpu + "_source_archives",
+        srcs = [
+            "@cosmopolitan_source//:cosmo",
+            "@cosmopolitan_source//:cxx",
+        ],
+        tags = ["manual"],
+        target_platform = "//platforms:linux_" + cpu + "_musl",
+    )
+    for cpu in COSMO_TARGET_CPUS
+]
+
+[
+    copy_to_directory(
+        name = cpu + "_source_libs",
+        srcs = [":" + cpu + "_source_archives"] + [
+            ":stub_" + library
+            for library in COMPANION_LIBRARIES
+        ],
+        include_external_repositories = ["**"],
+        root_paths = [package_name() + "/stubs"],
+        tags = ["manual"],
+    )
+    for cpu in COSMO_TARGET_CPUS
+]
+
+[
+    alias(
+        name = cpu + "_libs",
+        actual = select({
+            "//constraints/libc:cosmo_source": ":" + cpu + "_source_libs",
+            "//conditions:default": "@cosmopolitan_sdk//:" + cpu + "_libs",
+        }),
+        visibility = ["//visibility:public"],
+    )
+    for cpu in COSMO_TARGET_CPUS
+]
+
+bzl_library(
+    name = "host_tools",
+    srcs = ["host_tools.bzl"],
+)

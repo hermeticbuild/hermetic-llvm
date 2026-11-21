@@ -1,16 +1,18 @@
 load("@bazel_features//:features.bzl", "bazel_features")
-load("//platforms:common.bzl", "MSVC_TARGET_STAGE0_SUPPORTED_EXECS", "SUPPORTED_EXECS", "SUPPORTED_TARGETS")
+load("//platforms:common.bzl", "COSMO_TARGET_CPUS", "MSVC_TARGET_STAGE0_SUPPORTED_EXECS", "SUPPORTED_EXECS", "SUPPORTED_TARGETS")
+load("//runtimes/cosmo:host_tools.bzl", "APE_LOADERS")
 load("//toolchain:merged_resource_directory.bzl", "merged_resource_directory")
 load("//toolchain:selects.bzl", "platform_cc_tool_map", "platform_module_map", "platform_resource_dir")
 load("//toolchain/args:resource_directory_args.bzl", "resource_directory_args")
 load(":cc_toolchain.bzl", "cc_toolchain")
 
-def declare_toolchains(*, execs = SUPPORTED_EXECS, targets = SUPPORTED_TARGETS):
+def declare_toolchains(*, execs = SUPPORTED_EXECS, targets = SUPPORTED_TARGETS, cosmo_targets = COSMO_TARGET_CPUS):
     """Declares the configured LLVM toolchains.
 
     Args:
         execs: List of (os, arch) tuples describing exec platforms.
         targets: List of (os, arch) tuples describing target platforms.
+        cosmo_targets: List of Cosmopolitan target architectures.
     """
     for (exec_os, exec_cpu) in execs:
         cc_toolchain_name = exec_os + "_" + exec_cpu + "_cc_toolchain"
@@ -45,6 +47,7 @@ def declare_toolchains(*, execs = SUPPORTED_EXECS, targets = SUPPORTED_TARGETS):
             # target semantics in //toolchain's ordered argument composition.
             extra_args = select({
                 "@platforms//os:uefi": [],
+                "@llvm//constraints/libc:cosmo": [],
                 "//conditions:default": [cc_toolchain_name + "_resource_directory_args"],
             }) + select({
                 "@llvm//platforms/config:windows_x86_64_msvc": [
@@ -95,6 +98,24 @@ def declare_toolchains(*, execs = SUPPORTED_EXECS, targets = SUPPORTED_TARGETS):
                         "@llvm//toolchain:bootstrap_stage0_prebuilt_seed",
                         "@llvm//platforms/config:windows_" + target_cpu + "_msvc",
                     ],
+                    toolchain = cc_toolchain_name,
+                    toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
+                    visibility = ["//visibility:public"],
+                )
+
+        if (exec_os, exec_cpu) in APE_LOADERS:
+            for target_cpu in cosmo_targets:
+                native.toolchain(
+                    name = exec_os + "_" + exec_cpu + "_to_cosmo_" + target_cpu,
+                    exec_compatible_with = [
+                        "@platforms//cpu:" + exec_cpu,
+                        "@platforms//os:" + exec_os,
+                    ],
+                    target_compatible_with = [
+                        "@platforms//cpu:" + target_cpu,
+                        "@llvm//constraints/libc:cosmo",
+                    ],
+                    target_settings = ["@llvm//toolchain:bootstrap_stage0_prebuilt_seed"],
                     toolchain = cc_toolchain_name,
                     toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
                     visibility = ["//visibility:public"],

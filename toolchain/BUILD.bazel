@@ -522,6 +522,7 @@ cc_args_list(
 cc_args_list(
     name = "toolchain_args",
     args = select({
+        "//constraints/libc:cosmo": ["//toolchain/args/cosmo:toolchain_args"],
         "@platforms//os:uefi": ["//toolchain:uefi_toolchain_args"],
         "@platforms//os:windows": [":windows_toolchain_args"],
         "//conditions:default": [":generic_toolchain_args"],
@@ -678,6 +679,7 @@ bzl_library(
         ":merged_resource_directory",
         ":selects",
         "//platforms:common",
+        "//runtimes/cosmo:host_tools",
         "//toolchain/args:resource_directory_args",
         "@bazel_features//:features",
     ],

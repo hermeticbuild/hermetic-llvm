@@ -18,6 +18,12 @@ bazel_dep(name = "windows_support", version = "0.4.1")
 bazel_dep(name = "zlib-ng", version = "2.3.3.bcr.2", repo_name = "llvm_zlib")
 bazel_dep(name = "zstd", version = "1.5.7.bcr.1", repo_name = "llvm_zstd")
 bazel_dep(name = "libxml2", version = "2.15.3", repo_name = "llvm_libxml2")
+single_version_override(
+    module_name = "libxml2",
+    patch_strip = 1,
+    patches = ["//3rd_party/libxml2:runtime-errno.patch"],
+)
+
 bazel_dep(name = "mimalloc", version = "3.5.3")
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
@@ -106,6 +112,9 @@ use_repo(
     "bsd_tar_toolchains_windows_amd64",
     "bsd_tar_toolchains_windows_arm64",
 )
+
+cosmopolitan = use_extension("//runtimes/cosmo:sdk.bzl", "cosmopolitan")
+use_repo(cosmopolitan, "cosmopolitan_sdk", "cosmopolitan_source")
 
 musl = use_extension("//runtimes/musl/extension:musl.bzl", "musl")
 use_repo(musl, "musl_libc")

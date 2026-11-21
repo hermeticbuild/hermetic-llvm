@@ -96,6 +96,7 @@ cc_feature_set(
     name = "hosted_dynamic_linker",
     all_of = select({
         "//constraints/libc:musl": [],
+        "//constraints/libc:cosmo": [],
         # Nodeps dylibs omit dependencies, leaving unresolved symbols on macOS.
         # https://github.com/hermeticbuild/hermetic-llvm/issues/893
         "@platforms//os:macos": [],
@@ -213,8 +214,8 @@ cc_feature(
     feature_name = "skip_virtual_includes",
 )
 
-# --icf=safe is LLD/ELF-only: sanitizer runtimes forbid ICF, wasm and Windows
-# don't support it, and macOS links with ld64 (which rejects the flag). Grouped
+# --icf=safe is LLD/ELF-only: sanitizer runtimes forbid ICF, and
+# Cosmopolitan (GNU BFD), macOS (ld64), WASM, and Windows omit this flag. Grouped
 # via match_any so overlapping conditions (e.g. macOS + a sanitizer) don't
 # produce an ambiguous select.
 selects.config_setting_group(
@@ -231,6 +232,7 @@ selects.config_setting_group(
         "//config:tsan_enabled",
         "//config:tysan_enabled",
         "//config:ubsan_enabled",
+        "//constraints/libc:cosmo",
         "@platforms//cpu:wasm32",
         "@platforms//cpu:wasm64",
         "@platforms//os:macos",

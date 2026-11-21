@@ -2,7 +2,7 @@ load("@bazel_skylib//lib:selects.bzl", "selects")
 load("//constraints/libc:libc_versions.bzl", "GLIBCS", "LIBCS")
 load("//constraints/wasi:variants.bzl", "WASI_TARGET_TRIPLES")
 load("//constraints/windows/abi:abis.bzl", "WINDOWS_ABIS", "WINDOWS_MINGW_COMPATIBLE_ABIS")
-load("//platforms:common.bzl", "LIBC_SUPPORTED_TARGETS", "SUPPORTED_TARGETS", "WINDOWS_TARGETS")
+load("//platforms:common.bzl", "COSMO_TARGET_CPUS", "LIBC_SUPPORTED_TARGETS", "SUPPORTED_TARGETS", "WINDOWS_TARGETS")
 load("//toolchain:bootstrap_stages.bzl", "BOOTSTRAP_STAGES")
 
 def declare_config_settings():
@@ -28,6 +28,16 @@ def declare_config_settings():
                 },
                 visibility = ["//visibility:public"],
             )
+
+    for cpu in COSMO_TARGET_CPUS:
+        native.config_setting(
+            name = "cosmo_" + cpu,
+            constraint_values = [
+                "@platforms//cpu:" + cpu,
+                "//constraints/libc:cosmo",
+            ],
+            visibility = ["//visibility:public"],
+        )
 
     declare_config_settings_libc_aware()
     declare_config_settings_windows_abi_aware()

@@ -5,6 +5,12 @@ load("//prebuilt/llvm:llvm_release.bzl", "llvm_release")
 llvm_release(name = "llvm_release")
 
 llvm_release(
+    name = "llvm_distribution",
+    binary = "//runtimes/cosmo:llvm",
+    binary_name = "llvm.com",
+)
+
+llvm_release(
     name = "windows_llvm_release",
     bin_suffix = ".exe",
 )

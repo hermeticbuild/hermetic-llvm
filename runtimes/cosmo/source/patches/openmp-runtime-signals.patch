@@ -1,0 +1,43 @@
+diff --git a/third_party/openmp/util1.cpp b/third_party/openmp/util1.cpp
+--- a/third_party/openmp/util1.cpp
++++ b/third_party/openmp/util1.cpp
+@@ -1094,19 +1094,13 @@
+ #ifdef KMP_DEBUG
+     __kmp_debug_printf("__kmp_team_handler: caught signal = %d\n", signo);
+ #endif
+-    switch (signo) {
+-    case SIGHUP:
+-    case SIGINT:
+-    case SIGQUIT:
+-    case SIGILL:
+-    case SIGABRT:
+-    case SIGFPE:
+-    case SIGBUS:
+-    case SIGSEGV:
++    if (signo == SIGHUP || signo == SIGINT || signo == SIGQUIT ||
++        signo == SIGILL || signo == SIGABRT || signo == SIGFPE ||
++        signo == SIGBUS || signo == SIGSEGV ||
+ #ifdef SIGSYS
+-    case SIGSYS:
+-#endif
+-    case SIGTERM:
++        signo == SIGSYS ||
++#endif
++        signo == SIGTERM) {
+       if (__kmp_debug_buf) {
+         __kmp_dump_debug_buffer();
+       }
+@@ -1116,12 +1110,10 @@
+       KMP_MB(); // Flush all pending memory write invalidates.
+       TCW_4(__kmp_global.g.g_done, TRUE);
+       KMP_MB(); // Flush all pending memory write invalidates.
+-      break;
+-    default:
++    } else {
+ #ifdef KMP_DEBUG
+       __kmp_debug_printf("__kmp_team_handler: unknown signal type");
+ #endif
+-      break;
+     }
+   }
+ } // __kmp_team_handler

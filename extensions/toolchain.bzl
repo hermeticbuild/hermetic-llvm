@@ -1,4 +1,4 @@
-load("//platforms:common.bzl", "SUPPORTED_EXECS", "SUPPORTED_TARGETS")
+load("//platforms:common.bzl", "COSMO_TARGET_CPUS", "SUPPORTED_EXECS", "SUPPORTED_TARGETS")
 
 _BUILD_TEMPLATE = """\
 load("@llvm//toolchain:declare_toolchains.bzl", "declare_toolchains")
@@ -12,7 +12,7 @@ _TARGETS = [
     {targets}
 ]
 
-declare_toolchains(execs = _EXECS, targets = _TARGETS)
+declare_toolchains(execs = _EXECS, targets = _TARGETS, cosmo_targets = {cosmo_targets})
 declare_bootstrap_toolchains(execs = _EXECS, targets = _TARGETS)
 """
 
@@ -37,6 +37,7 @@ def _validate_platform_pair(kind, platform, supported):
 def _toolchain_impl(mctx):
     execs = []
     targets = []
+    cosmo_targets = []
 
     for module in mctx.modules:
         for exec in module.tags.exec:
@@ -45,20 +46,26 @@ def _toolchain_impl(mctx):
             execs.append(platform)
         for target in module.tags.target:
             platform = (target.os, target.arch)
-            _validate_platform_pair("target", platform, SUPPORTED_TARGETS)
-            targets.append(platform)
+            if target.os == "cosmo":
+                _validate_platform_pair("target", platform, [("cosmo", cpu) for cpu in COSMO_TARGET_CPUS])
+                cosmo_targets.append(target.arch)
+            else:
+                _validate_platform_pair("target", platform, SUPPORTED_TARGETS)
+                targets.append(platform)
 
     if not execs:
         execs = SUPPORTED_EXECS
 
-    if not targets:
+    if not targets and not cosmo_targets:
         targets = SUPPORTED_TARGETS
+        cosmo_targets = COSMO_TARGET_CPUS
 
     _toolchains_repository(
         name = "llvm_toolchains",
         build_file_content = _BUILD_TEMPLATE.format(
             execs = _format_platform_list(execs),
             targets = _format_platform_list(targets),
+            cosmo_targets = repr(cosmo_targets),
         ),
     )
 
@@ -88,7 +95,7 @@ _target_platform_tag = tag_class(
     attrs = {
         "os": attr.string(
             mandatory = True,
-            values = ["linux", "macos", "windows", "uefi", "none", "wasi"],
+            values = ["linux", "macos", "windows", "uefi", "none", "wasi", "cosmo"],
         ),
         "arch": attr.string(
             mandatory = True,

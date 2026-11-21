@@ -1,0 +1,102 @@
+load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
+load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
+load(":link_args.bzl", "cosmo_link_args")
+
+package(default_visibility = ["//toolchain:__subpackages__"])
+
+filegroup(
+    name = "normalize",
+    srcs = ["normalize.h"],
+    visibility = ["//visibility:public"],
+)
+
+cc_args(
+    name = "compile",
+    actions = ["@llvm//toolchain:source_compile_actions"],
+    allowlist_include_directories = ["@llvm//runtimes/cosmo:c_headers"],
+    args = [
+        "-isystem",
+        "{headers}",
+        "-include",
+        "{normalize}",
+        "-D__COSMOCC__",
+        "-fno-pie",
+    ] + select({
+        "//platforms/config:cosmo_aarch64": [
+            "-fsigned-char",
+            "-ffixed-x18",
+            "-ffixed-x28",
+        ],
+        "//platforms/config:cosmo_x86_64": [
+            "-mno-red-zone",
+            "-mno-tls-direct-seg-refs",
+        ],
+    }),
+    data = [
+        ":normalize",
+        "@llvm//runtimes/cosmo:c_headers",
+    ],
+    format = {
+        "headers": "@llvm//runtimes/cosmo:c_headers",
+        "normalize": ":normalize",
+    },
+)
+
+cc_args(
+    name = "cxx_headers",
+    actions = ["@rules_cc//cc/toolchains/actions:cpp_compile_actions"],
+    args = [
+        "-isystem",
+        "{headers}/third_party/libcxx",
+    ],
+    format = {"headers": "@llvm//runtimes/cosmo:c_headers"},
+)
+
+cc_args(
+    name = "fixup_object",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:assembly_actions",
+        "@rules_cc//cc/toolchains/actions:c_compile",
+        "@rules_cc//cc/toolchains/actions:cpp_compile",
+        "@rules_cc//cc/toolchains/actions:linkstamp_compile",
+    ],
+    env = {"COSMO_FIXUP_OUTPUT": "{output_file}"},
+    format = {"output_file": "@rules_cc//cc/toolchains/variables:output_file"},
+    requires_not_none = "@rules_cc//cc/toolchains/variables:output_file",
+)
+
+cosmo_link_args("aarch64")
+
+cosmo_link_args("x86_64")
+
+cc_args_list(
+    name = "toolchain_args",
+    args = [
+        "//toolchain/args:target_flags",
+        "//toolchain/args:no_absolute_paths_for_builtins",
+        "//toolchain/args:deterministic_compile_flags",
+        "@rules_cc//cc/toolchains/args/external_include_paths:external_include_paths",
+    ] + select({
+        "//config:nostdincxx_enabled": [],
+        "//conditions:default": [":cxx_headers"],
+    }) + [
+        ":compile",
+        ":fixup_object",
+    ] + select({
+        "//platforms/config:cosmo_aarch64": [
+            ":aarch64_link",
+            ":aarch64_link_env",
+        ],
+        "//platforms/config:cosmo_x86_64": [
+            ":x86_64_link",
+            ":x86_64_link_env",
+        ],
+    }),
+)
+
+bzl_library(
+    name = "link_args",
+    srcs = ["link_args.bzl"],
+    deps = ["@rules_cc//cc/toolchains:toolchain_rules"],  # keep
+)

@@ -1,0 +1,13 @@
+diff --git a/libc/errno.h b/libc/errno.h
+--- a/libc/errno.h
++++ b/libc/errno.h
+@@ -657,6 +657,9 @@
+ #define EXDEV           EXDEV
+ 
+ extern errno_t __errno;
++#if defined(__x86_64__) && __has_attribute(__no_caller_saved_registers__)
++__attribute__((__no_caller_saved_registers__))
++#endif
+ errno_t *__errno_location(void) dontthrow pureconst;
+ 
+ #if defined(_COSMO_SOURCE) || defined(_GNU_SOURCE)

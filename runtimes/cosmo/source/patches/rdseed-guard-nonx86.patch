@@ -1,0 +1,29 @@
+diff --git a/libc/stdio/rdseed.c b/libc/stdio/rdseed.c
+--- a/libc/stdio/rdseed.c
++++ b/libc/stdio/rdseed.c
+@@ -16,8 +16,10 @@
+ │ TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR             │
+ │ PERFORMANCE OF THIS SOFTWARE.                                                │
+ ╚─────────────────────────────────────────────────────────────────────────────*/
++#if defined(__x86_64__) || defined(__i386__)
+ #include "libc/intrin/asmflag.h"
+ #include "libc/nexgen32e/x86feature.h"
++#endif
+ #include "libc/stdio/rand.h"
+ #include "libc/stdio/stdio.h"
+ #include "libc/sysv/consts/grnd.h"
+@@ -39,6 +41,7 @@
+  * @vforksafe
+  */
+ uint64_t rdseed(void) {
++#if defined(__x86_64__) || defined(__i386__)
+   int i;
+   char cf;
+   uint64_t x;
+@@ -53,5 +56,6 @@
+       asm volatile("pause");
+     }
+   }
++#endif
+   return rdrand();
+ }

@@ -1,0 +1,32 @@
+diff --git a/libc/runtime/winmain.greg.c b/libc/runtime/winmain.greg.c
+--- a/libc/runtime/winmain.greg.c
++++ b/libc/runtime/winmain.greg.c
+@@ -360,7 +360,7 @@
+   if (!(__sig.process = __sig_map_process(__pid, kNtOpenAlways)))
+     __sig.process = &fake_process_signals;
+   if (__winmain_isfork)
+-    __builtin_longjmp(__winmain_jmpbuf, 1);
++    __builtin_longjmp((void **)__winmain_jmpbuf, 1);
+   if (!pid_is_inherited)
+     atomic_store_explicit(__sig.process, 0, memory_order_release);
+   cmdline = __imp_GetCommandLineW();
+diff --git a/libc/intrin/sys_sched_yield.S b/libc/intrin/sys_sched_yield.S
+--- a/libc/intrin/sys_sched_yield.S
++++ b/libc/intrin/sys_sched_yield.S
+@@ -107,4 +107,3 @@
+ #error "arch unsupported"
+ #endif
+ 	.endfn	sys_sched_yield,globl
+-	.previous
+diff --git a/libc/proc/fork-nt.c b/libc/proc/fork-nt.c
+--- a/libc/proc/fork-nt.c
++++ b/libc/proc/fork-nt.c
+@@ -309,7 +309,7 @@
+   int rc;
+   __winmain_isfork = true;
+   __winmain_tib = __get_tls();
+-  if (!__builtin_setjmp(__winmain_jmpbuf)) {
++  if (!__builtin_setjmp((void **)__winmain_jmpbuf)) {
+     rc = sys_fork_nt_parent(dwCreationFlags);
+   } else {
+     sys_fork_nt_child();

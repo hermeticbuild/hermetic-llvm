@@ -3,8 +3,8 @@ def _mtree_impl(ctx):
 
     for tgt, dst in ctx.attr.files.items():
         lines.append(
-            "%s uid=0 gid=0 time=1672560000 mode=0755 type=file content=$(location %s)" %
-            (dst, str(tgt.label)),
+            "%s uid=0 gid=0 time=1672560000 mode=%s type=file content=$(location %s)" %
+            (dst, ctx.attr.modes.get(dst, "0755"), str(tgt.label)),
         )
 
     for link_path, target in ctx.attr.symlinks.items():
@@ -35,6 +35,7 @@ mtree = rule(
     attrs = {
         "files": attr.label_keyed_string_dict(allow_files = True),
         "format": attr.string_dict(),
+        "modes": attr.string_dict(doc = "File modes keyed by destination path, defaulting to 0755."),
         "symlinks": attr.string_dict(),
     },
 )

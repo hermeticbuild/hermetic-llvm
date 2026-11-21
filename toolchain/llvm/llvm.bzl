@@ -4,6 +4,7 @@ load("@rules_cc//cc/toolchains:tool.bzl", "cc_tool")
 load("@rules_cc//cc/toolchains:tool_map.bzl", "cc_tool_map")
 load("//:directory.bzl", "headers_directory")
 load(":component_tools.bzl", "component_tools")
+load(":cosmo_tools.bzl", "cosmo_tools")
 
 _VALIDATE_STATIC_LIBRARY_TOOL = {
     "@rules_cc//cc/toolchains/actions:validate_static_library": ":static_library_validator",
@@ -50,10 +51,7 @@ def declare_llvm_targets(*, exec_os, exec_cpu, suffix = ""):
         srcs = ["bin"],
     )
 
-    native.filegroup(
-        name = "clangxx_file",
-        srcs = ["bin/clang++" + suffix],
-    )
+    clangxx = "bin/clang++" + suffix
 
     native.filegroup(
         name = "dsymutil_file",
@@ -70,13 +68,13 @@ def declare_llvm_targets(*, exec_os, exec_cpu, suffix = ""):
         src = "@llvm//tools/internal:header-parser",
         data = [
             ":builtin_resource_dir",
-            ":clangxx_file",
+            clangxx,
         ],
         env = {
             "LLVM_CLANGXX": "{clangxx}",
         },
         format = {
-            "clangxx": ":clangxx_file",
+            "clangxx": clangxx,
         },
         allowlist_include_directories = builtin_resource_allowlist_directories,
     )
@@ -142,6 +140,23 @@ def declare_llvm_targets(*, exec_os, exec_cpu, suffix = ""):
     COMPLETE_ONLY_TOOLS = {
         "@rules_cc//cc/toolchains/actions:cpp_header_parsing": ":header_parser",
     } | _VALIDATE_STATIC_LIBRARY_TOOL
+
+    if exec_os != "windows":
+        headers_directory(
+            name = "cosmo_intrinsics",
+            path = "cosmo_intrinsics_include",
+        )
+
+    cosmo_tools(
+        name = "cosmo_tools",
+        exec_os = exec_os,
+        exec_cpu = exec_cpu,
+        clang = "bin/clang" + suffix,
+        clangxx = clangxx,
+        ar = ":llvm-ar",
+        strip = ":llvm-strip",
+        resource_include_dir = ":cosmo_intrinsics",
+    )
 
     component_tools(
         name = "wasi_component_tools_for_runtime",
@@ -405,7 +420,7 @@ def declare_llvm_targets(*, exec_os, exec_cpu, suffix = ""):
         name = "link-wrapper",
         src = "@llvm//tools/internal:link-wrapper",
         data = [
-            ":clangxx_file",
+            clangxx,
             ":dsymutil_file",
             ":strip_file",
             "bin/ld.lld" + suffix,
@@ -431,7 +446,7 @@ def declare_llvm_targets(*, exec_os, exec_cpu, suffix = ""):
             "LLVM_STRIP": "{strip}",
         },
         format = {
-            "clangxx": ":clangxx_file",
+            "clangxx": clangxx,
             "dsymutil": ":dsymutil_file",
             "llvm_bin": ":llvm_bin_directory",
             "llvm_ifs": "bin/llvm-ifs" + suffix,
@@ -586,9 +601,18 @@ def declare_llvm_targets(*, exec_os, exec_cpu, suffix = ""):
         }),
     )
 
+    include_path(
+        name = "cosmo_target_headers",
+        srcs = select({
+            "@llvm//config:nostdincxx_enabled": [],
+            "//conditions:default": ["@llvm//runtimes/cosmo:cxx_headers"],
+        }) + [":cosmo_intrinsics", "@llvm//runtimes/cosmo:c_headers", "@llvm//toolchain/args/cosmo:normalize"],
+    )
+
     module_map(
         name = "module_map",
         include_path = select({
+            "@llvm//constraints/libc:cosmo": ":cosmo_target_headers",
             "@platforms//os:macos": ":macos_target_headers",
             "@platforms//os:linux": ":linux_target_headers",
             "@platforms//os:windows": ":windows_target_headers",

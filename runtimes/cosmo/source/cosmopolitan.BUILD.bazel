@@ -1,0 +1,83 @@
+load("@llvm//:directory.bzl", "headers_directory")
+load("@llvm//runtimes/cosmo/source:loaders.bzl", "cosmo_ape_loaders")
+load("@llvm//runtimes/cosmo/source:runtime.bzl", "cosmo_sdk_tool", "cosmo_static_library", "cosmo_zip_assets")
+load("@llvm//runtimes/cosmo/source:sources.bzl", "SDK_TOOL_SRCS", "libcosmo_sources", "libcxx_sources")
+load("@llvm//runtimes/cosmo/source:startup.bzl", "cosmo_stage1_tool", "cosmo_startup_files")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+exports_files([
+    "LICENSE",
+    "ape/ape-m1.c",
+])
+
+filegroup(
+    name = "source_headers",
+    srcs = glob(
+        [
+            "ape/**/*.h",
+            "libc/**/*.h",
+            "libc/**/*.inc",
+            "libc/**/*.s",
+            "ctl/**/*",
+            "dsp/**/*.h",
+            "net/**/*.h",
+            "net/**/*.inc",
+            "tool/**/*.h",
+            "tool/**/*.inc",
+            "third_party/**/*.h",
+            "third_party/**/*.inc",
+            "third_party/**/*.def",
+            "third_party/**/*.hpp",
+            "third_party/libcxx/**",
+        ],
+        allow_empty = True,
+        exclude = [
+            "**/test/**",
+            "third_party/libcxx/**/*.cpp",
+        ],
+    ) + ["third_party/openmp/ompt-specific.cpp"],
+)
+
+cc_library(
+    name = "headers",
+    textual_hdrs = [":source_headers"],
+)
+
+cosmo_startup_files(headers = ":source_headers")
+
+cosmo_ape_loaders()
+
+headers_directory(
+    name = "c_headers",
+    path = "include",
+    visibility = ["//visibility:public"],
+)
+
+headers_directory(
+    name = "cxx_headers",
+    path = "include/third_party/libcxx",
+    visibility = ["//visibility:public"],
+)
+
+cosmo_stage1_tool("archive_llvm_ar", "llvm-ar")
+
+cosmo_zip_assets()
+
+cosmo_static_library(
+    name = "cosmo",
+    extra_objects = [":zip_objects"],
+    groups = libcosmo_sources(),
+)
+
+cosmo_static_library(
+    name = "cxx",
+    groups = libcxx_sources(),
+)
+
+[
+    cosmo_sdk_tool(
+        name = tool,
+        extra_srcs = sources,
+    )
+    for tool, sources in SDK_TOOL_SRCS.items()
+]

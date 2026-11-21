@@ -95,7 +95,9 @@ _LLVM_23_SOURCE_PATCHES = [
     "//3rd_party/llvm-project/x.x/patches:llvm-cov-multicall.patch",
     "//3rd_party/llvm-project/x.x/patches:thinlto-roundtrip-before-codegen.patch",
     "//3rd_party/llvm-project/x.x/patches:llvm-bazel-libxml2.patch",
-] + _DEFAULT_SOURCE_PATCHES
+] + _DEFAULT_SOURCE_PATCHES + [
+    "//3rd_party/llvm-project/23.x/patches:llvm-cosmopolitan.patch",
+]
 
 _FLANG_RUNTIME_23_SOURCE_PATCH = "//3rd_party/llvm-project/23.x/patches:flang-runtime-build.patch"
 

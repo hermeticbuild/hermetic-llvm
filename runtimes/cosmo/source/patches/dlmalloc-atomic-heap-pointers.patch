@@ -1,0 +1,7 @@
+diff --git a/third_party/dlmalloc/threaded.inc b/third_party/dlmalloc/threaded.inc
+--- a/third_party/dlmalloc/threaded.inc
++++ b/third_party/dlmalloc/threaded.inc
+@@ -37,2 +37,2 @@
+ static unsigned g_heapslen;
+-static mstate g_heaps[128];
++static _Atomic(mstate) g_heaps[128];

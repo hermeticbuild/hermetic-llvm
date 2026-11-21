@@ -1,0 +1,102 @@
+diff --git a/libc/intrin/demangle.c b/libc/intrin/demangle.c
+--- a/libc/intrin/demangle.c
++++ b/libc/intrin/demangle.c
+@@ -31,6 +31,17 @@
+ #include <stdbool.h>
+ #include <stddef.h>
+ #include <stdint.h>
++#include "libc/runtime/runtime.h"
++
++typedef jmp_buf demangle_jmpbuf;
++#if defined(__aarch64__)
++#define DEMANGLE_SETJMP(env) setjmp(env)
++#define DEMANGLE_LONGJMP(env, val) longjmp(env, val)
++#else
++#define DEMANGLE_SETJMP(env) __builtin_setjmp((void **)(env))
++#define DEMANGLE_LONGJMP(env, val) __builtin_longjmp((void **)(env), val)
++#endif
++#define DEMANGLE_JMPBUF demangle_jmpbuf
+ 
+ __notice(demangle_notice, "\
+ Cosmopolitan libelftc demangle (BSD-2)\n\
+@@ -194,7 +205,7 @@
+ 	int depth;
+ 	const char *cur;	/* current mangled name ptr */
+ 	const char *last_sname; /* last source name */
+-	intptr_t jmpbuf[5];
++	DEMANGLE_JMPBUF jmpbuf;
+ };
+ 
+ struct type_delimit {
+@@ -395,7 +406,7 @@
+ 	long b = sizeof(index_t);
+ 
+ 	if (n < 0 || n >= 32768)
+-		__builtin_longjmp(h->jmpbuf, 1);
++		DEMANGLE_LONGJMP(h->jmpbuf, 1);
+ 
+ 	/* Roundup size. */
+ 	n += a - 1;
+@@ -438,7 +449,7 @@
+ 		((index_t *)ptr)[-1] = n;
+ 		return (void *)ptr;
+ 	} else {
+-		__builtin_longjmp(h->jmpbuf, 1);
++		DEMANGLE_LONGJMP(h->jmpbuf, 1);
+ 	}
+ }
+ 
+@@ -2552,7 +2563,7 @@
+ demangle_read_expression(struct demangle_data *ddata)
+ {
+ 	if (ddata->depth == MAX_DEPTH)
+-		__builtin_longjmp(ddata->jmpbuf, 1);
++		DEMANGLE_LONGJMP(ddata->jmpbuf, 1);
+ 	++ddata->depth;
+ 	int res = demangle_read_expression_impl(ddata);
+ 	--ddata->depth;
+@@ -2881,7 +2892,7 @@
+ 
+ 	len = demangle_strtol(ddata->cur, 10);
+ 	if (len < 0)
+-		__builtin_longjmp(ddata->jmpbuf, 1);
++		DEMANGLE_LONGJMP(ddata->jmpbuf, 1);
+ 
+ 	while (ELFTC_ISDIGIT(*ddata->cur))
+ 		++ddata->cur;
+@@ -3121,7 +3132,7 @@
+ demangle_read_encoding(struct demangle_data *ddata)
+ {
+ 	if (ddata->depth == MAX_DEPTH)
+-		__builtin_longjmp(ddata->jmpbuf, 1);
++		DEMANGLE_LONGJMP(ddata->jmpbuf, 1);
+ 	++ddata->depth;
+ 	int res = demangle_read_encoding_impl(ddata);
+ 	--ddata->depth;
+@@ -3363,7 +3374,7 @@
+ demangle_read_name(struct demangle_data *ddata)
+ {
+ 	if (ddata->depth == MAX_DEPTH)
+-		__builtin_longjmp(ddata->jmpbuf, 1);
++		DEMANGLE_LONGJMP(ddata->jmpbuf, 1);
+ 	++ddata->depth;
+ 	int res = demangle_read_name_impl(ddata);
+ 	--ddata->depth;
+@@ -4262,7 +4273,7 @@
+ demangle_read_type(struct demangle_data *ddata, struct type_delimit *td)
+ {
+ 	if (ddata->depth == MAX_DEPTH)
+-		__builtin_longjmp(ddata->jmpbuf, 1);
++		DEMANGLE_LONGJMP(ddata->jmpbuf, 1);
+ 	++ddata->depth;
+ 	int res = demangle_read_type_impl(ddata, td);
+ 	--ddata->depth;
+@@ -4455,7 +4466,7 @@
+ __demangle(char *buf, const char *org, size_t buflen)
+ {
+ 	struct demangle_data ddata[1];
+-	if (!__builtin_setjmp(ddata->jmpbuf))
++	if (!DEMANGLE_SETJMP(ddata->jmpbuf))
+ 		return demangle(ddata, buf, org, buflen);
+ 	return demangle_failure(buf, org, buflen);
+ }

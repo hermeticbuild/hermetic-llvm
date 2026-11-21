@@ -31,6 +31,8 @@ cc_args(
     name = "legacy_default_stack_protector",
     actions = ["@rules_cc//cc/toolchains/actions:source_compile_actions"],
     args = select({
+        # Match the Cosmopolitan build defaults.
+        "//constraints/libc:cosmo": ["-fno-stack-protector"],
         "@platforms//os:none": [],
         "@platforms//os:wasi": [],
         "//conditions:default": ["-fstack-protector"],
