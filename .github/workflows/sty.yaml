@@ -168,24 +168,28 @@ jobs:
       # the releases in MODULE.bazel. Only the enrolled root files need a
       # second pass.
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        if: ${{ !cancelled() && steps.files.outcome == 'success' }}
         with:
           repository: bazelbuild/bazel-skylib
-          ref: 54352fa517a400e6c55b1496806d1483450697f2 # bazelbuild/bazel-skylib#641
+          ref: a5ceab38eb0145c5144d1204def60743d10249fe # bazelbuild/bazel-skylib#641
           path: .sty/bazel_skylib
           persist-credentials: false
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        if: ${{ !cancelled() && steps.files.outcome == 'success' }}
         with:
           repository: bazelbuild/rules_cc
-          ref: d59fe05713540581d30020697a91f0c7850d2ace # bazelbuild/rules_cc#940
+          ref: ac7c8bd8ec0af475ccf4dd65b2b58806f19ef696 # bazelbuild/rules_cc#940
           path: .sty/rules_cc
           persist-credentials: false
       - name: Select proposed rulesets and require fully static types
+        if: ${{ !cancelled() && steps.files.outcome == 'success' }}
         run: |
           cp .github/sty-strict.toml sty.toml
           for module in bazel_skylib rules_cc; do
             echo "common --override_module=$module=$GITHUB_WORKSPACE/.sty/$module"
           done > .bazelrc.user
       - name: Check root sources with proposed ruleset contracts
+        if: ${{ !cancelled() && steps.files.outcome == 'success' }}
         uses: tamird/sty@c1f42d68aa3c9dbec054edb345cfeb8c248bfba5
         with:
           audit-loads: true
