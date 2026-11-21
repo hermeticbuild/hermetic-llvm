@@ -5,6 +5,7 @@
 # type _CrtInputs = dict[{"//command_line_option:features": list[str]}]
 # type _CrtAttrs = struct[{"static_crt": bool, "target_platform": Label}, ...]
 # type _CrtOutputs = dict[{
+#     "//command_line_option:modify_execution_info": list[str],
 #     "//command_line_option:features": list[str],
 #     "//command_line_option:platforms": str,
 # }]
@@ -43,7 +44,7 @@ _crt_transition = transition(
 )
 
 def _windows_msvc_artifacts_impl(ctx):
-    # type: (...) -> list[DefaultInfo]
+    # type: (ctx[object, struct[{"targets": Sequence[Target]}, ...]]) -> list[DefaultInfo]
     return [DefaultInfo(
         files = depset(transitive = [
             target[DefaultInfo].files
@@ -70,11 +71,15 @@ windows_msvc_artifacts = rule(
 )
 
 def _windows_msvc_native_test_impl(ctx):
+    # type: (ctx[object, struct[{"binary": Sequence[Target[FilesToRunProvider]]}, ...]]) -> list[DefaultInfo]
     binary = ctx.attr.binary[0][DefaultInfo]
+    binary_executable = binary.files_to_run.executable
+    if binary_executable == None:
+        fail("binary target must provide an executable")
     executable = ctx.actions.declare_file(ctx.label.name + ".exe")
     ctx.actions.symlink(
         output = executable,
-        target_file = binary.files_to_run.executable,
+        target_file = binary_executable,
     )
     return [DefaultInfo(
         executable = executable,

@@ -51,6 +51,7 @@ def declare_platforms():
     declare_wasi_platforms()
 
 def declare_wasi_platforms():
+    # type: () -> None
     for variant in WASI_TARGET_TRIPLES:
         native.platform(
             name = "wasi_wasm32_" + variant,

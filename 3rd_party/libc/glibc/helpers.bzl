@@ -1,6 +1,6 @@
 # A good starting point for this is https://codeberg.org/ziglang/zig/src/branch/master/src/libs/glibc.zig add_include_dirs function
 def glibc_includes(cpu):
-    # type: (object) -> list[str]
+    # type: (str) -> list[str]
     # Use comments for local types while Bazel 8 is supported.
     os_abi_variant = []  # type: list[str]
     abi_variant = []  # type: list[str]

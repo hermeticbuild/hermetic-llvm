@@ -7,6 +7,7 @@ LLVM_PROJECT_OVERLAY = "utils/bazel/llvm-project-overlay"
 _MAX_OVERLAY_DIRECTORIES = 1000000
 
 def default_source_excludes():
+    # type: () -> list[str]
     excludes = [
         "flang-rt",
         "polly",

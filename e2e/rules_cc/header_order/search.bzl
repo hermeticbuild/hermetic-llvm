@@ -4,15 +4,21 @@ load("@rules_cc//cc:find_cc_toolchain.bzl", "use_cc_toolchain")
 
 _SearchInfo = provider(
     doc = "Files from a Clang verbose header search probe.",
-    fields = ["search", "stderr", "preprocessed"],
+    fields = {
+        "search": "Clang header search list.",  # type: File
+        "stderr": "Clang diagnostics.",  # type: File
+        "preprocessed": "Preprocessed probe source.",  # type: File
+    },
 )
 
 def _search_aspect_impl(target, ctx):
+    # type: (_ActionTarget, _SearchContext) -> list[_SearchInfo | OutputGroupInfo]
     compiles = [action for action in target.actions if action.mnemonic == "CppCompile"]
     if len(compiles) != 1:
         fail("expected one CppCompile action for %s, got %d" % (target.label, len(compiles)))
     compile_action = compiles[0]
-    if not compile_action.argv:
+    argv = compile_action.argv
+    if not argv:
         fail("CppCompile action does not expose its arguments: %s" % target.label)
 
     search = ctx.actions.declare_file(target.label.name + ".search.txt")
@@ -22,9 +28,12 @@ def _search_aspect_impl(target, ctx):
     arguments.add(search)
     arguments.add(stderr)
     arguments.add(preprocessed)
-    arguments.add_all(compile_action.argv)
+    arguments.add_all(argv)
+    capture = ctx.executable._capture
+    if capture == None:
+        fail("header search capture tool must provide an executable")
     ctx.actions.run(
-        executable = ctx.executable._capture,
+        executable = capture,
         arguments = [arguments],
         outputs = [search, stderr, preprocessed],
         shadowed_action = compile_action,
@@ -50,6 +59,7 @@ _search_aspect = aspect(
 )
 
 def _search_output_impl(ctx):
+    # type: (ctx[object, struct[{"target": Target}, ...]]) -> list[DefaultInfo | OutputGroupInfo]
     result = ctx.attr.target[_SearchInfo]
     return [
         DefaultInfo(files = depset([result.search])),

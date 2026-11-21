@@ -35,6 +35,7 @@ def declare_config_settings():
     declare_config_settings_wasi()
 
 def declare_config_settings_wasi():
+    # type: () -> None
     for variant in WASI_TARGET_TRIPLES:
         native.config_setting(
             name = "wasi_wasm32_" + variant,

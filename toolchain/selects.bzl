@@ -36,6 +36,7 @@ def platform_llvm_binary(binary):
     return select(binaries)
 
 def platform_flang_binary():
+    # type: () -> select[Label]
     """Select the execution Flang from the chosen LLVM bootstrap generation.
 
     Returns:

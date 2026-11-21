@@ -1,24 +1,31 @@
 def exec_test(
-        rule,
+        rule,  # ty: ignore[non-static-type]
         *,
-        name,  # type: str
-        tags = [],  # type: list[str]
-        args = [],  # type: Sequence[str] | select[Sequence[str]]
-        env = {},  # type: dict[str, str] | select[dict[str, str]]
-        data = [],  # type: Sequence[str | Label] | select[Sequence[str | Label]]
-        inner_data = [],  # type: Sequence[str | Label] | select[Sequence[str | Label]]
-        tools = [],  # type: Sequence[str | Label] | select[Sequence[str | Label]]
+        name,
+        tags = [],
+        args = [],
+        env = {},
+        data = [],
+        tools = [],
         **kwargs):
-    # type: (...) -> None
+    inner_tags = list(tags)  # type: _InnerTags[T]
+    if "manual" not in tags:
+        inner_tags.append("manual")
+
     # The inner executable is built in the exec configuration. Keep target
     # artifacts on the outer test unless an inner rule attribute itself uses a
     # location expansion for one of them (for example go_test.x_defs), in which
     # case the caller must also declare it in inner_data.
+    forwarded = dict(kwargs)
+    forwarded.pop("inner_data", None)
+
+    # Allocate omitted inner_data here so calls cannot share the default list.
+    # ty: ignore[non-static-type]
     rule(
         name = name + "_",
-        data = inner_data,
-        tags = tags + (["manual"] if "manual" not in tags else []),
-        **kwargs
+        data = kwargs["inner_data"] if "inner_data" in kwargs else [],
+        tags = inner_tags,
+        **forwarded
     )
 
     _exec_test(

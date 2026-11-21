@@ -7,10 +7,12 @@ _ARCHES = [
     "s390x",
 ]
 
-_SED_COMPATIBLE_WITH = select({
+_SED_COMPATIBILITY = {
     "@platforms//os:windows": ["@platforms//:incompatible"],
     "//conditions:default": [],
-})
+}  # type: dict[str, list[str]]
+
+_SED_COMPATIBLE_WITH = select(_SED_COMPATIBILITY)
 
 def _musl_alltypes_generation_test(arch):
     # type: (str) -> None
