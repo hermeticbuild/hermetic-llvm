@@ -1,0 +1,15 @@
+"""Fields read by the header-search aspect."""
+
+type _Actions = actions
+
+class _ActionTarget(Protocol):
+    @property
+    def label(self) -> Label: ...
+    @property
+    def actions(self) -> Sequence[Action]: ...
+
+class _SearchContext(Protocol):
+    @property
+    def actions(self) -> _Actions: ...
+    @property
+    def executable(self) -> struct[{"_capture": File | None}, ...]: ...

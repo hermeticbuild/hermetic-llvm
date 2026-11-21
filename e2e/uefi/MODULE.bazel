@@ -29,3 +29,6 @@ register_toolchains(
     "@llvm//toolchain:all",
     "@qemu_system_toolchains//:all",
 )
+
+sty_stubs = use_extension("@llvm//stubs:extensions.bzl", "sty_stubs", dev_dependency = True)
+use_repo(sty_stubs, "bazel_skylib_stubs")

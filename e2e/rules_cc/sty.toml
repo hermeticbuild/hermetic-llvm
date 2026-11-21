@@ -1,0 +1,14 @@
+[analysis]
+require-valid-suppressions = true
+strict-generic-narrowing = true
+
+[rules]
+strict = "error"
+
+# with_cfg generates macros in defs.bzl that BUILD invokes. The FDO and
+# ThinLTO tests inspect untyped Skylib and cc_common results.
+[[overrides]]
+include = ["BUILD.bazel", "defs.bzl", "fdo_optimize_test.bzl", "thin_lto_features_test.bzl"]
+
+[overrides.rules]
+non-static-type = "warn"

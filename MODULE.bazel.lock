@@ -300,6 +300,28 @@
   },
   "selectedYankedVersions": {},
   "moduleExtensions": {
+    "//stubs:extensions.bzl%sty_stubs": {
+      "general": {
+        "bzlTransitiveDigest": "wCf7RWJf/Y5zsE/f7LAqe2pGkcVFtgD0DWZo1ilRVfg=",
+        "usagesDigest": "BCqPcx5TQfmNh2fyVH33uOjnFemFzOhZiggV0KLf/rk=",
+        "recordedInputs": [
+          "REPO_MAPPING:,bazel_tools bazel_tools"
+        ],
+        "generatedRepoSpecs": {
+          "bazel_skylib_stubs": {
+            "repoRuleId": "@@bazel_tools//tools/build_defs/repo:http.bzl%http_archive",
+            "attributes": {
+              "build_file_content": "exports_files([\"stubs.toml\"])",
+              "sha256": "b09e17231210f90057e049b3b2c2ddba30682cc5d57825ca0481258ead0f8353",
+              "strip_prefix": "rules_cc-d59fe05713540581d30020697a91f0c7850d2ace/stubs/bazel_skylib",
+              "urls": [
+                "https://github.com/bazelbuild/rules_cc/archive/d59fe05713540581d30020697a91f0c7850d2ace.tar.gz"
+              ]
+            }
+          }
+        }
+      }
+    },
     "@@pybind11_bazel+//:internal_configure.bzl%internal_configure_extension": {
       "general": {
         "bzlTransitiveDigest": "BsgERqYptkJeeC8wFaLj251IoTZTSy/58WA6kVp0q8I=",

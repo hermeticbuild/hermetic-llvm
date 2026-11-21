@@ -2,9 +2,10 @@
 
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 
-def _has_constraint(ctx, attr_name):
+def _has_constraint(ctx, target):
+    # type: (ctx[object, object], Target) -> bool
     return ctx.target_platform_has_constraint(
-        getattr(ctx.attr, attr_name)[platform_common.ConstraintValueInfo],
+        target[platform_common.ConstraintValueInfo],
     )
 
 def validate_msvc_configuration(
@@ -17,6 +18,7 @@ def validate_msvc_configuration(
         unsupported_features,
         is_msvcstl = False,
         enabled_build_settings = []):
+    # type: (bool, bool, bool, Collection[str], Collection[str], Collection[str], bool, Collection[str]) -> str | None
     """Validates the frozen Layer 1 MSVC configuration.
 
     Returns:
@@ -42,14 +44,15 @@ def validate_msvc_configuration(
     return None
 
 def _msvc_configuration_validation_impl(ctx):
-    is_msvc_abi = _has_constraint(ctx, "_msvc_abi")
-    is_msvcstl = _has_constraint(ctx, "_msvcstl")
-    if is_msvcstl and not (is_msvc_abi and _has_constraint(ctx, "_windows")):
+    # type: (...) -> list[DefaultInfo]
+    is_msvc_abi = _has_constraint(ctx, ctx.attr._msvc_abi)
+    is_msvcstl = _has_constraint(ctx, ctx.attr._msvcstl)
+    if is_msvcstl and not (is_msvc_abi and _has_constraint(ctx, ctx.attr._windows)):
         fail("//constraints/cxxstdlib:msvcstl requires a Windows MSVC target")
 
     error = validate_msvc_configuration(
-        is_legacy_msvcrt = _has_constraint(ctx, "_legacy_msvcrt"),
-        is_libcxx = _has_constraint(ctx, "_libcxx"),
+        is_legacy_msvcrt = _has_constraint(ctx, ctx.attr._legacy_msvcrt),
+        is_libcxx = _has_constraint(ctx, ctx.attr._libcxx),
         is_msvc_abi = is_msvc_abi,
         is_msvcstl = is_msvcstl,
         enabled_features = ctx.features,

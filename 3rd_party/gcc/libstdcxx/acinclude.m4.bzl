@@ -85,28 +85,35 @@ CXX_FILESYSTEM_FLAGS = ["-fno-exceptions"]
 # GLIBCXX_DEFAULT_ABI are represented by glibcxx_abi_policies().
 
 def glibcxx_check_compiler_features():
+    # type: () -> list[str]
     return []
 
 def glibcxx_enable_hosted():
+    # type: () -> list[str]
     return [policy_define("_GLIBCXX_HOSTED", "__STDC_HOSTED__")]
 
 def glibcxx_enable_verbose():
+    # type: () -> list[str]
     return [policy_define("_GLIBCXX_VERBOSE")]
 
 def glibcxx_enable_pch():
+    # type: () -> list[str]
     return []
 
 def glibcxx_enable_atomic_builtins(gcc_version):
+    # type: (str) -> list[str]
     if libstdcxx_has_atomic_builtins_define(gcc_version):
         return [policy_define("_GLIBCXX_ATOMIC_BUILTINS")]
     return [policy_define("_GLIBCXX_ATOMIC_WORD_BUILTINS")]
 
 def glibcxx_enable_lock_policy():
+    # type: () -> list[str]
     # HAVE_ATOMIC_LOCK_POLICY is target-derived because GCC keeps RISC-V on the
     # mutex ABI even when compare-and-swap builtins are available.
     return []
 
 def glibcxx_enable_decimal_float():
+    # type: () -> list[str]
     return [
         compile_check(
             name = "_GLIBCXX_USE_DECIMAL_FLOAT",
@@ -122,6 +129,7 @@ int main() {
     ]
 
 def glibcxx_enable_int128_float128(gcc_version):
+    # type: (str) -> list[str]
     if not libstdcxx_has_int128_float128_checks(gcc_version):
         return []
     return [
@@ -142,9 +150,11 @@ int main() {
     ]
 
 def glibcxx_enable_cstdio():
+    # type: () -> list[str]
     return []
 
 def glibcxx_enable_clocale():
+    # type: () -> list[str]
     return [
         function_link_check("HAVE_STRERROR_L", "string.h", "char *s = strerror_l(0, (locale_t)0)"),
         function_link_check("HAVE_STRERROR_R", "string.h", "char buf[64]; strerror_r(0, buf, sizeof(buf))"),
@@ -152,12 +162,15 @@ def glibcxx_enable_clocale():
     ]
 
 def glibcxx_enable_allocator():
+    # type: () -> list[str]
     return []
 
 def glibcxx_enable_long_long():
+    # type: () -> list[str]
     return [policy_define("_GLIBCXX_USE_LONG_LONG")]
 
 def glibcxx_enable_wchar_t():
+    # type: () -> list[str]
     return [
         compile_check(
             name = "HAVE_MBSTATE_T",
@@ -604,9 +617,11 @@ uintmax_t uret = wcstoumax(s, endptr, base);
 """
 
 def _scoped(body):
+    # type: (str) -> str
     return "{\n" + body + "\n}\n"
 
 def _compile_body_check(name, header, body, standard):
+    # type: (str, object, object, str) -> str
     return compile_check(
         name = name,
         language = "c++",
@@ -621,6 +636,7 @@ int main() {{
     )
 
 def _stdint_compile_check(name, standard):
+    # type: (str, str) -> str
     return compile_check(
         name = name,
         language = "c++",
@@ -637,6 +653,7 @@ int main() {{
     )
 
 def _link_body_check(name, headers, body, standard, link_flags = []):
+    # type: (str, Collection[object], object, str, Sequence[str]) -> str
     includes = "\n".join(["#include <{}>".format(header) for header in headers])
     return link_check(
         name = name,
@@ -657,6 +674,7 @@ int main() {{
     )
 
 def glibcxx_enable_c99(gcc_version):
+    # type: (str) -> list[str]
     checks = [
         _link_body_check("_GLIBCXX98_USE_C99_MATH", ["math.h"], _C99_MATH_GENERIC_BODY, "c++98", MATH_LINK_FLAGS),
         _link_body_check("_GLIBCXX98_USE_C99_COMPLEX", ["complex.h"], _C99_COMPLEX_BODY, "c++98", MATH_LINK_FLAGS),
@@ -762,6 +780,7 @@ int main() { return 0; }
     return checks
 
 def glibcxx_check_c99_tr1():
+    # type: () -> list[str]
     return [
         _compile_body_check("_GLIBCXX_USE_C99_COMPLEX_TR1", "complex.h", _C99_COMPLEX_ARC_BODY, "c++98"),
         _compile_body_check("_GLIBCXX_USE_C99_CTYPE_TR1", "ctype.h", "int ch;\nint ret;\nret = isblank(ch);", "c++98"),
@@ -773,6 +792,7 @@ def glibcxx_check_c99_tr1():
     ]
 
 def glibcxx_check_uchar_h(gcc_version):
+    # type: (str) -> list[str]
     checks = [
         compile_check(
             name = "_GLIBCXX_USE_C11_UCHAR_CXX11",
@@ -828,6 +848,7 @@ int main() { return 0; }
     return checks
 
 def glibcxx_check_int64_t(gcc_version):
+    # type: (str) -> list[str]
     if not libstdcxx_has_int64_t_checks(gcc_version):
         return []
     return [
@@ -870,6 +891,7 @@ int main() { return check[0]; }
     ]
 
 def glibcxx_check_lfs(gcc_version):
+    # type: (str) -> list[str]
     checks = [
         link_check(
             name = "_GLIBCXX_USE_LFS",
@@ -897,6 +919,7 @@ int main() {
     return checks
 
 def glibcxx_check_gettimeofday():
+    # type: () -> list[str]
     return [
         link_check(
             name = "_GLIBCXX_USE_GETTIMEOFDAY",
@@ -913,6 +936,7 @@ int main() {
     ]
 
 def glibcxx_enable_libstdcxx_time(gcc_version):
+    # type: (str) -> list[str]
     checks = [
         link_check(
             name = "_GLIBCXX_USE_CLOCK_MONOTONIC",
@@ -959,9 +983,11 @@ int main() {
     return checks
 
 def glibcxx_check_stdio_proto():
+    # type: () -> list[str]
     return [function_link_check("HAVE_GETS", "stdio.h", "char buf[8]; gets(buf)")]
 
 def glibcxx_check_math11_proto():
+    # type: () -> list[str]
     return [
         compile_check(
             name = "HAVE_OBSOLETE_ISINF",
@@ -1000,6 +1026,7 @@ int main() { return b; }
     ]
 
 def glibcxx_compute_stdio_integer_constants():
+    # type: () -> list[str]
     return [
         policy_define("_GLIBCXX_STDIO_EOF", "-1"),
         policy_define("_GLIBCXX_STDIO_SEEK_CUR", "1"),
@@ -1007,9 +1034,11 @@ def glibcxx_compute_stdio_integer_constants():
     ]
 
 def glibcxx_check_tmpnam():
+    # type: () -> list[str]
     return [function_link_check("_GLIBCXX_USE_TMPNAM", "stdio.h", "char buf[L_tmpnam]; tmpnam(buf)")]
 
 def glibcxx_check_pthread_clock_apis(gcc_version):
+    # type: (str) -> list[str]
     if not libstdcxx_has_pthread_clock_checks(gcc_version):
         return []
     return [
@@ -1061,6 +1090,7 @@ int main() {
     ]
 
 def glibcxx_check_hardware_concurrency():
+    # type: () -> list[str]
     return [
         function_link_check("_GLIBCXX_USE_GET_NPROCS", "sys/sysinfo.h", "int n = get_nprocs()", compile_flags = CXX_NO_EXCEPTIONS_FLAGS),
         function_link_check("_GLIBCXX_USE_SC_NPROCESSORS_ONLN", "unistd.h", "int n = sysconf(_SC_NPROCESSORS_ONLN)", compile_flags = CXX_NO_EXCEPTIONS_FLAGS),
@@ -1069,6 +1099,7 @@ def glibcxx_check_hardware_concurrency():
     ]
 
 def glibcxx_check_gthreads(gcc_version):
+    # type: (str) -> list[str]
     checks = [
         compile_check(
             name = "_GTHREAD_USE_MUTEX_TIMEDLOCK",
@@ -1152,6 +1183,7 @@ int main() {
     return checks
 
 def glibcxx_check_filesystem_deps(gcc_version):
+    # type: (str) -> list[str]
     checks = [
         compile_check(
             name = "HAVE_STRUCT_DIRENT_D_TYPE",
@@ -1292,6 +1324,7 @@ int main() {
     return checks
 
 def glibcxx_check_networking_deps(gcc_version):
+    # type: (str) -> list[str]
     if not libstdcxx_has_networking_o_nonblock_check(gcc_version):
         return []
     return [
@@ -1308,6 +1341,7 @@ int main(void) { return O_NONBLOCK == 0; }
     ]
 
 def glibcxx_check_text_encoding(gcc_version):
+    # type: (str) -> list[str]
     if not libstdcxx_has_text_encoding_checks(gcc_version):
         return []
     return [
@@ -1328,6 +1362,7 @@ int main() {
     ]
 
 def glibcxx_check_debugging(gcc_version):
+    # type: (str) -> list[str]
     if not libstdcxx_has_debugging_checks(gcc_version):
         return []
     return [
@@ -1344,6 +1379,7 @@ int main() { return ptrace(PTRACE_TRACEME, (pid_t)0, 1, 0); }
     ]
 
 def glibcxx_check_stdio_locking(gcc_version):
+    # type: (str) -> list[str]
     if not libstdcxx_has_stdio_locking_checks(gcc_version):
         return []
     return [
@@ -1393,6 +1429,7 @@ int main() {
     ]
 
 def glibcxx_misc_compile_checks(gcc_version):
+    # type: (str) -> list[str]
     checks = [
         compile_check(
             name = "HAVE_S_IFREG",
@@ -1481,6 +1518,7 @@ int main() { struct tm t{}; t.tm_zone = (char *)0; return 0; }
     return checks
 
 def glibcxx_misc_link_checks(gcc_version):
+    # type: (str) -> list[str]
     checks = [
         function_link_check("HAVE_POLL", "poll.h", "struct pollfd pfd; poll(&pfd, 1, 0)"),
         function_link_check("HAVE_LC_MESSAGES", "locale.h", "int i = LC_MESSAGES"),
@@ -1516,6 +1554,7 @@ int main() { return __cxa_thread_atexit_impl((void (*)(void *))0, (void *)0, (vo
     return checks
 
 def glibcxx_abi_policies():
+    # type: () -> list[str]
     return [
         policy_define("_GLIBCXX_USE_DUAL_ABI"),
         policy_define("_GLIBCXX_USE_CXX11_ABI"),
@@ -1524,6 +1563,7 @@ def glibcxx_abi_policies():
     ]
 
 def glibcxx_check_system_error(gcc_version):
+    # type: (str) -> list[str]
     if not libstdcxx_has_system_error_check(gcc_version):
         return []
     return [
@@ -1549,6 +1589,7 @@ def glibcxx_check_system_error(gcc_version):
     ]
 
 def glibcxx_random_policy(gcc_version):
+    # type: (str) -> list[str]
     if not libstdcxx_has_dev_random_policy(gcc_version):
         return [
             policy_define("_GLIBCXX_USE_RANDOM_TR1"),
@@ -1566,6 +1607,7 @@ def glibcxx_random_policy(gcc_version):
     ]
 
 def glibcxx_zoneinfo_policy(gcc_version):
+    # type: (str) -> list[str]
     if not libstdcxx_has_zoneinfo_policy(gcc_version):
         return []
     return [
@@ -1574,4 +1616,5 @@ def glibcxx_zoneinfo_policy(gcc_version):
     ]
 
 def glibcxx_resource_limits_policy():
+    # type: () -> list[str]
     return [policy_undef("_GLIBCXX_RES_LIMITS")]
