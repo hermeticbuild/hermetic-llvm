@@ -73,6 +73,23 @@ cc_test(
     deps = [":textual_greeter"],
 )
 
+# Consume the x86 intrinsics module from a header module and directly.
+cc_library(
+    name = "intrinsics",
+    srcs = ["intrinsics.cc"],
+    hdrs = ["intrinsics.h"],
+    copts = _COPTS,
+    target_compatible_with = ["@platforms//cpu:x86_64"],
+)
+
+cc_test(
+    name = "intrinsics_test",
+    srcs = ["intrinsics_main.cc"],
+    copts = _COPTS,
+    exec_properties = _TEST_EXEC_PROPERTIES,
+    deps = [":intrinsics"],
+)
+
 # Module codegen must track its dependency on the libc++ module.
 # https://github.com/bazelbuild/bazel/pull/30396
 # Import greeter as well to test merging modules that share libc++.
