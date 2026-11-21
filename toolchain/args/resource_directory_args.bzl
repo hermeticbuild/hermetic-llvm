@@ -33,7 +33,8 @@ def resource_directory_args(name, compile_directory, link_directory):
     # Stage0 builds runtime libraries consumed by //runtimes:resource_directory
     # (including compiler-rt builtins), so it must not depend on that tree.
     # Later stages share the directory policy across ABIs, independently of
-    # whether their rtlib arguments select compiler-rt; see //toolchain/runtimes:rtlib.
+    # whether their rtlib arguments select compiler-rt; see
+    # //toolchain/runtimes:toolchain_args.bzl.
     #
     # rules_foreign_cc may combine CFLAGS and LDFLAGS in one driver invocation.
     # Conventional build systems put LDFLAGS last, so Clang selects the complete
