@@ -55,6 +55,18 @@ bootstrap_binaries(
     ]
 ]
 
+# Runs the compile, link and merge actions of the FDO training rules for a
+# Linux and a MinGW workload, which needs the Stage 1 and Stage 2 compilers but
+# not Stage 3. CI builds it with path mapping.
+llvm_fdo_profile_data(
+    name = "llvm_fdo_profdata_smoke",
+    profiles = [
+        "llvm_fdo_profile_workload_linux_x86_64_to_linux_x86_64",
+        "llvm_fdo_profile_workload_linux_x86_64_to_windows_x86_64",
+    ],
+    tags = ["manual"],
+)
+
 alias(
     name = "llvm_fdo_profdata",
     actual = select({

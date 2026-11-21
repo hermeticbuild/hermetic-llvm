@@ -90,14 +90,51 @@ _profile_merge_transition = transition(
 def _c_sources(files):
     return [file for file in files if file.extension == "c"]
 
-def _profile_environment(feature_configuration, action_name, variables, profraw):
-    env = dict(cc_common.get_environment_variables(
-        feature_configuration = feature_configuration,
-        action_name = action_name,
-        variables = variables,
-    ))
-    env["LLVM_PROFILE_FILE"] = profraw.path
-    return env
+# Bazel doesn't map paths in the environment, so the tools get theirs,
+# including the profile path, as NAME=VALUE arguments before a `--`.
+_RUN_WITH_ENVIRONMENT = 'while [ "$1" != -- ]; do export "$1"; shift; done; shift; exec "$@"'
+
+def _dirname(file):
+    return file.dirname
+
+def _add_mapped(args, arg, output_root, files_by_path, files_by_dirname):
+    """Adds `arg` to `args` so that path mapping can rewrite its output path.
+
+    The toolchain's command line and environment consist of strings, which
+    path mapping doesn't rewrite. An argument that ends with an output path
+    is added with the File at that path. For a directory of generated files,
+    such as the MinGW headers, or a name in one, such as the `llvm-` tool
+    prefix in COMPILER_PATH, it is added with a file in that directory.
+    """
+    start = arg.find(output_root)
+    if start == -1:
+        args.add(arg)
+        return
+    path = arg[start:]
+    prefix = arg[:start].replace("%", "%%")
+    if path in files_by_path:
+        args.add_all([files_by_path[path]], expand_directories = False, format_each = prefix + "%s")
+        return
+    directory = path if path in files_by_dirname else path.rpartition("/")[0]
+    if directory not in files_by_dirname:
+        fail("%s in %r isn't an input or output of the action" % (path, arg))
+    args.add_all(
+        [files_by_dirname[directory]],
+        map_each = _dirname,
+        format_each = prefix + "%s" + path[len(directory):].replace("%", "%%"),
+    )
+
+def _tool_args(ctx, profraw, env, command_line, files_by_path, files_by_dirname):
+    """Returns Args for _RUN_WITH_ENVIRONMENT that path mapping can rewrite."""
+    output_root = ctx.bin_dir.path.split("/")[0] + "/"
+    args = ctx.actions.args()
+    args.add(profraw, format = "LLVM_PROFILE_FILE=%s")
+    for name, value in env.items():
+        _add_mapped(args, "%s=%s" % (name, value), output_root, files_by_path, files_by_dirname)
+    args.add("--")
+    for arg in command_line:
+        _add_mapped(args, arg, output_root, files_by_path, files_by_dirname)
+    return args
 
 def _llvm_fdo_profile_workload_impl(ctx):
     cc_toolchain = find_cc_toolchain(ctx)
@@ -134,6 +171,9 @@ def _llvm_fdo_profile_workload_impl(ctx):
         feature_configuration = feature_configuration,
         action_name = ACTION_NAMES.c_compile,
     )
+    toolchain_files = cc_toolchain.all_files.to_list()
+    toolchain_files_by_path = {file.path: file for file in toolchain_files}
+    toolchain_files_by_dirname = {file.dirname: file for file in toolchain_files}
     profraws = []
     objects = []
     for index, source in enumerate(_c_sources(ctx.files.srcs)):
@@ -148,14 +188,24 @@ def _llvm_fdo_profile_workload_impl(ctx):
             user_compile_flags = compile_flags,
         )
 
-        ctx.actions.run(
-            executable = compile_executable,
-            arguments = cc_common.get_memory_inefficient_command_line(
-                feature_configuration = feature_configuration,
-                action_name = ACTION_NAMES.c_compile,
-                variables = compile_variables,
-            ),
-            env = _profile_environment(feature_configuration, ACTION_NAMES.c_compile, compile_variables, profraw),
+        ctx.actions.run_shell(
+            command = _RUN_WITH_ENVIRONMENT,
+            arguments = [_tool_args(
+                ctx,
+                profraw,
+                cc_common.get_environment_variables(
+                    feature_configuration = feature_configuration,
+                    action_name = ACTION_NAMES.c_compile,
+                    variables = compile_variables,
+                ),
+                [compile_executable] + cc_common.get_memory_inefficient_command_line(
+                    feature_configuration = feature_configuration,
+                    action_name = ACTION_NAMES.c_compile,
+                    variables = compile_variables,
+                ),
+                toolchain_files_by_path | {object_file.path: object_file},
+                toolchain_files_by_dirname,
+            )],
             inputs = depset(
                 [source],
                 transitive = [ctx.attr.srcs[DefaultInfo].files],
@@ -188,23 +238,32 @@ def _llvm_fdo_profile_workload_impl(ctx):
         output_file = binary_file.path,
         user_link_flags = link_flags,
     )
-    link_args = ctx.actions.args()
-    link_args.add_all(cc_common.get_memory_inefficient_command_line(
-        feature_configuration = feature_configuration,
-        action_name = ACTION_NAMES.cpp_link_executable,
-        variables = link_variables,
-    ))
-    link_args.add_all(objects)
-
     link_profraw = ctx.actions.declare_file(ctx.label.name + ".link.profraw")
     link_executable = cc_common.get_tool_for_action(
         feature_configuration = feature_configuration,
         action_name = ACTION_NAMES.cpp_link_executable,
     )
-    ctx.actions.run(
-        executable = link_executable,
+    link_args = _tool_args(
+        ctx,
+        link_profraw,
+        cc_common.get_environment_variables(
+            feature_configuration = feature_configuration,
+            action_name = ACTION_NAMES.cpp_link_executable,
+            variables = link_variables,
+        ),
+        [link_executable] + cc_common.get_memory_inefficient_command_line(
+            feature_configuration = feature_configuration,
+            action_name = ACTION_NAMES.cpp_link_executable,
+            variables = link_variables,
+        ),
+        toolchain_files_by_path | {binary_file.path: binary_file},
+        toolchain_files_by_dirname,
+    )
+    link_args.add_all(objects)
+
+    ctx.actions.run_shell(
+        command = _RUN_WITH_ENVIRONMENT,
         arguments = [link_args],
-        env = _profile_environment(feature_configuration, ACTION_NAMES.cpp_link_executable, link_variables, link_profraw),
         inputs = objects,
         tools = cc_toolchain.all_files,
         outputs = [
