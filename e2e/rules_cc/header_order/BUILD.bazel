@@ -254,7 +254,10 @@ _BAZEL8_SEARCH_FAMILIES = [
         name = "search_" + language + "_" + name + "_test",
         failure_message = "Clang's effective " + language + " header search order changed for " + name,
         file1 = ":search_output_" + language + "_" + name,
-        file2 = "golden/" + family + "_" + language + ("_bazel8" if family in _BAZEL8_SEARCH_FAMILIES and not bazel_features.cc.supports_starlarkified_toolchains else "") + ".txt",
+        file2 = select({
+            "@llvm//config:macos_libcxx_headers_llvm": "golden/macos_cxx_llvm" + ("" if bazel_features.cc.supports_starlarkified_toolchains else "_bazel8") + ".txt",
+            "//conditions:default": "golden/macos_cxx" + ("" if bazel_features.cc.supports_starlarkified_toolchains else "_bazel8") + ".txt",
+        }) if family == "macos" and language == "cxx" else "golden/" + family + "_" + language + ("_bazel8" if family in _BAZEL8_SEARCH_FAMILIES and not bazel_features.cc.supports_starlarkified_toolchains else "") + ".txt",
         tags = ["manual"],
     )
     for name, _, family in _SEARCH_CASES + _MUSL_SEARCH_CASES

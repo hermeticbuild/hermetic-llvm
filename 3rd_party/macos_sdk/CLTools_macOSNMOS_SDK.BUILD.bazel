@@ -7,4 +7,13 @@ headers_directory(
     visibility = ["//visibility:public"],
 )
 
+filegroup(
+    name = "sysroot_without_libcxx_headers",
+    srcs = glob(
+        ["**"],
+        exclude = ["usr/include/c++/v1/**"],
+    ),
+    visibility = ["//visibility:public"],
+)
+
 macos_sdk_libcxx_headers()

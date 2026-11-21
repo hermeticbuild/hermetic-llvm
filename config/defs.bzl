@@ -143,6 +143,19 @@ def _declare_sanitizer_config_setting(sanitizer):
     )
 
 def config_settings():
+    # Select the C++ headers independently of Apple's system libc++ linkage.
+    # The choice also applies to C++ tools built in the execution configuration.
+    string_flag(
+        name = "macos_libcxx_headers",
+        values = ["sdk", "llvm"],
+        build_setting_default = "sdk",
+        scope = "universal",
+    )
+    native.config_setting(
+        name = "macos_libcxx_headers_llvm",
+        flag_values = {"macos_libcxx_headers": "llvm"},
+    )
+
     # Compiler semantics: suppress implicit C++ headers and implicit C++
     # libraries independently. Explicit consumer dependencies remain valid.
     # Target policy must not leak into unrelated execution tools.

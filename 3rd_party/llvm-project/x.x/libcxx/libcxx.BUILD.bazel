@@ -123,7 +123,6 @@ _CONFIG_SITE_GENERIC_LINES = [
     "#define _LIBCPP_HAS_UNICODE             1",
     "#define _LIBCPP_HAS_WIDE_CHARACTERS     1",
     "#define _LIBCPP_HAS_STD_MODULES         0",
-    "#define _LIBCPP_HAS_VENDOR_AVAILABILITY_ANNOTATIONS 0",
     "#define _LIBCPP_INSTRUMENTED_WITH_ASAN  __has_feature(address_sanitizer)",
     "",
     "#define _LIBCPP_PSTL_BACKEND_SERIAL",
@@ -174,6 +173,10 @@ write_file(
     content = _CONFIG_SITE_PREAMBLE_LINES +
               _CONFIG_SITE_GENERIC_LINES +
               _CONFIG_SITE_LLVM_LINE_LINES +
+              select({
+                  "@llvm//runtimes/cxxstdlib:macos_llvm_headers": ["#define _LIBCPP_HAS_VENDOR_AVAILABILITY_ANNOTATIONS 1"],
+                  "//conditions:default": ["#define _LIBCPP_HAS_VENDOR_AVAILABILITY_ANNOTATIONS 0"],
+              }) +
               select({
                   ":windows_msvc": _CONFIG_SITE_ABI_MSVC_LINES,
                   "//conditions:default": _CONFIG_SITE_ABI_DEFAULT_LINES,
