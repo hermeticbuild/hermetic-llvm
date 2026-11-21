@@ -970,6 +970,9 @@ cc_library(
             "@llvm-project//libcxxabi:headers",
             ":linux_libc_headers",
         ],
+        # libc++ on the MSVC ABI uses vcruntime as its ABI library, not
+        # libc++abi (see :windows_msvc in libcxx.BUILD.bazel), and libFuzzer
+        # does not include cxxabi.h, so no libcxxabi headers here.
         ":windows_msvc_libcxx": [
             "@llvm-project//libcxx:headers",
         ],
