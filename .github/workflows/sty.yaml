@@ -88,7 +88,7 @@ jobs:
           fi
           echo "root_bazel_version=$(<.bazelversion)" >> "$GITHUB_OUTPUT"
       - name: Check root workspace with released rulesets
-        uses: tamird/sty@ce96423cb6707c17953ac67ef32348af0f87fc53
+        uses: tamird/sty@c1f42d68aa3c9dbec054edb345cfeb8c248bfba5
         with:
           audit-loads: true
           files: |
@@ -100,7 +100,7 @@ jobs:
             :(exclude)e2e/**
       - name: Check rules_cc example workspace
         if: ${{ !cancelled() && steps.files.outcome == 'success' }}
-        uses: tamird/sty@ce96423cb6707c17953ac67ef32348af0f87fc53
+        uses: tamird/sty@c1f42d68aa3c9dbec054edb345cfeb8c248bfba5
         with:
           working-directory: e2e/rules_cc
           audit-loads: true
@@ -114,7 +114,7 @@ jobs:
           artifact-name: sty-rules-cc
       - name: Check cross_compilation example workspace
         if: ${{ !cancelled() && steps.files.outcome == 'success' }}
-        uses: tamird/sty@ce96423cb6707c17953ac67ef32348af0f87fc53
+        uses: tamird/sty@c1f42d68aa3c9dbec054edb345cfeb8c248bfba5
         with:
           working-directory: e2e/cross_compilation
           advisory-only: true
@@ -124,7 +124,7 @@ jobs:
           artifact-name: sty-cross-compilation
       - name: Check rules_rs example workspace
         if: ${{ !cancelled() && steps.files.outcome == 'success' }}
-        uses: tamird/sty@ce96423cb6707c17953ac67ef32348af0f87fc53
+        uses: tamird/sty@c1f42d68aa3c9dbec054edb345cfeb8c248bfba5
         with:
           working-directory: e2e/rules_rs
           advisory-only: true
@@ -134,7 +134,7 @@ jobs:
           artifact-name: sty-rules-rs
       - name: Check rules_rust example workspace
         if: ${{ !cancelled() && steps.files.outcome == 'success' }}
-        uses: tamird/sty@ce96423cb6707c17953ac67ef32348af0f87fc53
+        uses: tamird/sty@c1f42d68aa3c9dbec054edb345cfeb8c248bfba5
         with:
           working-directory: e2e/rules_rust
           advisory-only: true
@@ -144,7 +144,7 @@ jobs:
           artifact-name: sty-rules-rust
       - name: Check toolchain_registration example workspace
         if: ${{ !cancelled() && steps.files.outcome == 'success' }}
-        uses: tamird/sty@ce96423cb6707c17953ac67ef32348af0f87fc53
+        uses: tamird/sty@c1f42d68aa3c9dbec054edb345cfeb8c248bfba5
         with:
           working-directory: e2e/toolchain_registration
           advisory-only: true
@@ -154,7 +154,7 @@ jobs:
           artifact-name: sty-toolchain-registration
       - name: Check uefi example workspace
         if: ${{ !cancelled() && steps.files.outcome == 'success' }}
-        uses: tamird/sty@ce96423cb6707c17953ac67ef32348af0f87fc53
+        uses: tamird/sty@c1f42d68aa3c9dbec054edb345cfeb8c248bfba5
         with:
           working-directory: e2e/uefi
           advisory-only: true
@@ -186,7 +186,7 @@ jobs:
             echo "common --override_module=$module=$GITHUB_WORKSPACE/.sty/$module"
           done > .bazelrc.user
       - name: Check root sources with proposed ruleset contracts
-        uses: tamird/sty@ce96423cb6707c17953ac67ef32348af0f87fc53
+        uses: tamird/sty@c1f42d68aa3c9dbec054edb345cfeb8c248bfba5
         with:
           audit-loads: true
           files: ${{ steps.files.outputs.root }}
