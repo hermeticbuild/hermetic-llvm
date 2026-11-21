@@ -148,6 +148,9 @@ def _llvm_fdo_profile_workload_impl(ctx):
             user_compile_flags = compile_flags,
         )
 
+        # Path mapping only rewrites File arguments. The toolchain's command
+        # line and LLVM_PROFILE_FILE are strings that keep the configuration
+        # in their paths, so this action and the link don't support it.
         ctx.actions.run(
             executable = compile_executable,
             arguments = cc_common.get_memory_inefficient_command_line(
@@ -167,7 +170,6 @@ def _llvm_fdo_profile_workload_impl(ctx):
             ],
             mnemonic = "LLVMFDOProfileCompile",
             progress_message = "Generating LLVM FDO profile input with %{label}",
-            execution_requirements = {"supports-path-mapping": "1"},
             toolchain = CC_TOOLCHAIN_TYPE,
         )
 
@@ -213,7 +215,6 @@ def _llvm_fdo_profile_workload_impl(ctx):
         ],
         mnemonic = "LLVMFDOProfileLink",
         progress_message = "Linking LLVM FDO training binary with %{label}",
-        execution_requirements = {"supports-path-mapping": "1"},
         toolchain = CC_TOOLCHAIN_TYPE,
     )
     profraws.append(link_profraw)
