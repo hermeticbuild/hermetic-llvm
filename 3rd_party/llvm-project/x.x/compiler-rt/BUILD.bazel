@@ -9,10 +9,7 @@ bzl_library(
     name = "targets",
     srcs = ["targets.bzl"],
     visibility = ["//visibility:public"],
-    deps = [
-        "@bazel_lib//lib:copy_file",
-        "@rules_cc//cc:core_rules",
-    ],
+    deps = ["@rules_cc//cc:core_rules"],
 )
 
 bzl_library(
@@ -28,5 +25,11 @@ bzl_library(
 bzl_library(
     name = "filter_builtin_sources",
     srcs = ["filter_builtin_sources.bzl"],
+    visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "lse_variants",
+    srcs = ["lse_variants.bzl"],
     visibility = ["//visibility:public"],
 )
