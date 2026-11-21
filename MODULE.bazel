@@ -1,6 +1,8 @@
 module(
     name = "llvm",
     version = "0.0.0",
+    # TODO(https://github.com/bazelbuild/bazel/pull/30373): Use source annotations for ordinary
+    # signatures once all supported Bazel versions accept type syntax.
     bazel_compatibility = [">=7.7.0"],
 )
 
@@ -201,6 +203,10 @@ llvm_dev.configure(targets = [
     "SystemZ",
     "WebAssembly",
 ])
+
+# Keep type-checking inputs local to the workspace running the check.
+sty_stubs = use_extension("//stubs:extensions.bzl", "sty_stubs", dev_dependency = True)
+use_repo(sty_stubs, "bazel_skylib_stubs")
 
 bazel_dep(name = "gazelle", version = "0.47.0", dev_dependency = True)
 bazel_dep(name = "bazel_skylib_gazelle_plugin", version = "1.9.0", dev_dependency = True)

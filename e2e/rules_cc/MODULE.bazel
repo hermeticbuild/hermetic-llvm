@@ -36,3 +36,6 @@ register_toolchains("@llvm_toolchains//:all")
 
 # Bump transitive zlib version to avoid genrules.
 bazel_dep(name = "zlib", version = "1.3.1.bcr.8")
+
+sty_stubs = use_extension("@llvm//stubs:extensions.bzl", "sty_stubs", dev_dependency = True)
+use_repo(sty_stubs, "bazel_skylib_stubs")

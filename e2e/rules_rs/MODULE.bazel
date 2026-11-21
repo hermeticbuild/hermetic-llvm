@@ -79,3 +79,6 @@ crate.from_cargo(
     ],
 )
 use_repo(crate, "crates")
+
+sty_stubs = use_extension("@llvm//stubs:extensions.bzl", "sty_stubs", dev_dependency = True)
+use_repo(sty_stubs, "bazel_skylib_stubs")

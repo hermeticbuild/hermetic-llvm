@@ -15,17 +15,22 @@ _LINK_FLAGS = {
 }
 
 def _check_flags(action, flags, expected):
+    # type: (Action, Sequence[str], bool) -> None
+    argv = action.argv
+    if argv == None:
+        fail("%s action does not expose its arguments" % action.mnemonic)
     for flag in flags:
-        if (flag in action.argv) != expected:
+        if (flag in argv) != expected:
             fail("%s of %s: expected %s to be %s, got: %s" % (
                 action.mnemonic,
                 [f.short_path for f in action.outputs.to_list()],
                 flag,
                 "present" if expected else "absent",
-                action.argv,
+                argv,
             ))
 
 def _coverage_instrumentation_test_impl(ctx):
+    # type: (ctx[object, struct[{"format": str, "instrumented": bool}, ...]]) -> list[AnalysisTestResultInfo]
     env = analysistest.begin(ctx)
     compiles = []
     links = []
@@ -46,6 +51,7 @@ def _coverage_instrumentation_test_impl(ctx):
     return analysistest.end(env)
 
 def _coverage_instrumentation_test(format, instrumentation_filter, instrumented):
+    # type: (str, str, bool) -> rule
     return analysistest.make(
         _coverage_instrumentation_test_impl,
         attrs = {

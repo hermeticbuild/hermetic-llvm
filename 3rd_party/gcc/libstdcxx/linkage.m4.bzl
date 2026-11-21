@@ -106,6 +106,7 @@ long double cld;
 """
 
 def gcc_check_math_support():
+    # type: () -> list[str]
     return [
         link_check(
             name = name,
@@ -121,6 +122,7 @@ int main() {{
     ]
 
 def gcc_check_stdlib_support(gcc_version):
+    # type: (str) -> list[str]
     checks = [
         function_link_check("HAVE_POSIX_MEMALIGN", "stdlib.h", "void *p = 0; posix_memalign(&p, 16, 16)"),
         function_link_check("HAVE_MEMALIGN", "malloc.h", "void *p = memalign(16, 16)"),

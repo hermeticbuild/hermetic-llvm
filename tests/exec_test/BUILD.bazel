@@ -1,0 +1,3 @@
+load(":defs.bzl", "exec_test_regression_tests")
+
+exec_test_regression_tests()

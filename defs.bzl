@@ -1,13 +1,31 @@
-def exec_test(rule, *, name, tags = [], args = [], env = {}, data = [], inner_data = [], tools = [], **kwargs):
+def exec_test(
+        rule,  # ty: ignore[non-static-type]
+        *,
+        name,
+        tags = [],
+        args = [],
+        env = {},
+        data = [],
+        tools = [],
+        **kwargs):
+    inner_tags = list(tags)  # type: _InnerTags[T]
+    if "manual" not in tags:
+        inner_tags.append("manual")
+
     # The inner executable is built in the exec configuration. Keep target
     # artifacts on the outer test unless an inner rule attribute itself uses a
     # location expansion for one of them (for example go_test.x_defs), in which
     # case the caller must also declare it in inner_data.
+    forwarded = dict(kwargs)
+    forwarded.pop("inner_data", None)
+
+    # Allocate omitted inner_data here so calls cannot share the default list.
+    # ty: ignore[non-static-type]
     rule(
         name = name + "_",
-        data = inner_data,
-        tags = tags + (["manual"] if "manual" not in tags else []),
-        **kwargs
+        data = kwargs["inner_data"] if "inner_data" in kwargs else [],
+        tags = inner_tags,
+        **forwarded
     )
 
     _exec_test(
@@ -22,6 +40,7 @@ def exec_test(rule, *, name, tags = [], args = [], env = {}, data = [], inner_da
     )
 
 def _exec_test_impl(ctx):
+    # type: (...) -> list[DefaultInfo | RunEnvironmentInfo]
     inner = ctx.attr.inner[DefaultInfo]
     inner_executable = inner.files_to_run.executable
     out = ctx.actions.declare_file(ctx.label.name + ".exe") if inner_executable.extension == "exe" else ctx.outputs.executable

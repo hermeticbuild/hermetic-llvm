@@ -1,0 +1,5 @@
+# TODO(https://github.com/bazelbuild/bazel/pull/30373): Use source type parameters when every
+# supported Bazel release accepts them (8.8+ on the 8.x line).
+# TODO(https://github.com/tamird/sty/blob/d400a0080/docs/type-interfaces.md#selectors):
+# Use a native selector type once Bazel can express the first branch's list kind.
+def make_glibc_linker_script[T: str](name: str, lib_name: str, lib_version: str | int, additional_linker_inputs: list[T] | select[list[T] | None, Literal["list"]] = ...) -> str: ...

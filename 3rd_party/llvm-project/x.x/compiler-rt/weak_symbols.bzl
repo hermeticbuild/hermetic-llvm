@@ -77,6 +77,7 @@ XRAY_WEAK_SYMBOLS = [
 ]
 
 def weak_symbol_link_flags(symbol_lists):
+    # type: (Collection[Collection[str]]) -> list[str]
     """Returns `-Wl,-U,<symbol>` link flags for the given lists of weak symbols.
 
     Args:
@@ -99,6 +100,7 @@ _WEAK_SYMBOLS_BY_RUNTIME = {
 }
 
 def weak_symbols_in_sync_tests():
+    # type: () -> None
     """Asserts each *_WEAK_SYMBOLS list matches upstream lib/<name>/weak_symbols.txt.
 
     The lists above are a verbatim copy of compiler-rt's weak_symbols.txt files;

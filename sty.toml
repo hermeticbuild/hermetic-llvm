@@ -1,0 +1,25 @@
+[analysis]
+require-valid-suppressions = true
+strict-generic-narrowing = true
+
+[rules]
+strict = "error"
+
+# Skylib 1.9.0 and rules_cc 0.2.25 leave config_setting_group,
+# create_directory_info and cc_tool untyped. Drop the exceptions as releases
+# incorporate bazelbuild/bazel-skylib#641 and bazelbuild/rules_cc#940.
+[[overrides]]
+include = [
+    "directory.bzl",
+    "platforms/config/declare_config_settings.bzl",
+    "toolchain/llvm/llvm.bzl",
+]
+
+[overrides.rules]
+non-static-type = "warn"
+
+[[stub-packages]]
+manifest = "@bazel_skylib_stubs//:stubs.toml"
+
+[[stub-packages]]
+manifest = "stubs/bazel_skylib/stubs.toml"

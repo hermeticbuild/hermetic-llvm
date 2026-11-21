@@ -21,6 +21,7 @@ CXX_NO_EXCEPTIONS_FLAGS = ["-fno-exceptions"]
 PTHREAD_LINK_FLAGS = ["-lpthread"]
 
 def gcc_check_tls():
+    # type: () -> list[str]
     return [
         compile_check(
             name = "HAVE_CC_TLS",
@@ -34,12 +35,14 @@ def gcc_check_tls():
     ]
 
 def gcc_check_unwind_getipinfo():
+    # type: () -> list[str]
     # config/unwind_ipinfo.m4 defines this by target policy for GCC's own
     # unwinder on Linux GNU targets. It is about _Unwind_GetIPInfo, not
     # networking APIs.
     return [policy_define("HAVE_GETIPINFO")]
 
 def gcc_linux_futex():
+    # type: () -> list[str]
     return [
         link_check(
             name = "HAVE_LINUX_FUTEX",
@@ -53,6 +56,7 @@ int main() { return syscall(SYS_futex, (int *)0, FUTEX_WAKE, 1, 0, 0, 0); }
     ]
 
 def am_iconv():
+    # type: () -> list[str]
     return [
         link_check(
             name = "HAVE_ICONV",

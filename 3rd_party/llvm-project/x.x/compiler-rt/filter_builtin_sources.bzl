@@ -21,6 +21,7 @@ _MACOS_EXCLUDE_LIST = [
 ]
 
 def _filter_builtin_sources_impl(ctx):
+    # type: (...) -> list[DefaultInfo]
     is_macos = ctx.target_platform_has_constraint(
         ctx.attr._macos_constraint[platform_common.ConstraintValueInfo],
     )

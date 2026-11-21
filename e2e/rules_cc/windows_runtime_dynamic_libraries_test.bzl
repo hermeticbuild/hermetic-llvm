@@ -1,4 +1,5 @@
 def _windows_runtime_dynamic_libraries_test_impl(ctx):
+    # type: (...) -> list[DefaultInfo]
     output_groups = ctx.attr.target[OutputGroupInfo]
     runtime_libraries = getattr(output_groups, "runtime_dynamic_libraries", None)
     if runtime_libraries == None:
