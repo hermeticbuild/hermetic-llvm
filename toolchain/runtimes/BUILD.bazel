@@ -150,6 +150,7 @@ cc_args_list(
         ":linker",
         "//toolchain/args:lto_plugin_target_flags",
         ":rtlib",
+        ":unwindlib",
         ":default_link_flags",
         # Needs to stay out of resource_dir since clang does not always search for crtstuff for all targets.
         ":default_startfiles",
@@ -249,16 +250,33 @@ cc_args_list(
 # Use compiler-rt for intermediate links on every ABI: Microsoft's CRT does
 # not provide every compiler-generated helper (e.g. __udivti3). Stage0 builds
 # these libraries; complete toolchains add //toolchain:rtlib directly through
-# //toolchain:toolchain_args instead.
+# //toolchain:toolchain_args instead, which follows //config:rtlib.
 cc_args_list(
     name = "rtlib",
     args = select({
         "//toolchain:runtimes_all": [],
         "//toolchain:runtimes_stage1": [
-            "//toolchain:rtlib",
+            "//toolchain:default_rtlib",
         ],
         "//toolchain:runtimes_stage1_hosted": [
-            "//toolchain:rtlib",
+            "//toolchain:default_rtlib",
+        ],
+        "//toolchain:runtimes_none": [],
+    }),
+)
+
+# Runtime libraries leave the unwinder to the final link, whatever
+# //config:unwindlib selects. Pass --unwindlib=none explicitly: a seed compiler
+# built with another CLANG_DEFAULT_UNWINDLIB would add -lgcc_s or -lgcc_eh.
+cc_args_list(
+    name = "unwindlib",
+    args = select({
+        "//toolchain:runtimes_all": [],
+        "//toolchain:runtimes_stage1": [
+            "//toolchain/args:unwindlib_none",
+        ],
+        "//toolchain:runtimes_stage1_hosted": [
+            "//toolchain/args:unwindlib_none",
         ],
         "//toolchain:runtimes_none": [],
     }),

@@ -15,6 +15,17 @@ FASTBUILD_OPTIMIZATION_MODES = [
     "Oz",
 ]
 
+RTLIBS = [
+    "compiler-rt",
+    "libgcc",
+]
+
+UNWINDLIBS = [
+    "libunwind",
+    "libgcc",
+    "none",
+]
+
 SANITIZERS = [
     "ubsan",
     "cfi",
@@ -171,6 +182,44 @@ def config_settings():
         flag_values = {"nostdlibxx": "true"},
     )
 
+    # Compiler runtime and unwinder for Linux targets, following Clang's
+    # --rtlib= and --unwindlib=. The defaults link the toolchain's compiler-rt
+    # builtins and LLVM libunwind. "libgcc" passes the same option to Clang,
+    # which then links libgcc, libgcc_s or libgcc_eh from library search paths
+    # that the consumer supplies. "none" links no unwinder. Programs that share
+    # a process with GCC-built shared libraries need their unwinder, libgcc_s.
+    # Runtime libraries the toolchain builds keep the defaults.
+    # Supported on Bazel 9+ only.
+    string_flag(
+        name = "rtlib",
+        values = RTLIBS,
+        build_setting_default = "compiler-rt",
+        scope = "target",
+    )
+
+    for rtlib in RTLIBS:
+        native.config_setting(
+            name = "rtlib_{}".format(rtlib),
+            flag_values = {
+                ":rtlib": rtlib,
+            },
+        )
+
+    string_flag(
+        name = "unwindlib",
+        values = UNWINDLIBS,
+        build_setting_default = "libunwind",
+        scope = "target",
+    )
+
+    for unwindlib in UNWINDLIBS:
+        native.config_setting(
+            name = "unwindlib_{}".format(unwindlib),
+            flag_values = {
+                ":unwindlib": unwindlib,
+            },
+        )
+
     # This flag controls the optimization mode for the compilation of the target
     # prequisites like the standard C library, the C++ standard library,
     # the unwinder, etc.
@@ -225,11 +274,11 @@ def config_settings():
     # when creating or linking against a shared library that uses c++ exceptions
     # that may cross the library boundary.
     #
-    # This toolchain currently doesn't support linking dynamically against an
-    # unwinder, which means that this toolchain doesn't support cross boundary
-    # c++ exceptions for the moment (and the only unwinder supported is libunwind).
-    # Yet, it is possible for dependencies that you do not control to pass -lgcc_s
-    # linker flags.
+    # With the default unwindlib, LLVM libunwind is the only unwinder, so C++
+    # exceptions cannot cross into libraries that unwind with libgcc_s; set
+    # unwindlib=libgcc for those. Yet, it is possible for dependencies that you
+    # do not control to pass -lgcc_s linker flags. Only unwindlib=libunwind
+    # uses this stub.
     #
     # Since rustc passes this flag, we default to enabling this flag to make this toolchain
     # more broadly compatible out-of-the-box. If you know what you are doing and do not want

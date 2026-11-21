@@ -262,7 +262,7 @@ cc_args_list(
             "//toolchain/args:libunwind_library_search_paths",
         ],
         "@platforms//os:linux": [
-            "//toolchain/args:libunwind_library_search_paths",
+            "//toolchain/args/linux:libunwind_library_search_paths",
         ],
         "@platforms//os:windows": ["//toolchain/args/windows:libunwind_library_search_paths"],
         "//conditions:default": [],
@@ -313,10 +313,18 @@ cc_args_list(
     }),
 )
 
+cc_args_list(
+    name = "rtlib",
+    args = select({
+        "@platforms//os:linux": ["//toolchain/args/linux:rtlib"],
+        "//conditions:default": ["default_rtlib"],
+    }),
+)
+
 # This makes the clang driver use compiler-rt compliant filenames
 # and paths when resolving compiler runtime libraries from the resource-dir.
 cc_args_list(
-    name = "rtlib",
+    name = "default_rtlib",
     args = select({
         # macOS defaults to compiler-rt; explicitly selecting it warns with
         # -nodefaultlibs (used by Rust) or -nostdlib.
@@ -330,6 +338,7 @@ cc_args_list(
 cc_args_list(
     name = "unwindlib",
     args = select({
+        "@platforms//os:linux": ["//toolchain/args/linux:unwindlib"],
         "@platforms//os:windows": ["//toolchain/args/windows:unwindlib"],
         "//conditions:default": ["//toolchain/args:unwindlib_none"],
     }),

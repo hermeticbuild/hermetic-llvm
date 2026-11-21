@@ -1164,6 +1164,16 @@ cc_args(
 )
 
 cc_args(
+    name = "rtlib_libgcc",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    args = [
+        "-rtlib=libgcc",
+    ],
+)
+
+cc_args(
     # We provide the libc++ and libunwind ourselves through static_runtime_libs
     # and dynamic_runtime_libs.
     name = "stdlib",
@@ -1188,6 +1198,16 @@ cc_args(
         # Will prevent clang from choosing which libunwind to link against.
         "//conditions:default": ["--unwindlib=none"],
     }),
+)
+
+cc_args(
+    name = "unwindlib_libgcc",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    args = [
+        "--unwindlib=libgcc",
+    ],
 )
 
 # Those are stubs since we link against static_runtime_libs / dynamic_runtime_libs.

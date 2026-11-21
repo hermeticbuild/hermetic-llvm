@@ -527,8 +527,9 @@ jobs:
           test_flags=()
           if [[ "${{ matrix.bazel_version }}" == "8.x" ]]; then
             excluded_tests+=(-//tests/header_modules/...)
-            # The target-scoped C++ stdlib settings are supported on Bazel 9+ only.
+            # The target-scoped C++ stdlib and runtime settings are supported on Bazel 9+ only.
             excluded_tests+=(-//tests/cxxstdlib_settings/...)
+            excluded_tests+=(-//tests/rtlib_unwindlib_settings/...)
             # Preparing remote inputs for 800 concurrent actions exhausts
             # Bazel 8's Java heap in the root test suite.
             test_flags+=(--jobs=100)

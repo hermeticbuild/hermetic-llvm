@@ -43,6 +43,35 @@ cc_args(
     requires_none = "@rules_cc//cc/toolchains/variables:force_pic",
 )
 
+# The runtime library and unwinder selected by //config:rtlib and
+# //config:unwindlib. The toolchain links its own libunwind as a runtime
+# library, so the driver adds an unwinder only for unwindlib=libgcc.
+cc_args_list(
+    name = "rtlib",
+    args = select({
+        "//config:rtlib_libgcc": ["//toolchain/args:rtlib_libgcc"],
+        "//conditions:default": ["//toolchain/args:rtlib_compiler_rt"],
+    }),
+)
+
+cc_args_list(
+    name = "unwindlib",
+    args = select({
+        "//config:unwindlib_libgcc": ["//toolchain/args:unwindlib_libgcc"],
+        "//conditions:default": ["//toolchain/args:unwindlib_none"],
+    }),
+)
+
+# The empty libunwind and libgcc_s archives stand in for the toolchain's
+# libunwind. Without it, -lunwind and -lgcc_s must find the consumer's.
+cc_args_list(
+    name = "libunwind_library_search_paths",
+    args = select({
+        "//config:unwindlib_libunwind": ["//toolchain/args:libunwind_library_search_paths"],
+        "//conditions:default": [],
+    }),
+)
+
 cc_args(
     name = "kernel_headers_include_search_paths",
     actions = [

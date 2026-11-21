@@ -71,6 +71,34 @@ change optimization policy or MSVC CRT selection (`/MT` versus `/MD`).
 On MSVC targets the library opt-out removes the toolchain's libc++ default
 library; it does not use the broader `/NODEFAULTLIB` or `/Zl` options.
 
+### Selecting the compiler runtime and unwinder
+
+Two string build settings (Bazel 9+ only) follow Clang's `--rtlib=` and
+`--unwindlib=` options on Linux targets:
+
+- `--@llvm//config:rtlib`: `compiler-rt` (the default) links the toolchain's
+  compiler-rt builtins. `libgcc` passes `-rtlib=libgcc`, so Clang links
+  `-lgcc` instead.
+- `--@llvm//config:unwindlib`: `libunwind` (the default) links the toolchain's
+  LLVM libunwind. `libgcc` passes `--unwindlib=libgcc`, so Clang links
+  `-lgcc_s`, or `-lgcc_eh` in static links. `none` links no unwinder.
+
+An exception that crosses between libraries needs a single unwinder, so
+programs that share a process with GCC-built shared libraries, such as
+manylinux Python wheels, should use `unwindlib=libgcc`. The toolchain does not
+provide libgcc, so add a library search path that holds the libraries Clang
+requests, such as the target's `libgcc_s.so` or a stub of it. With
+`unwindlib=none`, link an unwinder explicitly, for example
+`@llvm//runtimes/cxxstdlib:static_unwind_runtime_lib`. Without its libunwind,
+the toolchain also drops the empty `-lunwind` and `-lgcc_s` archives that stand
+in for it, including `experimental_stub_libgcc_s`.
+
+Both settings declare `scope = "target"`, so execution tools keep the defaults
+unless explicitly configured by a transition. The runtime libraries that the
+toolchain builds, such as libc++ and libstdc++, keep compiler-rt and leave the
+unwinder to the final link. Other target operating systems ignore both
+settings.
+
 ### Header checks and modules
 
 The toolchain supports the following opt-in features. Set `features` on a target or package to enable them selectively, or use the command-line flags below. Pass each feature as a separate `--features` flag.

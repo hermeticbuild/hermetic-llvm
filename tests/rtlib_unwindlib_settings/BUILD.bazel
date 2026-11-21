@@ -1,0 +1,97 @@
+load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@bazel_skylib//lib:selects.bzl", "selects")
+load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load(
+    ":contract.bzl",
+    "rtlib_libgcc_test",
+    "runtime_contract",
+    "scope_probe",
+    "toolchain_link",
+    "unwindlib_libgcc_test",
+    "unwindlib_none_test",
+)
+
+toolchain_link(name = "toolchain_link")
+
+scope_probe(name = "exec_scope")
+
+# Analysis fails unless each setting changes only its driver option, the
+# toolchain's libunwind and its stub search path, and only on Linux.
+runtime_contract(name = "contract")
+
+# The toolchain provides no libgcc. Stand in for the consumer's with the
+# toolchain's builtins and libunwind under GCC's library names.
+copy_file(
+    name = "gcc",
+    src = "//runtimes/compiler-rt:clang_rt.builtins.static",
+    out = "libgcc.a",
+    allow_symlink = True,
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+copy_file(
+    name = "gcc_eh",
+    src = "//runtimes/cxxstdlib:static_unwind_runtime_lib",
+    out = "libgcc_eh.a",
+    allow_symlink = True,
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+copy_file(
+    name = "gcc_s",
+    src = "//runtimes/cxxstdlib:static_unwind_runtime_lib",
+    out = "libgcc_s.a",
+    allow_symlink = True,
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+copy_to_directory(
+    name = "libgcc_library_search_directory",
+    srcs = [
+        ":gcc",
+        ":gcc_eh",
+        ":gcc_s",
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+# With unwindlib=none, the consumer links an unwinder explicitly.
+cc_library(
+    name = "explicit_unwinder",
+    srcs = ["//runtimes/cxxstdlib:static_unwind_runtime_lib"],
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+_LIBGCC = selects.with_or({
+    ("//config:rtlib_libgcc", "//config:unwindlib_libgcc"): [":libgcc_library_search_directory"],
+    "//conditions:default": [],
+})
+
+_LIBGCC_SEARCH_PATH = selects.with_or({
+    ("//config:rtlib_libgcc", "//config:unwindlib_libgcc"): ["-L$(execpath :libgcc_library_search_directory)"],
+    "//conditions:default": [],
+})
+
+# Each setting must still link a program that throws and catches an exception.
+[
+    test(
+        name = name,
+        srcs = ["exceptions.cc"],
+        additional_linker_inputs = _LIBGCC,
+        data = [":contract"],
+        linkopts = _LIBGCC_SEARCH_PATH,
+        target_compatible_with = ["@platforms//os:linux"],
+        deps = select({
+            "//config:unwindlib_none": [":explicit_unwinder"],
+            "//conditions:default": [],
+        }),
+    )
+    for name, test in [
+        ("defaults_test", cc_test),
+        ("rtlib_libgcc_test", rtlib_libgcc_test),
+        ("unwindlib_libgcc_test", unwindlib_libgcc_test),
+        ("unwindlib_none_test", unwindlib_none_test),
+    ]
+]

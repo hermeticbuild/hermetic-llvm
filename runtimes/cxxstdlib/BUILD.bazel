@@ -179,12 +179,33 @@ genrule(
     cmd = "echo 'libstdc++ is currently supported only for Linux targets; Windows/MinGW libstdc++ is intentionally unsupported.' >&2; exit 1",
 )
 
+# //config:unwindlib replaces the toolchain's libunwind on Linux targets.
+selects.config_setting_group(
+    name = "linux_unwindlib_libgcc",
+    match_all = [
+        "//config:unwindlib_libgcc",
+        "@platforms//os:linux",
+    ],
+)
+
+selects.config_setting_group(
+    name = "linux_unwindlib_none",
+    match_all = [
+        "//config:unwindlib_none",
+        "@platforms//os:linux",
+    ],
+)
+
 filegroup(
     name = "static_runtime_lib",
     srcs = select({
         "//config:nostdlibxx_enabled": [],
         "//conditions:default": ["static_stdlib_runtime_lib"],
-    }) + ["static_unwind_runtime_lib"],
+    }) + select({
+        ":linux_unwindlib_libgcc": [],
+        ":linux_unwindlib_none": [],
+        "//conditions:default": ["static_unwind_runtime_lib"],
+    }),
 )
 
 # C++ library suppression must not remove the independently selected unwinder.
@@ -225,7 +246,11 @@ filegroup(
     srcs = select({
         "//config:nostdlibxx_enabled": [],
         "//conditions:default": ["dynamic_stdlib_runtime_lib"],
-    }) + ["dynamic_unwind_runtime_lib"],
+    }) + select({
+        ":linux_unwindlib_libgcc": [],
+        ":linux_unwindlib_none": [],
+        "//conditions:default": ["dynamic_unwind_runtime_lib"],
+    }),
 )
 
 filegroup(
