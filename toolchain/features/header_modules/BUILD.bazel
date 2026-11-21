@@ -141,6 +141,7 @@ cc_feature(
         ":use_header_modules_module_files_args",
     ],
     feature_name = "use_header_modules",
+    requires_any_of = ["@rules_cc//cc/toolchains/args/layering_check:module_maps"],
 )
 
 cc_feature_set(
