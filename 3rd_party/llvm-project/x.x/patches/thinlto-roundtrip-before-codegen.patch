@@ -1,7 +1,7 @@
 diff --git a/llvm/lib/LTO/LTOBackend.cpp b/llvm/lib/LTO/LTOBackend.cpp
 --- a/llvm/lib/LTO/LTOBackend.cpp
 +++ b/llvm/lib/LTO/LTOBackend.cpp
-@@ -703,7 +703,24 @@ Error lto::thinBackend(const Config &Conf, unsigned Task, AddStreamFn AddStream,
+@@ -703,7 +703,29 @@ Error lto::thinBackend(const Config &Conf, unsigned Task, AddStreamFn AddStream,
          if (IRAddStream)
            cgdata::saveModuleForTwoRounds(Mod, Task, IRAddStream);
  
@@ -11,6 +11,11 @@ diff --git a/llvm/lib/LTO/LTOBackend.cpp b/llvm/lib/LTO/LTOBackend.cpp
 +        WriteBitcodeToFile(Mod, BCOS);
 +
 +        LTOLLVMContext CodeGenCtx(Conf);
++        if (!CodeGenCtx.DiagHandler)
++          CodeGenCtx.DiagHandler =
++              [Ctx = &Mod.getContext()](const DiagnosticInfo &DI) {
++                Ctx->diagnose(DI);
++              };
 +        Expected<std::unique_ptr<Module>> CodeGenModOrErr =
 +            parseBitcodeFile(MemoryBufferRef(BC.str(),
 +                                             Mod.getModuleIdentifier()),
