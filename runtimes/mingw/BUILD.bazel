@@ -330,9 +330,19 @@ stub_library(
     name = "stdc++",
 )
 
+stub_library(
+    name = "gcc",
+)
+
+stub_library(
+    name = "gcc_eh",
+)
+
 copy_to_directory(
     name = "mingw_crt_library_search_directory",
     srcs = [
+        ":gcc",
+        ":gcc_eh",
         ":m",
         ":mingw32",
         ":mingwex",
