@@ -15,6 +15,11 @@ fi
 echo "Using binary: ${BIN}"
 ls -l "${BIN}" 2>/dev/null || true
 
+if ! "${READELF}" --file-header "${BIN}" | grep -Eq 'Type:[[:space:]]+DYN'; then
+  echo "TSan executable must be PIE" >&2
+  exit 1
+fi
+
 set +e
 OUTPUT="$($BIN 2>&1)"
 STATUS=$?
