@@ -2,6 +2,7 @@ load("@bazel_lib//lib:transitions.bzl", "platform_transition_binary")
 load("@llvm//:defs.bzl", "exec_test")
 load("@llvm//toolchain:selects.bzl", "platform_llvm_binary")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 
 alias(
@@ -166,4 +167,18 @@ exec_test(
     tools = [
         ":llvm-readelf",
     ],
+)
+
+# Callers such as rustc pass -nodefaultlibs, leaving --unwindlib=none unused
+# by the clang driver. Scoping unused-argument suppression to --unwindlib=none
+# avoids spurious warnings while keeping -Wunused-command-line-argument active.
+cc_test(
+    name = "nodefaultlibs_no_unused_unwindlib_warning_test",
+    srcs = ["main.c"],
+    linkopts = [
+        "-nodefaultlibs",
+        "-lc",
+        "-Werror=unused-command-line-argument",
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
 )
