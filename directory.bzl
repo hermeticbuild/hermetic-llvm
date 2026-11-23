@@ -5,7 +5,7 @@ def _files_directory_info(ctx):
     # Header inclusion checking and module maps only need the path and the files. Skylib's
     # directory rule would retain a DirectoryInfo with a dict and four closures per subdirectory,
     # which adds up to megabytes for SDKs.
-    roots = {f.root.path: None for f in ctx.files.srcs}
+    roots = set([f.root.path for f in ctx.files.srcs])
     if len(roots) > 1:
         fail("{} mixes source and generated files".format(ctx.label))
     root = list(roots)[0] if roots else ""
