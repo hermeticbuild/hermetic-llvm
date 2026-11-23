@@ -1,0 +1,52 @@
+name: FDO Path Mapping
+
+# Running the FDO training actions needs the Stage 1 and the instrumented
+# Stage 2 compilers, about 50,000 actions when the remote cache misses, so
+# pushes and pull requests only run this when they change the training rules.
+# The nightly run catches changes to other inputs, such as the toolchain or
+# rules_cc, and keeps the remote cache warm for pull requests, which can't
+# write to it.
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".bazelversion"
+      - ".github/workflows/fdo-path-mapping.yml"
+      - "toolchain/bootstrap/fdo_profile.bzl"
+      - "toolchain/bootstrap/stage3/**"
+  pull_request:
+    branches: [main]
+    paths:
+      - ".bazelversion"
+      - ".github/workflows/fdo-path-mapping.yml"
+      - "toolchain/bootstrap/fdo_profile.bzl"
+      - "toolchain/bootstrap/stage3/**"
+  schedule:
+    - cron: "0 4 * * *"
+  workflow_dispatch:
+concurrency:
+  group: concurrency-group::${{ github.workflow }}::${{ github.event.pull_request.number > 0 && format('pr-{0}', github.event.pull_request.number) || github.ref_name }}${{ github.ref_name == 'main' && format('::{0}', github.run_id) || ''}}
+  cancel-in-progress: ${{ github.ref_name != 'main' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref == 'refs/heads/main' && 'ci' || '' }}
+    name: Build FDO training actions with path mapping
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: ./.github/actions/buildbuddy-api-key
+        with:
+          api-key: ${{ github.ref == 'refs/heads/main' && secrets.BUILDBUDDY_CI_API_KEY || '' }}
+
+      - name: bazel build FDO profile with path mapping
+        shell: bash
+        run: |
+          bazel \
+            --bazelrc=$GITHUB_WORKSPACE/.github/workflows/ci.bazelrc \
+            --bazelrc=.bazelrc \
+            build \
+            --experimental_output_paths=strip \
+            //toolchain/bootstrap/stage3:llvm_fdo_profdata_smoke
