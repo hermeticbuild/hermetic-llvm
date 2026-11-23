@@ -1,8 +1,6 @@
 load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
-load("@bazel_skylib//rules/directory:directory.bzl", "directory")
-load("@bazel_skylib//rules/directory:subdirectory.bzl", "subdirectory")
-load("@llvm//:directory.bzl", "headers_directory")
+load("@llvm//:directory.bzl", "files_directory", "headers_directory")
 load(
     "@llvm//runtimes/mingw:crt_sources.bzl",
     "MINGW32_HDRS",
@@ -212,17 +210,11 @@ headers_directory(
     visibility = ["//visibility:public"],
 )
 
-directory(
-    name = "mingw_generated_headers_directory",
+files_directory(
+    name = "mingw_generated_headers_crt_directory",
     srcs = [
         "mingw-w64-headers/crt/_mingw.h",
     ],
-    visibility = ["//visibility:public"],
-)
-
-subdirectory(
-    name = "mingw_generated_headers_crt_directory",
-    parent = ":mingw_generated_headers_directory",
     path = "mingw-w64-headers/crt",
     visibility = ["//visibility:public"],
 )
