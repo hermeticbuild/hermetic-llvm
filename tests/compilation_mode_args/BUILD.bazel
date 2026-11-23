@@ -1,0 +1,145 @@
+load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
+load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
+load(":contract.bzl", "compilation_mode_contract")
+
+cc_args(
+    name = "opt_level",
+    actions = ["@rules_cc//cc/toolchains/actions:compile_actions"],
+    args = [
+        "-O3",
+        "-g1",
+    ],
+)
+
+# opt with -O3 -g1 instead of -O2 -g0, and without identical code folding.
+cc_args_list(
+    name = "custom_opt_args",
+    args = [
+        ":opt_level",
+        "//toolchain/features:opt_fortify",
+        "//toolchain/features:opt_disable_assertions",
+        "//toolchain/features:opt_function_sections",
+        "//toolchain/features:opt_data_sections",
+        "//toolchain/features:opt_gc_sections",
+    ],
+)
+
+cc_args(
+    name = "custom_dbg_args",
+    actions = ["@rules_cc//cc/toolchains/actions:compile_actions"],
+    args = [
+        "-Og",
+        "-g",
+        "-D_FORTIFY_SOURCE=2",
+    ],
+)
+
+cc_args(
+    name = "custom_fastbuild_args",
+    actions = ["@rules_cc//cc/toolchains/actions:compile_actions"],
+    args = ["-O1"],
+)
+
+compilation_mode_contract(
+    name = "opt_default",
+    compilation_mode = "opt",
+    compile_flags = [
+        "-O2",
+        "-g0",
+        "-DNDEBUG",
+    ],
+    link_flags = [
+        "-Wl,--gc-sections",
+        "-Wl,--icf=safe",
+    ],
+)
+
+compilation_mode_contract(
+    name = "opt_custom",
+    compilation_mode = "opt",
+    compile_flags = [
+        "-O3",
+        "-g1",
+        "-D_FORTIFY_SOURCE=1",
+        "-DNDEBUG",
+        "-ffunction-sections",
+        "-fdata-sections",
+    ],
+    link_flags = ["-Wl,--gc-sections"],
+    no_compile_flags = [
+        "-O2",
+        "-g0",
+    ],
+    no_link_flags = ["-Wl,--icf=safe"],
+    opt_args = ":custom_opt_args",
+)
+
+compilation_mode_contract(
+    name = "dbg_default",
+    compilation_mode = "dbg",
+    compile_flags = [
+        "-O0",
+        "-g",
+        "-D_DEBUG",
+    ],
+)
+
+compilation_mode_contract(
+    name = "dbg_custom",
+    compilation_mode = "dbg",
+    compile_flags = [
+        "-Og",
+        "-g",
+        "-D_FORTIFY_SOURCE=2",
+    ],
+    dbg_args = ":custom_dbg_args",
+    no_compile_flags = [
+        "-O0",
+        "-D_DEBUG",
+    ],
+)
+
+compilation_mode_contract(
+    name = "fastbuild_default",
+    compilation_mode = "fastbuild",
+    no_compile_flags = ["-O1"],
+)
+
+compilation_mode_contract(
+    name = "fastbuild_custom",
+    compilation_mode = "fastbuild",
+    compile_flags = ["-O1"],
+    fastbuild_args = ":custom_fastbuild_args",
+)
+
+# Each mode's args apply in that mode only.
+compilation_mode_contract(
+    name = "dbg_with_other_modes_custom",
+    compilation_mode = "dbg",
+    compile_flags = [
+        "-O0",
+        "-g",
+    ],
+    fastbuild_args = ":custom_fastbuild_args",
+    no_compile_flags = [
+        "-O3",
+        "-g1",
+        "-O1",
+    ],
+    opt_args = ":custom_opt_args",
+)
+
+compilation_mode_contract(
+    name = "opt_with_other_modes_custom",
+    compilation_mode = "opt",
+    compile_flags = [
+        "-O2",
+        "-g0",
+    ],
+    dbg_args = ":custom_dbg_args",
+    fastbuild_args = ":custom_fastbuild_args",
+    no_compile_flags = [
+        "-Og",
+        "-O1",
+    ],
+)

@@ -239,7 +239,7 @@ selects.config_setting_group(
 )
 
 cc_args(
-    name = "opt_link_flags",
+    name = "opt_gc_sections",
     actions = [
         "@rules_cc//cc/toolchains/actions:link_actions",
     ],
@@ -255,10 +255,26 @@ cc_args(
             #TODO: should be somehow done only if the choosen linker supports it
             "-Wl,--gc-sections",
         ],
-    }) + select({
+    }),
+)
+
+cc_args(
+    name = "opt_icf",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    args = select({
         ":_icf_unsupported": [],
         "//conditions:default": ["-Wl,--icf=safe"],
     }),
+)
+
+cc_args_list(
+    name = "opt_link_flags",
+    args = [
+        ":opt_gc_sections",
+        ":opt_icf",
+    ],
 )
 
 cc_args(
@@ -366,13 +382,21 @@ cc_args_list(
     ],
 )
 
-# Use a stub feature so we can properly control flag ordering.
-cc_feature(
-    name = "opt",
+# The default of --@llvm//config:opt_args.
+cc_args_list(
+    name = "default_opt_args",
     args = [
         ":opt_compile_flags",
         ":opt_link_flags",
     ],
+)
+
+# Use a stub feature so we can properly control flag ordering. Its args come
+# from a flag, so that a consumer can replace them, while this feature keeps
+# them to opt mode and in their place on the command line.
+cc_feature(
+    name = "opt",
+    args = ["//config:opt_args"],
     feature_name = "_underlying_opt",
     requires_any_of = [":opt_stub"],
 )
@@ -431,12 +455,18 @@ cc_args_list(
     ],
 )
 
-# Use a stub feature so we can properly control flag ordering.
-cc_feature(
-    name = "dbg",
+# The default of --@llvm//config:dbg_args.
+cc_args_list(
+    name = "default_dbg_args",
     args = [
         ":dbg_compile_flags",
     ],
+)
+
+# Use a stub feature so we can properly control flag ordering. See opt.
+cc_feature(
+    name = "dbg",
+    args = ["//config:dbg_args"],
     feature_name = "_underlying_dbg",
     implies = select({
         "//constraints/windows/abi:msvc": [":generate_pdb_file"],
@@ -517,12 +547,18 @@ cc_args_list(
     }),
 )
 
-# Use a stub feature so we can properly control flag ordering.
-cc_feature(
-    name = "fastbuild",
+# The default of --@llvm//config:fastbuild_args.
+cc_args_list(
+    name = "default_fastbuild_args",
     args = [
         ":fastbuild_compile_flags",
     ],
+)
+
+# Use a stub feature so we can properly control flag ordering. See opt.
+cc_feature(
+    name = "fastbuild",
+    args = ["//config:fastbuild_args"],
     feature_name = "_underlying_fastbuild",
     requires_any_of = [":fastbuild_stub"],
 )

@@ -71,6 +71,40 @@ change optimization policy or MSVC CRT selection (`/MT` versus `/MD`).
 On MSVC targets the library opt-out removes the toolchain's libc++ default
 library; it does not use the broader `/NODEFAULTLIB` or `/Zl` options.
 
+### Replacing the flags of a compilation mode
+
+`--@llvm//config:opt_args`, `--@llvm//config:dbg_args` and `--@llvm//config:fastbuild_args` name the `cc_args` or `cc_args_list` that the toolchain adds in each `--compilation_mode`, such as `-O2 -g0` in opt. The toolchain adds a replacement in that mode only, in the same place on the command line. It can reuse parts of the defaults, which are in `@llvm//toolchain/features`:
+
+```starlark
+load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
+load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
+
+cc_args(
+    name = "opt_level",
+    actions = ["@rules_cc//cc/toolchains/actions:compile_actions"],
+    args = ["-O3", "-g1"],
+)
+
+# opt with -O3 -g1 instead of -O2 -g0, and without identical code folding.
+cc_args_list(
+    name = "opt_args",
+    args = [
+        ":opt_level",
+        "@llvm//toolchain/features:opt_fortify",
+        "@llvm//toolchain/features:opt_disable_assertions",
+        "@llvm//toolchain/features:opt_function_sections",
+        "@llvm//toolchain/features:opt_data_sections",
+        "@llvm//toolchain/features:opt_gc_sections",
+    ],
+)
+```
+
+```sh
+bazel build -c opt --@llvm//config:opt_args=//:opt_args //...
+```
+
+A replacement applies to every target, so select on `@llvm//constraints/windows/abi:msvc` if you build for Windows MSVC targets, as the defaults do. A replacement of fastbuild's args replaces `--@llvm//config:fastbuild_optimization_mode` as well, unless it includes `@llvm//toolchain/features:fastbuild_compile_flags`. The flags also apply in the exec configuration, but the bootstrap compilers are built with the defaults.
+
 ### Header checks and modules
 
 The toolchain supports the following opt-in features. Set `features` on a target or package to enable them selectively, or use the command-line flags below. Pass each feature as a separate `--features` flag.

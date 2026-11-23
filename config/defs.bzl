@@ -209,6 +209,18 @@ def config_settings():
             },
         )
 
+    # These flags name the cc_args or cc_args_list that the toolchain adds in
+    # each compilation mode, such as -O2 -g0 in opt. The toolchain adds a
+    # replacement in the same place and in the same mode only. A replacement
+    # of fastbuild's args replaces fastbuild_optimization_mode as well, unless
+    # it includes //toolchain/features:fastbuild_compile_flags. The bootstrap
+    # compilers are built with the defaults.
+    for compilation_mode in ["opt", "dbg", "fastbuild"]:
+        native.label_flag(
+            name = compilation_mode + "_args",
+            build_setting_default = Label("//toolchain/features:default_{}_args".format(compilation_mode)),
+        )
+
     # This flag controls whether we compile and link with --sysroot=/dev/null
     # to ensure hermeticity.
     #

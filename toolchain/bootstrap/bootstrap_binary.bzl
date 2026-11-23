@@ -39,6 +39,10 @@ def _bootstrap_transition_impl(settings, attr):
         "//command_line_option:compilation_mode": "opt",
         "//command_line_option:features": _append_unique(features, _LLVM_TOOL_FEATURES + ["thin_lto"]) if source_backed else features,
         "//command_line_option:fdo_profile": fdo_profile,
+        # The compilers are built with the toolchain's own flags.
+        "//config:dbg_args": Label("//toolchain/features:default_dbg_args"),
+        "//config:fastbuild_args": Label("//toolchain/features:default_fastbuild_args"),
+        "//config:opt_args": Label("//toolchain/features:default_opt_args"),
         "@llvm-project//llvm:driver-tools": LLVM_TOOLS,
     }
 
@@ -67,6 +71,9 @@ bootstrap_transition = transition(
         "//command_line_option:platforms",
         "//toolchain:runtime_stage",
         "//toolchain:bootstrap_stage",
+        "//config:dbg_args",
+        "//config:fastbuild_args",
+        "//config:opt_args",
         "@llvm-project//llvm:driver-tools",
     ] + SANITIZER_FLAGS,
 )
