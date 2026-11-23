@@ -80,6 +80,9 @@ def cc_toolchain(
             # replacement set last so user arguments retain their ordering.
             "@llvm//toolchain/features/clang_cl:enabled_features",
             "@llvm//toolchain/features/msvc:abi_enabled_features",
+            # After the defaults, so that they can override them, and before
+            # user flags.
+            "@llvm//toolchain:extra_enabled_features",
             # Always last: contains user compile/link arguments.
             "@llvm//toolchain/features/legacy:clang_cl_experimental_replace_legacy_action_config_features",
         ],
@@ -202,6 +205,9 @@ def cc_toolchain(
             "@llvm//toolchain/features:archive_param_file",
             "@llvm//toolchain/features:parse_headers_wrapper",
             "@llvm//toolchain/features/legacy:all_legacy_builtin_features",
+            # After the defaults, so that they can override them, and before
+            # user flags.
+            "@llvm//toolchain:extra_enabled_features",
             # Always last (contains user_compile_flags and user_link_flags who should apply last).
             "@llvm//toolchain/features/legacy:experimental_replace_legacy_action_config_features",
         ],

@@ -1,0 +1,40 @@
+load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
+load("@rules_cc//cc/toolchains:feature.bzl", "cc_feature")
+load(":contract.bzl", "EXTRA_COMPILE_FLAG", "EXTRA_LINK_FLAG", "extra_features_contract", "with_extra_features", "without_extra_features")
+
+cc_args(
+    name = "extra_compile_args",
+    actions = ["@rules_cc//cc/toolchains/actions:compile_actions"],
+    args = [EXTRA_COMPILE_FLAG],
+)
+
+cc_args(
+    name = "extra_link_args",
+    actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
+    args = [EXTRA_LINK_FLAG],
+)
+
+cc_feature(
+    name = "extra_feature",
+    args = [
+        ":extra_compile_args",
+        ":extra_link_args",
+    ],
+    feature_name = "extra_enabled_feature",
+)
+
+# Renders the C++ compile and link command lines. When
+# --@llvm//toolchain:extra_enabled_features names :extra_feature, analysis
+# fails unless its flags come after the toolchain's defaults and before user
+# flags. Otherwise, it fails if they're present.
+extra_features_contract(name = "contract")
+
+without_extra_features(
+    name = "without_extra_features",
+    srcs = [":contract"],
+)
+
+with_extra_features(
+    name = "with_extra_features",
+    srcs = [":contract"],
+)

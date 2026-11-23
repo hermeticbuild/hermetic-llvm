@@ -2,6 +2,7 @@ load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 load("@bazel_skylib//rules:common_settings.bzl", "string_flag", "string_setting")
 load("@rules_cc//cc/toolchains:actions.bzl", "cc_action_type_set")
 load("@rules_cc//cc/toolchains:artifacts.bzl", "cc_artifact_name_pattern")
+load("@rules_cc//cc/toolchains:feature_set.bzl", "cc_feature_set")
 load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
 load("//toolchain/bootstrap:declare_toolchains.bzl", declare_bootstrap_toolchains = "declare_toolchains")
 load(":bootstrap_stages.bzl", "BOOTSTRAP_STAGES")
@@ -46,6 +47,20 @@ alias(
     actual = "//constraints/windows/crt:msvcrt",
     deprecation = "Use //constraints/windows/crt:msvcrt instead.",
     visibility = ["//visibility:public"],
+)
+
+# Features to enable when compiling and linking complete programs, after the
+# toolchain's own flags, so that they can override them, and before user flags
+# such as --copt and copts. The bootstrap compilers don't get them.
+label_flag(
+    name = "extra_enabled_features",
+    build_setting_default = ":no_extra_enabled_features",
+    visibility = ["//visibility:public"],
+)
+
+cc_feature_set(
+    name = "no_extra_enabled_features",
+    all_of = [],
 )
 
 # Controls which LLVM bootstrap stage builds targets.

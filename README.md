@@ -93,6 +93,33 @@ Header parsing, module maps, and layering checks work with the Clang driver, inc
 
 Compiled header modules can speed up incremental builds after the initial module build, but require compatible dependencies and currently do not work for Windows targets. See the [header module guide](toolchain/features/header_modules/README.md) for setup and limitations.
 
+### Adding flags after the toolchain's defaults
+
+`--@llvm//toolchain:extra_enabled_features` names a `cc_feature` or `cc_feature_set` that the toolchains enable when they compile and link programs. Its flags come after the toolchain's own flags, such as `-std=c++17` and the compilation mode's `-O2`, so that they can override them, and before user flags such as `--copt` and `copts`.
+
+```starlark
+load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
+load("@rules_cc//cc/toolchains:feature.bzl", "cc_feature")
+
+cc_args(
+    name = "cxx_standard",
+    actions = ["@rules_cc//cc/toolchains/actions:cpp_compile_actions"],
+    args = ["-std=c++20"],
+)
+
+cc_feature(
+    name = "compile_policy",
+    args = [":cxx_standard"],
+    feature_name = "compile_policy",
+)
+```
+
+```sh
+bazel build --@llvm//toolchain:extra_enabled_features=//:compile_policy //...
+```
+
+The features also apply in the exec configuration, so that tools built from the same sources get the same flags. They don't apply to the runtime libraries or the bootstrap compilers, which keep the toolchain's own flags.
+
 ### Registering a subset of all toolchains
 
 Use the toolchain module extension:
