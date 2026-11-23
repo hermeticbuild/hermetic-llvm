@@ -1,28 +1,42 @@
-load("@bazel_skylib//rules/directory:directory.bzl", "directory")
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//rules/directory:providers.bzl", "DirectoryInfo", "create_directory_info")
-load("@bazel_skylib//rules/directory:subdirectory.bzl", "subdirectory")
+
+def _files_directory_info(ctx):
+    # Header inclusion checking and module maps only need the path and the files. Skylib's
+    # directory rule would retain a DirectoryInfo with a dict and four closures per subdirectory,
+    # which adds up to megabytes for SDKs.
+    roots = {f.root.path: None for f in ctx.files.srcs}
+    if len(roots) > 1:
+        fail("{} mixes source and generated files".format(ctx.label))
+    root = list(roots)[0] if roots else ""
+    return create_directory_info(
+        entries = {},
+        human_readable = str(ctx.label),
+        path = paths.normalize(paths.join(root, ctx.label.workspace_root, ctx.label.package, ctx.attr.path)),
+        transitive_files = depset(ctx.files.srcs),
+    )
+
+def _files_directory_impl(ctx):
+    directory_info = _files_directory_info(ctx)
+    return [
+        directory_info,
+        DefaultInfo(files = directory_info.transitive_files),
+    ]
+
+files_directory = rule(
+    implementation = _files_directory_impl,
+    doc = "Provides a DirectoryInfo for the directory `path` that contains `srcs`, without its entries.",
+    attrs = {
+        "path": attr.string(default = "."),
+        "srcs": attr.label_list(allow_files = True),
+    },
+    provides = [DirectoryInfo],
+)
 
 # We want to put a source directory into the DefaultInfo but still propagate
 # the DirectoryInfo for header inclusion checking and the toolchain's module
 # map.
 def headers_directory(name, path, visibility = None):
-    if path == ".":
-        directory(
-            name = name + "_directory",
-            srcs = native.glob(["**"]),
-        )
-    else:
-        directory(
-            name = name + "_files",
-            srcs = native.glob([path + "/**"]),
-        )
-
-        subdirectory(
-            name = name + "_directory",
-            path = path,
-            parent = name + "_files",
-        )
-
     native.filegroup(
         name = name + "_source_directory",
         srcs = [path],
@@ -30,14 +44,15 @@ def headers_directory(name, path, visibility = None):
 
     _headers_directory(
         name = name,
-        directory = name + "_directory",
+        srcs = native.glob(["**"] if path == "." else [path + "/**"]),
+        path = path,
         source_directory = name + "_source_directory",
         visibility = visibility,
     )
 
 def _headers_directory_impl(ctx):
     return [
-        ctx.attr.directory[DirectoryInfo],
+        _files_directory_info(ctx),
         DefaultInfo(
             files = ctx.attr.source_directory[DefaultInfo].files,
         ),
@@ -46,8 +61,9 @@ def _headers_directory_impl(ctx):
 _headers_directory = rule(
     implementation = _headers_directory_impl,
     attrs = {
-        "directory": attr.label(mandatory = True),
+        "path": attr.string(mandatory = True),
         "source_directory": attr.label(mandatory = True),
+        "srcs": attr.label_list(allow_files = True),
     },
     cfg = config.none(),
 )
