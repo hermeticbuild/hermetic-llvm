@@ -31,7 +31,7 @@ Status meanings are defined in `AGENTS.md`.
   adds C8 uchar probes; `modeled`.
 - [x] `GLIBCXX_CHECK_INT64_T` - GCC 11 and older `int64_t`
   typedef-shape probes are modeled; `modeled`.
-- [x] `GLIBCXX_COMPUTE_STDIO_INTEGER_CONSTANTS` - Linux GNU constants are policy-modeled; `modeled`.
+- [x] `GLIBCXX_COMPUTE_STDIO_INTEGER_CONSTANTS` - the constants are probed with `compute_int_check`; `modeled`.
 - [x] `GLIBCXX_CHECK_TMPNAM` - `tmpnam` probe is modeled; `modeled`.
 - [x] `GLIBCXX_CHECK_PTHREAD_COND_CLOCKWAIT` - pthread probe is modeled; `modeled`.
 - [x] `GLIBCXX_CHECK_PTHREAD_MUTEX_CLOCKLOCK` - pthread probe is modeled; `modeled`.

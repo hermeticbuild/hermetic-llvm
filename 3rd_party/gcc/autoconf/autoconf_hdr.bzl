@@ -20,12 +20,14 @@ def _write_config_output(ctx, config_h, results):
         if result.result:
             result_path = result.result.path
             inputs.append(result.result)
+
+        # The value is last, so that it may contain the ':' separator.
         result_ops.append([
             result.name,
             result.kind,
-            result.value,
             result_path,
             ",".join(result.defines_on_success),
+            result.value,
         ])
 
     ops_file = ctx.actions.declare_file(ctx.attr.name + ".result_ops")
@@ -49,7 +51,7 @@ args="$4"
     printf '/* %s */\\n' "$header_comment"
     echo "#ifndef $include_guard"
     echo "#define $include_guard 1"
-    while IFS=':' read -r name kind value result_file defines_on_success; do
+    while IFS=':' read -r name kind result_file defines_on_success value; do
         [[ -z "$name" || "$name" == \\#* ]] && continue
         if [ "$kind" = "define" ]; then
             old_ifs="$IFS"
@@ -62,13 +64,25 @@ args="$4"
             echo "#define $name \\"$value\\""
         elif [ "$kind" = "undef" ]; then
             echo "/* #undef $name */"
+        elif [ "$kind" = "compute_int" ]; then
+            result="$(cat "$result_file")"
+            old_ifs="$IFS"
+            IFS=","
+            for define_name in $defines_on_success; do
+                if [ -n "$result" ]; then
+                    echo "#define $define_name $result"
+                else
+                    echo "/* #undef $define_name */"
+                fi
+            done
+            IFS="$old_ifs"
         else
             result="$(cat "$result_file")"
             old_ifs="$IFS"
             IFS=","
             if [ "$result" = true ]; then
                 for define_name in $defines_on_success; do
-                    echo "#define $define_name 1"
+                    echo "#define $define_name ${value:-1}"
                 done
             else
                 for define_name in $defines_on_success; do

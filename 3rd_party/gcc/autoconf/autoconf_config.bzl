@@ -12,6 +12,7 @@ load(
     "cc_configure_probe_context",
     "cc_configure_probe_toolchains",
     "declare_compile_probe",
+    "declare_compute_int_probe",
     "declare_link_probe",
 )
 load(":providers.bzl", "AutoconfConfigInfo", "AutoconfResultInfo")
@@ -105,6 +106,14 @@ def _autoconf_config_impl(ctx):
                 check = check,
                 extra_inputs = extra_inputs,
                 compile_extra_flags = extra_flags,
+            )
+        elif check_type == "compute_int":
+            result = declare_compute_int_probe(
+                ctx = ctx,
+                probe_context = probe_context,
+                check = check,
+                extra_inputs = extra_inputs,
+                extra_flags = extra_flags,
             )
         elif check_type in ["define", "string_define", "undef"]:
             result = None

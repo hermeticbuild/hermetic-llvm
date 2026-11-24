@@ -3,6 +3,11 @@
 # updates can be reviewed by comparing acinclude.m4 against this module.
 
 load(
+    "//3rd_party/gcc:gcc_config_checks.bzl",
+    "CXX_NO_EXCEPTIONS_FLAGS",
+    "PTHREAD_LINK_FLAGS",
+)
+load(
     "//3rd_party/gcc:version.bzl",
     "libstdcxx_has_alignas_init_priority_checks",
     "libstdcxx_has_arc4random_getentropy_checks",
@@ -37,16 +42,12 @@ load(
 load(
     "//3rd_party/gcc/autoconf:checks.bzl",
     "compile_check",
+    "compute_int_check",
     "function_link_check",
     "link_check",
     "policy_define",
     "policy_string_define",
     "policy_undef",
-)
-load(
-    "//3rd_party/gcc:gcc_config_checks.bzl",
-    "CXX_NO_EXCEPTIONS_FLAGS",
-    "PTHREAD_LINK_FLAGS",
 )
 load(":linkage.m4.bzl", "MATH_LINK_FLAGS")
 
@@ -1000,10 +1001,19 @@ int main() { return b; }
     ]
 
 def glibcxx_compute_stdio_integer_constants():
+    # AC_COMPUTE_INT, and AC_MSG_ERROR when it fails.
     return [
-        policy_define("_GLIBCXX_STDIO_EOF", "-1"),
-        policy_define("_GLIBCXX_STDIO_SEEK_CUR", "1"),
-        policy_define("_GLIBCXX_STDIO_SEEK_END", "2"),
+        compute_int_check(
+            name = name,
+            expression = expression,
+            prologue = "#include <stdio.h>",
+            required = True,
+        )
+        for name, expression in [
+            ("_GLIBCXX_STDIO_EOF", "EOF"),
+            ("_GLIBCXX_STDIO_SEEK_CUR", "SEEK_CUR"),
+            ("_GLIBCXX_STDIO_SEEK_END", "SEEK_END"),
+        ]
     ]
 
 def glibcxx_check_tmpnam():
