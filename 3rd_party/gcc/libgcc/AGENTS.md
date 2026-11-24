@@ -36,9 +36,9 @@ for it. Each libstdc++ version links the libgcc built from its own GCC sources.
   status, and `configure_subst_status.txt` each `@VAR@` substitution in
   `libgcc/Makefile.in`. Each file's header defines its statuses.
 - `libgcc_rules.bzl` has the wrapper-source, hide-list and version-map rules.
-- `3rd_party/gcc/patches/14-17/libgcc-clang-compat.patch` and
-  `3rd_party/gcc/patches/10.x/libgcc-clang-compat.patch` change the spots in
-  libgcc's sources that rely on GCC-only behavior, so that Clang compiles them.
+- `libgcc-clang-compat.patch` in the `3rd_party/gcc/patches` directory of each
+  range of GCC versions, such as `14-17`, changes the spots in libgcc's sources
+  that rely on GCC-only behavior, so that Clang compiles them.
 - `3rd_party/gcc/patches/10.x/libgcc-morestack-init-array.patch` backports how
   GCC 14's `morestack.S` registers `__stack_split_initialize` in `.init_array`.
   GCC 10 registers it in `.ctors`. lld keeps `.ctors` apart from `.init_array`,
@@ -165,7 +165,7 @@ Derive each value from GCC itself, not from memory:
 
 ## Targets
 
-x86-64 is supported for GCC 10.5.0 and 14.2.0 through 17, and AArch64 for GCC
+x86-64 is supported for GCC 10.5.0 and 13.1.0 through 17, and AArch64 for GCC
 17. On AArch64, Clang returns the frame pointer for `__builtin_dwarf_cfa` and
 emits nothing for `__builtin_eh_return`, and libgcc's unwinder relies on both:
 
