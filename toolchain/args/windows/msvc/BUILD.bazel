@@ -101,6 +101,8 @@ cc_args(
     name = "deterministic_link_flags",
     actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
     args = [
+        # lld-link records its own path in PDBs.
+        "-no-canonical-prefixes",
         "/Brepro",
         "/clang:-Xlinker",
         "/clang:/INCREMENTAL:NO",

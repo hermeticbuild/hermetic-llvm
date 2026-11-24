@@ -296,8 +296,7 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
         prefix,
         "clang-cl",
         bootstrap_binary_kwargs,
-        # Link actions don't carry the compile-only -no-canonical-prefixes.
-        # Copy so their InstalledDir still contains the declared lld-link.
+        # Copy so that InstalledDir contains the declared lld-link.
         symlink = False,
         data = [
             prefix + "/clang_resource_directory",

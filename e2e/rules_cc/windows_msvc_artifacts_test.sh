@@ -251,3 +251,8 @@ done
 "${LLVM_READOBJ}" --coff-debug-directory "${debug_executable}" |
   grep -Fq "PDBFileName: $(basename "${debug_pdb}")" ||
   fail "debug executable does not reference its declared PDB"
+for artifact in "${debug_executable}" "${debug_pdb}"; do
+  if grep -a -Fq execroot "${artifact}"; then
+    fail "absolute path into the execution root in ${artifact}"
+  fi
+done
