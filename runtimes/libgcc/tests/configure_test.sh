@@ -98,10 +98,13 @@ actual="${TEST_TMPDIR}/actual.txt"
     echo "tm_file=$(words ${tm_file})"
   )
   # libgcc/configure.ac substitutes these into Makefile.in, whose
-  # conditionals add decimal floating-point, fixed-point and strub objects.
+  # conditionals add decimal floating-point, fixed-point and, from GCC 14,
+  # strub objects.
   echo "decimal_float=$(yes_no LIBGCC_CV_DFP)"
   echo "fixed_point=$(yes_no LIBGCC_CV_FIXED_POINT)"
-  echo "have_strub_support=$(yes_no LIBGCC_CV_STRUB_SUPPORT)"
+  if grep -q '@HAVE_STRUB_SUPPORT@' "${sources}/libgcc/Makefile.in"; then
+    echo "have_strub_support=$(yes_no LIBGCC_CV_STRUB_SUPPORT)"
+  fi
 } | LC_ALL=C sort > "${actual}"
 
 if ! diff -u "${EXPECTED}" "${actual}"; then

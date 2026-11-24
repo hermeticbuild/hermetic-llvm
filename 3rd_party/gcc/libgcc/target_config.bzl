@@ -150,7 +150,40 @@ _X86_64_PREDEFINES_GCC14 = [
     "#define __libgcc_shift_count__ __word__",
 ]
 
+# What GCC 10.5.0 predefines under -fbuilding-libgcc for x86-64 Linux.
+_X86_64_PREDEFINES_GCC10 = [
+    "#define __LIBGCC_DF_EXCESS_PRECISION__ 0",
+    "#define __LIBGCC_DF_FUNC_EXT__",
+    "#define __LIBGCC_DF_MANT_DIG__ 53",
+    "#define __LIBGCC_DWARF_FRAME_REGISTERS__ 17",
+    "#define __LIBGCC_EH_FRAME_SECTION_NAME__ \".eh_frame\"",
+    "#define __LIBGCC_EH_RETURN_STACKADJ_RTX__ 1",
+    "#define __LIBGCC_EH_TABLES_CAN_BE_READ_ONLY__ 1",
+    "#define __LIBGCC_HAS_DF_MODE__ 1",
+    "#define __LIBGCC_HAS_SF_MODE__ 1",
+    "#define __LIBGCC_HAS_TF_MODE__ 1",
+    "#define __LIBGCC_HAS_XF_MODE__ 1",
+    "#define __LIBGCC_INIT_ARRAY_SECTION_ASM_OP__ 1",
+    "#define __LIBGCC_SF_EXCESS_PRECISION__ 0",
+    "#define __LIBGCC_SF_FUNC_EXT__ f",
+    "#define __LIBGCC_SF_MANT_DIG__ 24",
+    "#define __LIBGCC_STACK_GROWS_DOWNWARD__ 1",
+    "#define __LIBGCC_STACK_POINTER_REGNUM__ 7",
+    "#define __LIBGCC_TEXT_SECTION_ASM_OP__ \"\\t.text\"",
+    "#define __LIBGCC_TF_EXCESS_PRECISION__ 0",
+    "#define __LIBGCC_TF_FUNC_EXT__ f128",
+    "#define __LIBGCC_TF_MANT_DIG__ 113",
+    "#define __LIBGCC_TRAMPOLINE_SIZE__ 28",
+    "#define __LIBGCC_VTABLE_USES_DESCRIPTORS__ 0",
+    "#define __LIBGCC_XF_EXCESS_PRECISION__ 0",
+    "#define __LIBGCC_XF_FUNC_EXT__ l",
+    "#define __LIBGCC_XF_MANT_DIG__ 64",
+    "#define __libgcc_cmp_return__ __word__",
+    "#define __libgcc_shift_count__ __word__",
+]
+
 _X86_64_PREDEFINES = {
+    "10.5.0": _X86_64_PREDEFINES_GCC10,
     "14.3.0": _X86_64_PREDEFINES_GCC14,
     "17.0.0": _X86_64_PREDEFINES_GCC14,
 }
@@ -167,14 +200,14 @@ def _x86_64(version):
             "LIBC_MUSL=4",
             "DEFAULT_LIBC=LIBC_GLIBC",
             "ANDROID_DEFAULT=0",
-            "HEAP_TRAMPOLINES_INIT=0",
-        ],
+        ] + (["HEAP_TRAMPOLINES_INIT=0"] if gcc_version_at_least_for(version, "14.0.0") else []),
         tm_file = [
             "config/vxworks-dummy.h",
             "config/i386/biarch64.h",
             "config/i386/i386.h",
             "config/i386/unix.h",
             "config/i386/att.h",
+        ] + ([] if gcc_version_at_least_for(version, "13.0.0") else ["config/dbxelf.h"]) + [
             "config/elfos.h",
             "config/gnu-user.h",
             "config/glibc-stdint.h",
@@ -189,7 +222,7 @@ def _x86_64(version):
         ],
         # i386.h sizes its register tables with this i386.md constant.
         insn_constants = [
-            "#define FIRST_PSEUDO_REG 92",
+            "#define FIRST_PSEUDO_REG {}".format(92 if gcc_version_at_least_for(version, "14.0.0") else 76),
         ],
         # libgcc/config.host for x86_64-*-linux*.
         libgcc_tm_file = [
@@ -406,6 +439,7 @@ _AARCH64 = struct(
 # The GCC versions these headers and predefines were taken from, with the CPUs
 # of each.
 _PORTED_TARGETS = {
+    "10.5.0": ["x86_64"],
     "14.3.0": ["x86_64"],
     "17.0.0": [
         "aarch64",

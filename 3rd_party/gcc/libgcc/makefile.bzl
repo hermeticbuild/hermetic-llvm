@@ -17,9 +17,12 @@
 # in place of the -D flags their rule passes. vis_hide is False for objects
 # whose rule compiles them without libgcc's vis_hide flags or hide list.
 
+load("//3rd_party/gcc:version.bzl", "gcc_version_at_least_for")
+
 # The tmake_file list that libgcc/config.host and libgcc/configure.ac select,
-# in their order. //runtimes/libgcc/tests:configure_* runs config.host and
-# checks its result against this list.
+# in their order, for GCC 17. libgcc_tmake_files adjusts it for older versions.
+# //runtimes/libgcc/tests:configure_* runs config.host and checks its result
+# against the list.
 _TMAKE_FILES = {
     "aarch64": [
         "t-crtstuff-pic",
@@ -118,7 +121,6 @@ _LIB2FUNCS = [
     "_bswapdi2",
     "_clrsbsi2",
     "_clrsbdi2",
-    "_mulbitint3",
 ]
 
 _LIB2_DIVMOD_FUNCS = [
@@ -129,7 +131,6 @@ _LIB2_DIVMOD_FUNCS = [
     "_umoddi3",
     "_udivmoddi4",
     "_udiv_w_sdiv",
-    "_divmodbitint4",
 ]
 
 _LIB2FUNCS_ST = [
@@ -179,8 +180,9 @@ def _softfp(state):
     funcs += ["trunc{}2".format(t) for t in state.truncations]
     funcs += state.extras
     bitint_funcs = []
-    for m in ["sf", "df"]:
-        bitint_funcs += ["fix{}bitint".format(m), "floatbitint{}".format(m)]
+    if state.bitint:
+        for m in ["sf", "df"]:
+            bitint_funcs += ["fix{}bitint".format(m), "floatbitint{}".format(m)]
     exclude = []
     if not state.exclude_libgcc2:
         for m in state.float_modes:
@@ -193,7 +195,24 @@ def _softfp(state):
                 ]]
     return funcs + bitint_funcs, exclude
 
-def _x86_64_linux_gnu():
+def _features(version):
+    """The libgcc features of a GCC version that change its object lists.
+
+    Each threshold is a major version whose earliest release in GCC_VERSIONS
+    has the feature.
+    """
+    return struct(
+        # _BitInt (libgcc2.c, soft-fp), the heap trampolines, hardcfr.c and
+        # strub.c.
+        gcc14 = gcc_version_at_least_for(version, "14.0.0"),
+        # The __bf16 conversions in i386/t-softfp and i386/64/t-softfp.
+        bf16 = gcc_version_at_least_for(version, "13.0.0"),
+        # The _Float16 functions in i386/t-softfp and i386/64/t-softfp.
+        float16 = gcc_version_at_least_for(version, "12.0.0"),
+    )
+
+def _x86_64_linux_gnu(version):
+    features = _features(version)
     lib2add = []
     lib2add_st = []
     lib2addeh = [
@@ -202,41 +221,63 @@ def _x86_64_linux_gnu():
         "libgcc/unwind-dw2-fde-dip.c",
         "libgcc/unwind-sjlj.c",
         "libgcc/unwind-c.c",
-        # i386/t-heap-trampoline
-        "libgcc/config/i386/heap-trampoline.c",
     ]
+    if features.gcc14:
+        # i386/t-heap-trampoline
+        lib2addeh.append("libgcc/config/i386/heap-trampoline.c")
     lib2funcs_exclude = []
 
     # Per-file CFLAGS-<file> from i386/64/t-softfp and i386/t-softfp. The
     # misspelled floatunstihf and floatunstibf entries are kept as GCC has
     # them, so floatuntihf and floatuntibf get no -msse2 there either.
-    sse2_files = [
-        "fixhfti",
-        "fixunshfti",
-        "floattihf",
-        "floatunstihf",
-        "floattibf",
-        "floatunstibf",
-        "extendhfsf2",
-        "extendhfdf2",
-        "extendhftf2",
-        "extendhfxf2",
-        "extendbfsf2",
-        "truncsfhf2",
-        "truncdfhf2",
-        "truncxfhf2",
-        "trunctfhf2",
-        "truncsfbf2",
-        "truncdfbf2",
-        "truncxfbf2",
-        "trunctfbf2",
-        "trunchfbf2",
-        "floatbitintbf",
-        "floatbitinthf",
-        "eqhf2",
-        "_divhc3",
-        "_mulhc3",
-    ]
+    sse2_files = []
+    if features.float16:
+        sse2_files += [
+            "fixhfti",
+            "fixunshfti",
+            "floattihf",
+            "floatunstihf",
+        ]
+    if features.bf16:
+        sse2_files += [
+            "floattibf",
+            "floatunstibf",
+        ]
+    if features.float16:
+        sse2_files += [
+            "extendhfsf2",
+            "extendhfdf2",
+            "extendhftf2",
+            "extendhfxf2",
+        ]
+    if features.bf16:
+        sse2_files.append("extendbfsf2")
+    if features.float16:
+        sse2_files += [
+            "truncsfhf2",
+            "truncdfhf2",
+            "truncxfhf2",
+            "trunctfhf2",
+        ]
+    if features.bf16:
+        sse2_files += [
+            "truncsfbf2",
+            "truncdfbf2",
+            "truncxfbf2",
+            "trunctfbf2",
+            "trunchfbf2",
+        ]
+    if features.gcc14:
+        sse2_files += [
+            "floatbitintbf",
+            "floatbitinthf",
+        ]
+    if features.float16:
+        sse2_files += [
+            "eqhf2",
+            "_divhc3",
+            "_mulhc3",
+        ]
 
     # i386/t-cpuinfo
     lib2add.append("libgcc/config/i386/cpuinfo.c")
@@ -266,37 +307,62 @@ def _x86_64_linux_gnu():
 
     # t-softfp-tf, then i386/64/t-softfp, then i386/t-softfp, in config.host
     # order. i386/t-softfp assigns softfp_extensions and softfp_truncations
-    # with :=, replacing the t-softfp-tf values.
-    softfp = struct(
-        float_modes = ["tf"],
-        int_modes = ["si", "di", "ti"],
-        extensions = ["hfsf", "hfdf", "hftf", "hfxf", "sfdf", "sftf", "dftf", "xftf", "bfsf"],
-        truncations = ["tfhf", "xfhf", "dfhf", "sfhf", "tfsf", "dfsf", "tfdf", "tfxf", "tfbf", "xfbf", "dfbf", "sfbf", "hfbf"],
-        extras = [
-            # t-softfp-tf
+    # with :=, replacing the t-softfp-tf values, from GCC 12.
+    extensions = ["sftf", "dftf", "xftf"]
+    truncations = ["tfsf", "tfdf", "tfxf"]
+    extras = []
+    if features.gcc14:
+        # t-softfp-tf
+        extras += [
             "fixtfbitint",
             "floatbitinttf",
-            # i386/64/t-softfp
+        ]
+    if features.float16:
+        extensions = ["hfsf", "hfdf", "hftf", "hfxf", "sfdf", "sftf", "dftf", "xftf"]
+        truncations = ["tfhf", "xfhf", "dfhf", "sfhf", "tfsf", "dfsf", "tfdf", "tfxf"]
+
+        # i386/64/t-softfp
+        extras += [
             "fixhfti",
             "fixunshfti",
             "floattihf",
             "floatuntihf",
+        ]
+    if features.bf16:
+        extensions.append("bfsf")
+        truncations += ["tfbf", "xfbf", "dfbf", "sfbf", "hfbf"]
+
+        # i386/64/t-softfp
+        extras += [
             "floattibf",
             "floatuntibf",
-            # i386/t-softfp
-            "eqhf2",
+        ]
+    if features.float16:
+        # i386/t-softfp
+        extras.append("eqhf2")
+    if features.gcc14:
+        # i386/t-softfp
+        extras += [
             "fixxfbitint",
             "floatbitinthf",
             "floatbitintbf",
             "floatbitintxf",
-        ],
+        ]
+    softfp = struct(
+        float_modes = ["tf"],
+        int_modes = ["si", "di", "ti"],
+        extensions = extensions,
+        truncations = truncations,
+        extras = extras,
         exclude_libgcc2 = False,
+        bitint = features.gcc14,
     )
 
-    # i386/t-softfp: sfp-exceptions.c and the HF complex functions.
+    # i386/t-softfp: sfp-exceptions.c, and the HF complex functions from GCC 12.
     lib2add.append("libgcc/config/i386/sfp-exceptions.c")
-    lib2funcs_exclude += ["_divhc3", "_mulhc3"]
-    lib2add += ["libgcc/config/i386/_divhc3.c", "libgcc/config/i386/_mulhc3.c"]
+    if features.float16:
+        lib2funcs_exclude += ["_divhc3", "_mulhc3"]
+        lib2add += ["libgcc/config/i386/_divhc3.c", "libgcc/config/i386/_mulhc3.c"]
 
     # t-softfp
     softfp_funcs, softfp_exclude = _softfp(softfp)
@@ -312,6 +378,7 @@ def _x86_64_linux_gnu():
     lib2add += ["libgcc/config/i386/64/{}.c".format(f) for f in libgcc2_tf_functions]
 
     return _makefile_in(
+        version = version,
         lib2add = lib2add,
         lib2add_st = lib2add_st,
         lib2addeh = lib2addeh,
@@ -319,7 +386,7 @@ def _x86_64_linux_gnu():
         file_copts = {f: ["-msse2"] for f in sse2_files},
     )
 
-def _aarch64_linux_gnu():
+def _aarch64_linux_gnu(version):
     lib2add = []
     lib2addeh = [
         # t-eh-dw2-dip
@@ -385,6 +452,7 @@ def _aarch64_linux_gnu():
             "fixtfbitint",
         ],
         exclude_libgcc2 = False,
+        bitint = True,
     )
     lib2add.append("libgcc/config/aarch64/sfp-exceptions.c")
 
@@ -397,6 +465,7 @@ def _aarch64_linux_gnu():
     lib2addeh.append("libgcc/config/aarch64/heap-trampoline.c")
 
     return _makefile_in(
+        version = version,
         lib2add = lib2add,
         lib2add_st = [],
         lib2addeh = lib2addeh,
@@ -404,10 +473,11 @@ def _aarch64_linux_gnu():
         own_rule_objects = lse,
     )
 
-def _makefile_in(lib2add, lib2add_st, lib2addeh, lib2funcs_exclude, file_copts = {}, own_rule_objects = []):
+def _makefile_in(version, lib2add, lib2add_st, lib2addeh, lib2funcs_exclude, file_copts = {}, own_rule_objects = []):
     """Adds Makefile.in's defaults to the fragments' variables and partitions the objects.
 
     Args:
+      version: The GCC version.
       lib2add: LIB2ADD from the fragments.
       lib2add_st: LIB2ADD_ST from the fragments.
       lib2addeh: LIB2ADDEH from the fragments.
@@ -421,20 +491,25 @@ def _makefile_in(lib2add, lib2add_st, lib2addeh, lib2funcs_exclude, file_copts =
       The struct libgcc_objects returns.
     """
 
-    # Makefile.in: LIB2ADD defaults, with strub.c under HAVE_STRUB_SUPPORT, and
-    # the LIB2ADDEH emutls.c addition.
-    lib2add = lib2add + [
-        "enable-execute-stack.c",
-        "libgcc/hardcfr.c",
-        "libgcc/strub.c",
-    ]
+    gcc14 = _features(version).gcc14
+
+    # Makefile.in: the LIB2ADD defaults, with hardcfr.c from GCC 14 and strub.c
+    # from GCC 14 under HAVE_STRUB_SUPPORT, and the LIB2ADDEH emutls.c addition.
+    lib2add = lib2add + ["enable-execute-stack.c"]
+    if gcc14:
+        lib2add += [
+            "libgcc/hardcfr.c",
+            "libgcc/strub.c",
+        ]
     lib2addeh = lib2addeh + ["libgcc/emutls.c"]
 
     # Makefile.in: lib2funcs, including the conversion functions when
-    # LIB2_SIDITI_CONV_FUNCS is unset, filtered by LIB2FUNCS_EXCLUDE.
-    lib2funcs = _LIB2FUNCS + _swfloatfuncs("si") + _dwfloatfuncs("di")
+    # LIB2_SIDITI_CONV_FUNCS is unset, filtered by LIB2FUNCS_EXCLUDE. GCC 14
+    # added the _BitInt functions.
+    lib2funcs = _LIB2FUNCS + (["_mulbitint3"] if gcc14 else []) + _swfloatfuncs("si") + _dwfloatfuncs("di")
     lib2funcs = [f for f in lib2funcs if f not in lib2funcs_exclude]
-    divmod = [f for f in _LIB2_DIVMOD_FUNCS if f not in lib2funcs_exclude]
+    divmod = _LIB2_DIVMOD_FUNCS + (["_divmodbitint4"] if gcc14 else [])
+    divmod = [f for f in divmod if f not in lib2funcs_exclude]
     lib2funcs_st = [f for f in _LIB2FUNCS_ST if f not in lib2funcs_exclude]
 
     def basename(path):
@@ -465,6 +540,7 @@ def _makefile_in(lib2add, lib2add_st, lib2addeh, lib2funcs_exclude, file_copts =
 
 # The GCC versions whose Makefile.in and tmake fragments this file ports.
 _PORTED_VERSIONS = [
+    "10.5.0",
     "14.3.0",
     "17.0.0",
 ]
@@ -486,9 +562,9 @@ def libgcc_objects(cpu, version):
     if version not in _PORTED_VERSIONS:
         fail("libgcc's object lists are ported for GCC {}, not {}".format(", ".join(_PORTED_VERSIONS), version))
     if cpu == "x86_64":
-        return _x86_64_linux_gnu()
+        return _x86_64_linux_gnu(version)
     if cpu == "aarch64" and version == "17.0.0":
-        return _aarch64_linux_gnu()
+        return _aarch64_linux_gnu(version)
     fail("libgcc's object lists are not ported for {} in GCC {}".format(cpu, version))
 
 def libgcc_makefile_conditions(cpu, version):
@@ -502,12 +578,16 @@ def libgcc_makefile_conditions(cpu, version):
     Returns:
       A dict from each Makefile.in variable to its value.
     """
-    objects = libgcc_objects(cpu, version)
-    return {
+    conditions = {
         "decimal_float": "no",
         "fixed_point": "no",
-        "have_strub_support": "yes" if "libgcc/strub.c" in [e.src for e in objects.common] else "no",
     }
+
+    # GCC 14 added HAVE_STRUB_SUPPORT.
+    if _features(version).gcc14:
+        objects = libgcc_objects(cpu, version)
+        conditions["have_strub_support"] = "yes" if "libgcc/strub.c" in [e.src for e in objects.common] else "no"
+    return conditions
 
 def libgcc_tmake_files(cpu, version):
     """Lists the tmake fragments config.host selects for cpu, which this file ports.
@@ -517,7 +597,15 @@ def libgcc_tmake_files(cpu, version):
       objects are not ported.
     """
     libgcc_objects(cpu, version)
-    return _TMAKE_FILES[cpu]
+    features = _features(version)
+    dropped = []
+    if not features.gcc14:
+        dropped.append("i386/t-heap-trampoline")
+    if not features.float16:
+        # config.host adds it from GCC 12. Older ones add i386/32/t-softfp for
+        # 32-bit hosts only.
+        dropped.append("i386/64/t-softfp")
+    return [f for f in _TMAKE_FILES[cpu] if f not in dropped]
 
 def _flag_key(copts):
     return "_".join([c.lstrip("-").replace("=", "_").replace("-", "_") for c in copts]) or "default"

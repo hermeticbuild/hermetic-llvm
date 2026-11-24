@@ -1,0 +1,33 @@
+# Backports how GCC 14's morestack.S registers __stack_split_initialize. GCC
+# 12 moved it from .ctors to .init_array where GCC's configure found
+# initfini-array support. lld keeps .ctors apart from .init_array, and
+# compiler-rt's crtbegin.o runs only .init_array, so from .ctors the
+# constructor never runs and split stacks are never set up. GCC 12 and 13 give
+# the section the @progbits type and GCC 14 the @init_array type, and lld puts
+# the constructor in .init_array with either. This patch uses @init_array, the
+# form that every later version shares.
+
+diff --git a/libgcc/config/i386/morestack.S b/libgcc/config/i386/morestack.S
+--- a/libgcc/config/i386/morestack.S
++++ b/libgcc/config/i386/morestack.S
+@@ -23,6 +23,8 @@
+ # see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
+ # <http://www.gnu.org/licenses/>.
+ 
++#include "auto-host.h"
++
+ 
+ # Support for allocating more stack space when using -fsplit-stack.
+ # When a function discovers that it needs more stack space, it will
+@@ -848,7 +850,11 @@ __morestack_make_guard:
+ # Make __stack_split_initialize a high priority constructor.  FIXME:
+ # This is ELF specific.
+ 
++#if HAVE_INITFINI_ARRAY_SUPPORT
++	.section	.init_array.00000,"aw",@init_array
++#else
+ 	.section	.ctors.65535,"aw",@progbits
++#endif
+ 
+ #ifndef __LP64__
+ 	.align	4

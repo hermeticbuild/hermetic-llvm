@@ -22,7 +22,7 @@ AWK not-needed
 CC toolchain
 CET_FLAGS modeled 3rd_party/gcc/libgcc/target_config.bzl
 CFLAGS toolchain
-HAVE_STRUB_SUPPORT modeled 3rd_party/gcc/libgcc/makefile.bzl
+HAVE_STRUB_SUPPORT modeled 3rd_party/gcc/libgcc/makefile.bzl gcc=14.0.0-
 INSTALL not-needed
 INSTALL_DATA not-needed
 INSTALL_PROGRAM not-needed

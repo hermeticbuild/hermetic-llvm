@@ -22,7 +22,7 @@ AS_HIDDEN_DIRECTIVE probe-modeled
 HAVE_AS_AVX probe-modeled x86_64
 HAVE_AS_CFI_SECTIONS probe-modeled
 HAVE_AS_LSE probe-modeled aarch64
-HAVE_AS_VARIANT_PCS probe-modeled aarch64
+HAVE_AS_VARIANT_PCS probe-modeled aarch64 gcc=14.0.0-
 HAVE_CC_TLS cflags-probe-modeled
 HAVE_FTW_H probe-modeled
 HAVE_GETIPINFO policy-modeled
@@ -35,11 +35,11 @@ HAVE_STDLIB_H probe-modeled
 HAVE_STRINGS_H probe-modeled
 HAVE_STRING_H probe-modeled
 HAVE_SYS_AUXV_H probe-modeled
-HAVE_SYS_MMAN_H probe-modeled
+HAVE_SYS_MMAN_H probe-modeled gcc=11.0.0-
 HAVE_SYS_STAT_H probe-modeled
 HAVE_SYS_TYPES_H probe-modeled
 HAVE_UNISTD_H probe-modeled
-HAVE___GETAUXVAL policy-modeled aarch64
+HAVE___GETAUXVAL policy-modeled aarch64 gcc=14.0.0-
 PACKAGE_BUGREPORT policy-modeled
 PACKAGE_NAME policy-modeled
 PACKAGE_STRING policy-modeled

@@ -1980,7 +1980,7 @@ _LIBGCC_CONFIGURE_HEADERS = {
 
 _LIBGCC_CONFIGURE_CHECKS = {
     cpu: {
-        "auto-target.h": libgcc_auto_target_checks(cpu),
+        "auto-target.h": libgcc_auto_target_checks(cpu, GCC_VERSION),
         "libgcc_configure_cflags.h": libgcc_configure_cflags_checks(),
     }
     for cpu in _LIBGCC_CPUS

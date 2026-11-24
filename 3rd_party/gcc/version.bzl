@@ -305,6 +305,7 @@ LIBGCC_TARGETS = {
         "x86_64",
     ],
     "14.3.0": ["x86_64"],
+    "10.5.0": ["x86_64"],
 }
 
 LIBGCC_VERSIONS = [version for version in GCC_VERSIONS if version in LIBGCC_TARGETS]
@@ -320,6 +321,10 @@ LIBGCC_PATCHES = {
     ],
     "14.3.0": [
         _libstdcxx_patch("14-17/libgcc-clang-compat.patch"),
+    ],
+    "10.5.0": [
+        _libstdcxx_patch("10.x/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("10.x/libgcc-morestack-init-array.patch"),
     ],
 }
 

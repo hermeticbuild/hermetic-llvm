@@ -20,6 +20,7 @@ load(
     "gcc_check_emutls",
     "gcc_check_unwind_getipinfo",
 )
+load("//3rd_party/gcc:version.bzl", "gcc_version_at_least_for")
 load(
     "//3rd_party/gcc/autoconf:checks.bzl",
     "ac_check_headers",
@@ -70,7 +71,7 @@ _CPU_AUTO_TARGET_CHECKS = {
     ],
 }
 
-def libgcc_auto_target_checks(cpu):
+def libgcc_auto_target_checks(cpu, version):
     """The checks that write auto-target.h, in configure.ac's order."""
     if cpu not in _CPU_AUTO_TARGET_CHECKS:
         fail("libgcc's configure checks are not ported for " + cpu)
@@ -100,8 +101,7 @@ def libgcc_auto_target_checks(cpu):
         "strings.h",
         "memory.h",
         "sys/auxv.h",
-        "sys/mman.h",
-    ]) + [
+    ] + (["sys/mman.h"] if gcc_version_at_least_for(version, "11.0.0") else [])) + [
         ac_header_stdc(),
     ] + gcc_check_unwind_getipinfo() + [
         # libgcc_cv_hidden_visibility_attribute, which defines the directive
@@ -198,9 +198,9 @@ int fe_except =
         source = "_Sat _Fract x;",
     ),
     # libgcc/configure.ac: libgcc_cv_strub_support, Makefile.in's
-    # HAVE_STRUB_SUPPORT, which adds strub.c. GCC's check compiles without
-    # -Werror, so a compiler that ignores the attribute with a warning, as
-    # Clang does, passes it too.
+    # HAVE_STRUB_SUPPORT from GCC 14, which adds strub.c. GCC's check compiles
+    # without -Werror, so a compiler that ignores the attribute with a warning,
+    # as Clang does, passes it too.
     compile_check(
         name = "LIBGCC_CV_STRUB_SUPPORT",
         source = "void __attribute__ ((__strub__)) fn (void) {}",

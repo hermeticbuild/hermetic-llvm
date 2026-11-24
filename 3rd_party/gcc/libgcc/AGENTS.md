@@ -13,9 +13,11 @@ for it. Each libstdc++ version links the libgcc built from its own GCC sources.
 ## Files
 
 - `makefile.bzl` ports the object lists of `libgcc/Makefile.in` and the tmake
-  fragments `libgcc/config.host` selects, which `_TMAKE_FILES` lists. Each
-  fragment's contribution is marked with its file name. Keep the fragments in
-  config.host order, since later ones reassign variables.
+  fragments `libgcc/config.host` selects, which `_TMAKE_FILES` lists for GCC 17
+  and `libgcc_tmake_files` adjusts for older versions. Each fragment's
+  contribution is marked with its file name. Keep the fragments in config.host
+  order, since later ones reassign variables. `_features` names the GCC versions
+  where the object lists change.
 - `target_config.bzl` holds what GCC's build directory and libgcc's configure
   would provide: `tm.h`, `tconfig.h`, the parts of `auto-host.h` that libgcc
   reads, `libgcc_tm.h`, the `-fbuilding-libgcc` predefines, and shims for GCC
@@ -34,8 +36,13 @@ for it. Each libstdc++ version links the libgcc built from its own GCC sources.
   status, and `configure_subst_status.txt` each `@VAR@` substitution in
   `libgcc/Makefile.in`. Each file's header defines its statuses.
 - `libgcc_rules.bzl` has the wrapper-source, hide-list and version-map rules.
-- `3rd_party/gcc/patches/14-17/libgcc-clang-compat.patch` changes the spots in
+- `3rd_party/gcc/patches/14-17/libgcc-clang-compat.patch` and
+  `3rd_party/gcc/patches/10.x/libgcc-clang-compat.patch` change the spots in
   libgcc's sources that rely on GCC-only behavior, so that Clang compiles them.
+- `3rd_party/gcc/patches/10.x/libgcc-morestack-init-array.patch` backports how
+  GCC 14's `morestack.S` registers `__stack_split_initialize` in `.init_array`.
+  GCC 10 registers it in `.ctors`. lld keeps `.ctors` apart from `.init_array`,
+  and compiler-rt's `crtbegin.o` does not run `.ctors`.
 - `3rd_party/gcc/patches/17.x/libgcc-clang-aarch64-unwind.patch` replaces the
   `__builtin_eh_return` in libgcc's unwinder, which Clang does not implement
   for AArch64.
@@ -157,9 +164,9 @@ Derive each value from GCC itself, not from memory:
 
 ## Targets
 
-x86-64 is supported for GCC 14.3.0 and 17, and AArch64 for GCC 17. On AArch64,
-Clang returns the frame pointer for `__builtin_dwarf_cfa` and emits nothing for
-`__builtin_eh_return`, and libgcc's unwinder relies on both:
+x86-64 is supported for GCC 10.5.0, 14.3.0 and 17, and AArch64 for GCC 17. On
+AArch64, Clang returns the frame pointer for `__builtin_dwarf_cfa` and emits
+nothing for `__builtin_eh_return`, and libgcc's unwinder relies on both:
 
 - `uw_init_context` takes the caller's CFA from `__builtin_dwarf_cfa`.
   `libgcc_clang_compat.h` maps it to `__builtin_sponentry`, the stack pointer
