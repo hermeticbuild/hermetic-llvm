@@ -70,6 +70,8 @@ cc_args(
         # lld records its own path in PDBs.
         "-no-canonical-prefixes",
         "-Wl,--no-insert-timestamp",
+        "-Wl,--Xlink=-pdbaltpath:%_PDB%",
+        "-Wl,--Xlink=-pdbsourcepath:.",
     ],
 )
 

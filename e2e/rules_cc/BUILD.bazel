@@ -2047,6 +2047,47 @@ test_suite(
     ],
 )
 
+cc_binary(
+    name = "windows_mingw_debug",
+    srcs = ["main.cc"],
+    features = ["generate_pdb_file"],
+    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:windows"],
+)
+
+filegroup(
+    name = "windows_mingw_debug_pdb",
+    srcs = [":windows_mingw_debug"],
+    output_group = "pdb_file",
+    tags = ["manual"],
+)
+
+platform_transition_filegroup(
+    name = "windows_mingw_debug_artifacts",
+    srcs = [
+        ":windows_mingw_debug",
+        ":windows_mingw_debug_pdb",
+    ],
+    target_platform = "@llvm//platforms:windows_x86_64",
+)
+
+exec_test(
+    sh_test,
+    name = "windows_mingw_debug_artifacts_test",
+    srcs = ["windows_mingw_debug_artifacts_test.sh"],
+    data = [":windows_mingw_debug_artifacts"],
+    env = {
+        "ARTIFACTS": "$(rlocationpaths :windows_mingw_debug_artifacts)",
+        "LLVM_READOBJ": "$(rlocationpath @llvm//tools:llvm-readobj)",
+    },
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+    tools = ["@llvm//tools:llvm-readobj"],
+    deps = ["@bazel_tools//tools/bash/runfiles"],
+)
+
 [
     platform_transition_filegroup(
         name = "glibc_2_39_" + lib + "_compat_stubs",
