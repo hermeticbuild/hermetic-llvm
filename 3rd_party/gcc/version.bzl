@@ -328,6 +328,11 @@ LIBGCC_TARGETS = {
     "10.3.0": ["x86_64"],
     "10.2.0": ["x86_64"],
     "10.1.0": ["x86_64"],
+    "9.5.0": ["x86_64"],
+    "9.4.0": ["x86_64"],
+    "9.3.0": ["x86_64"],
+    "9.2.0": ["x86_64"],
+    "9.1.0": ["x86_64"],
 }
 
 LIBGCC_VERSIONS = [version for version in GCC_VERSIONS if version in LIBGCC_TARGETS]
@@ -385,43 +390,63 @@ LIBGCC_PATCHES = {
     ],
     "11.5.0": [
         _libstdcxx_patch("11.x/libgcc-clang-compat.patch"),
-        _libstdcxx_patch("10-11/libgcc-morestack-init-array.patch"),
+        _libstdcxx_patch("9-11/libgcc-morestack-init-array.patch"),
     ],
     "11.4.0": [
         _libstdcxx_patch("11.x/libgcc-clang-compat.patch"),
-        _libstdcxx_patch("10-11/libgcc-morestack-init-array.patch"),
+        _libstdcxx_patch("9-11/libgcc-morestack-init-array.patch"),
     ],
     "11.3.0": [
         _libstdcxx_patch("11.x/libgcc-clang-compat.patch"),
-        _libstdcxx_patch("10-11/libgcc-morestack-init-array.patch"),
+        _libstdcxx_patch("9-11/libgcc-morestack-init-array.patch"),
     ],
     "11.2.0": [
         _libstdcxx_patch("11.x/libgcc-clang-compat.patch"),
-        _libstdcxx_patch("10-11/libgcc-morestack-init-array.patch"),
+        _libstdcxx_patch("9-11/libgcc-morestack-init-array.patch"),
     ],
     "11.1.0": [
         _libstdcxx_patch("11.x/libgcc-clang-compat.patch"),
-        _libstdcxx_patch("10-11/libgcc-morestack-init-array.patch"),
+        _libstdcxx_patch("9-11/libgcc-morestack-init-array.patch"),
     ],
     "10.5.0": [
-        _libstdcxx_patch("10.x/libgcc-clang-compat.patch"),
-        _libstdcxx_patch("10-11/libgcc-morestack-init-array.patch"),
+        _libstdcxx_patch("9.4-10/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("9-11/libgcc-morestack-init-array.patch"),
     ],
     "10.4.0": [
-        _libstdcxx_patch("10.x/libgcc-clang-compat.patch"),
-        _libstdcxx_patch("10-11/libgcc-morestack-init-array.patch"),
+        _libstdcxx_patch("9.4-10/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("9-11/libgcc-morestack-init-array.patch"),
     ],
     "10.3.0": [
-        _libstdcxx_patch("10.x/libgcc-clang-compat.patch"),
-        _libstdcxx_patch("10-11/libgcc-morestack-init-array.patch"),
+        _libstdcxx_patch("9.4-10/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("9-11/libgcc-morestack-init-array.patch"),
     ],
     "10.2.0": [
-        _libstdcxx_patch("10.x/libgcc-clang-compat.patch"),
-        _libstdcxx_patch("10-11/libgcc-morestack-init-array.patch"),
+        _libstdcxx_patch("9.4-10/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("9-11/libgcc-morestack-init-array.patch"),
     ],
     "10.1.0": [
-        _libstdcxx_patch("10.x/libgcc-clang-compat.patch"),
-        _libstdcxx_patch("10-11/libgcc-morestack-init-array.patch"),
+        _libstdcxx_patch("9.4-10/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("9-11/libgcc-morestack-init-array.patch"),
+    ],
+    "9.5.0": [
+        _libstdcxx_patch("9.4-10/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("9-11/libgcc-morestack-init-array.patch"),
+    ],
+    "9.4.0": [
+        _libstdcxx_patch("9.4-10/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("9-11/libgcc-morestack-init-array.patch"),
+    ],
+    "9.3.0": [
+        _libstdcxx_patch("9.1-9.3/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("9-11/libgcc-morestack-init-array.patch"),
+    ],
+    "9.2.0": [
+        _libstdcxx_patch("9.1-9.3/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("9-11/libgcc-morestack-init-array.patch"),
+    ],
+    "9.1.0": [
+        _libstdcxx_patch("9.1-9.3/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("9-11/libgcc-morestack-init-array.patch"),
     ],
 }
 

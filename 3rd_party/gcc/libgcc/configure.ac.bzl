@@ -71,6 +71,31 @@ _CPU_AUTO_TARGET_CHECKS = {
     ],
 }
 
+# configure.ac checks for sys/auxv.h from GCC 10, which added it with the
+# AArch64 LSE checks, and in 9.4.0, which backported them.
+def _has_sys_auxv_h_check(version):
+    return gcc_version_at_least_for(version, "9.4.0")
+
+# The headers of configure.ac's AC_CHECK_HEADERS, in its order.
+def _headers(version):
+    headers = [
+        "inttypes.h",
+        "stdint.h",
+        "stdlib.h",
+        "ftw.h",
+        "unistd.h",
+        "sys/stat.h",
+        "sys/types.h",
+        "string.h",
+        "strings.h",
+        "memory.h",
+    ]
+    if _has_sys_auxv_h_check(version):
+        headers.append("sys/auxv.h")
+    if gcc_version_at_least_for(version, "11.0.0"):
+        headers.append("sys/mman.h")
+    return headers
+
 def libgcc_auto_target_checks(cpu, version):
     """The checks that write auto-target.h, in configure.ac's order."""
     if cpu not in _CPU_AUTO_TARGET_CHECKS:
@@ -89,19 +114,7 @@ def libgcc_auto_target_checks(cpu, version):
         policy_undef("_LARGE_FILES"),
         ac_check_sizeof("double"),
         ac_check_sizeof("long double"),
-    ] + ac_check_headers([
-        "inttypes.h",
-        "stdint.h",
-        "stdlib.h",
-        "ftw.h",
-        "unistd.h",
-        "sys/stat.h",
-        "sys/types.h",
-        "string.h",
-        "strings.h",
-        "memory.h",
-        "sys/auxv.h",
-    ] + (["sys/mman.h"] if gcc_version_at_least_for(version, "11.0.0") else [])) + [
+    ] + ac_check_headers(_headers(version)) + [
         ac_header_stdc(),
     ] + gcc_check_unwind_getipinfo() + [
         # libgcc_cv_hidden_visibility_attribute, which defines the directive

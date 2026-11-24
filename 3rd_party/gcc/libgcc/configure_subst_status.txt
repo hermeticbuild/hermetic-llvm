@@ -81,6 +81,6 @@ tmake_file modeled 3rd_party/gcc/libgcc/makefile.bzl
 toolexecdir not-needed
 toolexeclibdir not-needed
 unwind_header modeled 3rd_party/gcc/libgcc/target_config.bzl
-use_tm_clone_registry not-needed
+use_tm_clone_registry not-needed gcc=10.0.0-
 vis_hide modeled 3rd_party/gcc/gcc.BUILD.bazel
 with_aix_soname unsupported-target
