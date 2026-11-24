@@ -9,6 +9,7 @@ load(
     "gcc_has_libgcc",
     "gcc_patches",
     "gcc_repo_name",
+    "gcc_version_at_least_for",
     "libgcc_cpus",
 )
 
@@ -82,10 +83,15 @@ _LIBGCC_CPU_ARCHIVE_INCLUDES = {
         "gcc/config/aarch64/*.h",
     ],
     "x86_64": [
-        "gcc/common/config/i386/*.h",
         "gcc/config/i386/*.def",
         "gcc/config/i386/*.h",
     ],
+}
+
+# libgcc's config/i386/cpuinfo.c includes gcc/common/config/i386's headers from
+# GCC 11. Older archives may have no header there for the pattern to match.
+_LIBGCC_GCC11_CPU_ARCHIVE_INCLUDES = {
+    "x86_64": ["gcc/common/config/i386/*.h"],
 }
 
 def _libgcc_archive_includes(version):
@@ -94,6 +100,8 @@ def _libgcc_archive_includes(version):
     includes = list(_LIBGCC_ARCHIVE_INCLUDES)
     for cpu in libgcc_cpus(version):
         includes += _LIBGCC_CPU_ARCHIVE_INCLUDES[cpu]
+        if gcc_version_at_least_for(version, "11.0.0"):
+            includes += _LIBGCC_GCC11_CPU_ARCHIVE_INCLUDES.get(cpu, [])
     return includes
 
 _GCC_10_ARCHIVE_INCLUDES = [

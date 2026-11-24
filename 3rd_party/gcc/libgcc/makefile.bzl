@@ -540,6 +540,10 @@ def _makefile_in(version, lib2add, lib2add_st, lib2addeh, lib2funcs_exclude, fil
 
 # The GCC versions whose Makefile.in and tmake fragments this file ports.
 _PORTED_VERSIONS = [
+    "10.1.0",
+    "10.2.0",
+    "10.3.0",
+    "10.4.0",
     "10.5.0",
     "11.1.0",
     "11.2.0",
