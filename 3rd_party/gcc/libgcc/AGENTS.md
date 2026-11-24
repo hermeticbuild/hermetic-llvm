@@ -25,10 +25,14 @@ dynamic links find it with `-lgcc_s`.
   probe, where configure's check fits this toolchain, or a fixed policy value,
   where it does not. The results write `auto-target.h` and
   `libgcc_configure_cflags.h`, which holds the `-D` flags configure puts in
-  `INTERNAL_CFLAGS`. `LIBGCC_CONFIG_HOST_CHECKS` holds the results that decide
-  what `config.host` and `config.gcc` select. Only the configure tests use that
-  list, because the build needs the selections at loading time, before probes
-  can run.
+  `INTERNAL_CFLAGS`. `LIBGCC_SELECTION_CHECKS` holds the results that decide
+  what the build includes: what `config.host` and `config.gcc` select, and the
+  results that `Makefile.in`'s conditionals read. Only the configure tests use
+  that list, because the build needs the selections at loading time, before
+  probes can run.
+- `configure_define_status.txt` gives each macro in `libgcc/config.in` a
+  status, and `configure_subst_status.txt` each `@VAR@` substitution in
+  `libgcc/Makefile.in`. Each file's header defines its statuses.
 - `libgcc_rules.bzl` has the wrapper-source, hide-list and version-map rules.
 - `3rd_party/gcc/patches/17.x/libgcc-clang-compat.patch` changes the spots in
   libgcc's sources that rely on GCC-only behavior, so that Clang compiles them.
@@ -86,9 +90,11 @@ Derive each value from GCC itself, not from memory:
 - A GCC version: port its differences into `makefile.bzl` and
   `target_config.bzl`, taking each value from that GCC as described above, and
   add the version to `_PORTED_VERSIONS` in both files. Loading fails for a
-  version that is missing from them. Then add the version to `LIBGCC_VERSIONS`
-  in `3rd_party/gcc/version.bzl`, and its Clang patches, if any, to
-  `LIBGCC_PATCHES`.
+  version that is missing from them. Give each macro and substitution that the
+  version adds a status in the two status files, and port the ones whose status
+  says they are modeled. The inventory tests name the ones without a status.
+  Then add the version to `LIBGCC_VERSIONS` in `3rd_party/gcc/version.bzl`, and
+  its Clang patches, if any, to `LIBGCC_PATCHES`.
 - A CPU: add its configuration and canonical triple to `target_config.bzl`, the
   tmake fragments that `config.host` selects for it to `makefile.bzl` and
   `_TMAKE_FILES`, its GCC config headers to `_LIBGCC_ARCHIVE_INCLUDES` in
@@ -97,7 +103,8 @@ Derive each value from GCC itself, not from memory:
   `LIBGCC_CPUS`. `3rd_party/gcc/gcc.BUILD.bazel` and
   `runtimes/libgcc/BUILD.bazel` follow `LIBGCC_CPUS`. If its `config.host` or
   `config.gcc` entry reads another configure result, add that check to
-  `LIBGCC_CONFIG_HOST_CHECKS`.
+  `LIBGCC_SELECTION_CHECKS`. In `configure_define_status.txt`, add the CPU to
+  the CPU column of each macro whose check configure runs for it.
   In `runtimes/libgcc/tests`, add a symbol list, and add the CPU with the
   programs it runs to `_CPU_PROGRAMS`. Those tests run on an x86-64 Linux host,
   so a CPU other than x86-64 runs its binaries under qemu-user, as AArch64
@@ -113,9 +120,17 @@ Derive each value from GCC itself, not from memory:
 - The configure tests (`configure_linux_<cpu>_<version>_test`) run `config.gcc`
   and `config.host` for each CPU's triple, with the `configure.ac.bzl` results
   that the CPU's toolchain probes, and compare what the scripts select with the
-  port. A new GCC version that adds a tmake fragment, header or `tm.h` entry
-  fails them. They do not check the objects inside each fragment. Only the
-  `make -n` comparison does.
+  port. They also compare the probed `decimal_float`, `fixed_point` and
+  `HAVE_STRUB_SUPPORT` with `libgcc_makefile_conditions()`. A new GCC version
+  that adds a tmake fragment, header or `tm.h` entry fails them. They do not
+  check the objects inside each fragment. Only the `make -n` comparison does.
+- The configure inventory tests
+  (`configure_inventory_linux_<cpu>_<version>_test`) fail for a macro in
+  `libgcc/config.in` or a substitution in `libgcc/Makefile.in` without a
+  status, and for a status whose item GCC no longer has. They check each
+  macro's status against the `auto-target.h` and `libgcc_configure_cflags.h`
+  rendered for the CPU, and that the port file a modeled substitution names
+  mentions it.
 - For a new version or target, also run GCC's `g++.dg/eh` and
   `gcc.dg/cleanup-*` run tests, built with a GCC, against the new
   `libgcc_s.so.1` through `LD_LIBRARY_PATH` and against the static archives by

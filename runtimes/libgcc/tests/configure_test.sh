@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # Runs gcc/config.gcc and libgcc/config.host for $TARGET as GCC's configure
 # scripts do, and compares what they select with $EXPECTED, the configuration
-# that //3rd_party/gcc/libgcc ports. $CHECKS holds the configure results that
-# the two scripts read, some probed with the target's toolchain and the rest
-# fixed by policy.
+# that //3rd_party/gcc/libgcc ports. It also compares the configure results that
+# Makefile.in's conditionals read. $CHECKS holds the results that the two
+# scripts and those conditionals read, some probed with the target's toolchain
+# and the rest fixed by policy.
 set -euo pipefail
 
 # sh_test starts in the runfiles workspace; rootpath values are relative to it.
@@ -27,6 +28,16 @@ if is_defined GCC_ENABLE_INITFINI_ARRAY; then
   enable_initfini_array=yes
 fi
 target_thread_file="$(sed -n 's/^#define LIBGCC_TARGET_THREAD_FILE "\(.*\)"$/\1/p' "${checks}")"
+
+# Prints yes when a check succeeded and no otherwise, as configure's cache
+# variables hold them.
+yes_no() {
+  if is_defined "$1"; then
+    echo yes
+  else
+    echo no
+  fi
+}
 
 # Prints a variable's words separated by single spaces.
 words() {
@@ -86,6 +97,11 @@ actual="${TEST_TMPDIR}/actual.txt"
     echo "tm_defines=$(words ${tm_defines})"
     echo "tm_file=$(words ${tm_file})"
   )
+  # libgcc/configure.ac substitutes these into Makefile.in, whose
+  # conditionals add decimal floating-point, fixed-point and strub objects.
+  echo "decimal_float=$(yes_no LIBGCC_CV_DFP)"
+  echo "fixed_point=$(yes_no LIBGCC_CV_FIXED_POINT)"
+  echo "have_strub_support=$(yes_no LIBGCC_CV_STRUB_SUPPORT)"
 } | LC_ALL=C sort > "${actual}"
 
 if ! diff -u "${EXPECTED}" "${actual}"; then

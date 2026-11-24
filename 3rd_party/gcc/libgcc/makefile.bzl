@@ -421,7 +421,8 @@ def _makefile_in(lib2add, lib2add_st, lib2addeh, lib2funcs_exclude, file_copts =
       The struct libgcc_objects returns.
     """
 
-    # Makefile.in: LIB2ADD defaults and the LIB2ADDEH emutls.c addition.
+    # Makefile.in: LIB2ADD defaults, with strub.c under HAVE_STRUB_SUPPORT, and
+    # the LIB2ADDEH emutls.c addition.
     lib2add = lib2add + [
         "enable-execute-stack.c",
         "libgcc/hardcfr.c",
@@ -486,6 +487,24 @@ def libgcc_objects(cpu, version):
     if cpu == "aarch64":
         return _aarch64_linux_gnu()
     fail("libgcc's object lists are not ported for " + cpu)
+
+def libgcc_makefile_conditions(cpu, version):
+    """The configure results that Makefile.in's conditionals read, as ported.
+
+    //runtimes/libgcc/tests:configure_* checks them against configure's
+    probes. Clang by default accepts neither decimal floating-point nor
+    fixed-point types, so this file ports neither part: decimal_float and
+    fixed_point are no.
+
+    Returns:
+      A dict from each Makefile.in variable to its value.
+    """
+    objects = libgcc_objects(cpu, version)
+    return {
+        "decimal_float": "no",
+        "fixed_point": "no",
+        "have_strub_support": "yes" if "libgcc/strub.c" in [e.src for e in objects.common] else "no",
+    }
 
 def libgcc_tmake_files(cpu):
     """Lists the tmake fragments config.host selects for cpu, which this file ports."""

@@ -1899,12 +1899,15 @@ copy_to_directory(
 
 # The inputs of //runtimes/libgcc/tests:configure_*: gcc/config.gcc and
 # libgcc/config.host, with the files that configure checks for after running
-# them.
+# them, and libgcc/config.in and libgcc/Makefile.in, which list what configure
+# can write.
 copy_to_directory(
     name = "libgcc_configure_inputs",
     srcs = [
         "gcc/config.gcc",
+        "libgcc/Makefile.in",
         "libgcc/config.host",
+        "libgcc/config.in",
     ] + glob([
         "libgcc/config/**/t-*",
         "libgcc/config/*/sfp-machine.h",
@@ -2012,6 +2015,22 @@ _LIBGCC_CONFIGURE_CHECKS = {
     for cpu in _LIBGCC_CPUS
     for name, guard in _LIBGCC_CONFIGURE_HEADERS.items()
 ]
+
+# The configure headers for the target CPU, for
+# //runtimes/libgcc/tests:configure_inventory_*.
+filegroup(
+    name = "libgcc_configure_headers",
+    srcs = select({
+        "@platforms//cpu:" + cpu: [
+            ":libgcc_{}_{}".format(cpu, name)
+            for name in _LIBGCC_CONFIGURE_HEADERS
+        ]
+        for cpu in _LIBGCC_CPUS
+    } | {
+        "//conditions:default": [],
+    }),
+    visibility = ["//visibility:public"],
+)
 
 [
     cc_library(
@@ -2254,8 +2273,9 @@ libgcc_version_script(
     deps = _LIBGCC_S_DEPS,
 )
 
-# libgcc/config/t-slibgcc, t-slibgcc-gld and t-slibgcc-elf-ver: link the _s
-# objects with the version script. libgcc.a is linked in too, because it
+# libgcc/config/t-slibgcc, t-slibgcc-gld and t-slibgcc-elf-ver, which
+# Makefile.in uses when configure's enable_shared is yes: link the _s objects
+# with the version script. libgcc.a is linked in too, because it
 # supplies the hidden copies of the symbols that the compat wrappers rename.
 cc_runtime_stage1_shared_library(
     name = "libgcc_s.so.1",

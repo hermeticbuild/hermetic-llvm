@@ -1,0 +1,51 @@
+# Statuses of the macros in libgcc/config.in, which libgcc's configure writes
+# into auto-target.h. //runtimes/libgcc/tests:configure_inventory_* fails for a
+# macro without a status, and checks each status against the headers that
+# configure.ac.bzl renders.
+#
+# Columns: macro, status, and optionally the CPUs whose configure checks the
+# macro, comma-separated. Without the third column, every CPU checks it.
+#
+# probe-modeled: a probe renders it in auto-target.h.
+# policy-modeled: a fixed value renders it in auto-target.h.
+# cflags-probe-modeled: a probe renders it in libgcc_configure_cflags.h, since
+#   the configure script GCC ships passes it as a -D flag.
+# not-needed: neither header has it, because nothing on a ported target reads
+#   it, though GCC's auto-target.h may define it.
+#
+# A macro must be in its header for the CPUs that check it and in neither
+# header for the others.
+AS_HIDDEN_DIRECTIVE probe-modeled
+HAVE_AS_AVX probe-modeled x86_64
+HAVE_AS_CFI_SECTIONS probe-modeled
+HAVE_AS_LSE probe-modeled aarch64
+HAVE_AS_VARIANT_PCS probe-modeled aarch64
+HAVE_CC_TLS cflags-probe-modeled
+HAVE_FTW_H probe-modeled
+HAVE_GETIPINFO policy-modeled
+HAVE_INIT_PRIORITY probe-modeled
+HAVE_INTTYPES_H probe-modeled
+HAVE_MEMORY_H probe-modeled
+HAVE_STDINT_H probe-modeled
+HAVE_STDLIB_H probe-modeled
+HAVE_STRINGS_H probe-modeled
+HAVE_STRING_H probe-modeled
+HAVE_SYS_AUXV_H probe-modeled
+HAVE_SYS_MMAN_H probe-modeled
+HAVE_SYS_STAT_H probe-modeled
+HAVE_SYS_TYPES_H probe-modeled
+HAVE_UNISTD_H probe-modeled
+HAVE___GETAUXVAL policy-modeled aarch64
+PACKAGE_BUGREPORT policy-modeled
+PACKAGE_NAME policy-modeled
+PACKAGE_STRING policy-modeled
+PACKAGE_TARNAME policy-modeled
+PACKAGE_URL policy-modeled
+PACKAGE_VERSION policy-modeled
+SIZEOF_DOUBLE probe-modeled
+SIZEOF_LONG_DOUBLE probe-modeled
+STDC_HEADERS probe-modeled
+USE_EMUTLS cflags-probe-modeled
+_DARWIN_USE_64_BIT_INODE not-needed
+_FILE_OFFSET_BITS policy-modeled
+_LARGE_FILES policy-modeled

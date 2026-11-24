@@ -6,11 +6,12 @@
 #
 # libgcc_auto_target_checks renders auto-target.h, and
 # libgcc_configure_cflags_checks the -D flags configure substitutes into
-# INTERNAL_CFLAGS. LIBGCC_CONFIG_HOST_CHECKS holds the results that decide
-# what gcc/config.gcc and libgcc/config.host select. The build takes those
-# selections from target_config.bzl and makefile.bzl at loading time, before
-# any probe, which is a Bazel action, can run. Only
-# //runtimes/libgcc/tests:configure_* uses LIBGCC_CONFIG_HOST_CHECKS: a probe
+# INTERNAL_CFLAGS. LIBGCC_SELECTION_CHECKS holds the results that decide what
+# the build includes: what gcc/config.gcc and libgcc/config.host select, and
+# the configure results that Makefile.in's conditionals read. The build takes
+# those selections from target_config.bzl and makefile.bzl at loading time,
+# before any probe, which is a Bazel action, can run. Only
+# //runtimes/libgcc/tests:configure_* uses LIBGCC_SELECTION_CHECKS: a probe
 # result that would change a selection fails it.
 
 load(
@@ -31,9 +32,9 @@ load(
 )
 
 # AC_LANG_PROGRAM, the source of AC_TRY_COMPILE and AC_COMPILE_IFELSE checks
-# that give only a function body.
-def _program(body):
-    return """
+# that give a function body and, optionally, a prologue.
+def _program(body, prologue = ""):
+    return """{}
 int
 main (void)
 {{
@@ -41,7 +42,7 @@ main (void)
   ;
   return 0;
 }}
-""".format(body)
+""".format(prologue, body)
 
 # The checks only some CPUs run, under configure.ac's case on the target.
 _CPU_AUTO_TARGET_CHECKS = {
@@ -145,7 +146,7 @@ def libgcc_configure_cflags_checks():
     """
     return gcc_check_cc_tls() + gcc_check_emutls()
 
-LIBGCC_CONFIG_HOST_CHECKS = [
+LIBGCC_SELECTION_CHECKS = [
     # libgcc/configure.ac: "Check 32bit or 64bit", which sets host_address.
     compile_check(
         name = "LIBGCC_HOST_ADDRESS_64",
@@ -178,4 +179,29 @@ asm("\\n\\
     # libgcc/configure.ac: GCC_AC_THREAD_MODEL, from GCC's --enable-threads,
     # which defaults to posix on Linux.
     policy_string_define("LIBGCC_TARGET_THREAD_FILE", "posix"),
+    # libgcc/configure.ac: libgcc_cv_dfp, Makefile.in's decimal_float, which
+    # adds the decimal floating-point objects.
+    compile_check(
+        name = "LIBGCC_CV_DFP",
+        source = _program(
+            """_Decimal32 x;
+int fe_except =
+  FE_INVALID|FE_DIVBYZERO|FE_OVERFLOW|FE_UNDERFLOW|FE_INEXACT;""",
+            prologue = "#include <fenv.h>",
+        ),
+    ),
+    # libgcc/configure.ac: libgcc_cv_fixed_point, Makefile.in's fixed_point,
+    # which adds the fixed-point objects.
+    compile_check(
+        name = "LIBGCC_CV_FIXED_POINT",
+        source = "_Sat _Fract x;",
+    ),
+    # libgcc/configure.ac: libgcc_cv_strub_support, Makefile.in's
+    # HAVE_STRUB_SUPPORT, which adds strub.c. GCC's check compiles without
+    # -Werror, so a compiler that ignores the attribute with a warning, as
+    # Clang does, passes it too.
+    compile_check(
+        name = "LIBGCC_CV_STRUB_SUPPORT",
+        source = "void __attribute__ ((__strub__)) fn (void) {}",
+    ),
 ]

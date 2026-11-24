@@ -8,8 +8,8 @@ load("//:defs.bzl", "exec_test")
 load("//3rd_party/gcc:version.bzl", "LIBGCC_CPUS", "LIBGCC_VERSIONS", "gcc_repository_label", "gcc_target_suffix", "libstdcxx_constraint_value")
 load("//3rd_party/gcc/autoconf:autoconf_config.bzl", "autoconf_config")
 load("//3rd_party/gcc/autoconf:autoconf_hdr.bzl", "autoconf_hdr")
-load("//3rd_party/gcc/libgcc:configure.ac.bzl", "LIBGCC_CONFIG_HOST_CHECKS")
-load("//3rd_party/gcc/libgcc:makefile.bzl", "libgcc_tmake_files")
+load("//3rd_party/gcc/libgcc:configure.ac.bzl", "LIBGCC_SELECTION_CHECKS")
+load("//3rd_party/gcc/libgcc:makefile.bzl", "libgcc_makefile_conditions", "libgcc_tmake_files")
 load("//3rd_party/gcc/libgcc:target_config.bzl", "libgcc_configure_results", "libgcc_target_triple")
 
 # The binaries build for a libstdc++ platform whose GCC version builds libgcc,
@@ -256,7 +256,7 @@ copy_to_directory(
 # with each platform's toolchain where they are probes.
 autoconf_config(
     name = "configure_checks",
-    checks = LIBGCC_CONFIG_HOST_CHECKS,
+    checks = LIBGCC_SELECTION_CHECKS,
     tags = ["manual"],
 )
 
@@ -289,16 +289,25 @@ autoconf_hdr(
 
 [
     write_file(
-        name = "configure_results_{}".format(cpu),
-        out = "configure_results_{}.txt".format(cpu),
+        name = "configure_results_{}_{}".format(
+            cpu,
+            gcc_target_suffix(version),
+        ),
+        out = "configure_results_{}_{}.txt".format(
+            cpu,
+            gcc_target_suffix(version),
+        ),
         content = [
             "{}={}".format(name, value)
-            for name, value in sorted((libgcc_configure_results(cpu) | {
-                "tmake_file": " ".join(libgcc_tmake_files(cpu)),
-            }).items())
+            for name, value in sorted((
+                libgcc_configure_results(cpu) |
+                libgcc_makefile_conditions(cpu, version) |
+                {"tmake_file": " ".join(libgcc_tmake_files(cpu))}
+            ).items())
         ] + [""],
     )
     for cpu in LIBGCC_CPUS
+    for version in LIBGCC_VERSIONS
 ]
 
 [
@@ -313,7 +322,10 @@ autoconf_hdr(
                 cpu,
                 gcc_target_suffix(version),
             ),
-            ":configure_results_{}".format(cpu),
+            ":configure_results_{}_{}".format(
+                cpu,
+                gcc_target_suffix(version),
+            ),
             gcc_repository_label(version, "libgcc_configure_inputs"),
         ],
         env = {
@@ -321,9 +333,71 @@ autoconf_hdr(
                 cpu,
                 gcc_target_suffix(version),
             ),
-            "EXPECTED": "$(rootpath :configure_results_{})".format(cpu),
+            "EXPECTED": "$(rootpath :configure_results_{}_{})".format(
+                cpu,
+                gcc_target_suffix(version),
+            ),
             "GCC_SOURCES": "$(rootpath {})".format(gcc_repository_label(version, "libgcc_configure_inputs")),
             "TARGET": libgcc_target_triple(cpu),
+        },
+        target_compatible_with = _HOST,
+    )
+    for cpu in LIBGCC_CPUS
+    for version in LIBGCC_VERSIONS
+]
+
+[
+    platform_transition_filegroup(
+        name = "configure_headers_linux_{}_{}".format(
+            cpu,
+            gcc_target_suffix(version),
+        ),
+        srcs = [gcc_repository_label(version, "libgcc_configure_headers")],
+        tags = ["manual"],
+        target_compatible_with = _HOST,
+        target_platform = "//runtimes/libstdcxx/tests:linux_{}_{}".format(
+            cpu,
+            libstdcxx_constraint_value(version),
+        ),
+    )
+    for cpu in LIBGCC_CPUS
+    for version in LIBGCC_VERSIONS
+]
+
+# The port files that configure_subst_status.txt names for modeled
+# substitutions.
+_CONFIGURE_PORT_FILES = [
+    "//3rd_party/gcc:gcc.BUILD.bazel",
+    "//3rd_party/gcc/libgcc:configure.ac.bzl",
+    "//3rd_party/gcc/libgcc:makefile.bzl",
+    "//3rd_party/gcc/libgcc:target_config.bzl",
+]
+
+[
+    sh_test(
+        name = "configure_inventory_linux_{}_{}_test".format(
+            cpu,
+            gcc_target_suffix(version),
+        ),
+        srcs = ["configure_inventory_test.sh"],
+        data = [
+            ":configure_headers_linux_{}_{}".format(
+                cpu,
+                gcc_target_suffix(version),
+            ),
+            "//3rd_party/gcc/libgcc:configure_define_status.txt",
+            "//3rd_party/gcc/libgcc:configure_subst_status.txt",
+            gcc_repository_label(version, "libgcc_configure_inputs"),
+        ] + _CONFIGURE_PORT_FILES,
+        env = {
+            "CPU": cpu,
+            "DEFINE_STATUS": "$(rootpath //3rd_party/gcc/libgcc:configure_define_status.txt)",
+            "GCC_SOURCES": "$(rootpath {})".format(gcc_repository_label(version, "libgcc_configure_inputs")),
+            "HEADERS": "$(rootpaths :configure_headers_linux_{}_{})".format(
+                cpu,
+                gcc_target_suffix(version),
+            ),
+            "SUBST_STATUS": "$(rootpath //3rd_party/gcc/libgcc:configure_subst_status.txt)",
         },
         target_compatible_with = _HOST,
     )

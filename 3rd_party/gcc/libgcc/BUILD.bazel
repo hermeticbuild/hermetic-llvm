@@ -2,6 +2,19 @@ load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 
 package(default_visibility = ["//visibility:public"])
 
+# The configure inventory test reads the status files and the port files they
+# name.
+exports_files(
+    [
+        "configure.ac.bzl",
+        "configure_define_status.txt",
+        "configure_subst_status.txt",
+        "makefile.bzl",
+        "target_config.bzl",
+    ],
+    visibility = ["//runtimes/libgcc/tests:__pkg__"],
+)
+
 bzl_library(
     name = "configure_ac",
     srcs = ["configure.ac.bzl"],
