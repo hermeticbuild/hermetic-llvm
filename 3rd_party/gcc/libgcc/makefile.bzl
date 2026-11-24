@@ -542,6 +542,7 @@ def _makefile_in(version, lib2add, lib2add_st, lib2addeh, lib2funcs_exclude, fil
 _PORTED_VERSIONS = [
     "10.5.0",
     "14.3.0",
+    "16.1.0",
     "17.0.0",
 ]
 

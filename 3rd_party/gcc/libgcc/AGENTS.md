@@ -165,9 +165,9 @@ Derive each value from GCC itself, not from memory:
 
 ## Targets
 
-x86-64 is supported for GCC 10.5.0, 14.3.0 and 17, and AArch64 for GCC 17. On
-AArch64, Clang returns the frame pointer for `__builtin_dwarf_cfa` and emits
-nothing for `__builtin_eh_return`, and libgcc's unwinder relies on both:
+x86-64 is supported for GCC 10.5.0, 14.3.0, 16.1.0 and 17, and AArch64 for GCC
+17. On AArch64, Clang returns the frame pointer for `__builtin_dwarf_cfa` and
+emits nothing for `__builtin_eh_return`, and libgcc's unwinder relies on both:
 
 - `uw_init_context` takes the caller's CFA from `__builtin_dwarf_cfa`.
   `libgcc_clang_compat.h` maps it to `__builtin_sponentry`, the stack pointer
