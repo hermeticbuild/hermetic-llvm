@@ -47,14 +47,20 @@ _TCONFIG_H = [
 # config/i386/morestack.S does, and it reads HAVE_INITFINI_ARRAY_SUPPORT to
 # register __stack_split_initialize in .init_array. Without it the constructor
 # goes to .ctors, which compiler-rt's crtbegin does not run.
+#
+# ENABLE_RUNTIME_CHECKING comes from the runtime checks that GCC's
+# --enable-checking includes by default. It makes gcc/tsystem.h's gcc_assert
+# call abort () when its condition fails, as the unwinder's assertions do in
+# GCC's libgcc. GCC's configure defines TARGET_DL_ITERATE_PHDR only for Solaris,
+# FreeBSD, DragonFly and musl, so a glibc target leaves it out.
 _AUTO_HOST_H = [
     "/* The parts of GCC's auto-host.h that libgcc reads.  */",
+    "#define ENABLE_RUNTIME_CHECKING 1",
     "#define HAVE_GAS_CFI_DIRECTIVE 1",
     "#define HAVE_GAS_CFI_PERSONALITY_DIRECTIVE 1",
     "#define HAVE_GAS_CFI_SECTIONS_DIRECTIVE 1",
     "#define HAVE_GAS_HIDDEN 1",
     "#define HAVE_LD_EH_FRAME_HDR 1",
-    "#define TARGET_DL_ITERATE_PHDR 1",
     "#ifndef USED_FOR_TARGET",
     "#define HAVE_INITFINI_ARRAY_SUPPORT 1",
     "#endif",

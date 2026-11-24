@@ -63,17 +63,18 @@ Derive each value from GCC itself, not from memory:
   header links and the tmake fragments against what `config.gcc` and
   `config.host` select.
 - `auto-host.h`: set the macros as fixed policy, as GCC's configure sets them
-  for a GNU assembler and linker. A configure run without a target assembler
-  and linker leaves `HAVE_LD_EH_FRAME_HDR` and `TARGET_DL_ITERATE_PHDR` unset,
-  which silently breaks FDE lookup. Sources that include `auto-host.h`
-  directly, without `tconfig.h`, also see its host-only defines (the ones GCC's
-  header puts under `#ifndef USED_FOR_TARGET`). Check their `#if` lines, and put
-  each macro they read in that part of `_AUTO_HOST_H`, with the value from the
-  `auto-host.h` of a GCC built for the target. In the x86-64 port only
-  `config/i386/morestack.S` does this, and it reads
-  `HAVE_INITFINI_ARRAY_SUPPORT`. When `auto-host.h` lacks it, `morestack.S`
-  registers `__stack_split_initialize` in `.ctors`, which compiler-rt's
-  `crtbegin.o` does not run.
+  for a GNU assembler and linker, and compare them with the `auto-host.h` of a
+  GCC built for the target. A configure run without a target assembler and
+  linker leaves `HAVE_LD_EH_FRAME_HDR` unset, which silently breaks FDE lookup.
+  `ENABLE_RUNTIME_CHECKING` makes the unwinder's `gcc_assert` calls abort, as
+  they do in GCC's libgcc. Sources that include `auto-host.h` directly, without
+  `tconfig.h`, also see its host-only defines (the ones GCC's header puts under
+  `#ifndef USED_FOR_TARGET`). Check their `#if` lines, and put each macro they
+  read in that part of `_AUTO_HOST_H`, with the value from the `auto-host.h` of
+  a GCC built for the target. In the x86-64 port only `config/i386/morestack.S`
+  includes it directly, and it reads `HAVE_INITFINI_ARRAY_SUPPORT`. When
+  `auto-host.h` lacks it, `morestack.S` registers `__stack_split_initialize` in
+  `.ctors`, which compiler-rt's `crtbegin.o` does not run.
 - `configure.ac.bzl`: port each `libgcc/configure.ac` check that writes
   `auto-target.h` or `INTERNAL_CFLAGS`, in configure's order, with the rules in
   `3rd_party/gcc/autoconf`. For a check that GCC's top-level `config/*.m4`
