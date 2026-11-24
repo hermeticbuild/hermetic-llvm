@@ -18,7 +18,7 @@ load(
     "libstdcxx_has_stdlib_timespec_get_check",
 )
 load(
-    "//3rd_party/gcc/libstdcxx/autoconf:checks.bzl",
+    "//3rd_party/gcc/autoconf:checks.bzl",
     "function_link_check",
     "link_check",
 )

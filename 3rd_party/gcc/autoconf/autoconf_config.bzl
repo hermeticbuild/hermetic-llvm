@@ -2,7 +2,8 @@
 #
 # This rule consumes JSON check declarations from checks.bzl and emits ordered
 # result metadata for header renderers. It is intentionally generic so the
-# libstdc++ source-counterpart files only declare GCC configure checks.
+# libstdc++ and libgcc source-counterpart files only declare GCC configure
+# checks.
 
 load("@llvm//toolchain/runtimes:with_cfg_runtimes_common.bzl", "configure_builder_for_runtimes")
 load("@with_cfg.bzl", "with_cfg")
@@ -129,7 +130,7 @@ _autoconf_config = rule(
     implementation = _autoconf_config_impl,
     attrs = {
         "checks": attr.string_list(
-            doc = "JSON-encoded checks from //3rd_party/gcc/libstdcxx/autoconf:checks.bzl.",
+            doc = "JSON-encoded checks from //3rd_party/gcc/autoconf:checks.bzl.",
             default = [],
         ),
         "probe_context_include_root_markers": attr.string_dict(

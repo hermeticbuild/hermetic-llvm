@@ -11,7 +11,7 @@
 # modeled by the GCC overlay's generated libstdcxx_gstdint_h header.
 
 load(
-    "//3rd_party/gcc/libstdcxx/autoconf:checks.bzl",
+    "//3rd_party/gcc/autoconf:checks.bzl",
     "compile_check",
     "link_check",
     "policy_define",

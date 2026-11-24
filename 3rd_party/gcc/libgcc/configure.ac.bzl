@@ -8,7 +8,7 @@
 # run. The test ties the two together: a probe result that would change a
 # selection fails it.
 
-load("//3rd_party/gcc/libstdcxx/autoconf:checks.bzl", "compile_check", "policy_define", "policy_string_define")
+load("//3rd_party/gcc/autoconf:checks.bzl", "compile_check", "policy_define", "policy_string_define")
 
 LIBGCC_CONFIGURE_CHECKS = [
     # libgcc/configure.ac: "Check 32bit or 64bit", which sets host_address.

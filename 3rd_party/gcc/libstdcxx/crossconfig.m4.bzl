@@ -2,14 +2,14 @@
 # libstdc++-v3/crossconfig.m4. Only the Linux GNU-relevant branch is active in
 # this Bazel port; other target branches remain documented as unsupported.
 
-load("//3rd_party/gcc:version.bzl", "libstdcxx_has_dev_random_policy")
-load("//3rd_party/gcc/libstdcxx/autoconf:checks.bzl", "policy_define")
 load(
-    ":gcc_config_checks.bzl",
+    "//3rd_party/gcc:gcc_config_checks.bzl",
     "am_iconv",
     "gcc_check_tls",
     "gcc_linux_futex",
 )
+load("//3rd_party/gcc:version.bzl", "libstdcxx_has_dev_random_policy")
+load("//3rd_party/gcc/autoconf:checks.bzl", "policy_define")
 load(
     ":linkage.m4.bzl",
     "gcc_check_math_support",

@@ -3,7 +3,7 @@
 # This file intentionally mirrors the shape of external autoconf rulesets:
 # source-counterpart files declare checks as JSON-encoded data, execution rules
 # consume those declarations, and header rules render the results. Keep this
-# generic and free of libstdc++ policy.
+# generic and free of libstdc++ and libgcc policy.
 
 def _make_check(fields):
     return json.encode(fields)

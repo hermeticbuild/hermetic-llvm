@@ -9,8 +9,8 @@ load("//3rd_party/gcc:version.bzl", "LIBGCC_CPUS", "LIBGCC_VERSIONS", "gcc_repos
 load("//3rd_party/gcc/libgcc:configure.ac.bzl", "LIBGCC_CONFIGURE_CHECKS")
 load("//3rd_party/gcc/libgcc:makefile.bzl", "libgcc_tmake_files")
 load("//3rd_party/gcc/libgcc:target_config.bzl", "libgcc_configure_results", "libgcc_target_triple")
-load("//3rd_party/gcc/libstdcxx/autoconf:autoconf_config.bzl", "autoconf_config")
-load("//3rd_party/gcc/libstdcxx/autoconf:autoconf_hdr.bzl", "autoconf_hdr")
+load("//3rd_party/gcc/autoconf:autoconf_config.bzl", "autoconf_config")
+load("//3rd_party/gcc/autoconf:autoconf_hdr.bzl", "autoconf_hdr")
 
 # The binaries build for a libstdc++ platform whose GCC version builds libgcc,
 # and the tests run them on the x86-64 Linux host: natively for x86-64, and

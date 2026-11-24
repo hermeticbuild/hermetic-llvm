@@ -52,15 +52,15 @@ Keep Bazel files shaped like the GCC files they port:
   `libstdc++-v3/acinclude.m4`.
 - `3rd_party/gcc/libstdcxx/crossconfig.m4.bzl` is the counterpart of
   `libstdc++-v3/crossconfig.m4`.
-- `3rd_party/gcc/libstdcxx/gcc_config_checks.bzl` is the counterpart
+- `3rd_party/gcc/gcc_config_checks.bzl` is the counterpart
   for GCC top-level `config/*.m4` checks used by libstdc++.
 - `3rd_party/gcc/libstdcxx/linkage.m4.bzl` is the counterpart of
   `libstdc++-v3/linkage.m4`.
-- `3rd_party/gcc/libstdcxx/autoconf/checks.bzl`,
-  `3rd_party/gcc/libstdcxx/autoconf/autoconf_config.bzl`,
-  `3rd_party/gcc/libstdcxx/autoconf/autoconf_hdr.bzl`,
-  `3rd_party/gcc/libstdcxx/autoconf/cc_configure_probe.bzl`, and
-  `3rd_party/gcc/libstdcxx/autoconf/providers.bzl` are local generic
+- `3rd_party/gcc/autoconf/checks.bzl`,
+  `3rd_party/gcc/autoconf/autoconf_config.bzl`,
+  `3rd_party/gcc/autoconf/autoconf_hdr.bzl`,
+  `3rd_party/gcc/autoconf/cc_configure_probe.bzl`, and
+  `3rd_party/gcc/autoconf/providers.bzl` are local generic
   autoconf mechanics. They should stay free of libstdc++ source-policy
   decisions so a future external autoconf ruleset migration is a thin adapter
   change.
@@ -224,7 +224,7 @@ still belongs in the usage checklist and glossary.
 Before committing configure-check changes, run from the repository root:
 
     bazel run //internal_tools:buildifier.check
-    bazel build --config remote --platforms=//runtimes/libstdcxx/tests:linux_x86_64_libstdcxx.17.0.0 //runtimes/libstdcxx:headers_include_search_directory //runtimes/libstdcxx:abi_headers_include_search_directory //runtimes/libstdcxx:libstdcxx.shared //runtimes/libstdcxx:libstdcxx_library_search_directory //3rd_party/gcc/libstdcxx:libstdcxx_config_h //3rd_party/gcc/libstdcxx:target_config //3rd_party/gcc/libstdcxx/autoconf:autoconf_config //3rd_party/gcc/libstdcxx/autoconf:autoconf_hdr //3rd_party/gcc/libstdcxx/autoconf:checks //3rd_party/gcc/libstdcxx/autoconf:cc_configure_probe //3rd_party/gcc/libstdcxx:gcc_config_checks //3rd_party/gcc/libstdcxx:linkage_checks //3rd_party/gcc/libstdcxx:configure_ac_checks
+    bazel build --config remote --platforms=//runtimes/libstdcxx/tests:linux_x86_64_libstdcxx.17.0.0 //runtimes/libstdcxx:headers_include_search_directory //runtimes/libstdcxx:abi_headers_include_search_directory //runtimes/libstdcxx:libstdcxx.shared //runtimes/libstdcxx:libstdcxx_library_search_directory //3rd_party/gcc/libstdcxx:libstdcxx_config_h //3rd_party/gcc/libstdcxx:target_config //3rd_party/gcc/autoconf:autoconf_config //3rd_party/gcc/autoconf:autoconf_hdr //3rd_party/gcc/autoconf:checks //3rd_party/gcc/autoconf:cc_configure_probe //3rd_party/gcc:gcc_config_checks //3rd_party/gcc/libstdcxx:linkage_checks //3rd_party/gcc/libstdcxx:configure_ac_checks
     bazel test --config remote //3rd_party/gcc/libstdcxx/tests:autoconf_inventory_test
     bazel test --config remote //3rd_party/gcc/libstdcxx/tests:config_define_audit_test
     bazel build --config remote //runtimes/libstdcxx/tests:toolchain_dynamic_link_smoke_linux_all_versions

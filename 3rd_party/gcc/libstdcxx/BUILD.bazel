@@ -7,7 +7,6 @@ exports_files(
         "acinclude.m4.bzl",
         "configure.ac.bzl",
         "crossconfig.m4.bzl",
-        "gcc_config_checks.bzl",
         "libstdcxx_config_h.bzl",
         "libstdcxx_cxxconfig_header.bzl",
         "libstdcxx_gthr_headers.bzl",
@@ -22,18 +21,18 @@ exports_files(
 bzl_library(
     name = "acinclude_checks",
     deps = [
-        ":gcc_config_checks",
         ":linkage_checks",
-        "//3rd_party/gcc/libstdcxx/autoconf:checks",
+        "//3rd_party/gcc:gcc_config_checks",
+        "//3rd_party/gcc/autoconf:checks",
     ],
 )
 
 bzl_library(
     name = "crossconfig_checks",
     deps = [
-        ":gcc_config_checks",
         ":linkage_checks",
-        "//3rd_party/gcc/libstdcxx/autoconf:checks",
+        "//3rd_party/gcc:gcc_config_checks",
+        "//3rd_party/gcc/autoconf:checks",
     ],
 )
 
@@ -41,21 +40,15 @@ bzl_library(
     name = "configure_ac_checks",
     deps = [
         ":acinclude_checks",
-        ":gcc_config_checks",
         ":linkage_checks",
-        "//3rd_party/gcc/libstdcxx/autoconf:checks",
+        "//3rd_party/gcc:gcc_config_checks",
+        "//3rd_party/gcc/autoconf:checks",
     ],
 )
 
 bzl_library(
-    name = "gcc_config_checks",
-    srcs = ["gcc_config_checks.bzl"],
-    deps = ["//3rd_party/gcc/libstdcxx/autoconf:checks"],
-)
-
-bzl_library(
     name = "linkage_checks",
-    deps = ["//3rd_party/gcc/libstdcxx/autoconf:checks"],
+    deps = ["//3rd_party/gcc/autoconf:checks"],
 )
 
 bzl_library(
@@ -63,8 +56,8 @@ bzl_library(
     srcs = ["libstdcxx_config_h.bzl"],
     deps = [
         ":configure.ac",
-        "//3rd_party/gcc/libstdcxx/autoconf:autoconf_config",
-        "//3rd_party/gcc/libstdcxx/autoconf:autoconf_hdr",
+        "//3rd_party/gcc/autoconf:autoconf_config",
+        "//3rd_party/gcc/autoconf:autoconf_hdr",
     ],
 )
 
@@ -73,7 +66,7 @@ bzl_library(
     srcs = ["target_config.bzl"],
     deps = [
         "//3rd_party/gcc:version",
-        "//3rd_party/gcc/libstdcxx/autoconf:checks",
+        "//3rd_party/gcc/autoconf:checks",
     ],
 )
 
@@ -81,10 +74,10 @@ bzl_library(
     name = "acinclude.m4",
     srcs = ["acinclude.m4.bzl"],
     deps = [
-        ":gcc_config_checks",
         ":linkage.m4",
+        "//3rd_party/gcc:gcc_config_checks",
         "//3rd_party/gcc:version",
-        "//3rd_party/gcc/libstdcxx/autoconf:checks",
+        "//3rd_party/gcc/autoconf:checks",
     ],
 )
 
@@ -93,9 +86,9 @@ bzl_library(
     srcs = ["configure.ac.bzl"],
     deps = [
         ":acinclude.m4",
-        ":gcc_config_checks",
         ":linkage.m4",
-        "//3rd_party/gcc/libstdcxx/autoconf:checks",
+        "//3rd_party/gcc:gcc_config_checks",
+        "//3rd_party/gcc/autoconf:checks",
     ],
 )
 
@@ -103,10 +96,10 @@ bzl_library(
     name = "crossconfig.m4",
     srcs = ["crossconfig.m4.bzl"],
     deps = [
-        ":gcc_config_checks",
         ":linkage.m4",
+        "//3rd_party/gcc:gcc_config_checks",
         "//3rd_party/gcc:version",
-        "//3rd_party/gcc/libstdcxx/autoconf:checks",
+        "//3rd_party/gcc/autoconf:checks",
     ],
 )
 
@@ -115,7 +108,7 @@ bzl_library(
     srcs = ["linkage.m4.bzl"],
     deps = [
         "//3rd_party/gcc:version",
-        "//3rd_party/gcc/libstdcxx/autoconf:checks",
+        "//3rd_party/gcc/autoconf:checks",
     ],
 )
 

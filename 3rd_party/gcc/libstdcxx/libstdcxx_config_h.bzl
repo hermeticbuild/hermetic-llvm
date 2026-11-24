@@ -4,16 +4,16 @@
 # Local autoconf rules execute those checks and render the header.
 
 load(
-    "//3rd_party/gcc/libstdcxx:configure.ac.bzl",
-    "config_entries",
-)
-load(
-    "//3rd_party/gcc/libstdcxx/autoconf:autoconf_config.bzl",
+    "//3rd_party/gcc/autoconf:autoconf_config.bzl",
     "autoconf_config",
 )
 load(
-    "//3rd_party/gcc/libstdcxx/autoconf:autoconf_hdr.bzl",
+    "//3rd_party/gcc/autoconf:autoconf_hdr.bzl",
     "autoconf_hdr",
+)
+load(
+    "//3rd_party/gcc/libstdcxx:configure.ac.bzl",
+    "config_entries",
 )
 
 def libstdcxx_config_h(

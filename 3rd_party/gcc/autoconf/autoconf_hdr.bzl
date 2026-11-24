@@ -28,7 +28,7 @@ def _write_config_output(ctx, config_h, results):
             ",".join(result.defines_on_success),
         ])
 
-    ops_file = ctx.actions.declare_file("result_ops")
+    ops_file = ctx.actions.declare_file(ctx.attr.name + ".result_ops")
 
     # Terminate every line: `read` drops an unterminated last line.
     ctx.actions.write(ops_file, "".join([":".join(op) + "\n" for op in result_ops]))

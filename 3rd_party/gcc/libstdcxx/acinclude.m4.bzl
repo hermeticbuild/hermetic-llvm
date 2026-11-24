@@ -35,7 +35,7 @@ load(
     "libstdcxx_has_zoneinfo_policy",
 )
 load(
-    "//3rd_party/gcc/libstdcxx/autoconf:checks.bzl",
+    "//3rd_party/gcc/autoconf:checks.bzl",
     "compile_check",
     "function_link_check",
     "link_check",
@@ -44,7 +44,7 @@ load(
     "policy_undef",
 )
 load(
-    ":gcc_config_checks.bzl",
+    "//3rd_party/gcc:gcc_config_checks.bzl",
     "CXX_NO_EXCEPTIONS_FLAGS",
     "PTHREAD_LINK_FLAGS",
 )
