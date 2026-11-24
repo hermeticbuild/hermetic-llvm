@@ -16,63 +16,79 @@ _HOST = [
     "@platforms//os:linux",
 ]
 
-[
-    cc_binary(
-        name = "exceptions_{}".format(linkage),
-        testonly = True,
-        # cleanup.c needs -fexceptions for its cleanup to run during unwinding.
-        srcs = [
+_LINKAGES = [
+    "static",
+    "dynamic",
+]
+
+_PROGRAMS = {
+    # cleanup.c needs -fexceptions for its cleanup to run during unwinding.
+    "exceptions": {
+        "copts": ["-fexceptions"],
+        "srcs": [
             "cleanup.c",
             "exceptions.cc",
         ],
-        copts = ["-fexceptions"],
+    },
+    "split_stack": {
+        "copts": ["-fsplit-stack"],
+        "srcs": ["split_stack.c"],
+    },
+}
+
+[
+    cc_binary(
+        name = "{}_{}".format(program, linkage),
+        testonly = True,
+        srcs = attrs["srcs"],
+        copts = attrs["copts"],
         linkstatic = linkage == "static",
         tags = ["manual"],
         target_compatible_with = _LIBGCC_FROM_GCC,
     )
-    for linkage in [
-        "static",
-        "dynamic",
-    ]
+    for program, attrs in _PROGRAMS.items()
+    for linkage in _LINKAGES
 ]
 
 [
     # A filegroup keeps the binary's path, so its $ORIGIN-relative RUNPATH
     # still finds the toolchain's runtime libraries in the runfiles.
     platform_transition_filegroup(
-        name = "exceptions_{}_linux_x86_64_{}".format(
+        name = "{}_{}_linux_x86_64_{}".format(
+            program,
             linkage,
             gcc_target_suffix(version),
         ),
         testonly = True,
-        srcs = [":exceptions_{}".format(linkage)],
+        srcs = [":{}_{}".format(program, linkage)],
         tags = ["manual"],
         target_compatible_with = _HOST,
         target_platform = "//runtimes/libstdcxx/tests:linux_x86_64_{}".format(libstdcxx_constraint_value(version)),
     )
-    for linkage in [
-        "static",
-        "dynamic",
-    ]
+    for program in _PROGRAMS
+    for linkage in _LINKAGES
     for version in LIBGCC_VERSIONS
 ]
 
 [
     exec_test(
-        name = "exceptions_{}_linux_x86_64_{}_test".format(
+        name = "{}_{}_linux_x86_64_{}_test".format(
+            program,
             linkage,
             gcc_target_suffix(version),
         ),
-        srcs = ["exceptions_test.sh"],
+        srcs = ["runtime_test.sh"],
         data = [
-            ":exceptions_{}_linux_x86_64_{}".format(
+            ":{}_{}_linux_x86_64_{}".format(
+                program,
                 linkage,
                 gcc_target_suffix(version),
             ),
             "@llvm//tools:llvm-readelf",
         ],
         env = {
-            "BINARY": "$(rootpath :exceptions_{}_linux_x86_64_{})".format(
+            "BINARY": "$(rootpath :{}_{}_linux_x86_64_{})".format(
+                program,
                 linkage,
                 gcc_target_suffix(version),
             ),
@@ -82,10 +98,8 @@ _HOST = [
         rule = sh_test,
         target_compatible_with = _HOST,
     )
-    for linkage in [
-        "static",
-        "dynamic",
-    ]
+    for program in _PROGRAMS
+    for linkage in _LINKAGES
     for version in LIBGCC_VERSIONS
 ]
 

@@ -35,8 +35,17 @@ copy_to_directory(
     srcs = [
         ":unwind",
     ] + select({
+        # -lgcc_s finds the real libgcc_s.so there instead.
+        "//runtimes/libgcc:libgcc_library_search_path_enabled": [],
+        "//conditions:default": [":stub_libgcc_s_if_enabled"],
+    }),
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "stub_libgcc_s_if_enabled",
+    srcs = select({
         ":stub_libgcc_s": [":gcc_s"],
         "//conditions:default": [],
     }),
-    visibility = ["//visibility:public"],
 )

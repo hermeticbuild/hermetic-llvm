@@ -5,7 +5,7 @@
 #
 # - Headers generated in GCC's build directory: tconfig.h and tm.h from
 #   gcc/mkconfig.sh, with the tm_file list and tm_defines that gcc/config.gcc
-#   selects, and the USED_FOR_TARGET part of auto-host.h. tm.h also includes
+#   selects, and the parts of auto-host.h that libgcc reads. tm.h also includes
 #   the generated options.h, insn-constants.h and insn-modes.h. libgcc uses
 #   none of their contents, so they are stand-ins here, except for the
 #   constants the target headers need to declare their tables.
@@ -35,18 +35,26 @@ _TCONFIG_H = [
     "#endif /* GCC_TCONFIG_H */",
 ]
 
-# The auto-host.h defines that gcc/config.in leaves outside #ifndef
-# USED_FOR_TARGET, as GCC's configure sets them for a GNU assembler and linker
-# on Linux. The toolchain's integrated assembler and lld support the same
-# features.
+# What libgcc reads from GCC's auto-host.h. Most of it is the defines that
+# gcc/config.in leaves outside #ifndef USED_FOR_TARGET, as GCC's configure sets
+# them for a GNU assembler and linker on Linux. The toolchain's integrated
+# assembler and lld support the same features. The rest is host-only: sources
+# that include auto-host.h directly, without tconfig.h, also see the defines
+# under #ifndef USED_FOR_TARGET. Of the ported sources only
+# config/i386/morestack.S does, and it reads HAVE_INITFINI_ARRAY_SUPPORT to
+# register __stack_split_initialize in .init_array. Without it the constructor
+# goes to .ctors, which compiler-rt's crtbegin does not run.
 _AUTO_HOST_H = [
-    "/* The USED_FOR_TARGET part of GCC's auto-host.h.  */",
+    "/* The parts of GCC's auto-host.h that libgcc reads.  */",
     "#define HAVE_GAS_CFI_DIRECTIVE 1",
     "#define HAVE_GAS_CFI_PERSONALITY_DIRECTIVE 1",
     "#define HAVE_GAS_CFI_SECTIONS_DIRECTIVE 1",
     "#define HAVE_GAS_HIDDEN 1",
     "#define HAVE_LD_EH_FRAME_HDR 1",
     "#define TARGET_DL_ITERATE_PHDR 1",
+    "#ifndef USED_FOR_TARGET",
+    "#define HAVE_INITFINI_ARRAY_SUPPORT 1",
+    "#endif",
 ]
 
 def _mkconfig_tm_h(defines, headers):

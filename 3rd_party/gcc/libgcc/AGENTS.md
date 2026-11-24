@@ -6,6 +6,8 @@ in `3rd_party/gcc/gcc.BUILD.bazel`; this package holds their data and rules.
 `//runtimes/cxxstdlib` links them in place of LLVM's libunwind where
 `//runtimes/libgcc:libgcc_from_gcc` matches: the GCC versions in
 `LIBGCC_VERSIONS` (`3rd_party/gcc/version.bzl`) on x86-64 Linux.
+`runtimes/libgcc/BUILD.bazel` also has GCC's `libgcc_s.so` linker script and
+`:libgcc_library_search_directory`, where dynamic links find it with `-lgcc_s`.
 
 ## Files
 
@@ -14,9 +16,9 @@ in `3rd_party/gcc/gcc.BUILD.bazel`; this package holds their data and rules.
   marked with its file name. Keep the fragments in config.host order, since
   later ones reassign variables.
 - `target_config.bzl` holds what GCC's build directory and libgcc's configure
-  would provide: `tm.h`, `tconfig.h`, the `USED_FOR_TARGET` part of
-  `auto-host.h`, `auto-target.h`, `libgcc_tm.h`, the `-fbuilding-libgcc`
-  predefines, and shims for GCC builtins Clang lacks.
+  would provide: `tm.h`, `tconfig.h`, the parts of `auto-host.h` that libgcc
+  reads, `auto-target.h`, `libgcc_tm.h`, the `-fbuilding-libgcc` predefines,
+  and shims for GCC builtins Clang lacks.
 - `libgcc_rules.bzl` has the wrapper-source, hide-list and version-map rules.
 - `3rd_party/gcc/patches/17.x/libgcc-clang-compat.patch` changes the spots in
   libgcc's sources that rely on GCC-only behavior, so that Clang compiles them.
@@ -37,7 +39,15 @@ Derive each value from GCC itself, not from memory:
 - `auto-host.h`: set the macros as fixed policy, as GCC's configure sets them
   for a GNU assembler and linker. A configure run without a target assembler
   and linker leaves `HAVE_LD_EH_FRAME_HDR` and `TARGET_DL_ITERATE_PHDR` unset,
-  which silently breaks FDE lookup.
+  which silently breaks FDE lookup. Sources that include `auto-host.h`
+  directly, without `tconfig.h`, also see its host-only defines (the ones GCC's
+  header puts under `#ifndef USED_FOR_TARGET`). Check their `#if` lines, and put
+  each macro they read in that part of `_AUTO_HOST_H`, with the value from the
+  `auto-host.h` of a GCC built for the target. In the x86-64 port only
+  `config/i386/morestack.S` does this, and it reads
+  `HAVE_INITFINI_ARRAY_SUPPORT`. When `auto-host.h` lacks it, `morestack.S`
+  registers `__stack_split_initialize` in `.ctors`, which compiler-rt's
+  `crtbegin.o` does not run.
 - `__builtin_init_dwarf_reg_size_table`: compare Clang's table with GCC's
   (`xgcc -S` on a call to it) and add a shim where they differ or Clang lacks
   the builtin.
@@ -61,8 +71,9 @@ Derive each value from GCC itself, not from memory:
 
 ## Validation
 
-- `bazel test //runtimes/libgcc/...` checks the exported symbols and versions
-  and runs exception tests linked statically and dynamically.
+- `bazel test //runtimes/libgcc/...` checks the exported symbols and versions.
+  It also runs exception and split-stack tests, each linked statically and
+  dynamically.
 - For a new version or target, also run GCC's `g++.dg/eh` and
   `gcc.dg/cleanup-*` run tests, built with a GCC, against the new
   `libgcc_s.so.1` through `LD_LIBRARY_PATH` and against the static archives by

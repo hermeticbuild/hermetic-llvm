@@ -253,6 +253,18 @@ cc_args_list(
     }),
 )
 
+# Only complete-stage links with libgcc from the selected GCC search for
+# libgcc.a; see //runtimes/libgcc:libgcc_library_search_path_enabled.
+cc_args_list(
+    name = "libgcc_library_search_paths",
+    args = select({
+        "//runtimes/libgcc:libgcc_library_search_path_enabled": [
+            "//toolchain/args:libgcc_library_search_paths",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
 # Those are stubs since we link against static_runtime_libs / dynamic_runtime_libs.
 cc_args_list(
     name = "libunwind_library_search_paths",
@@ -438,6 +450,7 @@ cc_args_list(
     ] + [
         ":cxxstdlib_library_search_paths",
         ":libunwind_library_search_paths",
+        ":libgcc_library_search_paths",
         ":rtlib",
         ":stdlib",
         ":unwindlib",

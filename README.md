@@ -299,10 +299,14 @@ rules_cc's PIC configuration. The default toolchain configuration produces
 position-independent code suitable for shared libraries.
 
 With libstdc++ 17.0.0 on x86-64, the toolchain also builds libgcc from the same
-GCC sources. Static links use `libgcc.a` and `libgcc_eh.a`, as GCC's driver
-does, and dynamic links use `libgcc_s.so.1`. compiler-rt's builtins still come
-last on the link line. In dynamic links they supply the symbols that
-`libgcc_s.so.1` does not export. GCC's driver takes those from `libgcc.a`.
+GCC sources and links it as GCC's driver does. Static links use `libgcc.a` and
+`libgcc_eh.a`. Dynamic links pass `-lgcc_s`, which finds GCC's `libgcc_s.so`
+linker script. The script names `libgcc_s.so.1` and then `libgcc.a`, which
+supplies the symbols the shared library does not export, such as
+`-fsplit-stack`'s `__morestack`. rustc's `-lgcc_s` should find the same script,
+judging from the `-L` order, so the stub that
+`--@llvm//config:experimental_stub_libgcc_s` provides is left out. This is not
+tested with rustc. compiler-rt's builtins still come last on the link line, and
 compiler-rt's `crtbegin.o` and `crtend.o` are kept.
 
 `libstdc++.so.6` depends on `libgcc_s.so.1`, as GCC's does, and a dynamically
@@ -319,9 +323,9 @@ libunwind. AArch64 is not supported: Clang's AArch64 backend emits nothing for
 and libgcc's unwinder needs both.
 
 `bazel test //runtimes/libgcc/...` checks the symbols and versions that
-`libgcc_s.so.1` exports and runs exception tests.
-`3rd_party/gcc/libgcc/AGENTS.md` describes how the build is derived from GCC and
-how to validate a new version or target.
+`libgcc_s.so.1` exports. It also runs exception and split-stack tests, each
+linked statically and dynamically. `3rd_party/gcc/libgcc/AGENTS.md` describes
+how the build is derived from GCC and how to validate a new version or target.
 
 At the moment, libstdc++ support is limited to Linux glibc targets. Additional
 targets can be added based on demand; musl + libstdc++ is feasible too, even if

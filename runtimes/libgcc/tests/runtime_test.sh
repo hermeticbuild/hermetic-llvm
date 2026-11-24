@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Runs the exceptions binary and checks which unwinder it links.
+# Runs a test binary and checks which unwinder it links.
 set -euo pipefail
 
 # sh_test starts in the runfiles workspace; rootpath values are relative to it.
