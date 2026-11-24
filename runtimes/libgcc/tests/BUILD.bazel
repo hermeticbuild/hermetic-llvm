@@ -6,11 +6,11 @@ load("@rules_qemu//qemu:qemu_binary.bzl", "qemu_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//:defs.bzl", "exec_test")
 load("//3rd_party/gcc:version.bzl", "LIBGCC_CPUS", "LIBGCC_VERSIONS", "gcc_repository_label", "gcc_target_suffix", "libstdcxx_constraint_value")
-load("//3rd_party/gcc/libgcc:configure.ac.bzl", "LIBGCC_CONFIGURE_CHECKS")
-load("//3rd_party/gcc/libgcc:makefile.bzl", "libgcc_tmake_files")
-load("//3rd_party/gcc/libgcc:target_config.bzl", "libgcc_configure_results", "libgcc_target_triple")
 load("//3rd_party/gcc/autoconf:autoconf_config.bzl", "autoconf_config")
 load("//3rd_party/gcc/autoconf:autoconf_hdr.bzl", "autoconf_hdr")
+load("//3rd_party/gcc/libgcc:configure.ac.bzl", "LIBGCC_CONFIG_HOST_CHECKS")
+load("//3rd_party/gcc/libgcc:makefile.bzl", "libgcc_tmake_files")
+load("//3rd_party/gcc/libgcc:target_config.bzl", "libgcc_configure_results", "libgcc_target_triple")
 
 # The binaries build for a libstdc++ platform whose GCC version builds libgcc,
 # and the tests run them on the x86-64 Linux host: natively for x86-64, and
@@ -256,7 +256,7 @@ copy_to_directory(
 # with each platform's toolchain where they are probes.
 autoconf_config(
     name = "configure_checks",
-    checks = LIBGCC_CONFIGURE_CHECKS,
+    checks = LIBGCC_CONFIG_HOST_CHECKS,
     tags = ["manual"],
 )
 

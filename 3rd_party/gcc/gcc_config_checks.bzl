@@ -1,7 +1,7 @@
-# Shared configure-check model ported from GCC's top-level config/*.m4 files.
-# Compare these helpers with config/tls.m4, config/unwind_ipinfo.m4,
-# config/futex.m4, config/iconv.m4, and config/no-executables.m4 before
-# changing their semantics.
+# Shared configure-check model ported from GCC's top-level config/*.m4 files,
+# for the libstdc++ and libgcc ports. Compare these helpers with config/tls.m4,
+# config/unwind_ipinfo.m4, config/futex.m4, config/iconv.m4, and
+# config/no-executables.m4 before changing their semantics.
 #
 # AC_COMPILE_IFELSE and AC_LINK_IFELSE success branches may define several
 # macros. The check name stays the audit key; defines_on_success records the
@@ -20,16 +20,35 @@ load(
 CXX_NO_EXCEPTIONS_FLAGS = ["-fno-exceptions"]
 PTHREAD_LINK_FLAGS = ["-lpthread"]
 
-def gcc_check_tls():
+_TLS_SOURCE = "__thread int a; int b; int main(void) { return a = b; }"
+
+def gcc_check_cc_tls():
+    """GCC_CHECK_CC_TLS: whether the target supports thread-local storage."""
     return [
         compile_check(
             name = "HAVE_CC_TLS",
-            source = "__thread int a; int b; int main(void) { return a = b; }",
+            source = _TLS_SOURCE,
         ),
+    ]
+
+def gcc_check_tls():
+    """GCC_CHECK_TLS: GCC_CHECK_CC_TLS, and whether TLS links."""
+    return gcc_check_cc_tls() + [
         link_check(
             name = "HAVE_TLS",
             language = "c",
-            source = "__thread int a; int b; int main(void) { return a = b; }",
+            source = _TLS_SOURCE,
+        ),
+    ]
+
+def gcc_check_emutls():
+    """GCC_CHECK_EMUTLS: whether the compiler emulates TLS with __emutls calls."""
+    return [
+        compile_check(
+            name = "USE_EMUTLS",
+            source = _TLS_SOURCE,
+            flags = ["-Werror"],
+            output_regex = "__emutls_get_address",
         ),
     ]
 

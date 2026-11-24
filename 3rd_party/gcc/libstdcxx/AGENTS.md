@@ -53,7 +53,7 @@ Keep Bazel files shaped like the GCC files they port:
 - `3rd_party/gcc/libstdcxx/crossconfig.m4.bzl` is the counterpart of
   `libstdc++-v3/crossconfig.m4`.
 - `3rd_party/gcc/gcc_config_checks.bzl` is the counterpart
-  for GCC top-level `config/*.m4` checks used by libstdc++.
+  for GCC top-level `config/*.m4` checks used by libstdc++ and libgcc.
 - `3rd_party/gcc/libstdcxx/linkage.m4.bzl` is the counterpart of
   `libstdc++-v3/linkage.m4`.
 - `3rd_party/gcc/autoconf/checks.bzl`,
@@ -61,9 +61,9 @@ Keep Bazel files shaped like the GCC files they port:
   `3rd_party/gcc/autoconf/autoconf_hdr.bzl`,
   `3rd_party/gcc/autoconf/cc_configure_probe.bzl`, and
   `3rd_party/gcc/autoconf/providers.bzl` are local generic
-  autoconf mechanics. They should stay free of libstdc++ source-policy
-  decisions so a future external autoconf ruleset migration is a thin adapter
-  change.
+  autoconf mechanics, shared with the libgcc port. They should stay free of
+  libstdc++ and libgcc source-policy decisions so a future external autoconf
+  ruleset migration is a thin adapter change.
 - `libstdc++-v3/linkage.m4` helpers are represented in
   `3rd_party/gcc/libstdcxx/linkage.m4.bzl`, even when they are generic math or
   stdlib declaration/linkage checks.

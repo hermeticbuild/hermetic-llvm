@@ -3,6 +3,9 @@ load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@llvm//3rd_party/gcc:version.bzl", "LIBGCC_CPUS", "gcc_config_toolexeclibdir_target", "gcc_has_libgcc", "gcc_version_at_least_for", "gcc_version_less_than_for")
+load("@llvm//3rd_party/gcc/autoconf:autoconf_config.bzl", "autoconf_config")
+load("@llvm//3rd_party/gcc/autoconf:autoconf_hdr.bzl", "autoconf_hdr")
+load("@llvm//3rd_party/gcc/libgcc:configure.ac.bzl", "libgcc_auto_target_checks", "libgcc_configure_cflags_checks")
 load("@llvm//3rd_party/gcc/libgcc:libgcc_rules.bzl", "libgcc_hide_lists", "libgcc_version_script", "libgcc_wrappers")
 load("@llvm//3rd_party/gcc/libgcc:makefile.bzl", "libgcc_cc_groups", "libgcc_objects")
 load("@llvm//3rd_party/gcc/libgcc:target_config.bzl", "libgcc_header_contents", "libgcc_header_links", "libgcc_shlib_mapfiles", "libgcc_target_copts")
@@ -1965,12 +1968,57 @@ _LIBGCC_HEADER_LINKS = {
     for name, src in _LIBGCC_HEADER_LINKS[cpu].items()
 ]
 
+# The headers written by libgcc/configure.ac's checks, run with the toolchain
+# of the platform libgcc builds for: auto-target.h, and the header of the -D
+# flags configure puts in INTERNAL_CFLAGS, which every compile includes first.
+_LIBGCC_CONFIGURE_HEADERS = {
+    "auto-target.h": "LIBGCC_AUTO_TARGET_H",
+    "libgcc_configure_cflags.h": "LIBGCC_CONFIGURE_CFLAGS_H",
+}
+
+_LIBGCC_CONFIGURE_CHECKS = {
+    cpu: {
+        "auto-target.h": libgcc_auto_target_checks(cpu),
+        "libgcc_configure_cflags.h": libgcc_configure_cflags_checks(),
+    }
+    for cpu in _LIBGCC_CPUS
+}
+
+[
+    autoconf_config(
+        name = "libgcc_{}_{}_checks".format(cpu, name),
+        checks = _LIBGCC_CONFIGURE_CHECKS[cpu][name],
+        target_compatible_with = [
+            "@platforms//cpu:" + cpu,
+            "@platforms//os:linux",
+        ],
+    )
+    for cpu in _LIBGCC_CPUS
+    for name in _LIBGCC_CONFIGURE_HEADERS
+]
+
+[
+    autoconf_hdr(
+        name = "libgcc_{}_{}".format(cpu, name),
+        out = "libgcc_{}/{}".format(cpu, name),
+        dep = ":libgcc_{}_{}_checks".format(cpu, name),
+        header_comment = "Generated from libgcc/configure.ac's checks by @llvm//3rd_party/gcc/libgcc:configure.ac.bzl.",
+        include_guard = guard,
+        target_compatible_with = [
+            "@platforms//cpu:" + cpu,
+            "@platforms//os:linux",
+        ],
+    )
+    for cpu in _LIBGCC_CPUS
+    for name, guard in _LIBGCC_CONFIGURE_HEADERS.items()
+]
+
 [
     cc_library(
         name = "libgcc_{}_headers".format(cpu),
         hdrs = [
             ":libgcc_{}_{}".format(cpu, name)
-            for name in _LIBGCC_HEADER_CONTENTS[cpu].keys() + _LIBGCC_HEADER_LINKS[cpu].keys()
+            for name in _LIBGCC_HEADER_CONTENTS[cpu].keys() + _LIBGCC_HEADER_LINKS[cpu].keys() + _LIBGCC_CONFIGURE_HEADERS.keys()
             if not name.endswith(".c")
         ],
         # libgcc/Makefile.in's INCLUDES order: the build directory's headers, then
@@ -2010,9 +2058,10 @@ _LIBGCC_COPTS = [
     "-DIN_GCC",
     "-DIN_LIBGCC2",
     "-fno-stack-protector",
-    # INTERNAL_CFLAGS: set_have_cc_tls from configure, and t-tls.
-    "-DHAVE_CC_TLS",
-    "-DUSE_TLS",
+    # INTERNAL_CFLAGS: set_have_cc_tls and set_use_emutls from configure, as
+    # probes in libgcc_configure_cflags.h. t-tls's -DUSE_TLS is in libgcc_target_copts.
+    "-include",
+    "libgcc_configure_cflags.h",
     # GCC 15 and newer compile libgcc as C23, their default.
     "-std=gnu23",
     # longlong.h casts asm output operands, which GCC accepts.

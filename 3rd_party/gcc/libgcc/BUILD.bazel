@@ -5,7 +5,10 @@ package(default_visibility = ["//visibility:public"])
 bzl_library(
     name = "configure_ac",
     srcs = ["configure.ac.bzl"],
-    deps = ["//3rd_party/gcc/autoconf:checks"],
+    deps = [
+        "//3rd_party/gcc:gcc_config_checks",
+        "//3rd_party/gcc/autoconf:checks",
+    ],
 )
 
 bzl_library(

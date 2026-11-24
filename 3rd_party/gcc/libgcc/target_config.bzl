@@ -9,9 +9,10 @@
 #   the generated options.h, insn-constants.h and insn-modes.h. libgcc uses
 #   none of their contents, so they are stand-ins here, except for the
 #   constants the target headers need to declare their tables.
-# - Headers libgcc's own configure writes: auto-target.h (libgcc/config.in),
-#   libgcc_tm.h (libgcc/mkheader.sh with config.host's tm_file), and the
-#   LIBGCC_LINKS copies that Makefile.in makes.
+# - Headers libgcc's own configure writes: libgcc_tm.h (libgcc/mkheader.sh
+#   with config.host's tm_file) and the LIBGCC_LINKS copies that Makefile.in
+#   makes. configure's checks for auto-target.h are ported in configure.ac.bzl,
+#   as probes or policy.
 # - Macros GCC predefines under -fbuilding-libgcc
 #   (gcc/c-family/c-cppbuiltin.cc). Clang does not support that option, so
 #   these are written to a header that every libgcc source includes first.
@@ -82,36 +83,6 @@ def _mkconfig_tm_h(defines, headers):
     ]
     return lines
 
-# auto-target.h as libgcc/configure writes it with the toolchain's Clang and
-# glibc 2.17 or newer.
-_AUTO_TARGET_H_COMMON = [
-    "#define AS_HIDDEN_DIRECTIVE .hidden",
-    "#define HAVE_AS_CFI_SECTIONS 1",
-    "#define HAVE_FTW_H 1",
-    "#define HAVE_GETIPINFO 1",
-    "#define HAVE_INIT_PRIORITY 1",
-    "#define HAVE_INTTYPES_H 1",
-    "#define HAVE_MEMORY_H 1",
-    "#define HAVE_STDINT_H 1",
-    "#define HAVE_STDLIB_H 1",
-    "#define HAVE_STRINGS_H 1",
-    "#define HAVE_STRING_H 1",
-    "#define HAVE_SYS_AUXV_H 1",
-    "#define HAVE_SYS_MMAN_H 1",
-    "#define HAVE_SYS_STAT_H 1",
-    "#define HAVE_SYS_TYPES_H 1",
-    "#define HAVE_UNISTD_H 1",
-    "#define PACKAGE_BUGREPORT \"\"",
-    "#define PACKAGE_NAME \"GNU C Runtime Library\"",
-    "#define PACKAGE_STRING \"GNU C Runtime Library 1.0\"",
-    "#define PACKAGE_TARNAME \"libgcc\"",
-    "#define PACKAGE_URL \"http://www.gnu.org/software/libgcc/\"",
-    "#define PACKAGE_VERSION \"1.0\"",
-    "#define SIZEOF_DOUBLE 8",
-    "#define SIZEOF_LONG_DOUBLE 16",
-    "#define STDC_HEADERS 1",
-]
-
 _X86_64 = struct(
     # The canonical triple configure runs config.gcc and config.host for.
     triple = "x86_64-pc-linux-gnu",
@@ -147,7 +118,6 @@ _X86_64 = struct(
     insn_constants = [
         "#define FIRST_PSEUDO_REG 92",
     ],
-    auto_target = ["#define HAVE_AS_AVX 1"],
     # libgcc/config.host for x86_64-*-linux*.
     libgcc_tm_file = [
         "config/i386/elf-lib.h",
@@ -236,12 +206,14 @@ _X86_64 = struct(
         "#endif",
     ],
     # HOST_LIBGCC2_CFLAGS from i386/t-linux, with CET_FLAGS as libgcc's
-    # configure sets them for --enable-cet=auto on x86-64 Linux.
+    # configure sets them for --enable-cet=auto on x86-64 Linux, and t-tls's
+    # INTERNAL_CFLAGS.
     copts = [
         "-mlong-double-80",
         "-DUSE_ELF_SYMVER",
         "-fcf-protection",
         "-mshstk",
+        "-DUSE_TLS",
     ],
 )
 
@@ -273,12 +245,6 @@ _AARCH64 = struct(
         "config/initfini-array.h",
     ],
     insn_constants = [],
-    # libgcc's configure checks these for aarch64*-*-linux-gnu.
-    auto_target = [
-        "#define HAVE_AS_LSE 1",
-        "#define HAVE_AS_VARIANT_PCS 1",
-        "#define HAVE___GETAUXVAL 1",
-    ],
     # libgcc/config.host for aarch64*-*-linux*.
     libgcc_tm_file = [
         "config/aarch64/value-unwind.h",
@@ -447,7 +413,6 @@ def libgcc_header_contents(cpu, version):
     t = _target(cpu)
     return {
         "auto-host.h": _AUTO_HOST_H,
-        "auto-target.h": _AUTO_TARGET_H_COMMON + t.auto_target,
         "insn-constants.h": ["/* Stand-in for GCC's generated insn-constants.h.  */"] + t.insn_constants,
         "insn-modes.h": ["/* Stand-in for GCC's generated insn-modes.h.  */"],
         "libgcc_clang_compat.h": t.clang_compat,

@@ -19,7 +19,8 @@ used by the `runtimes/libstdcxx` facade.
   libstdc++ helper `.bzl` files in the main `@llvm` repository and load them
   with `@llvm//...` from this BUILD file.
 - `autoconf/` holds the generic configure-probe rules that the libstdc++ and
-  libgcc ports share.
+  libgcc ports share, and `gcc_config_checks.bzl` ports the checks of GCC's
+  top-level `config/*.m4` files for both.
 - `extension/trampoline.BUILD.bazel` is the stable selected facade. It should
   expose only runtime-facing targets consumed through `@gcc`, plus explicit
   version-matrix aliases needed by tests and audits.

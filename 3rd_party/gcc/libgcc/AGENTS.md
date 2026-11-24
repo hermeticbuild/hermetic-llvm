@@ -18,14 +18,17 @@ dynamic links find it with `-lgcc_s`.
   config.host order, since later ones reassign variables.
 - `target_config.bzl` holds what GCC's build directory and libgcc's configure
   would provide: `tm.h`, `tconfig.h`, the parts of `auto-host.h` that libgcc
-  reads, `auto-target.h`, `libgcc_tm.h`, the `-fbuilding-libgcc` predefines,
-  and shims for GCC builtins Clang lacks.
-- `configure.ac.bzl` holds the results of the `libgcc/configure.ac` and
-  `gcc/configure.ac` checks that decide what `config.host` and `config.gcc`
-  select. Each is a probe, where configure's check fits this toolchain, or a
-  fixed policy value, where it does not. Only the configure tests use them,
-  because the build needs those selections at loading time, before probes can
-  run.
+  reads, `libgcc_tm.h`, the `-fbuilding-libgcc` predefines, and shims for GCC
+  builtins Clang lacks.
+- `configure.ac.bzl` ports `libgcc/configure.ac`'s checks as autoconf checks
+  that run with the toolchain of the platform libgcc builds for. Each is a
+  probe, where configure's check fits this toolchain, or a fixed policy value,
+  where it does not. The results write `auto-target.h` and
+  `libgcc_configure_cflags.h`, which holds the `-D` flags configure puts in
+  `INTERNAL_CFLAGS`. `LIBGCC_CONFIG_HOST_CHECKS` holds the results that decide
+  what `config.host` and `config.gcc` select. Only the configure tests use that
+  list, because the build needs the selections at loading time, before probes
+  can run.
 - `libgcc_rules.bzl` has the wrapper-source, hide-list and version-map rules.
 - `3rd_party/gcc/patches/17.x/libgcc-clang-compat.patch` changes the spots in
   libgcc's sources that rely on GCC-only behavior, so that Clang compiles them.
@@ -60,6 +63,20 @@ Derive each value from GCC itself, not from memory:
   `HAVE_INITFINI_ARRAY_SUPPORT`. When `auto-host.h` lacks it, `morestack.S`
   registers `__stack_split_initialize` in `.ctors`, which compiler-rt's
   `crtbegin.o` does not run.
+- `configure.ac.bzl`: port each `libgcc/configure.ac` check that writes
+  `auto-target.h` or `INTERNAL_CFLAGS`, in configure's order, with the rules in
+  `3rd_party/gcc/autoconf`. For a check that GCC's top-level `config/*.m4`
+  files define, use its port in `3rd_party/gcc/gcc_config_checks.bzl`, which the
+  libstdc++ port shares. Use a probe wherever configure runs one. A check that
+  greps the compiler's output uses `compile_check` with `output_regex`.
+  `AC_CHECK_SIZEOF` uses `ac_check_sizeof` and `AC_COMPUTE_INT` uses
+  `compute_int_check`. Use policy only where configure sets the value without a
+  check, or where its check does not fit this toolchain, and say why. Where the
+  `configure` script GCC ships differs from the `.m4` files, follow the script,
+  because it is what produces GCC's `auto-target.h`. For example, the script
+  does not define `HAVE_CC_TLS`, though `config/tls.m4` does. Compare the
+  rendered headers with the `auto-target.h` and `make -n` flags of a libgcc
+  configured for the target.
 - `__builtin_init_dwarf_reg_size_table`: compare Clang's table with GCC's
   (`xgcc -S` on a call to it) and add a shim where they differ or Clang lacks
   the builtin.
@@ -75,9 +92,12 @@ Derive each value from GCC itself, not from memory:
 - A CPU: add its configuration and canonical triple to `target_config.bzl`, the
   tmake fragments that `config.host` selects for it to `makefile.bzl` and
   `_TMAKE_FILES`, its GCC config headers to `_LIBGCC_ARCHIVE_INCLUDES` in
-  `3rd_party/gcc/extension/gcc.bzl`, and the CPU to `LIBGCC_CPUS`.
-  `3rd_party/gcc/gcc.BUILD.bazel` and `runtimes/libgcc/BUILD.bazel` follow
-  `LIBGCC_CPUS`.
+  `3rd_party/gcc/extension/gcc.bzl`, the checks configure runs only for it to
+  `_CPU_AUTO_TARGET_CHECKS` in `configure.ac.bzl`, and the CPU to
+  `LIBGCC_CPUS`. `3rd_party/gcc/gcc.BUILD.bazel` and
+  `runtimes/libgcc/BUILD.bazel` follow `LIBGCC_CPUS`. If its `config.host` or
+  `config.gcc` entry reads another configure result, add that check to
+  `LIBGCC_CONFIG_HOST_CHECKS`.
   In `runtimes/libgcc/tests`, add a symbol list, and add the CPU with the
   programs it runs to `_CPU_PROGRAMS`. Those tests run on an x86-64 Linux host,
   so a CPU other than x86-64 runs its binaries under qemu-user, as AArch64
