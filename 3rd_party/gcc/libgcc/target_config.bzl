@@ -157,7 +157,8 @@ _X86_64_PREDEFINES_GCC14 = [
     "#define __libgcc_shift_count__ __word__",
 ]
 
-# What GCC 10.5.0 predefines under -fbuilding-libgcc for x86-64 Linux.
+# What GCC 10.5.0 and 11.1.0 through 11.5.0 predefine under -fbuilding-libgcc
+# for x86-64 Linux.
 _X86_64_PREDEFINES_GCC10 = [
     "#define __LIBGCC_DF_EXCESS_PRECISION__ 0",
     "#define __LIBGCC_DF_FUNC_EXT__",
@@ -311,6 +312,11 @@ _X86_64_PREDEFINES_GCC13 = [
 
 _X86_64_PREDEFINES = {
     "10.5.0": _X86_64_PREDEFINES_GCC10,
+    "11.1.0": _X86_64_PREDEFINES_GCC10,
+    "11.2.0": _X86_64_PREDEFINES_GCC10,
+    "11.3.0": _X86_64_PREDEFINES_GCC10,
+    "11.4.0": _X86_64_PREDEFINES_GCC10,
+    "11.5.0": _X86_64_PREDEFINES_GCC10,
     "12.1.0": _X86_64_PREDEFINES_GCC12,
     "12.2.0": _X86_64_PREDEFINES_GCC12,
     "12.3.0": _X86_64_PREDEFINES_GCC12,
@@ -580,6 +586,11 @@ _AARCH64 = struct(
 # of each.
 _PORTED_TARGETS = {
     "10.5.0": ["x86_64"],
+    "11.1.0": ["x86_64"],
+    "11.2.0": ["x86_64"],
+    "11.3.0": ["x86_64"],
+    "11.4.0": ["x86_64"],
+    "11.5.0": ["x86_64"],
     "12.1.0": ["x86_64"],
     "12.2.0": ["x86_64"],
     "12.3.0": ["x86_64"],

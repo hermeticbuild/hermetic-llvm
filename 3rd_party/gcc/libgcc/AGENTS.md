@@ -39,10 +39,10 @@ for it. Each libstdc++ version links the libgcc built from its own GCC sources.
 - `libgcc-clang-compat.patch` in the `3rd_party/gcc/patches` directory of each
   range of GCC versions, such as `14-17`, changes the spots in libgcc's sources
   that rely on GCC-only behavior, so that Clang compiles them.
-- `3rd_party/gcc/patches/10.x/libgcc-morestack-init-array.patch` backports how
+- `3rd_party/gcc/patches/10-11/libgcc-morestack-init-array.patch` backports how
   GCC 14's `morestack.S` registers `__stack_split_initialize` in `.init_array`.
-  GCC 10 registers it in `.ctors`. lld keeps `.ctors` apart from `.init_array`,
-  and compiler-rt's `crtbegin.o` does not run `.ctors`.
+  GCC 10 and 11 register it in `.ctors`. lld keeps `.ctors` apart from
+  `.init_array`, and compiler-rt's `crtbegin.o` does not run `.ctors`.
 - `3rd_party/gcc/patches/17.x/libgcc-clang-aarch64-unwind.patch` replaces the
   `__builtin_eh_return` in libgcc's unwinder, which Clang does not implement
   for AArch64.
@@ -165,7 +165,7 @@ Derive each value from GCC itself, not from memory:
 
 ## Targets
 
-x86-64 is supported for GCC 10.5.0 and 12.1.0 through 17, and AArch64 for GCC
+x86-64 is supported for GCC 10.5.0 and 11.1.0 through 17, and AArch64 for GCC
 17. On AArch64, Clang returns the frame pointer for `__builtin_dwarf_cfa` and
 emits nothing for `__builtin_eh_return`, and libgcc's unwinder relies on both:
 

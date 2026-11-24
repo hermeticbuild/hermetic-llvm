@@ -318,6 +318,11 @@ LIBGCC_TARGETS = {
     "12.3.0": ["x86_64"],
     "12.2.0": ["x86_64"],
     "12.1.0": ["x86_64"],
+    "11.5.0": ["x86_64"],
+    "11.4.0": ["x86_64"],
+    "11.3.0": ["x86_64"],
+    "11.2.0": ["x86_64"],
+    "11.1.0": ["x86_64"],
     "10.5.0": ["x86_64"],
 }
 
@@ -374,9 +379,29 @@ LIBGCC_PATCHES = {
     "12.1.0": [
         _libstdcxx_patch("12.x/libgcc-clang-compat.patch"),
     ],
+    "11.5.0": [
+        _libstdcxx_patch("11.x/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("10-11/libgcc-morestack-init-array.patch"),
+    ],
+    "11.4.0": [
+        _libstdcxx_patch("11.x/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("10-11/libgcc-morestack-init-array.patch"),
+    ],
+    "11.3.0": [
+        _libstdcxx_patch("11.x/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("10-11/libgcc-morestack-init-array.patch"),
+    ],
+    "11.2.0": [
+        _libstdcxx_patch("11.x/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("10-11/libgcc-morestack-init-array.patch"),
+    ],
+    "11.1.0": [
+        _libstdcxx_patch("11.x/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("10-11/libgcc-morestack-init-array.patch"),
+    ],
     "10.5.0": [
         _libstdcxx_patch("10.x/libgcc-clang-compat.patch"),
-        _libstdcxx_patch("10.x/libgcc-morestack-init-array.patch"),
+        _libstdcxx_patch("10-11/libgcc-morestack-init-array.patch"),
     ],
 }
 
