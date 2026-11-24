@@ -189,6 +189,62 @@ _X86_64_PREDEFINES_GCC10 = [
     "#define __libgcc_shift_count__ __word__",
 ]
 
+# What GCC 12 predefines under -fbuilding-libgcc for x86-64 Linux, the same in
+# 12.1.0 through 12.5.0.
+_X86_64_PREDEFINES_GCC12 = [
+    "#define __LIBGCC_DF_EPSILON__ __DBL_EPSILON__",
+    "#define __LIBGCC_DF_EXCESS_PRECISION__ 0",
+    "#define __LIBGCC_DF_FUNC_EXT__",
+    "#define __LIBGCC_DF_MANT_DIG__ 53",
+    "#define __LIBGCC_DF_MAX__ __DBL_MAX__",
+    "#define __LIBGCC_DF_MIN__ __DBL_MIN__",
+    "#define __LIBGCC_DWARF_FRAME_REGISTERS__ 17",
+    "#define __LIBGCC_EH_FRAME_SECTION_NAME__ \".eh_frame\"",
+    "#define __LIBGCC_EH_RETURN_STACKADJ_RTX__ 1",
+    "#define __LIBGCC_EH_TABLES_CAN_BE_READ_ONLY__ 1",
+    "#define __LIBGCC_GCOV_TYPE_SIZE 64",
+    "#define __LIBGCC_HAS_DF_MODE__ 1",
+    "#define __LIBGCC_HAS_HF_MODE__ 1",
+    "#define __LIBGCC_HAS_SF_MODE__ 1",
+    "#define __LIBGCC_HAS_TF_MODE__ 1",
+    "#define __LIBGCC_HAS_XF_MODE__ 1",
+    "#define __LIBGCC_HAVE_HWDBL__ 1",
+    "#define __LIBGCC_HF_EPSILON__ __FLT16_EPSILON__",
+    "#define __LIBGCC_HF_EXCESS_PRECISION__ 1",
+    "#define __LIBGCC_HF_FUNC_EXT__ f16",
+    "#define __LIBGCC_HF_MANT_DIG__ 11",
+    "#define __LIBGCC_HF_MAX__ __FLT16_MAX__",
+    "#define __LIBGCC_HF_MIN__ __FLT16_MIN__",
+    "#define __LIBGCC_INIT_ARRAY_SECTION_ASM_OP__ 1",
+    "#define __LIBGCC_SF_EPSILON__ __FLT_EPSILON__",
+    "#define __LIBGCC_SF_EXCESS_PRECISION__ 0",
+    "#define __LIBGCC_SF_FUNC_EXT__ f",
+    "#define __LIBGCC_SF_MANT_DIG__ 24",
+    "#define __LIBGCC_SF_MAX__ __FLT_MAX__",
+    "#define __LIBGCC_SF_MIN__ __FLT_MIN__",
+    "#define __LIBGCC_STACK_GROWS_DOWNWARD__ 1",
+    "#define __LIBGCC_STACK_POINTER_REGNUM__ 7",
+    "#define __LIBGCC_TEXT_SECTION_ASM_OP__ \"\\t.text\"",
+    "#define __LIBGCC_TF_EPSILON__ 1.92592994438723585305597794258492732e-34Q",
+    "#define __LIBGCC_TF_EXCESS_PRECISION__ 0",
+    "#define __LIBGCC_TF_FUNC_EXT__ f128",
+    "#define __LIBGCC_TF_MANT_DIG__ 113",
+    "#define __LIBGCC_TF_MAX__ 1.18973149535723176508575932662800702e+4932Q",
+    "#define __LIBGCC_TF_MIN__ 3.36210314311209350626267781732175260e-4932Q",
+    "#define __LIBGCC_TRAMPOLINE_SIZE__ 28",
+    "#define __LIBGCC_VTABLE_USES_DESCRIPTORS__ 0",
+    "#define __LIBGCC_XF_EPSILON__ __LDBL_EPSILON__",
+    "#define __LIBGCC_XF_EXCESS_PRECISION__ 0",
+    "#define __LIBGCC_XF_FUNC_EXT__ l",
+    "#define __LIBGCC_XF_MANT_DIG__ 64",
+    "#define __LIBGCC_XF_MAX__ __LDBL_MAX__",
+    "#define __LIBGCC_XF_MIN__ __LDBL_MIN__",
+    # The libgcc_cmp_return_mode and libgcc_shift_count_mode target hooks
+    # name these modes; both are word_mode on x86-64.
+    "#define __libgcc_cmp_return__ __word__",
+    "#define __libgcc_shift_count__ __word__",
+]
+
 # What GCC 13 predefines under -fbuilding-libgcc for x86-64 Linux, the same in
 # 13.1.0 through 13.4.0.
 _X86_64_PREDEFINES_GCC13 = [
@@ -255,6 +311,11 @@ _X86_64_PREDEFINES_GCC13 = [
 
 _X86_64_PREDEFINES = {
     "10.5.0": _X86_64_PREDEFINES_GCC10,
+    "12.1.0": _X86_64_PREDEFINES_GCC12,
+    "12.2.0": _X86_64_PREDEFINES_GCC12,
+    "12.3.0": _X86_64_PREDEFINES_GCC12,
+    "12.4.0": _X86_64_PREDEFINES_GCC12,
+    "12.5.0": _X86_64_PREDEFINES_GCC12,
     "13.1.0": _X86_64_PREDEFINES_GCC13,
     "13.2.0": _X86_64_PREDEFINES_GCC13,
     "13.3.0": _X86_64_PREDEFINES_GCC13,
@@ -519,6 +580,11 @@ _AARCH64 = struct(
 # of each.
 _PORTED_TARGETS = {
     "10.5.0": ["x86_64"],
+    "12.1.0": ["x86_64"],
+    "12.2.0": ["x86_64"],
+    "12.3.0": ["x86_64"],
+    "12.4.0": ["x86_64"],
+    "12.5.0": ["x86_64"],
     "13.1.0": ["x86_64"],
     "13.2.0": ["x86_64"],
     "13.3.0": ["x86_64"],
