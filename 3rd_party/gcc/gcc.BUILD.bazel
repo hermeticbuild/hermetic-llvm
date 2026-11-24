@@ -2083,9 +2083,11 @@ _LIBGCC_COPTS = [
     # GCC compiles libgcc in its default C dialect: gnu23 from GCC 15, gnu17
     # before.
     "-std=gnu23" if gcc_version_at_least_for(GCC_VERSION, "15.0.0") else "-std=gnu17",
-    # longlong.h casts asm output operands, which GCC accepts. Clang 20 and
-    # newer reject them by default as -Winvalid-gnu-asm-cast, and older Clang
-    # only with -fheinous-gnu-extensions, so a prebuilt Clang 19 needs both.
+    # longlong.h casts asm output operands, which GCC accepts. Clang 23 rejects
+    # them with a -Winvalid-gnu-asm-cast error that -w does not hide and
+    # -Wno-invalid-gnu-asm-cast silences. Clang 19 rejects them with an error
+    # that -Wno-invalid-gnu-asm-cast does not silence and
+    # -fheinous-gnu-extensions does.
     "-Wno-invalid-gnu-asm-cast",
     "-fheinous-gnu-extensions",
     "-w",

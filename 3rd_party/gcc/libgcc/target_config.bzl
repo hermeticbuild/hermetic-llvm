@@ -190,8 +190,8 @@ _X86_64_PREDEFINES_GCC10 = [
     "#define __libgcc_shift_count__ __word__",
 ]
 
-# What GCC 12 predefines under -fbuilding-libgcc for x86-64 Linux, the same in
-# 12.1.0 through 12.5.0.
+# What GCC 12.1.0 through 12.5.0 predefine under -fbuilding-libgcc for x86-64
+# Linux.
 _X86_64_PREDEFINES_GCC12 = [
     "#define __LIBGCC_DF_EPSILON__ __DBL_EPSILON__",
     "#define __LIBGCC_DF_EXCESS_PRECISION__ 0",
@@ -246,8 +246,8 @@ _X86_64_PREDEFINES_GCC12 = [
     "#define __libgcc_shift_count__ __word__",
 ]
 
-# What GCC 13 predefines under -fbuilding-libgcc for x86-64 Linux, the same in
-# 13.1.0 through 13.4.0.
+# What GCC 13.1.0 through 13.4.0 predefine under -fbuilding-libgcc for x86-64
+# Linux.
 _X86_64_PREDEFINES_GCC13 = [
     "#define __LIBGCC_BF_EPSILON__ ((__bf16) 7.81250000000000000000000000000000000e-3F)",
     "#define __LIBGCC_BF_EXCESS_PRECISION__ 1",

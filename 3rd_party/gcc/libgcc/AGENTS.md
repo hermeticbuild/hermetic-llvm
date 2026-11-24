@@ -36,9 +36,10 @@ for it. Each libstdc++ version links the libgcc built from its own GCC sources.
   status, and `configure_subst_status.txt` each `@VAR@` substitution in
   `libgcc/Makefile.in`. Each file's header defines its statuses.
 - `libgcc_rules.bzl` has the wrapper-source, hide-list and version-map rules.
-- `libgcc-clang-compat.patch` in the `3rd_party/gcc/patches` directory of each
-  range of GCC versions, such as `14-17`, changes the spots in libgcc's sources
-  that rely on GCC-only behavior, so that Clang compiles them.
+- Each `3rd_party/gcc/patches/<versions>/libgcc-clang-compat.patch` (for example
+  `14-17`) changes the spots in libgcc's sources that rely on GCC-only behavior,
+  so that Clang compiles them. `LIBGCC_PATCHES` in `3rd_party/gcc/version.bzl`
+  lists the patches each GCC version applies.
 - `3rd_party/gcc/patches/8-11/libgcc-morestack-init-array.patch` backports how
   GCC 14's `morestack.S` registers `__stack_split_initialize` in `.init_array`.
   GCC 8 to 11 register it in `.ctors`. lld keeps `.ctors` apart from

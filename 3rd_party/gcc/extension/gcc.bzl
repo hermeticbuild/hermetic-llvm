@@ -89,7 +89,7 @@ _LIBGCC_CPU_ARCHIVE_INCLUDES = {
 }
 
 # libgcc's config/i386/cpuinfo.c includes gcc/common/config/i386's headers from
-# GCC 11. Older archives may have no header there for the pattern to match.
+# GCC 11. GCC 10.2.0 and older have no header there for the pattern to match.
 _LIBGCC_GCC11_CPU_ARCHIVE_INCLUDES = {
     "x86_64": ["gcc/common/config/i386/*.h"],
 }

@@ -71,8 +71,8 @@ _CPU_AUTO_TARGET_CHECKS = {
     ],
 }
 
-# configure.ac checks for sys/auxv.h from GCC 10, which added it with the
-# AArch64 LSE checks, and in 8.5.0 and 9.4.0, which backported them.
+# configure.ac checks for sys/auxv.h from GCC 10, where it gates AArch64's
+# lse-init.c, and from 8.5.0 and 9.4.0, which backported that file.
 def _has_sys_auxv_h_check(version):
     if gcc_version_at_least_for(version, "9.0.0"):
         return gcc_version_at_least_for(version, "9.4.0")
@@ -191,9 +191,9 @@ asm("\\n\\
     # use .init_array regardless, because compiler-rt's crtbegin runs only
     # .init_array.
     policy_define("GCC_ENABLE_INITFINI_ARRAY"),
-    # libgcc/configure.ac: the thread model from GCC_AC_THREAD_MODEL from GCC 16
-    # and, before it, the thread model that the compiler's -v reports. Both come
-    # from GCC's --enable-threads, which defaults to posix on Linux.
+    # libgcc/configure.ac: the thread model from GCC_AC_THREAD_MODEL in GCC 16
+    # and, in earlier versions, the thread model that the compiler's -v reports.
+    # Both come from GCC's --enable-threads, which defaults to posix on Linux.
     policy_string_define("LIBGCC_TARGET_THREAD_FILE", "posix"),
     # libgcc/configure.ac: libgcc_cv_dfp, Makefile.in's decimal_float, which
     # adds the decimal floating-point objects.
