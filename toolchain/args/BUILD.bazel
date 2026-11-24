@@ -1185,8 +1185,16 @@ cc_args(
         # The clang driver forces -ISystem and doesn't claim the arg, which
         # would result in a warning when targeting macOS.
         "@platforms//os:macos": [],
-        # Will prevent clang from choosing which libunwind to link against.
-        "//conditions:default": ["--unwindlib=none"],
+        # Prevent clang from choosing which libunwind to link against.
+        # Scope unused-argument suppression to this flag so callers that pass
+        # -nodefaultlibs / -nostdlib (such as rustc) or forward link flags into
+        # compile invocations do not get spurious warnings, while keeping
+        # -Wunused-command-line-argument active for every other argument.
+        "//conditions:default": [
+            "--start-no-unused-arguments",
+            "--unwindlib=none",
+            "--end-no-unused-arguments",
+        ],
     }),
 )
 
