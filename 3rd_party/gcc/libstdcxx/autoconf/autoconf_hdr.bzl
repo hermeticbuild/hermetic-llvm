@@ -29,7 +29,9 @@ def _write_config_output(ctx, config_h, results):
         ])
 
     ops_file = ctx.actions.declare_file("result_ops")
-    ctx.actions.write(ops_file, "\n".join([":".join(op) for op in result_ops]))
+
+    # Terminate every line: `read` drops an unterminated last line.
+    ctx.actions.write(ops_file, "".join([":".join(op) + "\n" for op in result_ops]))
     inputs.append(ops_file)
     arguments.append(ops_file.path)
 
