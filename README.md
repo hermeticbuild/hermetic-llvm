@@ -298,10 +298,10 @@ linkage. The static archive includes the C++ ABI support from libsupc++ and uses
 rules_cc's PIC configuration. The default toolchain configuration produces
 position-independent code suitable for shared libraries.
 
-With libstdc++ 17.0.0 on x86-64 and AArch64, and with libstdc++ 16.1.0, 15.2.0,
-15.1.0, 14.3.0 and 10.5.0 on x86-64, the toolchain also builds libgcc from the
-same GCC sources and links it as GCC's driver does. Static links use `libgcc.a`
-and `libgcc_eh.a`. Dynamic links pass `-lgcc_s`, which finds GCC's `libgcc_s.so`
+With libstdc++ 17.0.0 on x86-64 and AArch64, and with libstdc++ 14.2.0 through
+16.1.0 and 10.5.0 on x86-64, the toolchain also builds libgcc from the same GCC
+sources and links it as GCC's driver does. Static links use `libgcc.a` and
+`libgcc_eh.a`. Dynamic links pass `-lgcc_s`, which finds GCC's `libgcc_s.so`
 linker script. The script names `libgcc_s.so.1` and then `libgcc.a`, which
 supplies the symbols the shared library does not export, such as `__morestack`
 for `-fsplit-stack` code on x86-64. rustc's `-lgcc_s` should find the same

@@ -308,6 +308,7 @@ LIBGCC_TARGETS = {
     "15.2.0": ["x86_64"],
     "15.1.0": ["x86_64"],
     "14.3.0": ["x86_64"],
+    "14.2.0": ["x86_64"],
     "10.5.0": ["x86_64"],
 }
 
@@ -332,6 +333,9 @@ LIBGCC_PATCHES = {
         _libstdcxx_patch("14-17/libgcc-clang-compat.patch"),
     ],
     "14.3.0": [
+        _libstdcxx_patch("14-17/libgcc-clang-compat.patch"),
+    ],
+    "14.2.0": [
         _libstdcxx_patch("14-17/libgcc-clang-compat.patch"),
     ],
     "10.5.0": [

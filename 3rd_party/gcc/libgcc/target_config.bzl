@@ -91,8 +91,8 @@ def _mkconfig_tm_h(defines, headers):
     ]
     return lines
 
-# What GCC 14.3.0, 15.1.0, 15.2.0, 16.1.0 and 17 predefine under
-# -fbuilding-libgcc for x86-64 Linux.
+# What GCC 14.2.0 through 17 predefine under -fbuilding-libgcc for x86-64
+# Linux.
 _X86_64_PREDEFINES_GCC14 = [
     "#define __LIBGCC_BF_EPSILON__ ((__bf16) 7.81250000000000000000000000000000000e-3F)",
     "#define __LIBGCC_BF_EXCESS_PRECISION__ 1",
@@ -191,6 +191,7 @@ _X86_64_PREDEFINES_GCC10 = [
 
 _X86_64_PREDEFINES = {
     "10.5.0": _X86_64_PREDEFINES_GCC10,
+    "14.2.0": _X86_64_PREDEFINES_GCC14,
     "14.3.0": _X86_64_PREDEFINES_GCC14,
     "15.1.0": _X86_64_PREDEFINES_GCC14,
     "15.2.0": _X86_64_PREDEFINES_GCC14,
@@ -450,6 +451,7 @@ _AARCH64 = struct(
 # of each.
 _PORTED_TARGETS = {
     "10.5.0": ["x86_64"],
+    "14.2.0": ["x86_64"],
     "14.3.0": ["x86_64"],
     "15.1.0": ["x86_64"],
     "15.2.0": ["x86_64"],
