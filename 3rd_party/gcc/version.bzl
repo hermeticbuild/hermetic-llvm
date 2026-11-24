@@ -294,7 +294,22 @@ def gcc_patches(version):
     return GCC_PATCHES.get(version, []) + [
         _libstdcxx_patch(filesystem_patch),
         _libstdcxx_patch("libstdcxx-filesystem-ts-dir-namespace.patch"),
-    ]
+    ] + LIBGCC_PATCHES.get(version, [])
+
+# GCC versions whose libgcc is built from source. The others keep LLVM's
+# libunwind and compiler-rt with libstdc++.
+LIBGCC_VERSIONS = [
+    "17.0.0",
+]
+
+LIBGCC_PATCHES = {
+    "17.0.0": [
+        _libstdcxx_patch("17.x/libgcc-clang-compat.patch"),
+    ],
+}
+
+def gcc_has_libgcc(version):
+    return version in LIBGCC_VERSIONS
 
 def gcc_version_at_least(version):
     return gcc_version_at_least_for(GCC_VERSION, version)

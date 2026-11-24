@@ -298,6 +298,31 @@ linkage. The static archive includes the C++ ABI support from libsupc++ and uses
 rules_cc's PIC configuration. The default toolchain configuration produces
 position-independent code suitable for shared libraries.
 
+With libstdc++ 17.0.0 on x86-64, the toolchain also builds libgcc from the same
+GCC sources. Static links use `libgcc.a` and `libgcc_eh.a`, as GCC's driver
+does, and dynamic links use `libgcc_s.so.1`. compiler-rt's builtins still come
+last on the link line. In dynamic links they supply the symbols that
+`libgcc_s.so.1` does not export. GCC's driver takes those from `libgcc.a`.
+compiler-rt's `crtbegin.o` and `crtend.o` are kept.
+
+`libstdc++.so.6` depends on `libgcc_s.so.1`, as GCC's does, and a dynamically
+linked binary finds both in its runfiles through its `RUNPATH`. The dynamic
+loader loads one library per soname, so the program and the GCC-built shared
+libraries it loads, such as manylinux Python wheels, use the same
+`libgcc_s.so.1`. Outside its runfiles, as with `libstdc++.so.6`, the loader
+looks for `libgcc_s.so.1` in the system's library paths.
+
+Decimal floating-point routines (`__bid_*`) are not built, because Clang has no
+decimal floating-point types. Other GCC versions and targets link LLVM's
+libunwind. AArch64 is not supported: Clang's AArch64 backend emits nothing for
+`__builtin_eh_return` and returns the frame pointer for `__builtin_dwarf_cfa`,
+and libgcc's unwinder needs both.
+
+`bazel test //runtimes/libgcc/...` checks the symbols and versions that
+`libgcc_s.so.1` exports and runs exception tests.
+`3rd_party/gcc/libgcc/AGENTS.md` describes how the build is derived from GCC and
+how to validate a new version or target.
+
 At the moment, libstdc++ support is limited to Linux glibc targets. Additional
 targets can be added based on demand; musl + libstdc++ is feasible too, even if
 it is an uncommon configuration.

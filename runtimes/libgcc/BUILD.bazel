@@ -1,0 +1,55 @@
+load("@bazel_skylib//lib:selects.bzl", "selects")
+load("//3rd_party/gcc:version.bzl", "LIBGCC_VERSIONS", "libstdcxx_constraint_label")
+
+package(default_visibility = ["//visibility:public"])
+
+# libgcc built from the selected libstdc++'s GCC sources, for the versions in
+# LIBGCC_VERSIONS. Only x86-64 for now: Clang's AArch64 backend emits nothing
+# for __builtin_eh_return and returns the frame pointer for
+# __builtin_dwarf_cfa, and libgcc's unwinder needs both.
+selects.config_setting_group(
+    name = "libgcc_version",
+    match_any = [libstdcxx_constraint_label(version) for version in LIBGCC_VERSIONS],
+)
+
+selects.config_setting_group(
+    name = "libgcc_from_gcc",
+    match_all = [
+        ":libgcc_version",
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ],
+)
+
+alias(
+    name = "libgcc.static",
+    actual = "@gcc//:libgcc.static",
+)
+
+alias(
+    name = "libgcc_eh.static",
+    actual = "@gcc//:libgcc_eh.static",
+)
+
+alias(
+    name = "libgcc_s.shared",
+    actual = "@gcc//:libgcc_s.shared",
+)
+
+# GCC's driver links -lgcc -lgcc_eh for static links and -lgcc_s -lgcc for
+# dynamic ones. Bazel ignores a static archive among the dynamic runtime
+# libraries, so dynamic links get only libgcc_s.so.1. Clang's driver appends
+# compiler-rt's builtins last (-rtlib=compiler-rt), and in dynamic links they
+# supply what libgcc_s.so.1 does not export.
+filegroup(
+    name = "static_runtime_libs",
+    srcs = [
+        ":libgcc.static",
+        ":libgcc_eh.static",
+    ],
+)
+
+alias(
+    name = "dynamic_runtime_libs",
+    actual = ":libgcc_s.shared",
+)

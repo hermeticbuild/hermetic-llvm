@@ -1,0 +1,295 @@
+# Configuration headers for building libgcc with Clang, for Linux GNU targets.
+#
+# GCC builds libgcc with the xgcc it has just built, and libgcc reads three
+# kinds of configuration from that build:
+#
+# - Headers generated in GCC's build directory: tconfig.h and tm.h from
+#   gcc/mkconfig.sh, with the tm_file list and tm_defines that gcc/config.gcc
+#   selects, and the USED_FOR_TARGET part of auto-host.h. tm.h also includes
+#   the generated options.h, insn-constants.h and insn-modes.h. libgcc uses
+#   none of their contents, so they are stand-ins here, except for the
+#   constants the target headers need to declare their tables.
+# - Headers libgcc's own configure writes: auto-target.h (libgcc/config.in),
+#   libgcc_tm.h (libgcc/mkheader.sh with config.host's tm_file), and the
+#   LIBGCC_LINKS copies that Makefile.in makes.
+# - Macros GCC predefines under -fbuilding-libgcc
+#   (gcc/c-family/c-cppbuiltin.cc). Clang does not support that option, so
+#   these are written to a header that every libgcc source includes first.
+#   The values were taken from GCC 17's xgcc with -fbuilding-libgcc -dM -E.
+#   Clang lacks the __FLT128_* and __BFLT16_* macros, so those values are
+#   spelled out.
+#
+# One more header maps the few GCC builtins that libgcc uses and Clang does not
+# provide to what GCC expands them to.
+
+_TCONFIG_H = [
+    "#ifndef GCC_TCONFIG_H",
+    "#define GCC_TCONFIG_H",
+    "#ifndef USED_FOR_TARGET",
+    "# define USED_FOR_TARGET",
+    "#endif",
+    "#include \"auto-host.h\"",
+    "#ifdef IN_GCC",
+    "# include \"ansidecl.h\"",
+    "#endif",
+    "#endif /* GCC_TCONFIG_H */",
+]
+
+# The auto-host.h defines that gcc/config.in leaves outside #ifndef
+# USED_FOR_TARGET, as GCC's configure sets them for a GNU assembler and linker
+# on Linux. The toolchain's integrated assembler and lld support the same
+# features.
+_AUTO_HOST_H = [
+    "/* The USED_FOR_TARGET part of GCC's auto-host.h.  */",
+    "#define HAVE_GAS_CFI_DIRECTIVE 1",
+    "#define HAVE_GAS_CFI_PERSONALITY_DIRECTIVE 1",
+    "#define HAVE_GAS_CFI_SECTIONS_DIRECTIVE 1",
+    "#define HAVE_GAS_HIDDEN 1",
+    "#define HAVE_LD_EH_FRAME_HDR 1",
+    "#define TARGET_DL_ITERATE_PHDR 1",
+]
+
+def _mkconfig_tm_h(defines, headers):
+    """gcc/mkconfig.sh output for tm.h."""
+    lines = ["#ifndef GCC_TM_H", "#define GCC_TM_H"]
+    for define in defines:
+        name, _, value = define.partition("=")
+        lines += [
+            "#ifndef " + name,
+            "# define {} {}".format(name, value) if value else "# define " + name,
+            "#endif",
+        ]
+    lines.append("#ifdef IN_GCC")
+    lines += ["# include \"{}\"".format(h) for h in ["options.h", "insn-constants.h"] + headers]
+    lines += [
+        "#endif",
+        "#if defined IN_GCC && !defined GENERATOR_FILE && !defined USED_FOR_TARGET",
+        "# include \"insn-flags.h\"",
+        "#endif",
+        "#if defined IN_GCC && !defined GENERATOR_FILE",
+        "# include \"insn-modes.h\"",
+        "#endif",
+        "# include \"defaults.h\"",
+        "#endif /* GCC_TM_H */",
+    ]
+    return lines
+
+# auto-target.h as libgcc/configure writes it with the toolchain's Clang and
+# glibc 2.17 or newer.
+_AUTO_TARGET_H_COMMON = [
+    "#define AS_HIDDEN_DIRECTIVE .hidden",
+    "#define HAVE_AS_CFI_SECTIONS 1",
+    "#define HAVE_FTW_H 1",
+    "#define HAVE_GETIPINFO 1",
+    "#define HAVE_INIT_PRIORITY 1",
+    "#define HAVE_INTTYPES_H 1",
+    "#define HAVE_MEMORY_H 1",
+    "#define HAVE_STDINT_H 1",
+    "#define HAVE_STDLIB_H 1",
+    "#define HAVE_STRINGS_H 1",
+    "#define HAVE_STRING_H 1",
+    "#define HAVE_SYS_AUXV_H 1",
+    "#define HAVE_SYS_MMAN_H 1",
+    "#define HAVE_SYS_STAT_H 1",
+    "#define HAVE_SYS_TYPES_H 1",
+    "#define HAVE_UNISTD_H 1",
+    "#define PACKAGE_BUGREPORT \"\"",
+    "#define PACKAGE_NAME \"GNU C Runtime Library\"",
+    "#define PACKAGE_STRING \"GNU C Runtime Library 1.0\"",
+    "#define PACKAGE_TARNAME \"libgcc\"",
+    "#define PACKAGE_URL \"http://www.gnu.org/software/libgcc/\"",
+    "#define PACKAGE_VERSION \"1.0\"",
+    "#define SIZEOF_DOUBLE 8",
+    "#define SIZEOF_LONG_DOUBLE 16",
+    "#define STDC_HEADERS 1",
+]
+
+_X86_64 = struct(
+    # gcc/config.gcc for x86_64-*-linux*.
+    tm_defines = [
+        "LIBC_GLIBC=1",
+        "LIBC_UCLIBC=2",
+        "LIBC_BIONIC=3",
+        "LIBC_MUSL=4",
+        "DEFAULT_LIBC=LIBC_GLIBC",
+        "ANDROID_DEFAULT=0",
+        "HEAP_TRAMPOLINES_INIT=0",
+    ],
+    tm_file = [
+        "config/vxworks-dummy.h",
+        "config/i386/biarch64.h",
+        "config/i386/i386.h",
+        "config/i386/unix.h",
+        "config/i386/att.h",
+        "config/elfos.h",
+        "config/gnu-user.h",
+        "config/glibc-stdint.h",
+        "config/i386/x86-64.h",
+        "config/i386/gnu-user-common.h",
+        "config/i386/gnu-user64.h",
+        "config/linux.h",
+        "config/linux-android.h",
+        "config/i386/linux-common.h",
+        "config/i386/linux64.h",
+        "config/initfini-array.h",
+    ],
+    # i386.h sizes its register tables with this i386.md constant.
+    insn_constants = [
+        "#define FIRST_PSEUDO_REG 92",
+    ],
+    auto_target = ["#define HAVE_AS_AVX 1"],
+    # libgcc/config.host for x86_64-*-linux*.
+    libgcc_tm_file = [
+        "config/i386/elf-lib.h",
+        "config/i386/value-unwind.h",
+    ],
+    # cpuinfo.c includes cpuid.h, which GCC installs from its config/i386
+    # directory. Clang's cpuid.h lacks some of the bits it tests.
+    extra_links = {
+        "cpuid.h": "gcc/config/i386/cpuid.h",
+    },
+    md_unwind_def_header = "libgcc/config/no-unwind.h",
+    md_unwind_header = "libgcc/config/i386/linux-unwind.h",
+    sfp_machine_header = "libgcc/config/i386/sfp-machine.h",
+    shlib_mapfiles = [
+        "libgcc/config/i386/libgcc-glibc.ver",
+    ],
+    predefines = [
+        "#define __LIBGCC_BF_EPSILON__ ((__bf16) 7.81250000000000000000000000000000000e-3F)",
+        "#define __LIBGCC_BF_EXCESS_PRECISION__ 1",
+        "#define __LIBGCC_BF_FUNC_EXT__ bf16",
+        "#define __LIBGCC_BF_MANT_DIG__ 8",
+        "#define __LIBGCC_BF_MAX__ ((__bf16) 3.38953138925153547590470800371487867e+38F)",
+        "#define __LIBGCC_BF_MIN__ ((__bf16) 1.17549435082228750796873653722224568e-38F)",
+        "#define __LIBGCC_BITINT_LIMB_WIDTH__ 64",
+        "#define __LIBGCC_BITINT_ORDER__ __ORDER_LITTLE_ENDIAN__",
+        "#define __LIBGCC_DF_EPSILON__ __DBL_EPSILON__",
+        "#define __LIBGCC_DF_EXCESS_PRECISION__ 0",
+        "#define __LIBGCC_DF_FUNC_EXT__",
+        "#define __LIBGCC_DF_MANT_DIG__ 53",
+        "#define __LIBGCC_DF_MAX__ __DBL_MAX__",
+        "#define __LIBGCC_DF_MIN__ __DBL_MIN__",
+        "#define __LIBGCC_DWARF_CIE_DATA_ALIGNMENT__ -8",
+        "#define __LIBGCC_DWARF_FRAME_REGISTERS__ 17",
+        "#define __LIBGCC_EH_FRAME_SECTION_NAME__ \".eh_frame\"",
+        "#define __LIBGCC_EH_RETURN_STACKADJ_RTX__ 1",
+        "#define __LIBGCC_EH_TABLES_CAN_BE_READ_ONLY__ 1",
+        "#define __LIBGCC_HAS_BF_MODE__ 1",
+        "#define __LIBGCC_HAS_DF_MODE__ 1",
+        "#define __LIBGCC_HAS_HF_MODE__ 1",
+        "#define __LIBGCC_HAS_SF_MODE__ 1",
+        "#define __LIBGCC_HAS_TF_MODE__ 1",
+        "#define __LIBGCC_HAS_XF_MODE__ 1",
+        "#define __LIBGCC_HAVE_HWDBL__ 1",
+        "#define __LIBGCC_HAVE_LIBATOMIC 0",
+        "#define __LIBGCC_HF_EPSILON__ __FLT16_EPSILON__",
+        "#define __LIBGCC_HF_EXCESS_PRECISION__ 1",
+        "#define __LIBGCC_HF_FUNC_EXT__ f16",
+        "#define __LIBGCC_HF_MANT_DIG__ 11",
+        "#define __LIBGCC_HF_MAX__ __FLT16_MAX__",
+        "#define __LIBGCC_HF_MIN__ __FLT16_MIN__",
+        "#define __LIBGCC_INIT_ARRAY_SECTION_ASM_OP__ 1",
+        "#define __LIBGCC_SF_EPSILON__ __FLT_EPSILON__",
+        "#define __LIBGCC_SF_EXCESS_PRECISION__ 0",
+        "#define __LIBGCC_SF_FUNC_EXT__ f",
+        "#define __LIBGCC_SF_MANT_DIG__ 24",
+        "#define __LIBGCC_SF_MAX__ __FLT_MAX__",
+        "#define __LIBGCC_SF_MIN__ __FLT_MIN__",
+        "#define __LIBGCC_STACK_GROWS_DOWNWARD__ 1",
+        "#define __LIBGCC_STACK_POINTER_REGNUM__ 7",
+        "#define __LIBGCC_TEXT_SECTION_ASM_OP__ \"\\t.text\"",
+        "#define __LIBGCC_TF_EPSILON__ 1.92592994438723585305597794258492732e-34Q",
+        "#define __LIBGCC_TF_EXCESS_PRECISION__ 0",
+        "#define __LIBGCC_TF_FUNC_EXT__ f128",
+        "#define __LIBGCC_TF_MANT_DIG__ 113",
+        "#define __LIBGCC_TF_MAX__ 1.18973149535723176508575932662800702e+4932Q",
+        "#define __LIBGCC_TF_MIN__ 3.36210314311209350626267781732175260e-4932Q",
+        "#define __LIBGCC_TRAMPOLINE_SIZE__ 28",
+        "#define __LIBGCC_VTABLE_USES_DESCRIPTORS__ 0",
+        "#define __LIBGCC_XF_EPSILON__ __LDBL_EPSILON__",
+        "#define __LIBGCC_XF_EXCESS_PRECISION__ 0",
+        "#define __LIBGCC_XF_FUNC_EXT__ l",
+        "#define __LIBGCC_XF_MANT_DIG__ 64",
+        "#define __LIBGCC_XF_MAX__ __LDBL_MAX__",
+        "#define __LIBGCC_XF_MIN__ __LDBL_MIN__",
+        # The libgcc_cmp_return_mode and libgcc_shift_count_mode target hooks
+        # name these modes; both are word_mode on x86-64.
+        "#define __libgcc_cmp_return__ __word__",
+        "#define __libgcc_shift_count__ __word__",
+    ],
+    clang_compat = [
+        "/* libgcc/config/i386/shadow-stack-unwind.h uses GCC's cetintrin.h",
+        "   names.  These expand to the builtins GCC's definitions use.  */",
+        "#ifndef __ASSEMBLER__",
+        "# define _get_ssp() __builtin_ia32_rdsspq (0)",
+        "# define _inc_ssp(n) __builtin_ia32_incsspq ((unsigned long long) (n))",
+        "#endif",
+    ],
+    # HOST_LIBGCC2_CFLAGS from i386/t-linux, with CET_FLAGS as libgcc's
+    # configure sets them for --enable-cet=auto on x86-64 Linux.
+    copts = [
+        "-mlong-double-80",
+        "-DUSE_ELF_SYMVER",
+        "-fcf-protection",
+        "-mshstk",
+    ],
+)
+
+def _target(cpu):
+    if cpu == "x86_64":
+        return _X86_64
+    fail("libgcc's configuration is not ported for " + cpu)
+
+# The GCC versions these headers and predefines were taken from.
+_PORTED_VERSIONS = ["17.0.0"]
+
+def libgcc_header_contents(cpu, version):
+    """Lists the configuration headers libgcc's build reads.
+
+    Returns:
+      A dict from each generated header's name to its lines. Fails for a
+      version or CPU that is not ported.
+    """
+    if version not in _PORTED_VERSIONS:
+        fail("libgcc's configuration is ported for GCC {}, not {}".format(", ".join(_PORTED_VERSIONS), version))
+    t = _target(cpu)
+    return {
+        "auto-host.h": _AUTO_HOST_H,
+        "auto-target.h": _AUTO_TARGET_H_COMMON + t.auto_target,
+        "insn-constants.h": ["/* Stand-in for GCC's generated insn-constants.h.  */"] + t.insn_constants,
+        "insn-modes.h": ["/* Stand-in for GCC's generated insn-modes.h.  */"],
+        "libgcc_clang_compat.h": t.clang_compat,
+        "libgcc_predefines.h": ["/* What GCC predefines under -fbuilding-libgcc.  */"] + t.predefines,
+        "libgcc_tm.h": ["#ifndef LIBGCC_TM_H", "#define LIBGCC_TM_H"] +
+                       ["#include \"{}\"".format(h) for h in t.libgcc_tm_file] +
+                       ["#endif /* LIBGCC_TM_H */"],
+        "options.h": ["/* Stand-in for GCC's generated options.h.  */"],
+        "tconfig.h": _TCONFIG_H,
+        "tm.h": _mkconfig_tm_h(t.tm_defines, t.tm_file),
+    }
+
+def libgcc_header_links(cpu):
+    """Lists Makefile.in's LIBGCC_LINKS and the other copied headers.
+
+    Returns:
+      A dict from each copy's name to its source path in the GCC repository.
+      Fails for a CPU that is not ported.
+    """
+    t = _target(cpu)
+    links = {
+        "enable-execute-stack.c": "libgcc/enable-execute-stack-empty.c",
+        "gthr-default.h": "libgcc/gthr-posix.h",
+        "md-unwind-def.h": t.md_unwind_def_header,
+        "md-unwind-support.h": t.md_unwind_header,
+        "sfp-machine.h": t.sfp_machine_header,
+        "unwind.h": "libgcc/unwind-generic.h",
+    }
+    links.update(t.extra_links)
+    return links
+
+def libgcc_target_copts(cpu):
+    return _target(cpu).copts
+
+def libgcc_shlib_mapfiles(cpu):
+    """SHLIB_MAPFILES after libgcc-std.ver, from t-linux and i386/t-linux."""
+    return _target(cpu).shlib_mapfiles

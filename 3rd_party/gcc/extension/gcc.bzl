@@ -6,6 +6,7 @@ load(
     "GCC_RELEASES",
     "GCC_VERSIONS",
     "gcc_has_config_toolexeclibdir_m4",
+    "gcc_has_libgcc",
     "gcc_patches",
     "gcc_repo_name",
 )
@@ -52,6 +53,25 @@ _GCC_ARCHIVE_INCLUDES = [
     "libstdc++-v3/include/**",
     "libstdc++-v3/libsupc++/**",
     "libstdc++-v3/src/**",
+]
+
+# For GCC versions that build libgcc: libgcc, and the GCC headers its tm.h and
+# sources include. Compare with libgcc/Makefile.in's INCLUDES and the tm_file
+# lists in 3rd_party/gcc/libgcc/target_config.bzl before trimming.
+_LIBGCC_ARCHIVE_INCLUDES = [
+    "libgcc/**",
+    "gcc/coretypes.h",
+    "gcc/defaults.h",
+    "gcc/tsystem.h",
+    "gcc/common/config/i386/*.h",
+    "gcc/config/*.h",
+    "gcc/config/i386/*.def",
+    "gcc/config/i386/*.h",
+    "include/dwarf2.def",
+    "include/dwarf2.h",
+    "include/filenames.h",
+    "include/hashtab.h",
+    "include/longlong.h",
 ]
 
 _GCC_10_ARCHIVE_INCLUDES = [
@@ -102,7 +122,7 @@ def _gcc_impl(module_ctx):
                 generated_files = {
                     "version.bzl": "GCC_VERSION = \"{}\"\n".format(version),
                 },
-                includes = _GCC_ARCHIVE_INCLUDES + (_GCC_10_ARCHIVE_INCLUDES if gcc_has_config_toolexeclibdir_m4(version) else []),
+                includes = _GCC_ARCHIVE_INCLUDES + (_GCC_10_ARCHIVE_INCLUDES if gcc_has_config_toolexeclibdir_m4(version) else []) + (_LIBGCC_ARCHIVE_INCLUDES if gcc_has_libgcc(version) else []),
                 patch_args = ["-p1"],
                 patches = [Label(patch) for patch in gcc_patches(version)],
                 sha256 = release["sha256"],

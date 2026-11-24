@@ -171,6 +171,24 @@ alias(
     actual = "//runtimes/libstdcxx:libstdcxx.static",
 )
 
+# libstdc++ links the libgcc built from its own GCC where that is supported,
+# and LLVM's libunwind elsewhere.
+alias(
+    name = "libstdcxx_static_unwind_runtime_lib",
+    actual = select({
+        "//runtimes/libgcc:libgcc_from_gcc": "//runtimes/libgcc:static_runtime_libs",
+        "//conditions:default": "@llvm-project//libunwind:libunwind.static.gnu_link_name",
+    }),
+)
+
+alias(
+    name = "libstdcxx_dynamic_unwind_runtime_lib",
+    actual = select({
+        "//runtimes/libgcc:libgcc_from_gcc": "//runtimes/libgcc:dynamic_runtime_libs",
+        "//conditions:default": "//runtimes/libunwind:libunwind.shared",
+    }),
+)
+
 genrule(
     name = "libstdcxx_windows_unsupported",
     outs = ["unsupported/windows-libstdcxx"],
@@ -192,7 +210,7 @@ filegroup(
 filegroup(
     name = "static_unwind_runtime_lib",
     srcs = select({
-        ":libstdcxx_linux": ["@llvm-project//libunwind:libunwind.static.gnu_link_name"],
+        ":libstdcxx_linux": [":libstdcxx_static_unwind_runtime_lib"],
         ":libcxx_windows_msvc_vcruntime": [],
         ":libcxx_linux": ["@llvm-project//libunwind:libunwind.static.gnu_link_name"],
         ":libcxx_windows": ["@llvm-project//libunwind:libunwind.static.gnu_link_name"],
@@ -231,7 +249,7 @@ filegroup(
 filegroup(
     name = "dynamic_unwind_runtime_lib",
     srcs = select({
-        ":libstdcxx_linux": ["//runtimes/libunwind:libunwind.shared"],
+        ":libstdcxx_linux": [":libstdcxx_dynamic_unwind_runtime_lib"],
         ":libcxx_linux": ["@llvm-project//libunwind:libunwind.shared"],
         "//conditions:default": [],
     }),

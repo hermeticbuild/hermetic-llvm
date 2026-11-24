@@ -1,0 +1,119 @@
+load("@bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load("//:defs.bzl", "exec_test")
+load("//3rd_party/gcc:version.bzl", "LIBGCC_VERSIONS", "gcc_target_suffix", "libstdcxx_constraint_value")
+
+# The binaries build for a libstdc++ platform whose GCC version builds libgcc,
+# and the tests run them on the x86-64 Linux host.
+_LIBGCC_FROM_GCC = select({
+    "//runtimes/libgcc:libgcc_from_gcc": [],
+    "//conditions:default": ["@platforms//:incompatible"],
+})
+
+_HOST = [
+    "@platforms//cpu:x86_64",
+    "@platforms//os:linux",
+]
+
+[
+    cc_binary(
+        name = "exceptions_{}".format(linkage),
+        testonly = True,
+        # cleanup.c needs -fexceptions for its cleanup to run during unwinding.
+        srcs = [
+            "cleanup.c",
+            "exceptions.cc",
+        ],
+        copts = ["-fexceptions"],
+        linkstatic = linkage == "static",
+        tags = ["manual"],
+        target_compatible_with = _LIBGCC_FROM_GCC,
+    )
+    for linkage in [
+        "static",
+        "dynamic",
+    ]
+]
+
+[
+    # A filegroup keeps the binary's path, so its $ORIGIN-relative RUNPATH
+    # still finds the toolchain's runtime libraries in the runfiles.
+    platform_transition_filegroup(
+        name = "exceptions_{}_linux_x86_64_{}".format(
+            linkage,
+            gcc_target_suffix(version),
+        ),
+        testonly = True,
+        srcs = [":exceptions_{}".format(linkage)],
+        tags = ["manual"],
+        target_compatible_with = _HOST,
+        target_platform = "//runtimes/libstdcxx/tests:linux_x86_64_{}".format(libstdcxx_constraint_value(version)),
+    )
+    for linkage in [
+        "static",
+        "dynamic",
+    ]
+    for version in LIBGCC_VERSIONS
+]
+
+[
+    exec_test(
+        name = "exceptions_{}_linux_x86_64_{}_test".format(
+            linkage,
+            gcc_target_suffix(version),
+        ),
+        srcs = ["exceptions_test.sh"],
+        data = [
+            ":exceptions_{}_linux_x86_64_{}".format(
+                linkage,
+                gcc_target_suffix(version),
+            ),
+            "@llvm//tools:llvm-readelf",
+        ],
+        env = {
+            "BINARY": "$(rootpath :exceptions_{}_linux_x86_64_{})".format(
+                linkage,
+                gcc_target_suffix(version),
+            ),
+            "LINKAGE": linkage,
+            "READELF": "$(rootpath @llvm//tools:llvm-readelf)",
+        },
+        rule = sh_test,
+        target_compatible_with = _HOST,
+    )
+    for linkage in [
+        "static",
+        "dynamic",
+    ]
+    for version in LIBGCC_VERSIONS
+]
+
+[
+    platform_transition_filegroup(
+        name = "libgcc_s_linux_x86_64_{}".format(gcc_target_suffix(version)),
+        srcs = ["//runtimes/libgcc:libgcc_s.shared"],
+        target_compatible_with = _HOST,
+        target_platform = "//runtimes/libstdcxx/tests:linux_x86_64_{}".format(libstdcxx_constraint_value(version)),
+    )
+    for version in LIBGCC_VERSIONS
+]
+
+[
+    sh_test(
+        name = "libgcc_s_elf_linux_x86_64_{}_test".format(gcc_target_suffix(version)),
+        srcs = ["libgcc_s_elf_test.sh"],
+        data = [
+            "libgcc_s_x86_64.symbols",
+            ":libgcc_s_linux_x86_64_{}".format(gcc_target_suffix(version)),
+            "@llvm//tools:llvm-readelf",
+        ],
+        env = {
+            "EXPECTED_SYMBOLS": "$(rootpath libgcc_s_x86_64.symbols)",
+            "LIBGCC_S": "$(rootpath :libgcc_s_linux_x86_64_{})".format(gcc_target_suffix(version)),
+            "READELF": "$(rootpath @llvm//tools:llvm-readelf)",
+        },
+        target_compatible_with = _HOST,
+    )
+    for version in LIBGCC_VERSIONS
+]
