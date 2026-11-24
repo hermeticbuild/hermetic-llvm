@@ -72,9 +72,11 @@ _CPU_AUTO_TARGET_CHECKS = {
 }
 
 # configure.ac checks for sys/auxv.h from GCC 10, which added it with the
-# AArch64 LSE checks, and in 9.4.0, which backported them.
+# AArch64 LSE checks, and in 8.5.0 and 9.4.0, which backported them.
 def _has_sys_auxv_h_check(version):
-    return gcc_version_at_least_for(version, "9.4.0")
+    if gcc_version_at_least_for(version, "9.0.0"):
+        return gcc_version_at_least_for(version, "9.4.0")
+    return gcc_version_at_least_for(version, "8.5.0")
 
 # The headers of configure.ac's AC_CHECK_HEADERS, in its order.
 def _headers(version):

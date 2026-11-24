@@ -43,7 +43,7 @@ decimal_float modeled 3rd_party/gcc/libgcc/makefile.bzl
 double_type_size unsupported-target
 enable_decimal_float unsupported-feature
 enable_execute_stack modeled 3rd_party/gcc/libgcc/target_config.bzl
-enable_gcov unsupported-feature
+enable_gcov unsupported-feature gcc=9.0.0-
 enable_shared modeled 3rd_party/gcc/gcc.BUILD.bazel
 enable_vtable_verify unsupported-feature
 exec_prefix not-needed
@@ -71,7 +71,7 @@ shlib_objs not-needed
 shlib_slibdir not-needed
 shlib_slibdir_qual not-needed
 slibdir not-needed
-solaris_ld_v2_maps unsupported-target
+solaris_ld_v2_maps unsupported-target gcc=9.0.0-
 srcdir not-needed
 target_noncanonical not-needed
 thread_header modeled 3rd_party/gcc/libgcc/target_config.bzl

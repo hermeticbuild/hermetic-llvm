@@ -157,7 +157,7 @@ _X86_64_PREDEFINES_GCC14 = [
     "#define __libgcc_shift_count__ __word__",
 ]
 
-# What GCC 9.1.0 through 11.5.0 predefine under -fbuilding-libgcc for x86-64
+# What GCC 8.1.0 through 11.5.0 predefine under -fbuilding-libgcc for x86-64
 # Linux.
 _X86_64_PREDEFINES_GCC10 = [
     "#define __LIBGCC_DF_EXCESS_PRECISION__ 0",
@@ -311,6 +311,11 @@ _X86_64_PREDEFINES_GCC13 = [
 ]
 
 _X86_64_PREDEFINES = {
+    "8.1.0": _X86_64_PREDEFINES_GCC10,
+    "8.2.0": _X86_64_PREDEFINES_GCC10,
+    "8.3.0": _X86_64_PREDEFINES_GCC10,
+    "8.4.0": _X86_64_PREDEFINES_GCC10,
+    "8.5.0": _X86_64_PREDEFINES_GCC10,
     "9.1.0": _X86_64_PREDEFINES_GCC10,
     "9.2.0": _X86_64_PREDEFINES_GCC10,
     "9.3.0": _X86_64_PREDEFINES_GCC10,
@@ -342,6 +347,13 @@ _X86_64_PREDEFINES = {
     "16.1.0": _X86_64_PREDEFINES_GCC14,
     "17.0.0": _X86_64_PREDEFINES_GCC14,
 }
+
+def _x86_64_first_pseudo_reg(version):
+    if gcc_version_at_least_for(version, "14.0.0"):
+        return 92
+    if gcc_version_at_least_for(version, "9.0.0"):
+        return 76
+    return 81
 
 def _x86_64(version):
     return struct(
@@ -377,7 +389,7 @@ def _x86_64(version):
         ],
         # i386.h sizes its register tables with this i386.md constant.
         insn_constants = [
-            "#define FIRST_PSEUDO_REG {}".format(92 if gcc_version_at_least_for(version, "14.0.0") else 76),
+            "#define FIRST_PSEUDO_REG {}".format(_x86_64_first_pseudo_reg(version)),
         ],
         # libgcc/config.host for x86_64-*-linux*.
         libgcc_tm_file = [
@@ -594,6 +606,11 @@ _AARCH64 = struct(
 # The GCC versions these headers and predefines were taken from, with the CPUs
 # of each.
 _PORTED_TARGETS = {
+    "8.1.0": ["x86_64"],
+    "8.2.0": ["x86_64"],
+    "8.3.0": ["x86_64"],
+    "8.4.0": ["x86_64"],
+    "8.5.0": ["x86_64"],
     "9.1.0": ["x86_64"],
     "9.2.0": ["x86_64"],
     "9.3.0": ["x86_64"],

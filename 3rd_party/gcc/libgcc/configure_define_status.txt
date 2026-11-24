@@ -21,7 +21,7 @@
 AS_HIDDEN_DIRECTIVE probe-modeled
 HAVE_AS_AVX probe-modeled x86_64
 HAVE_AS_CFI_SECTIONS probe-modeled
-HAVE_AS_LSE probe-modeled aarch64 gcc=9.4.0-
+HAVE_AS_LSE probe-modeled aarch64 gcc=8.5.0-9.0.0,9.4.0-
 HAVE_AS_VARIANT_PCS probe-modeled aarch64 gcc=14.0.0-
 HAVE_CC_TLS cflags-probe-modeled
 HAVE_FTW_H probe-modeled
@@ -34,7 +34,7 @@ HAVE_STDINT_H probe-modeled
 HAVE_STDLIB_H probe-modeled
 HAVE_STRINGS_H probe-modeled
 HAVE_STRING_H probe-modeled
-HAVE_SYS_AUXV_H probe-modeled gcc=9.4.0-
+HAVE_SYS_AUXV_H probe-modeled gcc=8.5.0-9.0.0,9.4.0-
 HAVE_SYS_MMAN_H probe-modeled gcc=11.0.0-
 HAVE_SYS_STAT_H probe-modeled
 HAVE_SYS_TYPES_H probe-modeled
@@ -50,6 +50,6 @@ SIZEOF_DOUBLE probe-modeled
 SIZEOF_LONG_DOUBLE probe-modeled
 STDC_HEADERS probe-modeled
 USE_EMUTLS cflags-probe-modeled
-_DARWIN_USE_64_BIT_INODE not-needed gcc=9.4.0-
+_DARWIN_USE_64_BIT_INODE not-needed gcc=8.5.0-9.0.0,9.4.0-
 _FILE_OFFSET_BITS policy-modeled
 _LARGE_FILES policy-modeled
