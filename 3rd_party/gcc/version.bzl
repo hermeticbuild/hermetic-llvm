@@ -296,15 +296,22 @@ def gcc_patches(version):
         _libstdcxx_patch("libstdcxx-filesystem-ts-dir-namespace.patch"),
     ] + LIBGCC_PATCHES.get(version, [])
 
-# GCC versions whose libgcc is built from source. The others keep LLVM's
-# libunwind and compiler-rt with libstdc++.
+# GCC versions whose libgcc is built from source, and the Linux CPUs it is
+# built for. Other versions and CPUs keep LLVM's libunwind and compiler-rt with
+# libstdc++.
 LIBGCC_VERSIONS = [
     "17.0.0",
+]
+
+LIBGCC_CPUS = [
+    "aarch64",
+    "x86_64",
 ]
 
 LIBGCC_PATCHES = {
     "17.0.0": [
         _libstdcxx_patch("17.x/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("17.x/libgcc-clang-aarch64-unwind.patch"),
     ],
 }
 

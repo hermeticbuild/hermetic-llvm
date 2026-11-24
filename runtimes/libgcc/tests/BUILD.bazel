@@ -1,11 +1,14 @@
+load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_qemu//qemu:qemu_binary.bzl", "qemu_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//:defs.bzl", "exec_test")
-load("//3rd_party/gcc:version.bzl", "LIBGCC_VERSIONS", "gcc_target_suffix", "libstdcxx_constraint_value")
+load("//3rd_party/gcc:version.bzl", "LIBGCC_CPUS", "LIBGCC_VERSIONS", "gcc_target_suffix", "libstdcxx_constraint_value")
 
 # The binaries build for a libstdc++ platform whose GCC version builds libgcc,
-# and the tests run them on the x86-64 Linux host.
+# and the tests run them on the x86-64 Linux host: natively for x86-64, and
+# under qemu-user for AArch64.
 _LIBGCC_FROM_GCC = select({
     "//runtimes/libgcc:libgcc_from_gcc": [],
     "//conditions:default": ["@platforms//:incompatible"],
@@ -36,6 +39,16 @@ _PROGRAMS = {
     },
 }
 
+# The programs each CPU runs. libgcc has __morestack only on x86, so split
+# stacks are tested only there.
+_CPU_PROGRAMS = {
+    "aarch64": ["exceptions"],
+    "x86_64": [
+        "exceptions",
+        "split_stack",
+    ],
+}
+
 [
     cc_binary(
         name = "{}_{}".format(program, linkage),
@@ -54,18 +67,23 @@ _PROGRAMS = {
     # A filegroup keeps the binary's path, so its $ORIGIN-relative RUNPATH
     # still finds the toolchain's runtime libraries in the runfiles.
     platform_transition_filegroup(
-        name = "{}_{}_linux_x86_64_{}".format(
+        name = "{}_{}_linux_{}_{}".format(
             program,
             linkage,
+            cpu,
             gcc_target_suffix(version),
         ),
         testonly = True,
         srcs = [":{}_{}".format(program, linkage)],
         tags = ["manual"],
         target_compatible_with = _HOST,
-        target_platform = "//runtimes/libstdcxx/tests:linux_x86_64_{}".format(libstdcxx_constraint_value(version)),
+        target_platform = "//runtimes/libstdcxx/tests:linux_{}_{}".format(
+            cpu,
+            libstdcxx_constraint_value(version),
+        ),
     )
-    for program in _PROGRAMS
+    for cpu in LIBGCC_CPUS
+    for program in _CPU_PROGRAMS[cpu]
     for linkage in _LINKAGES
     for version in LIBGCC_VERSIONS
 ]
@@ -98,36 +116,132 @@ _PROGRAMS = {
         rule = sh_test,
         target_compatible_with = _HOST,
     )
-    for program in _PROGRAMS
+    for program in _CPU_PROGRAMS["x86_64"]
+    for linkage in _LINKAGES
+    for version in LIBGCC_VERSIONS
+]
+
+# The system libraries for AArch64 binaries under qemu-user: the dynamic loader
+# and libc that the toolchain's default glibc 2.28 targets, and the
+# libgcc_s.so.1 that glibc loads for pthread_exit in static runtime links.
+copy_to_directory(
+    name = "centos_8_aarch64_sysroot",
+    testonly = True,
+    srcs = [
+        "@centos_8_glibc_aarch64//:runtime",
+        "@centos_8_libgcc_aarch64//:runtime",
+    ],
+    include_external_repositories = [
+        "*centos_8_glibc_aarch64",
+        "*centos_8_libgcc_aarch64",
+    ],
+    tags = ["manual"],
+)
+
+[
+    qemu_binary(
+        name = "{}_{}_linux_aarch64_{}_qemu".format(
+            program,
+            linkage,
+            gcc_target_suffix(version),
+        ),
+        testonly = True,
+        binary = ":{}_{}".format(program, linkage),
+        tags = ["manual"],
+        target_compatible_with = _HOST,
+        target_platform = "//runtimes/libstdcxx/tests:linux_aarch64_{}".format(libstdcxx_constraint_value(version)),
+    )
+    for program in _CPU_PROGRAMS["aarch64"]
+    for linkage in _LINKAGES
+    for version in LIBGCC_VERSIONS
+]
+
+[
+    sh_test(
+        name = "{}_{}_linux_aarch64_{}_test".format(
+            program,
+            linkage,
+            gcc_target_suffix(version),
+        ),
+        srcs = ["runtime_test.sh"],
+        data = [
+            ":centos_8_aarch64_sysroot",
+            ":{}_{}_linux_aarch64_{}".format(
+                program,
+                linkage,
+                gcc_target_suffix(version),
+            ),
+            ":{}_{}_linux_aarch64_{}_qemu".format(
+                program,
+                linkage,
+                gcc_target_suffix(version),
+            ),
+            "@llvm//tools:llvm-readelf",
+        ],
+        env = {
+            "BINARY": "$(rootpath :{}_{}_linux_aarch64_{})".format(
+                program,
+                linkage,
+                gcc_target_suffix(version),
+            ),
+            "LAUNCHER": "$(rootpath :{}_{}_linux_aarch64_{}_qemu)".format(
+                program,
+                linkage,
+                gcc_target_suffix(version),
+            ),
+            "LINKAGE": linkage,
+            "QEMU_LD_PREFIX": "$(rootpath :centos_8_aarch64_sysroot)",
+            "READELF": "$(rootpath @llvm//tools:llvm-readelf)",
+        },
+        target_compatible_with = _HOST,
+    )
+    for program in _CPU_PROGRAMS["aarch64"]
     for linkage in _LINKAGES
     for version in LIBGCC_VERSIONS
 ]
 
 [
     platform_transition_filegroup(
-        name = "libgcc_s_linux_x86_64_{}".format(gcc_target_suffix(version)),
+        name = "libgcc_s_linux_{}_{}".format(
+            cpu,
+            gcc_target_suffix(version),
+        ),
         srcs = ["//runtimes/libgcc:libgcc_s.shared"],
         target_compatible_with = _HOST,
-        target_platform = "//runtimes/libstdcxx/tests:linux_x86_64_{}".format(libstdcxx_constraint_value(version)),
+        target_platform = "//runtimes/libstdcxx/tests:linux_{}_{}".format(
+            cpu,
+            libstdcxx_constraint_value(version),
+        ),
     )
+    for cpu in LIBGCC_CPUS
     for version in LIBGCC_VERSIONS
 ]
 
 [
     sh_test(
-        name = "libgcc_s_elf_linux_x86_64_{}_test".format(gcc_target_suffix(version)),
+        name = "libgcc_s_elf_linux_{}_{}_test".format(
+            cpu,
+            gcc_target_suffix(version),
+        ),
         srcs = ["libgcc_s_elf_test.sh"],
         data = [
-            "libgcc_s_x86_64.symbols",
-            ":libgcc_s_linux_x86_64_{}".format(gcc_target_suffix(version)),
+            "libgcc_s_{}.symbols".format(cpu),
+            ":libgcc_s_linux_{}_{}".format(
+                cpu,
+                gcc_target_suffix(version),
+            ),
             "@llvm//tools:llvm-readelf",
         ],
         env = {
-            "EXPECTED_SYMBOLS": "$(rootpath libgcc_s_x86_64.symbols)",
-            "LIBGCC_S": "$(rootpath :libgcc_s_linux_x86_64_{})".format(gcc_target_suffix(version)),
+            "EXPECTED_SYMBOLS": "$(rootpath libgcc_s_{}.symbols)".format(cpu),
+            "LIBGCC_S": "$(rootpath :libgcc_s_linux_{}_{})".format(
+                cpu,
+                gcc_target_suffix(version),
+            ),
             "READELF": "$(rootpath @llvm//tools:llvm-readelf)",
         },
         target_compatible_with = _HOST,
     )
+    for cpu in LIBGCC_CPUS
     for version in LIBGCC_VERSIONS
 ]

@@ -266,6 +266,67 @@ go_deps = use_extension("@gazelle//:extensions.bzl", "go_deps", dev_dependency =
 go_deps.from_file(go_mod = "//tests/wasm:go.mod")
 use_repo(go_deps, "com_github_tetratelabs_wazero")
 
+# rules_qemu runs the AArch64 libgcc tests under qemu-user on x86-64 hosts. The
+# tests use CentOS 8's glibc 2.28 and libgcc_s.so.1 as the system libraries,
+# because glibc 2.28 is the toolchain's default for linux-aarch64.
+bazel_dep(name = "rules_qemu", version = "0.3.0", dev_dependency = True)
+
+# Version 0.3.0's extension hard-codes the repos it imports into the root
+# module, which Bazel rejects when the root module uses the extension only as a
+# dev dependency. The patch imports them as dev dependencies.
+single_version_override(
+    module_name = "rules_qemu",
+    patch_strip = 1,
+    patches = ["//3rd_party/rules_qemu:0001-import-repos-as-dev-deps-for-dev-only-roots.patch"],
+)
+
+qemu = use_extension("@rules_qemu//qemu/extension:qemu.bzl", "qemu", dev_dependency = True)
+use_repo(
+    qemu,
+    "qemu_system_toolchains",
+    "qemu_user_toolchains",
+)
+
+register_toolchains(
+    "@qemu_user_toolchains//:all",
+    dev_dependency = True,
+)
+
+http_bsdtar_archive = use_repo_rule("//:http_bsdtar_archive.bzl", "http_bsdtar_archive")
+
+http_bsdtar_archive(
+    name = "centos_8_glibc_aarch64",
+    build_file_content = """filegroup(
+    name = "runtime",
+    srcs = [
+        "lib/ld-linux-aarch64.so.1",
+        "lib64/libc.so.6",
+        "lib64/libdl.so.2",
+        "lib64/libm.so.6",
+        "lib64/libpthread.so.0",
+        "lib64/librt.so.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+""",
+    dev_dependency = True,
+    sha256 = "33b1f0bfa6570457ef94cb6d3103a98ef51d940b3d9e33c2877e92a530ca9f7d",
+    urls = ["https://vault.centos.org/8.5.2111/BaseOS/aarch64/os/Packages/glibc-2.28-164.el8.aarch64.rpm"],
+)
+
+http_bsdtar_archive(
+    name = "centos_8_libgcc_aarch64",
+    build_file_content = """filegroup(
+    name = "runtime",
+    srcs = ["lib64/libgcc_s.so.1"],
+    visibility = ["//visibility:public"],
+)
+""",
+    dev_dependency = True,
+    sha256 = "6e8904fc1515bb3e0f1d54d51b03dc72a98bc001bf87d97b467805ce92d35357",
+    urls = ["https://vault.centos.org/8.5.2111/BaseOS/aarch64/os/Packages/libgcc-8.5.0-4.el8_5.aarch64.rpm"],
+)
+
 ## OVERRIDES PORTS FROM DEPENDENCIES
 
 bazel_dep(name = "rules_zig", version = "0.12.2", dev_dependency = True)

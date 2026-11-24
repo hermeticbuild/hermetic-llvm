@@ -1,24 +1,27 @@
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
-load("//3rd_party/gcc:version.bzl", "LIBGCC_VERSIONS", "libstdcxx_constraint_label")
+load("//3rd_party/gcc:version.bzl", "LIBGCC_CPUS", "LIBGCC_VERSIONS", "libstdcxx_constraint_label")
 
 package(default_visibility = ["//visibility:public"])
 
 # libgcc built from the selected libstdc++'s GCC sources, for the versions in
-# LIBGCC_VERSIONS. Only x86-64 for now: Clang's AArch64 backend emits nothing
-# for __builtin_eh_return and returns the frame pointer for
-# __builtin_dwarf_cfa, and libgcc's unwinder needs both.
+# LIBGCC_VERSIONS on the Linux CPUs in LIBGCC_CPUS.
 selects.config_setting_group(
     name = "libgcc_version",
     match_any = [libstdcxx_constraint_label(version) for version in LIBGCC_VERSIONS],
 )
 
 selects.config_setting_group(
+    name = "libgcc_cpu",
+    match_any = ["@platforms//cpu:" + cpu for cpu in LIBGCC_CPUS],
+)
+
+selects.config_setting_group(
     name = "libgcc_from_gcc",
     match_all = [
         ":libgcc_version",
-        "@platforms//cpu:x86_64",
+        ":libgcc_cpu",
         "@platforms//os:linux",
     ],
 )

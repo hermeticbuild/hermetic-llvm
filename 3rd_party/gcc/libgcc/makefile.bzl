@@ -1,11 +1,17 @@
 # Ports the object lists of libgcc/Makefile.in and of the tmake fragments that
-# libgcc/config.host selects for x86_64-*-linux-gnu:
+# libgcc/config.host selects for each ported target. For x86_64-*-linux-gnu:
 #
 #   t-crtstuff-pic t-libgcc-pic t-eh-dw2-dip t-slibgcc t-slibgcc-gld
 #   t-slibgcc-elf-ver t-linux i386/t-crtpc t-crtfm i386/t-crtstuff t-dfprules
 #   i386/t-heap-trampoline i386/t-cpuinfo t-tls i386/t-linux i386/t-msabi
 #   t-slibgcc-libgcc t-stack i386/t-stack-i386 t-softfp-tf i386/64/t-softfp
 #   i386/t-softfp t-softfp i386/64/t-softfp-compat
+#
+# For aarch64*-*-linux-gnu:
+#
+#   t-crtstuff-pic t-libgcc-pic t-eh-dw2-dip t-slibgcc t-slibgcc-gld
+#   t-slibgcc-elf-ver t-linux aarch64/t-aarch64 aarch64/t-lse t-slibgcc-libgcc
+#   aarch64/t-softfp t-softfp t-crtfm t-dfprules aarch64/t-heap-trampoline
 #
 # Each fragment's contribution is marked with its file name. Only the startfile
 # fragments (crtstuff, crtprec, crtfastmath) and the decimal floating-point
@@ -15,10 +21,14 @@
 #
 # The result splits objects the way libgcc/Makefile.in does:
 #   common: libgcc-objects that also have an _s variant in libgcc-s-objects
-#   static_only: libgcc-objects without an _s variant (LIB2ADD_ST, LIB2FUNCS_ST)
+#   static_only: libgcc-objects without an _s variant (LIB2ADD_ST, LIB2FUNCS_ST,
+#     and objects that tmake fragments build with their own rules)
 #   eh: LIB2ADDEH, archived into libgcc_eh.a and linked into libgcc_s.so.1
-# Every entry is struct(name, src, copts). libgcc2.c entries have src = None:
-# they are compiled from a generated wrapper that defines L<name>.
+# Every entry is struct(name, src, copts, defines, vis_hide). libgcc2.c entries
+# have src = None: they are compiled from a generated wrapper that defines
+# L<name>. Entries with defines are compiled from a wrapper that defines them,
+# in place of the -D flags their rule passes. vis_hide is False for objects
+# whose rule compiles them without libgcc's vis_hide flags or hide list.
 
 _LIB2FUNCS = [
     "_muldi3",
@@ -265,13 +275,123 @@ def _x86_64_linux_gnu():
     lib2funcs_exclude += libgcc2_tf_functions
     lib2add += ["libgcc/config/i386/64/{}.c".format(f) for f in libgcc2_tf_functions]
 
-    # Makefile.in: LIB2ADD defaults and the LIB2ADDEH emutls.c addition.
+    return _makefile_in(
+        lib2add = lib2add,
+        lib2add_st = lib2add_st,
+        lib2addeh = lib2addeh,
+        lib2funcs_exclude = lib2funcs_exclude,
+        file_copts = {f: ["-msse2"] for f in sse2_files},
+    )
+
+def _aarch64_linux_gnu():
+    lib2add = []
+    lib2addeh = [
+        # t-eh-dw2-dip
+        "libgcc/unwind-dw2.c",
+        "libgcc/unwind-dw2-fde-dip.c",
+        "libgcc/unwind-sjlj.c",
+        "libgcc/unwind-c.c",
+    ]
+    lib2funcs_exclude = []
+
+    # aarch64/t-aarch64
     lib2add += [
+        "libgcc/config/aarch64/sync-cache.c",
+        "libgcc/config/aarch64/cpuinfo.c",
+    ]
+    lib2addeh += [
+        "libgcc/config/aarch64/__aarch64_have_sme.c",
+        "libgcc/config/aarch64/__arm_get_current_vg.S",
+        "libgcc/config/aarch64/__arm_sme_state.S",
+        "libgcc/config/aarch64/__arm_tpidr2_restore.S",
+        "libgcc/config/aarch64/__arm_tpidr2_save.S",
+        "libgcc/config/aarch64/__arm_za_disable.S",
+    ]
+
+    # aarch64/t-lse: the out-of-line atomics (one object per operation, size and
+    # memory model, compiled from lse.S by their own rule) and lse-init.
+    lse = []
+    for op, sizes in [
+        ("cas", [1, 2, 4, 8, 16]),
+        ("swp", [1, 2, 4, 8]),
+        ("ldadd", [1, 2, 4, 8]),
+        ("ldclr", [1, 2, 4, 8]),
+        ("ldeor", [1, 2, 4, 8]),
+        ("ldset", [1, 2, 4, 8]),
+    ]:
+        for model in [1, 2, 3, 4, 5]:
+            for size in sizes:
+                lse.append(struct(
+                    name = "{}_{}_{}".format(op, size, model),
+                    src = "libgcc/config/aarch64/lse.S",
+                    defines = ["L_" + op, "SIZE={}".format(size), "MODEL={}".format(model)],
+                ))
+    lse.append(struct(name = "lse-init", src = "libgcc/config/aarch64/lse-init.c", defines = []))
+
+    # aarch64/t-softfp
+    softfp = struct(
+        float_modes = ["tf"],
+        int_modes = ["si", "di", "ti"],
+        extensions = ["sftf", "dftf", "hftf", "bfsf"],
+        truncations = ["tfsf", "tfdf", "tfhf", "tfbf", "dfbf", "sfbf", "hfbf"],
+        extras = [
+            "fixhfti",
+            "fixunshfti",
+            "floattihf",
+            "floatuntihf",
+            "floatdibf",
+            "floatundibf",
+            "floattibf",
+            "floatuntibf",
+            "floatbitinthf",
+            "floatbitintbf",
+            "floatbitinttf",
+            "fixtfbitint",
+        ],
+        exclude_libgcc2 = False,
+    )
+    lib2add.append("libgcc/config/aarch64/sfp-exceptions.c")
+
+    # t-softfp
+    softfp_funcs, softfp_exclude = _softfp(softfp)
+    lib2add += ["libgcc/soft-fp/{}.c".format(f) for f in softfp_funcs]
+    lib2funcs_exclude += softfp_exclude
+
+    # aarch64/t-heap-trampoline
+    lib2addeh.append("libgcc/config/aarch64/heap-trampoline.c")
+
+    return _makefile_in(
+        lib2add = lib2add,
+        lib2add_st = [],
+        lib2addeh = lib2addeh,
+        lib2funcs_exclude = lib2funcs_exclude,
+        own_rule_objects = lse,
+    )
+
+def _makefile_in(lib2add, lib2add_st, lib2addeh, lib2funcs_exclude, file_copts = {}, own_rule_objects = []):
+    """Adds Makefile.in's defaults to the fragments' variables and partitions the objects.
+
+    Args:
+      lib2add: LIB2ADD from the fragments.
+      lib2add_st: LIB2ADD_ST from the fragments.
+      lib2addeh: LIB2ADDEH from the fragments.
+      lib2funcs_exclude: LIB2FUNCS_EXCLUDE from the fragments.
+      file_copts: CFLAGS-<file> from the fragments, by object name.
+      own_rule_objects: struct(name, src, defines) for the libgcc-objects that
+        fragments compile with their own rules, which add the defines as -D
+        flags and neither vis_hide nor a hide list.
+
+    Returns:
+      The struct libgcc_objects returns.
+    """
+
+    # Makefile.in: LIB2ADD defaults and the LIB2ADDEH emutls.c addition.
+    lib2add = lib2add + [
         "enable-execute-stack.c",
         "libgcc/hardcfr.c",
         "libgcc/strub.c",
     ]
-    lib2addeh.append("libgcc/emutls.c")
+    lib2addeh = lib2addeh + ["libgcc/emutls.c"]
 
     # Makefile.in: lib2funcs, including the conversion functions when
     # LIB2_SIDITI_CONV_FUNCS is unset, filtered by LIB2FUNCS_EXCLUDE.
@@ -283,18 +403,22 @@ def _x86_64_linux_gnu():
     def basename(path):
         return path.rsplit("/", 1)[-1].rsplit(".", 1)[0]
 
-    def entry(name, src, copts = []):
-        sse2 = ["-msse2"] if name in sse2_files else []
-        return struct(name = name, src = src, copts = copts + sse2)
+    def entry(name, src, copts = [], defines = [], vis_hide = True):
+        return struct(name = name, src = src, copts = copts + file_copts.get(name, []), defines = defines, vis_hide = vis_hide)
+
+    # static-object.mk and shared-object.mk compile assembly without c_flags.
+    def lib2_entry(src, c_flags = []):
+        return entry(basename(src), src, [] if src.endswith(".S") else c_flags)
 
     common = [entry(f, None) for f in lib2funcs]
     common += [entry(f, None, _LIB2_DIVMOD_EXCEPTION_FLAGS) for f in divmod]
-    common += [entry(basename(f), f) for f in lib2add]
+    common += [lib2_entry(f) for f in lib2add]
     static_only = [entry(f, None) for f in lib2funcs_st]
-    static_only += [entry(basename(f), f) for f in lib2add_st]
+    static_only += [lib2_entry(f) for f in lib2add_st]
+    static_only += [entry(o.name, o.src, defines = o.defines, vis_hide = False) for o in own_rule_objects]
 
     # Makefile.in builds LIB2ADDEH with c_flags := -fexceptions.
-    eh = [entry(basename(f), f, ["-fexceptions"]) for f in lib2addeh]
+    eh = [lib2_entry(f, ["-fexceptions"]) for f in lib2addeh]
 
     return struct(
         common = common,
@@ -308,23 +432,23 @@ _PORTED_VERSIONS = ["17.0.0"]
 def libgcc_objects(cpu, version):
     """Partitions libgcc's objects for a Linux GNU target CPU.
 
+    Fails for a version missing from _PORTED_VERSIONS and for a CPU whose
+    objects are not ported.
+
     Args:
-      cpu: The target CPU, or None for a GCC version that builds no libgcc.
+      cpu: The target CPU.
       version: The GCC version.
 
     Returns:
       A struct with common, static_only and eh lists of struct(name, src,
-      copts), all empty when cpu is None.
-
-    When cpu is set, fails for a version missing from _PORTED_VERSIONS and for a
-    CPU whose objects are not ported.
+      copts, defines, vis_hide).
     """
-    if cpu == None:
-        return struct(common = [], static_only = [], eh = [])
     if version not in _PORTED_VERSIONS:
         fail("libgcc's object lists are ported for GCC {}, not {}".format(", ".join(_PORTED_VERSIONS), version))
     if cpu == "x86_64":
         return _x86_64_linux_gnu()
+    if cpu == "aarch64":
+        return _aarch64_linux_gnu()
     fail("libgcc's object lists are not ported for " + cpu)
 
 def _flag_key(copts):
@@ -334,13 +458,14 @@ def libgcc_cc_groups(objects):
     """Groups objects that share a part and compile flags.
 
     Each group becomes one cc_library. libgcc2.c objects get a wrapper source
-    that defines L<name>. Static-only assembly objects get a wrapper that
-    includes their hide list first, as Makefile.in's -include $*.vis does.
+    that defines L<name>, and objects with defines get a wrapper that defines
+    them. Assembly objects with vis_hide get a wrapper that includes their hide
+    list first in the static compile, as Makefile.in's -include $*.vis does.
     Their sources are also listed under hide, so that the hide list can be made
     from a -DSHARED compile.
 
     Returns:
-      A list of structs with the group's name, part, asm, copts, srcs,
+      A list of structs with the group's name, part, asm, vis_hide, copts, srcs,
       wrappers and hide fields.
     """
     groups = {}
@@ -352,12 +477,18 @@ def libgcc_cc_groups(objects):
     ]:
         for e in entries:
             asm = e.src != None and e.src.endswith(".S")
-            key = "{}{}_{}".format(part, "_asm" if asm else "", _flag_key(e.copts))
+            key = "{}{}{}_{}".format(
+                part,
+                "_asm" if asm else "",
+                "" if e.vis_hide else "_novis",
+                _flag_key(e.copts),
+            )
             if key not in groups:
                 groups[key] = struct(
                     name = key,
                     part = part,
                     asm = asm,
+                    vis_hide = e.vis_hide,
                     copts = e.copts,
                     srcs = [],
                     wrappers = {},
@@ -367,8 +498,14 @@ def libgcc_cc_groups(objects):
             group = groups[key]
             if e.src == None:
                 group.wrappers[e.name + ".c"] = "#define L{} 1\n#include \"libgcc/libgcc2.c\"\n".format(e.name)
-            elif asm and part == "static_only":
-                group.wrappers[e.name + ".S"] = "#include \"{}.vis\"\n#include \"{}\"\n".format(e.name, e.src)
+            elif e.defines:
+                lines = []
+                for define in e.defines:
+                    name, _, value = define.partition("=")
+                    lines.append("#define {} {}\n".format(name, value or "1"))
+                group.wrappers[e.name + "." + e.src.rsplit(".", 1)[1]] = "".join(lines) + "#include \"{}\"\n".format(e.src)
+            elif asm and e.vis_hide:
+                group.wrappers[e.name + ".S"] = "#ifndef SHARED\n#include \"{}.vis\"\n#endif\n#include \"{}\"\n".format(e.name, e.src)
                 group.hide.append(e.src)
             else:
                 group.srcs.append(e.src)

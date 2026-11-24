@@ -28,11 +28,13 @@ if [[ "$soname" != "libgcc_s.so.1" ]]; then
 fi
 
 # Defined dynamic symbols with their versions, without lld's absent version
-# node symbols or GNU ld's GCC_x.y@@GCC_x.y ones.
+# node symbols or GNU ld's GCC_x.y@@GCC_x.y ones. The section index and name
+# are read from the end of the line, since readelf adds an Other column for
+# AArch64's [VARIANT_PCS] functions.
 actual="$(mktemp)"
 trap 'rm -f "$actual"' EXIT
 "$readelf" --dyn-syms -W "$shared" \
-  | awk 'NR > 3 && $7 != "UND" && $8 != "" { print $8 }' \
+  | awk 'NR > 3 && $5 != "LOCAL" && $(NF - 1) != "UND" { print $NF }' \
   | grep -v '^GCC_[0-9.]*@@' \
   | LC_ALL=C sort -u > "$actual"
 

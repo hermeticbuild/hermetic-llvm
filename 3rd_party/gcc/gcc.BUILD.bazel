@@ -2,7 +2,7 @@ load("@bazel_lib//lib:copy_file.bzl", "copy_file")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
-load("@llvm//3rd_party/gcc:version.bzl", "gcc_config_toolexeclibdir_target", "gcc_has_libgcc", "gcc_version_at_least_for", "gcc_version_less_than_for")
+load("@llvm//3rd_party/gcc:version.bzl", "LIBGCC_CPUS", "gcc_config_toolexeclibdir_target", "gcc_has_libgcc", "gcc_version_at_least_for", "gcc_version_less_than_for")
 load("@llvm//3rd_party/gcc/libgcc:libgcc_rules.bzl", "libgcc_hide_lists", "libgcc_version_script", "libgcc_wrappers")
 load("@llvm//3rd_party/gcc/libgcc:makefile.bzl", "libgcc_cc_groups", "libgcc_objects")
 load("@llvm//3rd_party/gcc/libgcc:target_config.bzl", "libgcc_header_contents", "libgcc_header_links", "libgcc_shlib_mapfiles", "libgcc_target_copts")
@@ -1727,7 +1727,9 @@ cc_runtime_stage1_shared_library(
     # Where libgcc is built from this GCC, libstdc++.so.6 needs libgcc_s.so.1
     # for the unwinder, as GCC links it.
     dynamic_deps = select({
-        "@platforms//cpu:x86_64": [":libgcc_s.so.1"],
+        "@platforms//cpu:" + cpu: [":libgcc_s.so.1"]
+        for cpu in LIBGCC_CPUS
+    } | {
         "//conditions:default": [],
     }) if gcc_has_libgcc(GCC_VERSION) else [],
     shared_lib_name = "libstdc++.so.6",
@@ -1893,84 +1895,100 @@ copy_to_directory(
 )
 
 # libgcc: libgcc.a, libgcc_eh.a and libgcc_s.so.1, compiled with the
-# toolchain's Clang for the GCC versions in LIBGCC_VERSIONS.
+# toolchain's Clang for the GCC versions in LIBGCC_VERSIONS and the CPUs in
+# LIBGCC_CPUS.
 # @llvm//3rd_party/gcc/libgcc:makefile.bzl ports the object lists from GCC's
 # libgcc/Makefile.in and the tmake fragments that libgcc/config.host selects,
 # and target_config.bzl in the same package provides the headers that GCC's
-# build directory and libgcc's configure write.
+# build directory and libgcc's configure write. Each CPU gets its own headers
+# and objects, named after it, and the libraries select them.
 # Objects build once per runtime link mode, as libstdc++'s do: static for
 # libgcc.a and libgcc_eh.a, with -fvisibility=hidden -DHIDE_EXPORTS, and
 # dynamic for libgcc_s.so.1, with -DSHARED.
-_LIBGCC_CPU = "x86_64"
+_LIBGCC_CPUS = LIBGCC_CPUS if gcc_has_libgcc(GCC_VERSION) else []
 
-_LIBGCC_GENERATED_DIR = "libgcc_" + _LIBGCC_CPU
+_LIBGCC_COMPATIBLE = select({
+    "@platforms//cpu:" + cpu: []
+    for cpu in _LIBGCC_CPUS
+} | {
+    "//conditions:default": ["@platforms//:incompatible"],
+}) + ["@platforms//os:linux"]
 
-_LIBGCC_COMPATIBLE = [
-    "@platforms//cpu:" + _LIBGCC_CPU,
-    "@platforms//os:linux",
-] + ([] if gcc_has_libgcc(GCC_VERSION) else ["@platforms//:incompatible"])
+_LIBGCC_GROUPS = {
+    cpu: libgcc_cc_groups(libgcc_objects(cpu, GCC_VERSION))
+    for cpu in _LIBGCC_CPUS
+}
 
-_LIBGCC_GROUPS = libgcc_cc_groups(libgcc_objects(
-    _LIBGCC_CPU if gcc_has_libgcc(GCC_VERSION) else None,
-    GCC_VERSION,
-))
+_LIBGCC_HEADER_CONTENTS = {
+    cpu: libgcc_header_contents(cpu, GCC_VERSION)
+    for cpu in _LIBGCC_CPUS
+}
 
-_LIBGCC_HEADER_CONTENTS = libgcc_header_contents(_LIBGCC_CPU, GCC_VERSION) if gcc_has_libgcc(GCC_VERSION) else {}
-
-_LIBGCC_HEADER_LINKS = libgcc_header_links(_LIBGCC_CPU) if gcc_has_libgcc(GCC_VERSION) else {}
+_LIBGCC_HEADER_LINKS = {
+    cpu: libgcc_header_links(cpu)
+    for cpu in _LIBGCC_CPUS
+}
 
 [
     write_file(
-        name = "{}_{}".format(_LIBGCC_GENERATED_DIR, name),
-        out = "{}/{}".format(_LIBGCC_GENERATED_DIR, name),
+        name = "libgcc_{}_{}".format(cpu, name),
+        out = "libgcc_{}/{}".format(cpu, name),
         content = lines,
     )
-    for name, lines in _LIBGCC_HEADER_CONTENTS.items()
+    for cpu in _LIBGCC_CPUS
+    for name, lines in _LIBGCC_HEADER_CONTENTS[cpu].items()
 ]
 
 [
     copy_file(
-        name = "{}_{}".format(_LIBGCC_GENERATED_DIR, name),
+        name = "libgcc_{}_{}".format(cpu, name),
         src = src,
-        out = "{}/{}".format(_LIBGCC_GENERATED_DIR, name),
+        out = "libgcc_{}/{}".format(cpu, name),
         allow_symlink = True,
     )
-    for name, src in _LIBGCC_HEADER_LINKS.items()
+    for cpu in _LIBGCC_CPUS
+    for name, src in _LIBGCC_HEADER_LINKS[cpu].items()
 ]
 
-cc_library(
-    name = "libgcc_headers",
-    hdrs = [
-        ":{}_{}".format(_LIBGCC_GENERATED_DIR, name)
-        for name in _LIBGCC_HEADER_CONTENTS.keys() + _LIBGCC_HEADER_LINKS.keys()
-        if not name.endswith(".c")
-    ],
-    # libgcc/Makefile.in's INCLUDES order: the build directory's headers, then
-    # libgcc, gcc and include.
-    includes = [
-        _LIBGCC_GENERATED_DIR,
-        "gcc",
-        "include",
-        "libgcc",
-    ],
-    target_compatible_with = _LIBGCC_COMPATIBLE,
-    # libgcc sources include each other and GCC's target headers. Other GCC
-    # versions do not extract these files.
-    textual_hdrs = glob([
-        "gcc/**/*.def",
-        "gcc/**/*.h",
-        "include/*.def",
-        "include/*.h",
-        "libgcc/**/*.S",
-        "libgcc/**/*.c",
-        "libgcc/**/*.h",
-        "libgcc/**/*.inc",
-    ]) if gcc_has_libgcc(GCC_VERSION) else [],
-    deps = [
-        "@glibc//:gnu_libc_headers",
-        "@kernel_headers",
-    ],
-)
+[
+    cc_library(
+        name = "libgcc_{}_headers".format(cpu),
+        hdrs = [
+            ":libgcc_{}_{}".format(cpu, name)
+            for name in _LIBGCC_HEADER_CONTENTS[cpu].keys() + _LIBGCC_HEADER_LINKS[cpu].keys()
+            if not name.endswith(".c")
+        ],
+        # libgcc/Makefile.in's INCLUDES order: the build directory's headers, then
+        # libgcc, gcc and include.
+        includes = [
+            "libgcc_" + cpu,
+            "gcc",
+            "include",
+            "libgcc",
+        ],
+        target_compatible_with = [
+            "@platforms//cpu:" + cpu,
+            "@platforms//os:linux",
+        ],
+        # libgcc sources include each other and GCC's target headers. Other GCC
+        # versions do not extract these files.
+        textual_hdrs = glob([
+            "gcc/**/*.def",
+            "gcc/**/*.h",
+            "include/*.def",
+            "include/*.h",
+            "libgcc/**/*.S",
+            "libgcc/**/*.c",
+            "libgcc/**/*.h",
+            "libgcc/**/*.inc",
+        ]),
+        deps = [
+            "@glibc//:gnu_libc_headers",
+            "@kernel_headers",
+        ],
+    )
+    for cpu in _LIBGCC_CPUS
+]
 
 _LIBGCC_COPTS = [
     # GCC_CFLAGS and LIBGCC2_CFLAGS from libgcc/Makefile.in and libgcc.mvars.
@@ -1990,10 +2008,12 @@ _LIBGCC_COPTS = [
     "libgcc_predefines.h",
     "-include",
     "libgcc_clang_compat.h",
-] + libgcc_target_copts(_LIBGCC_CPU)
+]
 
 # vis_hide from libgcc's configure for libgcc.a and libgcc_eh.a, and
-# gcc_s_compile's -DSHARED for libgcc_s.so.1.
+# gcc_s_compile's -DSHARED for libgcc_s.so.1. Assembly ignores the visibility
+# flags; its hide lists do that job. Objects that tmake fragments compile with
+# their own rules get neither.
 _LIBGCC_LINKMODE_COPTS = select({
     "@llvm//runtimes:linkmode_dynamic": ["-DSHARED"],
     "//conditions:default": [
@@ -2002,94 +2022,168 @@ _LIBGCC_LINKMODE_COPTS = select({
     ],
 })
 
+_LIBGCC_SHARED_COPTS = select({
+    "@llvm//runtimes:linkmode_dynamic": ["-DSHARED"],
+    "//conditions:default": [],
+})
+
 [
     libgcc_wrappers(
-        name = "libgcc_{}_wrappers".format(group.name),
+        name = "libgcc_{}_{}_wrappers".format(
+            cpu,
+            group.name,
+        ),
         files = group.wrappers,
-        target_compatible_with = _LIBGCC_COMPATIBLE,
+        target_compatible_with = [
+            "@platforms//cpu:" + cpu,
+            "@platforms//os:linux",
+        ],
     )
-    for group in _LIBGCC_GROUPS
+    for cpu in _LIBGCC_CPUS
+    for group in _LIBGCC_GROUPS[cpu]
     if group.wrappers
 ]
 
-# The -DSHARED compile that libgcc's gen-hide-list reads for static-only
-# assembly objects.
+# The -DSHARED compile that libgcc's gen-hide-list reads for assembly objects.
 [
     cc_library(
-        name = "libgcc_{}_hide_probe".format(group.name),
+        name = "libgcc_{}_{}_hide_probe".format(
+            cpu,
+            group.name,
+        ),
         srcs = group.hide,
-        copts = _LIBGCC_COPTS + group.copts + ["-DSHARED"],
-        target_compatible_with = _LIBGCC_COMPATIBLE,
-        deps = [":libgcc_headers"],
+        copts = _LIBGCC_COPTS + libgcc_target_copts(cpu) + group.copts + ["-DSHARED"],
+        target_compatible_with = [
+            "@platforms//cpu:" + cpu,
+            "@platforms//os:linux",
+        ],
+        deps = [":libgcc_{}_headers".format(cpu)],
     )
-    for group in _LIBGCC_GROUPS
+    for cpu in _LIBGCC_CPUS
+    for group in _LIBGCC_GROUPS[cpu]
     if group.hide
 ]
 
 [
     libgcc_hide_lists(
-        name = "libgcc_{}_hide_lists".format(group.name),
-        target_compatible_with = _LIBGCC_COMPATIBLE,
-        deps = [":libgcc_{}_hide_probe".format(group.name)],
+        name = "libgcc_{}_{}_hide_lists".format(
+            cpu,
+            group.name,
+        ),
+        target_compatible_with = [
+            "@platforms//cpu:" + cpu,
+            "@platforms//os:linux",
+        ],
+        deps = [":libgcc_{}_{}_hide_probe".format(
+            cpu,
+            group.name,
+        )],
     )
-    for group in _LIBGCC_GROUPS
+    for cpu in _LIBGCC_CPUS
+    for group in _LIBGCC_GROUPS[cpu]
     if group.hide
 ]
 
 [
     cc_library(
-        name = "libgcc_{}".format(group.name),
+        name = "libgcc_{}_{}".format(
+            cpu,
+            group.name,
+        ),
         srcs = [
-            ":{}_{}".format(_LIBGCC_GENERATED_DIR, src) if src in _LIBGCC_HEADER_LINKS else src
+            ":libgcc_{}_{}".format(cpu, src) if src in _LIBGCC_HEADER_LINKS[cpu] else src
             for src in group.srcs
-        ] + ([":libgcc_{}_wrappers".format(group.name)] if group.wrappers else []),
-        additional_compiler_inputs = [":libgcc_{}_hide_lists".format(group.name)] if group.hide else [],
-        # Assembly ignores visibility flags; its hide lists do that job.
-        copts = _LIBGCC_COPTS + group.copts + ([] if group.asm else _LIBGCC_LINKMODE_COPTS),
-        includes = ["libgcc_{}_hide_lists".format(group.name)] if group.hide else [],
-        target_compatible_with = _LIBGCC_COMPATIBLE,
-        deps = [":libgcc_headers"],
+        ] + ([":libgcc_{}_{}_wrappers".format(
+            cpu,
+            group.name,
+        )] if group.wrappers else []),
+        additional_compiler_inputs = [":libgcc_{}_{}_hide_lists".format(
+            cpu,
+            group.name,
+        )] if group.hide else [],
+        copts = _LIBGCC_COPTS + libgcc_target_copts(cpu) + group.copts + (
+            _LIBGCC_LINKMODE_COPTS if group.vis_hide and not group.asm else _LIBGCC_SHARED_COPTS
+        ),
+        includes = ["libgcc_{}_{}_hide_lists".format(
+            cpu,
+            group.name,
+        )] if group.hide else [],
+        target_compatible_with = [
+            "@platforms//cpu:" + cpu,
+            "@platforms//os:linux",
+        ],
+        deps = [":libgcc_{}_headers".format(cpu)],
     )
-    for group in _LIBGCC_GROUPS
+    for cpu in _LIBGCC_CPUS
+    for group in _LIBGCC_GROUPS[cpu]
 ]
 
 cc_runtime_stage0_static_library(
     name = "libgcc.static",
     target_compatible_with = _LIBGCC_COMPATIBLE,
     visibility = ["//visibility:public"],
-    deps = [
-        ":libgcc_{}".format(group.name)
-        for group in _LIBGCC_GROUPS
-        if group.part in [
-            "common",
-            "static_only",
+    deps = select({
+        "@platforms//cpu:" + cpu: [
+            ":libgcc_{}_{}".format(
+                cpu,
+                group.name,
+            )
+            for group in _LIBGCC_GROUPS[cpu]
+            if group.part in [
+                "common",
+                "static_only",
+            ]
         ]
-    ],
+        for cpu in _LIBGCC_CPUS
+    } | {
+        "//conditions:default": [],
+    }),
 )
 
 cc_runtime_stage0_static_library(
     name = "libgcc_eh.static",
     target_compatible_with = _LIBGCC_COMPATIBLE,
     visibility = ["//visibility:public"],
-    deps = [
-        ":libgcc_{}".format(group.name)
-        for group in _LIBGCC_GROUPS
-        if group.part == "eh"
-    ],
+    deps = select({
+        "@platforms//cpu:" + cpu: [
+            ":libgcc_{}_{}".format(
+                cpu,
+                group.name,
+            )
+            for group in _LIBGCC_GROUPS[cpu]
+            if group.part == "eh"
+        ]
+        for cpu in _LIBGCC_CPUS
+    } | {
+        "//conditions:default": [],
+    }),
 )
 
-_LIBGCC_S_DEPS = [
-    ":libgcc_{}".format(group.name)
-    for group in _LIBGCC_GROUPS
-    if group.part in [
-        "common",
-        "eh",
+_LIBGCC_S_DEPS = select({
+    "@platforms//cpu:" + cpu: [
+        ":libgcc_{}_{}".format(
+            cpu,
+            group.name,
+        )
+        for group in _LIBGCC_GROUPS[cpu]
+        if group.part in [
+            "common",
+            "eh",
+        ]
     ]
-]
+    for cpu in _LIBGCC_CPUS
+} | {
+    "//conditions:default": [],
+})
 
 libgcc_version_script(
     name = "libgcc_map",
-    map_files = libgcc_shlib_mapfiles(_LIBGCC_CPU),
+    map_files = select({
+        "@platforms//cpu:" + cpu: libgcc_shlib_mapfiles(cpu)
+        for cpu in _LIBGCC_CPUS
+    } | {
+        "//conditions:default": [],
+    }),
     mkmap = "libgcc/mkmap-symver.awk",
     std_ver = "libgcc/libgcc-std.ver.in",
     target_compatible_with = _LIBGCC_COMPATIBLE,
