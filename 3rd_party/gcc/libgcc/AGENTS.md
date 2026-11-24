@@ -34,7 +34,7 @@ for it. Each libstdc++ version links the libgcc built from its own GCC sources.
   status, and `configure_subst_status.txt` each `@VAR@` substitution in
   `libgcc/Makefile.in`. Each file's header defines its statuses.
 - `libgcc_rules.bzl` has the wrapper-source, hide-list and version-map rules.
-- `3rd_party/gcc/patches/17.x/libgcc-clang-compat.patch` changes the spots in
+- `3rd_party/gcc/patches/14-17/libgcc-clang-compat.patch` changes the spots in
   libgcc's sources that rely on GCC-only behavior, so that Clang compiles them.
 - `3rd_party/gcc/patches/17.x/libgcc-clang-aarch64-unwind.patch` replaces the
   `__builtin_eh_return` in libgcc's unwinder, which Clang does not implement
@@ -93,8 +93,9 @@ Derive each value from GCC itself, not from memory:
   `_PORTED_TARGETS` in `target_config.bzl`. Loading fails for a version that is
   missing from them. Give each macro and substitution that the version adds a
   status in the two status files, and port the ones whose status says they are
-  modeled. The inventory tests name the items without a status and the statuses
-  without an item. Then add the version and its CPUs to `LIBGCC_TARGETS` in
+  modeled. A `gcc=` range limits a status to the versions that have the item.
+  The inventory tests name the items without a status and the statuses without
+  an item. Then add the version and its CPUs to `LIBGCC_TARGETS` in
   `3rd_party/gcc/version.bzl`, and its Clang patches, if any, to
   `LIBGCC_PATCHES`. Each patch directory is named for the GCC versions its
   patches apply to without offsets. In `runtimes/libgcc/tests`, add
@@ -145,15 +146,20 @@ Derive each value from GCC itself, not from memory:
   system's `libgcc_s.so.1`. Every test that passes with the system libgcc must
   pass, except the tests that need decimal floating-point routines (`__bid_*`),
   which this port does not build because Clang has no decimal floating-point
-  types. For AArch64, build them with a cross GCC, such as Ubuntu's
+  types. Build the tests with a GCC of the same version where the host has one.
+  For AArch64, build them with a cross GCC, such as Ubuntu's
   `aarch64-linux-gnu-g++-10`, and run them with
   `qemu-aarch64-static -L /usr/aarch64-linux-gnu`, at `-O0` and `-O2`.
+- Compare each `libgcc_s.so.1`'s exports with those of a distribution's
+  `libgcc_s.so.1` built from the same GCC release, such as Ubuntu's. The system
+  library may be loaded first, and the loader loads one library per soname, so
+  the port must not export a symbol version that the distribution's lacks.
 
 ## Targets
 
-x86-64 and AArch64 are supported. On AArch64, Clang returns the frame pointer
-for `__builtin_dwarf_cfa` and emits nothing for `__builtin_eh_return`, and
-libgcc's unwinder relies on both:
+x86-64 is supported for GCC 14.3.0 and 17, and AArch64 for GCC 17. On AArch64,
+Clang returns the frame pointer for `__builtin_dwarf_cfa` and emits nothing for
+`__builtin_eh_return`, and libgcc's unwinder relies on both:
 
 - `uw_init_context` takes the caller's CFA from `__builtin_dwarf_cfa`.
   `libgcc_clang_compat.h` maps it to `__builtin_sponentry`, the stack pointer

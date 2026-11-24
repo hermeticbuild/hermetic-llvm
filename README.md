@@ -298,23 +298,30 @@ linkage. The static archive includes the C++ ABI support from libsupc++ and uses
 rules_cc's PIC configuration. The default toolchain configuration produces
 position-independent code suitable for shared libraries.
 
-With libstdc++ 17.0.0 on x86-64 and AArch64, the toolchain also builds libgcc
-from the same GCC sources and links it as GCC's driver does. Static links use
-`libgcc.a` and `libgcc_eh.a`. Dynamic links pass `-lgcc_s`, which finds GCC's
-`libgcc_s.so` linker script. The script names `libgcc_s.so.1` and then
-`libgcc.a`, which supplies the symbols the shared library does not export, such
-as `__morestack` for `-fsplit-stack` code on x86-64. rustc's `-lgcc_s` should
-find the same script, judging from the `-L` order, so the stub that
-`--@llvm//config:experimental_stub_libgcc_s` provides is left out. This is not
-tested with rustc. compiler-rt's builtins still come last on the link line, and
-compiler-rt's `crtbegin.o` and `crtend.o` are kept.
+With libstdc++ 17.0.0 on x86-64 and AArch64, and with libstdc++ 14.3.0 on
+x86-64, the toolchain also builds libgcc from the same GCC sources and links it
+as GCC's driver does. Static links use `libgcc.a` and `libgcc_eh.a`. Dynamic
+links pass `-lgcc_s`, which finds GCC's `libgcc_s.so` linker script. The script
+names `libgcc_s.so.1` and then `libgcc.a`, which supplies the symbols the shared
+library does not export, such as `__morestack` for `-fsplit-stack` code on
+x86-64. rustc's `-lgcc_s` should find the same script, judging from the `-L`
+order, so the stub that `--@llvm//config:experimental_stub_libgcc_s` provides is
+left out. This is not tested with rustc. compiler-rt's builtins still come last
+on the link line, and compiler-rt's `crtbegin.o` and `crtend.o` are kept.
 
 `libstdc++.so.6` depends on `libgcc_s.so.1`, as GCC's does, and a dynamically
 linked binary finds both in its runfiles through its `RUNPATH`. The dynamic
 loader loads one library per soname, so the program and the GCC-built shared
 libraries it loads, such as manylinux Python wheels, use the same
 `libgcc_s.so.1`. Outside its runfiles, as with `libstdc++.so.6`, the loader
-looks for `libgcc_s.so.1` in the system's library paths.
+looks for `libgcc_s.so.1` in the system's library paths. Each version's
+`libgcc_s.so.1` exports the same symbols and symbol versions as the one that the
+same GCC release builds, and a newer release keeps every older symbol version.
+Code linked against it therefore runs with the system's `libgcc_s.so.1` when
+that comes from the same GCC release or a newer one, as in a Python process that
+loads the system's first. An older release of the same major version can have
+the same exports. The port's 14.3.0 `libgcc_s.so.1` exports the same symbols and
+symbol versions as Ubuntu 24.04's, which comes from GCC 14.2.0.
 
 Decimal floating-point routines (`__bid_*`) are not built, because Clang has no
 decimal floating-point types. Other GCC versions and targets link LLVM's

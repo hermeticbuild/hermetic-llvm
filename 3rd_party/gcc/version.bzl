@@ -304,6 +304,7 @@ LIBGCC_TARGETS = {
         "aarch64",
         "x86_64",
     ],
+    "14.3.0": ["x86_64"],
 }
 
 LIBGCC_VERSIONS = [version for version in GCC_VERSIONS if version in LIBGCC_TARGETS]
@@ -314,8 +315,11 @@ def libgcc_cpus(version):
 
 LIBGCC_PATCHES = {
     "17.0.0": [
-        _libstdcxx_patch("17.x/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("14-17/libgcc-clang-compat.patch"),
         _libstdcxx_patch("17.x/libgcc-clang-aarch64-unwind.patch"),
+    ],
+    "14.3.0": [
+        _libstdcxx_patch("14-17/libgcc-clang-compat.patch"),
     ],
 }
 

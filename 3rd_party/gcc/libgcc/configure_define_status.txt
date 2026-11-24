@@ -4,7 +4,10 @@
 # configure.ac.bzl renders.
 #
 # Columns: macro, status, and optionally the CPUs whose configure checks the
-# macro, comma-separated. Without the third column, every CPU checks it.
+# macro, comma-separated. Without the third column, every CPU checks it. A
+# gcc=<first>-<last> field limits the line to the GCC versions from <first> up
+# to but not including <last>. Either bound may be left out, and a field may
+# list several ranges, comma-separated.
 #
 # probe-modeled: a probe renders it in auto-target.h.
 # policy-modeled: a fixed value renders it in auto-target.h.
@@ -26,6 +29,7 @@ HAVE_GETIPINFO policy-modeled
 HAVE_INIT_PRIORITY probe-modeled
 HAVE_INTTYPES_H probe-modeled
 HAVE_MEMORY_H probe-modeled
+HAVE_SOLARIS_CRTS not-needed gcc=-15.0.0
 HAVE_STDINT_H probe-modeled
 HAVE_STDLIB_H probe-modeled
 HAVE_STRINGS_H probe-modeled

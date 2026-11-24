@@ -4,7 +4,10 @@
 # without a status.
 #
 # Columns: variable, status, and for modeled ones the port file that carries
-# its value, which must mention the variable.
+# its value, which must mention the variable. A gcc=<first>-<last> field limits
+# the line to the GCC versions from <first> up to but not including <last>.
+# Either bound may be left out, and a field may list several ranges,
+# comma-separated.
 #
 # modeled: the port carries its value in that file.
 # toolchain: the cc toolchain provides it, as a tool or as compile flags. PICFLAG
@@ -27,12 +30,12 @@ LIPO toolchain
 LN_S not-needed
 MAINT not-needed
 NM toolchain
-NO_PIE_CFLAGS not-needed
+NO_PIE_CFLAGS not-needed gcc=16.0.0-
 PICFLAG toolchain
 RANLIB toolchain
 SHELL not-needed
 STRIP toolchain
-WERROR not-needed
+WERROR not-needed gcc=16.0.0-
 accel_dir_suffix not-needed
 asm_hidden_op modeled 3rd_party/gcc/libgcc/configure.ac.bzl
 cpu_type not-needed
@@ -53,7 +56,7 @@ host_subdir not-needed
 libdir not-needed
 libgcc_topdir not-needed
 long_double_type_size unsupported-target
-md_unwind_def_header modeled 3rd_party/gcc/libgcc/target_config.bzl
+md_unwind_def_header modeled 3rd_party/gcc/libgcc/target_config.bzl gcc=15.0.0-
 md_unwind_header modeled 3rd_party/gcc/libgcc/target_config.bzl
 multilib_dir not-needed
 multilib_flags not-needed

@@ -402,6 +402,7 @@ _CONFIGURE_PORT_FILES = [
             "CPU": cpu,
             "DEFINE_STATUS": "$(rootpath //3rd_party/gcc/libgcc:configure_define_status.txt)",
             "GCC_SOURCES": "$(rootpath {})".format(gcc_repository_label(version, "libgcc_configure_inputs")),
+            "GCC_VERSION": version,
             "HEADERS": "$(rootpaths :configure_headers_linux_{}_{})".format(
                 cpu,
                 gcc_target_suffix(version),

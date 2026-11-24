@@ -176,8 +176,9 @@ asm("\\n\\
     # use .init_array regardless, because compiler-rt's crtbegin runs only
     # .init_array.
     policy_define("GCC_ENABLE_INITFINI_ARRAY"),
-    # libgcc/configure.ac: GCC_AC_THREAD_MODEL, from GCC's --enable-threads,
-    # which defaults to posix on Linux.
+    # libgcc/configure.ac: the thread model from GCC_AC_THREAD_MODEL from GCC 15
+    # and, before it, the thread model that the compiler's -v reports. Both come
+    # from GCC's --enable-threads, which defaults to posix on Linux.
     policy_string_define("LIBGCC_TARGET_THREAD_FILE", "posix"),
     # libgcc/configure.ac: libgcc_cv_dfp, Makefile.in's decimal_float, which
     # adds the decimal floating-point objects.

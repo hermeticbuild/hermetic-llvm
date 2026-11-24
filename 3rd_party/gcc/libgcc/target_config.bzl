@@ -16,12 +16,14 @@
 # - Macros GCC predefines under -fbuilding-libgcc
 #   (gcc/c-family/c-cppbuiltin.cc). Clang does not support that option, so
 #   these are written to a header that every libgcc source includes first.
-#   The values were taken from GCC 17's xgcc with -fbuilding-libgcc -dM -E.
-#   Clang lacks the __FLT128_* and __BFLT16_* macros, so those values are
-#   spelled out.
+#   The values were taken from each GCC version's xgcc with
+#   -fbuilding-libgcc -dM -E. Clang lacks the __FLT128_* and __BFLT16_*
+#   macros, so those values are spelled out.
 #
 # One more header maps the few GCC builtins that libgcc uses and Clang does not
 # provide to what GCC expands them to.
+
+load("//3rd_party/gcc:version.bzl", "gcc_version_at_least_for")
 
 _TCONFIG_H = [
     "#ifndef GCC_TCONFIG_H",
@@ -83,139 +85,149 @@ def _mkconfig_tm_h(defines, headers):
     ]
     return lines
 
-_X86_64 = struct(
-    # The canonical triple configure runs config.gcc and config.host for.
-    triple = "x86_64-pc-linux-gnu",
-    # gcc/config.gcc for x86_64-*-linux*.
-    tm_defines = [
-        "LIBC_GLIBC=1",
-        "LIBC_UCLIBC=2",
-        "LIBC_BIONIC=3",
-        "LIBC_MUSL=4",
-        "DEFAULT_LIBC=LIBC_GLIBC",
-        "ANDROID_DEFAULT=0",
-        "HEAP_TRAMPOLINES_INIT=0",
-    ],
-    tm_file = [
-        "config/vxworks-dummy.h",
-        "config/i386/biarch64.h",
-        "config/i386/i386.h",
-        "config/i386/unix.h",
-        "config/i386/att.h",
-        "config/elfos.h",
-        "config/gnu-user.h",
-        "config/glibc-stdint.h",
-        "config/i386/x86-64.h",
-        "config/i386/gnu-user-common.h",
-        "config/i386/gnu-user64.h",
-        "config/linux.h",
-        "config/linux-android.h",
-        "config/i386/linux-common.h",
-        "config/i386/linux64.h",
-        "config/initfini-array.h",
-    ],
-    # i386.h sizes its register tables with this i386.md constant.
-    insn_constants = [
-        "#define FIRST_PSEUDO_REG 92",
-    ],
-    # libgcc/config.host for x86_64-*-linux*.
-    libgcc_tm_file = [
-        "config/i386/elf-lib.h",
-        "config/i386/value-unwind.h",
-    ],
-    # cpuinfo.c includes cpuid.h, which GCC installs from its config/i386
-    # directory. Clang's cpuid.h lacks some of the bits it tests.
-    extra_links = {
-        "cpuid.h": "gcc/config/i386/cpuid.h",
-    },
-    md_unwind_def_header = "libgcc/config/no-unwind.h",
-    md_unwind_header = "libgcc/config/i386/linux-unwind.h",
-    sfp_machine_header = "libgcc/config/i386/sfp-machine.h",
-    shlib_mapfiles = [
-        "libgcc/config/i386/libgcc-glibc.ver",
-    ],
-    predefines = [
-        "#define __LIBGCC_BF_EPSILON__ ((__bf16) 7.81250000000000000000000000000000000e-3F)",
-        "#define __LIBGCC_BF_EXCESS_PRECISION__ 1",
-        "#define __LIBGCC_BF_FUNC_EXT__ bf16",
-        "#define __LIBGCC_BF_MANT_DIG__ 8",
-        "#define __LIBGCC_BF_MAX__ ((__bf16) 3.38953138925153547590470800371487867e+38F)",
-        "#define __LIBGCC_BF_MIN__ ((__bf16) 1.17549435082228750796873653722224568e-38F)",
-        "#define __LIBGCC_BITINT_LIMB_WIDTH__ 64",
-        "#define __LIBGCC_BITINT_ORDER__ __ORDER_LITTLE_ENDIAN__",
-        "#define __LIBGCC_DF_EPSILON__ __DBL_EPSILON__",
-        "#define __LIBGCC_DF_EXCESS_PRECISION__ 0",
-        "#define __LIBGCC_DF_FUNC_EXT__",
-        "#define __LIBGCC_DF_MANT_DIG__ 53",
-        "#define __LIBGCC_DF_MAX__ __DBL_MAX__",
-        "#define __LIBGCC_DF_MIN__ __DBL_MIN__",
-        "#define __LIBGCC_DWARF_CIE_DATA_ALIGNMENT__ -8",
-        "#define __LIBGCC_DWARF_FRAME_REGISTERS__ 17",
-        "#define __LIBGCC_EH_FRAME_SECTION_NAME__ \".eh_frame\"",
-        "#define __LIBGCC_EH_RETURN_STACKADJ_RTX__ 1",
-        "#define __LIBGCC_EH_TABLES_CAN_BE_READ_ONLY__ 1",
-        "#define __LIBGCC_HAS_BF_MODE__ 1",
-        "#define __LIBGCC_HAS_DF_MODE__ 1",
-        "#define __LIBGCC_HAS_HF_MODE__ 1",
-        "#define __LIBGCC_HAS_SF_MODE__ 1",
-        "#define __LIBGCC_HAS_TF_MODE__ 1",
-        "#define __LIBGCC_HAS_XF_MODE__ 1",
-        "#define __LIBGCC_HAVE_HWDBL__ 1",
-        "#define __LIBGCC_HAVE_LIBATOMIC 0",
-        "#define __LIBGCC_HF_EPSILON__ __FLT16_EPSILON__",
-        "#define __LIBGCC_HF_EXCESS_PRECISION__ 1",
-        "#define __LIBGCC_HF_FUNC_EXT__ f16",
-        "#define __LIBGCC_HF_MANT_DIG__ 11",
-        "#define __LIBGCC_HF_MAX__ __FLT16_MAX__",
-        "#define __LIBGCC_HF_MIN__ __FLT16_MIN__",
-        "#define __LIBGCC_INIT_ARRAY_SECTION_ASM_OP__ 1",
-        "#define __LIBGCC_SF_EPSILON__ __FLT_EPSILON__",
-        "#define __LIBGCC_SF_EXCESS_PRECISION__ 0",
-        "#define __LIBGCC_SF_FUNC_EXT__ f",
-        "#define __LIBGCC_SF_MANT_DIG__ 24",
-        "#define __LIBGCC_SF_MAX__ __FLT_MAX__",
-        "#define __LIBGCC_SF_MIN__ __FLT_MIN__",
-        "#define __LIBGCC_STACK_GROWS_DOWNWARD__ 1",
-        "#define __LIBGCC_STACK_POINTER_REGNUM__ 7",
-        "#define __LIBGCC_TEXT_SECTION_ASM_OP__ \"\\t.text\"",
-        "#define __LIBGCC_TF_EPSILON__ 1.92592994438723585305597794258492732e-34Q",
-        "#define __LIBGCC_TF_EXCESS_PRECISION__ 0",
-        "#define __LIBGCC_TF_FUNC_EXT__ f128",
-        "#define __LIBGCC_TF_MANT_DIG__ 113",
-        "#define __LIBGCC_TF_MAX__ 1.18973149535723176508575932662800702e+4932Q",
-        "#define __LIBGCC_TF_MIN__ 3.36210314311209350626267781732175260e-4932Q",
-        "#define __LIBGCC_TRAMPOLINE_SIZE__ 28",
-        "#define __LIBGCC_VTABLE_USES_DESCRIPTORS__ 0",
-        "#define __LIBGCC_XF_EPSILON__ __LDBL_EPSILON__",
-        "#define __LIBGCC_XF_EXCESS_PRECISION__ 0",
-        "#define __LIBGCC_XF_FUNC_EXT__ l",
-        "#define __LIBGCC_XF_MANT_DIG__ 64",
-        "#define __LIBGCC_XF_MAX__ __LDBL_MAX__",
-        "#define __LIBGCC_XF_MIN__ __LDBL_MIN__",
-        # The libgcc_cmp_return_mode and libgcc_shift_count_mode target hooks
-        # name these modes; both are word_mode on x86-64.
-        "#define __libgcc_cmp_return__ __word__",
-        "#define __libgcc_shift_count__ __word__",
-    ],
-    clang_compat = [
-        "/* libgcc/config/i386/shadow-stack-unwind.h uses GCC's cetintrin.h",
-        "   names.  These expand to the builtins GCC's definitions use.  */",
-        "#ifndef __ASSEMBLER__",
-        "# define _get_ssp() __builtin_ia32_rdsspq (0)",
-        "# define _inc_ssp(n) __builtin_ia32_incsspq ((unsigned long long) (n))",
-        "#endif",
-    ],
-    # HOST_LIBGCC2_CFLAGS from i386/t-linux, with CET_FLAGS as libgcc's
-    # configure sets them for --enable-cet=auto on x86-64 Linux, and t-tls's
-    # INTERNAL_CFLAGS.
-    copts = [
-        "-mlong-double-80",
-        "-DUSE_ELF_SYMVER",
-        "-fcf-protection",
-        "-mshstk",
-        "-DUSE_TLS",
-    ],
-)
+# What GCC 14.3.0 and 17 predefine under -fbuilding-libgcc for x86-64 Linux.
+_X86_64_PREDEFINES_GCC14 = [
+    "#define __LIBGCC_BF_EPSILON__ ((__bf16) 7.81250000000000000000000000000000000e-3F)",
+    "#define __LIBGCC_BF_EXCESS_PRECISION__ 1",
+    "#define __LIBGCC_BF_FUNC_EXT__ bf16",
+    "#define __LIBGCC_BF_MANT_DIG__ 8",
+    "#define __LIBGCC_BF_MAX__ ((__bf16) 3.38953138925153547590470800371487867e+38F)",
+    "#define __LIBGCC_BF_MIN__ ((__bf16) 1.17549435082228750796873653722224568e-38F)",
+    "#define __LIBGCC_BITINT_LIMB_WIDTH__ 64",
+    "#define __LIBGCC_BITINT_ORDER__ __ORDER_LITTLE_ENDIAN__",
+    "#define __LIBGCC_DF_EPSILON__ __DBL_EPSILON__",
+    "#define __LIBGCC_DF_EXCESS_PRECISION__ 0",
+    "#define __LIBGCC_DF_FUNC_EXT__",
+    "#define __LIBGCC_DF_MANT_DIG__ 53",
+    "#define __LIBGCC_DF_MAX__ __DBL_MAX__",
+    "#define __LIBGCC_DF_MIN__ __DBL_MIN__",
+    "#define __LIBGCC_DWARF_CIE_DATA_ALIGNMENT__ -8",
+    "#define __LIBGCC_DWARF_FRAME_REGISTERS__ 17",
+    "#define __LIBGCC_EH_FRAME_SECTION_NAME__ \".eh_frame\"",
+    "#define __LIBGCC_EH_RETURN_STACKADJ_RTX__ 1",
+    "#define __LIBGCC_EH_TABLES_CAN_BE_READ_ONLY__ 1",
+    "#define __LIBGCC_HAS_BF_MODE__ 1",
+    "#define __LIBGCC_HAS_DF_MODE__ 1",
+    "#define __LIBGCC_HAS_HF_MODE__ 1",
+    "#define __LIBGCC_HAS_SF_MODE__ 1",
+    "#define __LIBGCC_HAS_TF_MODE__ 1",
+    "#define __LIBGCC_HAS_XF_MODE__ 1",
+    "#define __LIBGCC_HAVE_HWDBL__ 1",
+    "#define __LIBGCC_HAVE_LIBATOMIC 0",
+    "#define __LIBGCC_HF_EPSILON__ __FLT16_EPSILON__",
+    "#define __LIBGCC_HF_EXCESS_PRECISION__ 1",
+    "#define __LIBGCC_HF_FUNC_EXT__ f16",
+    "#define __LIBGCC_HF_MANT_DIG__ 11",
+    "#define __LIBGCC_HF_MAX__ __FLT16_MAX__",
+    "#define __LIBGCC_HF_MIN__ __FLT16_MIN__",
+    "#define __LIBGCC_INIT_ARRAY_SECTION_ASM_OP__ 1",
+    "#define __LIBGCC_SF_EPSILON__ __FLT_EPSILON__",
+    "#define __LIBGCC_SF_EXCESS_PRECISION__ 0",
+    "#define __LIBGCC_SF_FUNC_EXT__ f",
+    "#define __LIBGCC_SF_MANT_DIG__ 24",
+    "#define __LIBGCC_SF_MAX__ __FLT_MAX__",
+    "#define __LIBGCC_SF_MIN__ __FLT_MIN__",
+    "#define __LIBGCC_STACK_GROWS_DOWNWARD__ 1",
+    "#define __LIBGCC_STACK_POINTER_REGNUM__ 7",
+    "#define __LIBGCC_TEXT_SECTION_ASM_OP__ \"\\t.text\"",
+    "#define __LIBGCC_TF_EPSILON__ 1.92592994438723585305597794258492732e-34Q",
+    "#define __LIBGCC_TF_EXCESS_PRECISION__ 0",
+    "#define __LIBGCC_TF_FUNC_EXT__ f128",
+    "#define __LIBGCC_TF_MANT_DIG__ 113",
+    "#define __LIBGCC_TF_MAX__ 1.18973149535723176508575932662800702e+4932Q",
+    "#define __LIBGCC_TF_MIN__ 3.36210314311209350626267781732175260e-4932Q",
+    "#define __LIBGCC_TRAMPOLINE_SIZE__ 28",
+    "#define __LIBGCC_VTABLE_USES_DESCRIPTORS__ 0",
+    "#define __LIBGCC_XF_EPSILON__ __LDBL_EPSILON__",
+    "#define __LIBGCC_XF_EXCESS_PRECISION__ 0",
+    "#define __LIBGCC_XF_FUNC_EXT__ l",
+    "#define __LIBGCC_XF_MANT_DIG__ 64",
+    "#define __LIBGCC_XF_MAX__ __LDBL_MAX__",
+    "#define __LIBGCC_XF_MIN__ __LDBL_MIN__",
+    # The libgcc_cmp_return_mode and libgcc_shift_count_mode target hooks
+    # name these modes; both are word_mode on x86-64.
+    "#define __libgcc_cmp_return__ __word__",
+    "#define __libgcc_shift_count__ __word__",
+]
+
+_X86_64_PREDEFINES = {
+    "14.3.0": _X86_64_PREDEFINES_GCC14,
+    "17.0.0": _X86_64_PREDEFINES_GCC14,
+}
+
+def _x86_64(version):
+    return struct(
+        # The canonical triple configure runs config.gcc and config.host for.
+        triple = "x86_64-pc-linux-gnu",
+        # gcc/config.gcc for x86_64-*-linux*.
+        tm_defines = [
+            "LIBC_GLIBC=1",
+            "LIBC_UCLIBC=2",
+            "LIBC_BIONIC=3",
+            "LIBC_MUSL=4",
+            "DEFAULT_LIBC=LIBC_GLIBC",
+            "ANDROID_DEFAULT=0",
+            "HEAP_TRAMPOLINES_INIT=0",
+        ],
+        tm_file = [
+            "config/vxworks-dummy.h",
+            "config/i386/biarch64.h",
+            "config/i386/i386.h",
+            "config/i386/unix.h",
+            "config/i386/att.h",
+            "config/elfos.h",
+            "config/gnu-user.h",
+            "config/glibc-stdint.h",
+            "config/i386/x86-64.h",
+            "config/i386/gnu-user-common.h",
+            "config/i386/gnu-user64.h",
+            "config/linux.h",
+            "config/linux-android.h",
+            "config/i386/linux-common.h",
+            "config/i386/linux64.h",
+            "config/initfini-array.h",
+        ],
+        # i386.h sizes its register tables with this i386.md constant.
+        insn_constants = [
+            "#define FIRST_PSEUDO_REG 92",
+        ],
+        # libgcc/config.host for x86_64-*-linux*.
+        libgcc_tm_file = [
+            "config/i386/elf-lib.h",
+            "config/i386/value-unwind.h",
+        ],
+        # cpuinfo.c includes cpuid.h, which GCC installs from its config/i386
+        # directory. Clang's cpuid.h lacks some of the bits it tests.
+        extra_links = {
+            "cpuid.h": "gcc/config/i386/cpuid.h",
+        },
+        # config.host sets md_unwind_def_header from GCC 15.
+        md_unwind_def_header = "libgcc/config/no-unwind.h" if gcc_version_at_least_for(version, "15.0.0") else None,
+        md_unwind_header = "libgcc/config/i386/linux-unwind.h",
+        sfp_machine_header = "libgcc/config/i386/sfp-machine.h",
+        shlib_mapfiles = [
+            "libgcc/config/i386/libgcc-glibc.ver",
+        ],
+        predefines = _X86_64_PREDEFINES[version],
+        clang_compat = [
+            "/* libgcc/config/i386/shadow-stack-unwind.h uses GCC's cetintrin.h",
+            "   names.  These expand to the builtins GCC's definitions use.  */",
+            "#ifndef __ASSEMBLER__",
+            "# define _get_ssp() __builtin_ia32_rdsspq (0)",
+            "# define _inc_ssp(n) __builtin_ia32_incsspq ((unsigned long long) (n))",
+            "#endif",
+        ],
+        # HOST_LIBGCC2_CFLAGS from i386/t-linux, with CET_FLAGS as libgcc's
+        # configure sets them for --enable-cet=auto on x86-64 Linux, and t-tls's
+        # INTERNAL_CFLAGS.
+        copts = [
+            "-mlong-double-80",
+            "-DUSE_ELF_SYMVER",
+            "-fcf-protection",
+            "-mshstk",
+            "-DUSE_TLS",
+        ],
+    )
 
 _AARCH64 = struct(
     # The canonical triple configure runs config.gcc and config.host for.
@@ -394,6 +406,7 @@ _AARCH64 = struct(
 # The GCC versions these headers and predefines were taken from, with the CPUs
 # of each.
 _PORTED_TARGETS = {
+    "14.3.0": ["x86_64"],
     "17.0.0": [
         "aarch64",
         "x86_64",
@@ -404,7 +417,7 @@ def _target(cpu, version):
     if cpu not in _PORTED_TARGETS.get(version, []):
         fail("libgcc's configuration is not ported for {} in GCC {}".format(cpu, version))
     if cpu == "x86_64":
-        return _X86_64
+        return _x86_64(version)
     return _AARCH64
 
 def libgcc_header_contents(cpu, version):
@@ -440,11 +453,12 @@ def libgcc_header_links(cpu, version):
     links = {
         "enable-execute-stack.c": "libgcc/enable-execute-stack-empty.c",
         "gthr-default.h": "libgcc/gthr-posix.h",
-        "md-unwind-def.h": t.md_unwind_def_header,
         "md-unwind-support.h": t.md_unwind_header,
         "sfp-machine.h": t.sfp_machine_header,
         "unwind.h": "libgcc/unwind-generic.h",
     }
+    if t.md_unwind_def_header:
+        links["md-unwind-def.h"] = t.md_unwind_def_header
     links.update(t.extra_links)
     return links
 
@@ -468,7 +482,7 @@ def libgcc_configure_results(cpu, version):
     return {
         "enable_execute_stack": links["enable-execute-stack.c"].removeprefix("libgcc/"),
         "libgcc_tm_file": " ".join([f.removeprefix("config/") for f in t.libgcc_tm_file]),
-        "md_unwind_def_header": links["md-unwind-def.h"].removeprefix("libgcc/config/"),
+        "md_unwind_def_header": links.get("md-unwind-def.h", "").removeprefix("libgcc/config/"),
         "md_unwind_header": links["md-unwind-support.h"].removeprefix("libgcc/config/"),
         "sfp_machine_header": links["sfp-machine.h"].removeprefix("libgcc/config/"),
         "thread_header": links["gthr-default.h"].removeprefix("libgcc/"),

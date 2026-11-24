@@ -464,7 +464,10 @@ def _makefile_in(lib2add, lib2add_st, lib2addeh, lib2funcs_exclude, file_copts =
     )
 
 # The GCC versions whose Makefile.in and tmake fragments this file ports.
-_PORTED_VERSIONS = ["17.0.0"]
+_PORTED_VERSIONS = [
+    "14.3.0",
+    "17.0.0",
+]
 
 def libgcc_objects(cpu, version):
     """Partitions libgcc's objects for a Linux GNU target CPU.
@@ -484,9 +487,9 @@ def libgcc_objects(cpu, version):
         fail("libgcc's object lists are ported for GCC {}, not {}".format(", ".join(_PORTED_VERSIONS), version))
     if cpu == "x86_64":
         return _x86_64_linux_gnu()
-    if cpu == "aarch64":
+    if cpu == "aarch64" and version == "17.0.0":
         return _aarch64_linux_gnu()
-    fail("libgcc's object lists are not ported for " + cpu)
+    fail("libgcc's object lists are not ported for {} in GCC {}".format(cpu, version))
 
 def libgcc_makefile_conditions(cpu, version):
     """The configure results that Makefile.in's conditionals read, as ported.

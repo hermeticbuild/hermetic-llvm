@@ -2080,8 +2080,9 @@ _LIBGCC_COPTS = [
     # probes in libgcc_configure_cflags.h. t-tls's -DUSE_TLS is in libgcc_target_copts.
     "-include",
     "libgcc_configure_cflags.h",
-    # GCC 15 and newer compile libgcc as C23, their default.
-    "-std=gnu23",
+    # GCC compiles libgcc in its default C dialect: gnu23 from GCC 15, gnu17
+    # before.
+    "-std=gnu23" if gcc_version_at_least_for(GCC_VERSION, "15.0.0") else "-std=gnu17",
     # longlong.h casts asm output operands, which GCC accepts.
     "-Wno-invalid-gnu-asm-cast",
     "-w",

@@ -28,9 +28,53 @@ error() {
   echo "$*" >> "${errors}"
 }
 
-# Prints the lines of a status file without comments and blank lines.
+# Whether version $1 sorts before version $2.
+version_lt() {
+  [[ "$1" != "$2" && "$(printf '%s\n%s\n' "$1" "$2" | sort -V | head -n 1)" == "$1" ]]
+}
+
+# Whether version $1 is in the comma-separated ranges $2, each <first>-<last>
+# with <first> included, <last> excluded and either one optional.
+in_ranges() {
+  local version="$1" range first last
+  local -a ranges
+  IFS=, read -r -a ranges <<< "$2"
+  for range in "${ranges[@]}"; do
+    if [[ "${range}" != *-* ]]; then
+      error "malformed GCC version range: ${range}"
+      continue
+    fi
+    first="${range%%-*}"
+    last="${range#*-}"
+    if [[ -n "${first}" ]] && version_lt "${version}" "${first}"; then
+      continue
+    fi
+    if [[ -n "${last}" ]] && ! version_lt "${version}" "${last}"; then
+      continue
+    fi
+    return 0
+  done
+  return 1
+}
+
+# Prints the lines of a status file that apply to ${GCC_VERSION}, without
+# comments, blank lines and gcc= fields.
 statuses() {
-  sed -e 's/#.*//' -e '/^[[:space:]]*$/d' "$1"
+  local -a fields rest
+  local field ranges
+  while read -r -a fields; do
+    ranges=
+    rest=()
+    for field in "${fields[@]}"; do
+      case "${field}" in
+        gcc=*) ranges="${field#gcc=}" ;;
+        *) rest+=("${field}") ;;
+      esac
+    done
+    if [[ -z "${ranges}" ]] || in_ranges "${GCC_VERSION}" "${ranges}"; then
+      echo "${rest[*]}"
+    fi
+  done < <(sed -e 's/#.*//' -e '/^[[:space:]]*$/d' "$1")
 }
 
 # Compares the names a GCC file lists with the names a status file has.
@@ -142,7 +186,7 @@ while read -r name status file; do
 done < <(statuses "${SUBST_STATUS}")
 
 if [[ -s "${errors}" ]]; then
-  echo "libgcc's configure inventory differs from the port for ${CPU}:" >&2
+  echo "libgcc's configure inventory differs from the port for ${CPU} in GCC ${GCC_VERSION}:" >&2
   cat "${errors}" >&2
   exit 1
 fi
