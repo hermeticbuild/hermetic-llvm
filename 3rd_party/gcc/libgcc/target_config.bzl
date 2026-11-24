@@ -113,6 +113,8 @@ _AUTO_TARGET_H_COMMON = [
 ]
 
 _X86_64 = struct(
+    # The canonical triple configure runs config.gcc and config.host for.
+    triple = "x86_64-pc-linux-gnu",
     # gcc/config.gcc for x86_64-*-linux*.
     tm_defines = [
         "LIBC_GLIBC=1",
@@ -244,6 +246,8 @@ _X86_64 = struct(
 )
 
 _AARCH64 = struct(
+    # The canonical triple configure runs config.gcc and config.host for.
+    triple = "aarch64-unknown-linux-gnu",
     # gcc/config.gcc for aarch64*-*-linux*.
     tm_defines = [
         "LIBC_GLIBC=1",
@@ -474,6 +478,35 @@ def libgcc_header_links(cpu):
     }
     links.update(t.extra_links)
     return links
+
+def libgcc_target_triple(cpu):
+    return _target(cpu).triple
+
+def libgcc_configure_results(cpu):
+    """The config.gcc and config.host results this configuration encodes.
+
+    //runtimes/libgcc/tests:configure_* runs those scripts and compares their
+    results with these.
+
+    Returns:
+      A dict from each configure variable to its value, with paths written
+      as configure writes them: tm_file relative to gcc/config, the libgcc
+      headers relative to libgcc/config and the other files relative to
+      libgcc.
+    """
+    t = _target(cpu)
+    links = libgcc_header_links(cpu)
+    return {
+        "enable_execute_stack": links["enable-execute-stack.c"].removeprefix("libgcc/"),
+        "libgcc_tm_file": " ".join([f.removeprefix("config/") for f in t.libgcc_tm_file]),
+        "md_unwind_def_header": links["md-unwind-def.h"].removeprefix("libgcc/config/"),
+        "md_unwind_header": links["md-unwind-support.h"].removeprefix("libgcc/config/"),
+        "sfp_machine_header": links["sfp-machine.h"].removeprefix("libgcc/config/"),
+        "thread_header": links["gthr-default.h"].removeprefix("libgcc/"),
+        "tm_defines": " ".join(t.tm_defines),
+        "tm_file": " ".join([f.removeprefix("config/") for f in t.tm_file]),
+        "unwind_header": links["unwind.h"].removeprefix("libgcc/"),
+    }
 
 def libgcc_target_copts(cpu):
     return _target(cpu).copts

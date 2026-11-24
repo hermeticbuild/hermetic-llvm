@@ -1894,6 +1894,21 @@ copy_to_directory(
     },
 )
 
+# The inputs of //runtimes/libgcc/tests:configure_*: gcc/config.gcc and
+# libgcc/config.host, with the files that configure checks for after running
+# them.
+copy_to_directory(
+    name = "libgcc_configure_inputs",
+    srcs = [
+        "gcc/config.gcc",
+        "libgcc/config.host",
+    ] + glob([
+        "libgcc/config/**/t-*",
+        "libgcc/config/*/sfp-machine.h",
+    ]) if gcc_has_libgcc(GCC_VERSION) else [],
+    visibility = ["//visibility:public"],
+)
+
 # libgcc: libgcc.a, libgcc_eh.a and libgcc_s.so.1, compiled with the
 # toolchain's Clang for the GCC versions in LIBGCC_VERSIONS and the CPUs in
 # LIBGCC_CPUS.

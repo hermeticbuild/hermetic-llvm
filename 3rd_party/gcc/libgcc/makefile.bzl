@@ -1,18 +1,5 @@
 # Ports the object lists of libgcc/Makefile.in and of the tmake fragments that
-# libgcc/config.host selects for each ported target. For x86_64-*-linux-gnu:
-#
-#   t-crtstuff-pic t-libgcc-pic t-eh-dw2-dip t-slibgcc t-slibgcc-gld
-#   t-slibgcc-elf-ver t-linux i386/t-crtpc t-crtfm i386/t-crtstuff t-dfprules
-#   i386/t-heap-trampoline i386/t-cpuinfo t-tls i386/t-linux i386/t-msabi
-#   t-slibgcc-libgcc t-stack i386/t-stack-i386 t-softfp-tf i386/64/t-softfp
-#   i386/t-softfp t-softfp i386/64/t-softfp-compat
-#
-# For aarch64*-*-linux-gnu:
-#
-#   t-crtstuff-pic t-libgcc-pic t-eh-dw2-dip t-slibgcc t-slibgcc-gld
-#   t-slibgcc-elf-ver t-linux aarch64/t-aarch64 aarch64/t-lse t-slibgcc-libgcc
-#   aarch64/t-softfp t-softfp t-crtfm t-dfprules aarch64/t-heap-trampoline
-#
+# libgcc/config.host selects for each ported target. _TMAKE_FILES lists them.
 # Each fragment's contribution is marked with its file name. Only the startfile
 # fragments (crtstuff, crtprec, crtfastmath) and the decimal floating-point
 # objects are left out: the toolchain keeps compiler-rt's crtbegin/crtend, and
@@ -29,6 +16,55 @@
 # L<name>. Entries with defines are compiled from a wrapper that defines them,
 # in place of the -D flags their rule passes. vis_hide is False for objects
 # whose rule compiles them without libgcc's vis_hide flags or hide list.
+
+# The tmake_file list that libgcc/config.host and libgcc/configure.ac select,
+# in their order. //runtimes/libgcc/tests:configure_* runs config.host and
+# checks its result against this list.
+_TMAKE_FILES = {
+    "aarch64": [
+        "t-crtstuff-pic",
+        "t-libgcc-pic",
+        "t-eh-dw2-dip",
+        "t-slibgcc",
+        "t-slibgcc-gld",
+        "t-slibgcc-elf-ver",
+        "t-linux",
+        "aarch64/t-aarch64",
+        "aarch64/t-lse",
+        "t-slibgcc-libgcc",
+        "aarch64/t-softfp",
+        "t-softfp",
+        "t-crtfm",
+        "t-dfprules",
+        "aarch64/t-heap-trampoline",
+    ],
+    "x86_64": [
+        "t-crtstuff-pic",
+        "t-libgcc-pic",
+        "t-eh-dw2-dip",
+        "t-slibgcc",
+        "t-slibgcc-gld",
+        "t-slibgcc-elf-ver",
+        "t-linux",
+        "i386/t-crtpc",
+        "t-crtfm",
+        "i386/t-crtstuff",
+        "t-dfprules",
+        "i386/t-heap-trampoline",
+        "i386/t-cpuinfo",
+        "t-tls",
+        "i386/t-linux",
+        "i386/t-msabi",
+        "t-slibgcc-libgcc",
+        "t-stack",
+        "i386/t-stack-i386",
+        "t-softfp-tf",
+        "i386/64/t-softfp",
+        "i386/t-softfp",
+        "t-softfp",
+        "i386/64/t-softfp-compat",
+    ],
+}
 
 _LIB2FUNCS = [
     "_muldi3",
@@ -450,6 +486,12 @@ def libgcc_objects(cpu, version):
     if cpu == "aarch64":
         return _aarch64_linux_gnu()
     fail("libgcc's object lists are not ported for " + cpu)
+
+def libgcc_tmake_files(cpu):
+    """Lists the tmake fragments config.host selects for cpu, which this file ports."""
+    if cpu not in _TMAKE_FILES:
+        fail("libgcc's object lists are not ported for " + cpu)
+    return _TMAKE_FILES[cpu]
 
 def _flag_key(copts):
     return "_".join([c.lstrip("-").replace("=", "_").replace("-", "_") for c in copts]) or "default"

@@ -13,13 +13,19 @@ dynamic links find it with `-lgcc_s`.
 ## Files
 
 - `makefile.bzl` ports the object lists of `libgcc/Makefile.in` and the tmake
-  fragments `libgcc/config.host` selects. Each fragment's contribution is
-  marked with its file name. Keep the fragments in config.host order, since
-  later ones reassign variables.
+  fragments `libgcc/config.host` selects, which `_TMAKE_FILES` lists. Each
+  fragment's contribution is marked with its file name. Keep the fragments in
+  config.host order, since later ones reassign variables.
 - `target_config.bzl` holds what GCC's build directory and libgcc's configure
   would provide: `tm.h`, `tconfig.h`, the parts of `auto-host.h` that libgcc
   reads, `auto-target.h`, `libgcc_tm.h`, the `-fbuilding-libgcc` predefines,
   and shims for GCC builtins Clang lacks.
+- `configure.ac.bzl` holds the results of the `libgcc/configure.ac` and
+  `gcc/configure.ac` checks that decide what `config.host` and `config.gcc`
+  select. Each is a probe, where configure's check fits this toolchain, or a
+  fixed policy value, where it does not. Only the configure tests use them,
+  because the build needs those selections at loading time, before probes can
+  run.
 - `libgcc_rules.bzl` has the wrapper-source, hide-list and version-map rules.
 - `3rd_party/gcc/patches/17.x/libgcc-clang-compat.patch` changes the spots in
   libgcc's sources that rely on GCC-only behavior, so that Clang compiles them.
@@ -39,7 +45,9 @@ Derive each value from GCC itself, not from memory:
   enough). Check `__libgcc_cmp_return__` and `__libgcc_shift_count__` sizes
   the same way; they differ between targets.
 - `tm.h`: the `tm_file` list and `tm_defines` from GCC's configure for the
-  target.
+  target. The configure tests check these lists, the `libgcc_tm.h` list, the
+  header links and the tmake fragments against what `config.gcc` and
+  `config.host` select.
 - `auto-host.h`: set the macros as fixed policy, as GCC's configure sets them
   for a GNU assembler and linker. A configure run without a target assembler
   and linker leaves `HAVE_LD_EH_FRAME_HDR` and `TARGET_DL_ITERATE_PHDR` unset,
@@ -64,15 +72,16 @@ Derive each value from GCC itself, not from memory:
   version that is missing from them. Then add the version to `LIBGCC_VERSIONS`
   in `3rd_party/gcc/version.bzl`, and its Clang patches, if any, to
   `LIBGCC_PATCHES`.
-- A CPU: add its configuration to `target_config.bzl`, the tmake fragments that
-  `config.host` selects for it to `makefile.bzl`, its GCC config headers to
-  `_LIBGCC_ARCHIVE_INCLUDES` in `3rd_party/gcc/extension/gcc.bzl`, and the CPU
-  to `LIBGCC_CPUS`. `3rd_party/gcc/gcc.BUILD.bazel` and
-  `runtimes/libgcc/BUILD.bazel` follow `LIBGCC_CPUS`. In `runtimes/libgcc/tests`,
-  add a symbol list, and add the CPU with the programs it runs to
-  `_CPU_PROGRAMS`. Those tests run on an x86-64 Linux host, so a CPU other than
-  x86-64 runs its binaries under qemu-user, as AArch64 does, with a glibc for
-  that CPU.
+- A CPU: add its configuration and canonical triple to `target_config.bzl`, the
+  tmake fragments that `config.host` selects for it to `makefile.bzl` and
+  `_TMAKE_FILES`, its GCC config headers to `_LIBGCC_ARCHIVE_INCLUDES` in
+  `3rd_party/gcc/extension/gcc.bzl`, and the CPU to `LIBGCC_CPUS`.
+  `3rd_party/gcc/gcc.BUILD.bazel` and `runtimes/libgcc/BUILD.bazel` follow
+  `LIBGCC_CPUS`.
+  In `runtimes/libgcc/tests`, add a symbol list, and add the CPU with the
+  programs it runs to `_CPU_PROGRAMS`. Those tests run on an x86-64 Linux host,
+  so a CPU other than x86-64 runs its binaries under qemu-user, as AArch64
+  does, with a glibc for that CPU.
 
 ## Validation
 
@@ -81,6 +90,12 @@ Derive each value from GCC itself, not from memory:
   split-stack tests on x86-64 only, because `config.host` adds `t-stack`, which
   builds `__morestack`, only for x86, s390 and PowerPC. The AArch64 tests run
   under qemu-user.
+- The configure tests (`configure_linux_<cpu>_<version>_test`) run `config.gcc`
+  and `config.host` for each CPU's triple, with the `configure.ac.bzl` results
+  that the CPU's toolchain probes, and compare what the scripts select with the
+  port. A new GCC version that adds a tmake fragment, header or `tm.h` entry
+  fails them. They do not check the objects inside each fragment. Only the
+  `make -n` comparison does.
 - For a new version or target, also run GCC's `g++.dg/eh` and
   `gcc.dg/cleanup-*` run tests, built with a GCC, against the new
   `libgcc_s.so.1` through `LD_LIBRARY_PATH` and against the static archives by

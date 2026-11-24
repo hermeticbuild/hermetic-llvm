@@ -3,6 +3,12 @@ load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 package(default_visibility = ["//visibility:public"])
 
 bzl_library(
+    name = "configure_ac",
+    srcs = ["configure.ac.bzl"],
+    deps = ["//3rd_party/gcc/libstdcxx/autoconf:checks"],
+)
+
+bzl_library(
     name = "makefile",
     srcs = ["makefile.bzl"],
 )

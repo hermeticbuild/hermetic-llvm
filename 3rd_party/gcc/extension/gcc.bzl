@@ -60,6 +60,7 @@ _GCC_ARCHIVE_INCLUDES = [
 # lists in 3rd_party/gcc/libgcc/target_config.bzl before trimming.
 _LIBGCC_ARCHIVE_INCLUDES = [
     "libgcc/**",
+    "gcc/config.gcc",
     "gcc/coretypes.h",
     "gcc/defaults.h",
     "gcc/tsystem.h",

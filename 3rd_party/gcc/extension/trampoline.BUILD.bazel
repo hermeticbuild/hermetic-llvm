@@ -20,6 +20,7 @@ _SELECTED_FACADE_TARGETS = [
 ]
 
 _VERSION_MATRIX_TARGETS = [
+    "libgcc_configure_inputs",
     "libstdcxx_autoconf_audit_inputs",
     "libstdcxx_cxx26",
 ]
