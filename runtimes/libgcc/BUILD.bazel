@@ -1,29 +1,35 @@
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
-load("//3rd_party/gcc:version.bzl", "LIBGCC_CPUS", "LIBGCC_VERSIONS", "libstdcxx_constraint_label")
+load("//3rd_party/gcc:version.bzl", "LIBGCC_VERSIONS", "gcc_target_suffix", "libgcc_cpus", "libstdcxx_constraint_label")
 
 package(default_visibility = ["//visibility:public"])
 
-# libgcc built from the selected libstdc++'s GCC sources, for the versions in
-# LIBGCC_VERSIONS on the Linux CPUs in LIBGCC_CPUS.
-selects.config_setting_group(
-    name = "libgcc_version",
-    match_any = [libstdcxx_constraint_label(version) for version in LIBGCC_VERSIONS],
-)
+# libgcc built from the selected libstdc++'s GCC sources, for the GCC versions
+# and Linux CPUs in LIBGCC_TARGETS.
+[
+    selects.config_setting_group(
+        name = "libgcc_cpu_" + gcc_target_suffix(version),
+        match_any = ["@platforms//cpu:" + cpu for cpu in libgcc_cpus(version)],
+    )
+    for version in LIBGCC_VERSIONS
+]
 
-selects.config_setting_group(
-    name = "libgcc_cpu",
-    match_any = ["@platforms//cpu:" + cpu for cpu in LIBGCC_CPUS],
-)
+[
+    selects.config_setting_group(
+        name = "libgcc_from_" + gcc_target_suffix(version),
+        match_all = [
+            libstdcxx_constraint_label(version),
+            ":libgcc_cpu_" + gcc_target_suffix(version),
+            "@platforms//os:linux",
+        ],
+    )
+    for version in LIBGCC_VERSIONS
+]
 
 selects.config_setting_group(
     name = "libgcc_from_gcc",
-    match_all = [
-        ":libgcc_version",
-        ":libgcc_cpu",
-        "@platforms//os:linux",
-    ],
+    match_any = [":libgcc_from_" + gcc_target_suffix(version) for version in LIBGCC_VERSIONS],
 )
 
 alias(

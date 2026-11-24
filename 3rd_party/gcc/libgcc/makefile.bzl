@@ -506,10 +506,14 @@ def libgcc_makefile_conditions(cpu, version):
         "have_strub_support": "yes" if "libgcc/strub.c" in [e.src for e in objects.common] else "no",
     }
 
-def libgcc_tmake_files(cpu):
-    """Lists the tmake fragments config.host selects for cpu, which this file ports."""
-    if cpu not in _TMAKE_FILES:
-        fail("libgcc's object lists are not ported for " + cpu)
+def libgcc_tmake_files(cpu, version):
+    """Lists the tmake fragments config.host selects for cpu, which this file ports.
+
+    Returns:
+      The fragments in config.host order. Fails for a version or CPU whose
+      objects are not ported.
+    """
+    libgcc_objects(cpu, version)
     return _TMAKE_FILES[cpu]
 
 def _flag_key(copts):

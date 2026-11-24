@@ -2,7 +2,7 @@ load("@bazel_lib//lib:copy_file.bzl", "copy_file")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
-load("@llvm//3rd_party/gcc:version.bzl", "LIBGCC_CPUS", "gcc_config_toolexeclibdir_target", "gcc_has_libgcc", "gcc_version_at_least_for", "gcc_version_less_than_for")
+load("@llvm//3rd_party/gcc:version.bzl", "gcc_config_toolexeclibdir_target", "gcc_has_libgcc", "gcc_version_at_least_for", "gcc_version_less_than_for", "libgcc_cpus")
 load("@llvm//3rd_party/gcc/autoconf:autoconf_config.bzl", "autoconf_config")
 load("@llvm//3rd_party/gcc/autoconf:autoconf_hdr.bzl", "autoconf_hdr")
 load("@llvm//3rd_party/gcc/libgcc:configure.ac.bzl", "libgcc_auto_target_checks", "libgcc_configure_cflags_checks")
@@ -1731,10 +1731,10 @@ cc_runtime_stage1_shared_library(
     # for the unwinder, as GCC links it.
     dynamic_deps = select({
         "@platforms//cpu:" + cpu: [":libgcc_s.so.1"]
-        for cpu in LIBGCC_CPUS
+        for cpu in libgcc_cpus(GCC_VERSION)
     } | {
         "//conditions:default": [],
-    }) if gcc_has_libgcc(GCC_VERSION) else [],
+    }),
     shared_lib_name = "libstdc++.so.6",
     user_link_flags = [
         "-Wl,-soname,libstdc++.so.6",
@@ -1916,8 +1916,7 @@ copy_to_directory(
 )
 
 # libgcc: libgcc.a, libgcc_eh.a and libgcc_s.so.1, compiled with the
-# toolchain's Clang for the GCC versions in LIBGCC_VERSIONS and the CPUs in
-# LIBGCC_CPUS.
+# toolchain's Clang for the GCC versions and CPUs in LIBGCC_TARGETS.
 # @llvm//3rd_party/gcc/libgcc:makefile.bzl ports the object lists from GCC's
 # libgcc/Makefile.in and the tmake fragments that libgcc/config.host selects,
 # and target_config.bzl in the same package provides the headers that GCC's
@@ -1926,7 +1925,7 @@ copy_to_directory(
 # Objects build once per runtime link mode, as libstdc++'s do: static for
 # libgcc.a and libgcc_eh.a, with -fvisibility=hidden -DHIDE_EXPORTS, and
 # dynamic for libgcc_s.so.1, with -DSHARED.
-_LIBGCC_CPUS = LIBGCC_CPUS if gcc_has_libgcc(GCC_VERSION) else []
+_LIBGCC_CPUS = libgcc_cpus(GCC_VERSION)
 
 _LIBGCC_COMPATIBLE = select({
     "@platforms//cpu:" + cpu: []
@@ -1946,7 +1945,7 @@ _LIBGCC_HEADER_CONTENTS = {
 }
 
 _LIBGCC_HEADER_LINKS = {
-    cpu: libgcc_header_links(cpu)
+    cpu: libgcc_header_links(cpu, GCC_VERSION)
     for cpu in _LIBGCC_CPUS
 }
 
@@ -2135,7 +2134,7 @@ _LIBGCC_SHARED_COPTS = select({
             group.name,
         ),
         srcs = group.hide,
-        copts = _LIBGCC_COPTS + libgcc_target_copts(cpu) + group.copts + ["-DSHARED"],
+        copts = _LIBGCC_COPTS + libgcc_target_copts(cpu, GCC_VERSION) + group.copts + ["-DSHARED"],
         target_compatible_with = [
             "@platforms//cpu:" + cpu,
             "@platforms//os:linux",
@@ -2184,7 +2183,7 @@ _LIBGCC_SHARED_COPTS = select({
             cpu,
             group.name,
         )] if group.hide else [],
-        copts = _LIBGCC_COPTS + libgcc_target_copts(cpu) + group.copts + (
+        copts = _LIBGCC_COPTS + libgcc_target_copts(cpu, GCC_VERSION) + group.copts + (
             _LIBGCC_LINKMODE_COPTS if group.vis_hide and not group.asm else _LIBGCC_SHARED_COPTS
         ),
         includes = ["libgcc_{}_{}_hide_lists".format(
@@ -2262,7 +2261,7 @@ _LIBGCC_S_DEPS = select({
 libgcc_version_script(
     name = "libgcc_map",
     map_files = select({
-        "@platforms//cpu:" + cpu: libgcc_shlib_mapfiles(cpu)
+        "@platforms//cpu:" + cpu: libgcc_shlib_mapfiles(cpu, GCC_VERSION)
         for cpu in _LIBGCC_CPUS
     } | {
         "//conditions:default": [],

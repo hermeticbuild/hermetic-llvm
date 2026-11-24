@@ -5,7 +5,7 @@ load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_qemu//qemu:qemu_binary.bzl", "qemu_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//:defs.bzl", "exec_test")
-load("//3rd_party/gcc:version.bzl", "LIBGCC_CPUS", "LIBGCC_VERSIONS", "gcc_repository_label", "gcc_target_suffix", "libstdcxx_constraint_value")
+load("//3rd_party/gcc:version.bzl", "LIBGCC_VERSIONS", "gcc_repository_label", "gcc_target_suffix", "libgcc_cpus", "libstdcxx_constraint_value")
 load("//3rd_party/gcc/autoconf:autoconf_config.bzl", "autoconf_config")
 load("//3rd_party/gcc/autoconf:autoconf_hdr.bzl", "autoconf_hdr")
 load("//3rd_party/gcc/libgcc:configure.ac.bzl", "LIBGCC_SELECTION_CHECKS")
@@ -88,10 +88,10 @@ _CPU_PROGRAMS = {
             libstdcxx_constraint_value(version),
         ),
     )
-    for cpu in LIBGCC_CPUS
+    for version in LIBGCC_VERSIONS
+    for cpu in libgcc_cpus(version)
     for program in _CPU_PROGRAMS[cpu]
     for linkage in _LINKAGES
-    for version in LIBGCC_VERSIONS
 ]
 
 [
@@ -122,9 +122,10 @@ _CPU_PROGRAMS = {
         rule = sh_test,
         target_compatible_with = _HOST,
     )
+    for version in LIBGCC_VERSIONS
+    if "x86_64" in libgcc_cpus(version)
     for program in _CPU_PROGRAMS["x86_64"]
     for linkage in _LINKAGES
-    for version in LIBGCC_VERSIONS
 ]
 
 # The system libraries for AArch64 binaries under qemu-user: the dynamic loader
@@ -157,9 +158,10 @@ copy_to_directory(
         target_compatible_with = _HOST,
         target_platform = "//runtimes/libstdcxx/tests:linux_aarch64_{}".format(libstdcxx_constraint_value(version)),
     )
+    for version in LIBGCC_VERSIONS
+    if "aarch64" in libgcc_cpus(version)
     for program in _CPU_PROGRAMS["aarch64"]
     for linkage in _LINKAGES
-    for version in LIBGCC_VERSIONS
 ]
 
 [
@@ -201,9 +203,10 @@ copy_to_directory(
         },
         target_compatible_with = _HOST,
     )
+    for version in LIBGCC_VERSIONS
+    if "aarch64" in libgcc_cpus(version)
     for program in _CPU_PROGRAMS["aarch64"]
     for linkage in _LINKAGES
-    for version in LIBGCC_VERSIONS
 ]
 
 [
@@ -219,8 +222,8 @@ copy_to_directory(
             libstdcxx_constraint_value(version),
         ),
     )
-    for cpu in LIBGCC_CPUS
     for version in LIBGCC_VERSIONS
+    for cpu in libgcc_cpus(version)
 ]
 
 [
@@ -231,7 +234,10 @@ copy_to_directory(
         ),
         srcs = ["libgcc_s_elf_test.sh"],
         data = [
-            "libgcc_s_{}.symbols".format(cpu),
+            "libgcc_s_{}_{}.symbols".format(
+                cpu,
+                gcc_target_suffix(version),
+            ),
             ":libgcc_s_linux_{}_{}".format(
                 cpu,
                 gcc_target_suffix(version),
@@ -239,7 +245,10 @@ copy_to_directory(
             "@llvm//tools:llvm-readelf",
         ],
         env = {
-            "EXPECTED_SYMBOLS": "$(rootpath libgcc_s_{}.symbols)".format(cpu),
+            "EXPECTED_SYMBOLS": "$(rootpath libgcc_s_{}_{}.symbols)".format(
+                cpu,
+                gcc_target_suffix(version),
+            ),
             "LIBGCC_S": "$(rootpath :libgcc_s_linux_{}_{})".format(
                 cpu,
                 gcc_target_suffix(version),
@@ -248,8 +257,8 @@ copy_to_directory(
         },
         target_compatible_with = _HOST,
     )
-    for cpu in LIBGCC_CPUS
     for version in LIBGCC_VERSIONS
+    for cpu in libgcc_cpus(version)
 ]
 
 # The configure results that gcc/config.gcc and libgcc/config.host read, probed
@@ -283,8 +292,8 @@ autoconf_hdr(
             libstdcxx_constraint_value(version),
         ),
     )
-    for cpu in LIBGCC_CPUS
     for version in LIBGCC_VERSIONS
+    for cpu in libgcc_cpus(version)
 ]
 
 [
@@ -300,14 +309,14 @@ autoconf_hdr(
         content = [
             "{}={}".format(name, value)
             for name, value in sorted((
-                libgcc_configure_results(cpu) |
+                libgcc_configure_results(cpu, version) |
                 libgcc_makefile_conditions(cpu, version) |
-                {"tmake_file": " ".join(libgcc_tmake_files(cpu))}
+                {"tmake_file": " ".join(libgcc_tmake_files(cpu, version))}
             ).items())
         ] + [""],
     )
-    for cpu in LIBGCC_CPUS
     for version in LIBGCC_VERSIONS
+    for cpu in libgcc_cpus(version)
 ]
 
 [
@@ -338,12 +347,12 @@ autoconf_hdr(
                 gcc_target_suffix(version),
             ),
             "GCC_SOURCES": "$(rootpath {})".format(gcc_repository_label(version, "libgcc_configure_inputs")),
-            "TARGET": libgcc_target_triple(cpu),
+            "TARGET": libgcc_target_triple(cpu, version),
         },
         target_compatible_with = _HOST,
     )
-    for cpu in LIBGCC_CPUS
     for version in LIBGCC_VERSIONS
+    for cpu in libgcc_cpus(version)
 ]
 
 [
@@ -360,8 +369,8 @@ autoconf_hdr(
             libstdcxx_constraint_value(version),
         ),
     )
-    for cpu in LIBGCC_CPUS
     for version in LIBGCC_VERSIONS
+    for cpu in libgcc_cpus(version)
 ]
 
 # The port files that configure_subst_status.txt names for modeled
@@ -401,6 +410,6 @@ _CONFIGURE_PORT_FILES = [
         },
         target_compatible_with = _HOST,
     )
-    for cpu in LIBGCC_CPUS
     for version in LIBGCC_VERSIONS
+    for cpu in libgcc_cpus(version)
 ]

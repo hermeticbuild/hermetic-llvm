@@ -391,15 +391,21 @@ _AARCH64 = struct(
     copts = [],
 )
 
-def _target(cpu):
+# The GCC versions these headers and predefines were taken from, with the CPUs
+# of each.
+_PORTED_TARGETS = {
+    "17.0.0": [
+        "aarch64",
+        "x86_64",
+    ],
+}
+
+def _target(cpu, version):
+    if cpu not in _PORTED_TARGETS.get(version, []):
+        fail("libgcc's configuration is not ported for {} in GCC {}".format(cpu, version))
     if cpu == "x86_64":
         return _X86_64
-    if cpu == "aarch64":
-        return _AARCH64
-    fail("libgcc's configuration is not ported for " + cpu)
-
-# The GCC versions these headers and predefines were taken from.
-_PORTED_VERSIONS = ["17.0.0"]
+    return _AARCH64
 
 def libgcc_header_contents(cpu, version):
     """Lists the configuration headers libgcc's build reads.
@@ -408,9 +414,7 @@ def libgcc_header_contents(cpu, version):
       A dict from each generated header's name to its lines. Fails for a
       version or CPU that is not ported.
     """
-    if version not in _PORTED_VERSIONS:
-        fail("libgcc's configuration is ported for GCC {}, not {}".format(", ".join(_PORTED_VERSIONS), version))
-    t = _target(cpu)
+    t = _target(cpu, version)
     return {
         "auto-host.h": _AUTO_HOST_H,
         "insn-constants.h": ["/* Stand-in for GCC's generated insn-constants.h.  */"] + t.insn_constants,
@@ -425,14 +429,14 @@ def libgcc_header_contents(cpu, version):
         "tm.h": _mkconfig_tm_h(t.tm_defines, t.tm_file),
     }
 
-def libgcc_header_links(cpu):
+def libgcc_header_links(cpu, version):
     """Lists Makefile.in's LIBGCC_LINKS and the other copied headers.
 
     Returns:
       A dict from each copy's name to its source path in the GCC repository.
-      Fails for a CPU that is not ported.
+      Fails for a version or CPU that is not ported.
     """
-    t = _target(cpu)
+    t = _target(cpu, version)
     links = {
         "enable-execute-stack.c": "libgcc/enable-execute-stack-empty.c",
         "gthr-default.h": "libgcc/gthr-posix.h",
@@ -444,10 +448,10 @@ def libgcc_header_links(cpu):
     links.update(t.extra_links)
     return links
 
-def libgcc_target_triple(cpu):
-    return _target(cpu).triple
+def libgcc_target_triple(cpu, version):
+    return _target(cpu, version).triple
 
-def libgcc_configure_results(cpu):
+def libgcc_configure_results(cpu, version):
     """The config.gcc and config.host results this configuration encodes.
 
     //runtimes/libgcc/tests:configure_* runs those scripts and compares their
@@ -459,8 +463,8 @@ def libgcc_configure_results(cpu):
       headers relative to libgcc/config and the other files relative to
       libgcc.
     """
-    t = _target(cpu)
-    links = libgcc_header_links(cpu)
+    t = _target(cpu, version)
+    links = libgcc_header_links(cpu, version)
     return {
         "enable_execute_stack": links["enable-execute-stack.c"].removeprefix("libgcc/"),
         "libgcc_tm_file": " ".join([f.removeprefix("config/") for f in t.libgcc_tm_file]),
@@ -473,9 +477,9 @@ def libgcc_configure_results(cpu):
         "unwind_header": links["unwind.h"].removeprefix("libgcc/"),
     }
 
-def libgcc_target_copts(cpu):
-    return _target(cpu).copts
+def libgcc_target_copts(cpu, version):
+    return _target(cpu, version).copts
 
-def libgcc_shlib_mapfiles(cpu):
+def libgcc_shlib_mapfiles(cpu, version):
     """SHLIB_MAPFILES after libgcc-std.ver, from the target's tmake fragments."""
-    return _target(cpu).shlib_mapfiles
+    return _target(cpu, version).shlib_mapfiles

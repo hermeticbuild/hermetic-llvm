@@ -5,10 +5,10 @@ the selected GCC repository with the toolchain's Clang. The BUILD targets live
 in `3rd_party/gcc/gcc.BUILD.bazel`; this package holds their data and rules.
 `//runtimes/cxxstdlib` links them in place of LLVM's libunwind where
 `//runtimes/libgcc:libgcc_from_gcc` matches: the GCC versions in
-`LIBGCC_VERSIONS` on the Linux CPUs in `LIBGCC_CPUS`, both in
-`3rd_party/gcc/version.bzl`. `runtimes/libgcc/BUILD.bazel` also has GCC's
-`libgcc_s.so` linker script and `:libgcc_library_search_directory`, where
-dynamic links find it with `-lgcc_s`.
+`LIBGCC_TARGETS` in `3rd_party/gcc/version.bzl`, each on the Linux CPUs listed
+for it. Each libstdc++ version links the libgcc built from its own GCC sources.
+`runtimes/libgcc/BUILD.bazel` also has GCC's `libgcc_s.so` linker script and
+`:libgcc_library_search_directory`, where dynamic links find it with `-lgcc_s`.
 
 ## Files
 
@@ -87,36 +87,42 @@ Derive each value from GCC itself, not from memory:
 
 ## Adding a GCC version or CPU
 
-- A GCC version: port its differences into `makefile.bzl` and
-  `target_config.bzl`, taking each value from that GCC as described above, and
-  add the version to `_PORTED_VERSIONS` in both files. Loading fails for a
-  version that is missing from them. Give each macro and substitution that the
-  version adds a status in the two status files, and port the ones whose status
-  says they are modeled. The inventory tests name the ones without a status.
-  Then add the version to `LIBGCC_VERSIONS` in `3rd_party/gcc/version.bzl`, and
-  its Clang patches, if any, to `LIBGCC_PATCHES`.
+- A GCC version: port its differences into `makefile.bzl`, `target_config.bzl`
+  and `configure.ac.bzl`, taking each value from that GCC as described above.
+  Add the version to `_PORTED_VERSIONS` in `makefile.bzl` and, with its CPUs, to
+  `_PORTED_TARGETS` in `target_config.bzl`. Loading fails for a version that is
+  missing from them. Give each macro and substitution that the version adds a
+  status in the two status files, and port the ones whose status says they are
+  modeled. The inventory tests name the items without a status and the statuses
+  without an item. Then add the version and its CPUs to `LIBGCC_TARGETS` in
+  `3rd_party/gcc/version.bzl`, and its Clang patches, if any, to
+  `LIBGCC_PATCHES`. Each patch directory is named for the GCC versions its
+  patches apply to without offsets. In `runtimes/libgcc/tests`, add
+  `libgcc_s_<cpu>_gcc_<version>.symbols` for each CPU. Write it from a
+  `libgcc_s.so.1` that GCC of the same version builds, not from the port's.
 - A CPU: add its configuration and canonical triple to `target_config.bzl`, the
   tmake fragments that `config.host` selects for it to `makefile.bzl` and
-  `_TMAKE_FILES`, its GCC config headers to `_LIBGCC_ARCHIVE_INCLUDES` in
+  `_TMAKE_FILES`, its GCC config headers to `_LIBGCC_CPU_ARCHIVE_INCLUDES` in
   `3rd_party/gcc/extension/gcc.bzl`, the checks configure runs only for it to
-  `_CPU_AUTO_TARGET_CHECKS` in `configure.ac.bzl`, and the CPU to
-  `LIBGCC_CPUS`. `3rd_party/gcc/gcc.BUILD.bazel` and
-  `runtimes/libgcc/BUILD.bazel` follow `LIBGCC_CPUS`. If its `config.host` or
-  `config.gcc` entry reads another configure result, add that check to
-  `LIBGCC_SELECTION_CHECKS`. In `configure_define_status.txt`, add the CPU to
-  the CPU column of each macro whose check configure runs for it.
-  In `runtimes/libgcc/tests`, add a symbol list, and add the CPU with the
-  programs it runs to `_CPU_PROGRAMS`. Those tests run on an x86-64 Linux host,
-  so a CPU other than x86-64 runs its binaries under qemu-user, as AArch64
-  does, with a glibc for that CPU.
+  `_CPU_AUTO_TARGET_CHECKS` in `configure.ac.bzl`, and the CPU to the versions
+  that build it in `LIBGCC_TARGETS`. `3rd_party/gcc/gcc.BUILD.bazel`,
+  `3rd_party/gcc/extension/gcc.bzl` and `runtimes/libgcc/BUILD.bazel` follow
+  `LIBGCC_TARGETS`. If its `config.host` or `config.gcc` entry reads another
+  configure result, add that check to `LIBGCC_SELECTION_CHECKS`. In
+  `configure_define_status.txt`, add the CPU to the CPU column of each macro
+  whose check configure runs for it. In `runtimes/libgcc/tests`, add a symbol
+  list for each version, and add the CPU with the programs it runs to
+  `_CPU_PROGRAMS`. Those tests run on an x86-64 Linux host, so a CPU other than
+  x86-64 runs its binaries under qemu-user, as AArch64 does, with a glibc for
+  that CPU.
 
 ## Validation
 
-- `bazel test //runtimes/libgcc/...` checks the exported symbols and versions.
-  It also runs exception tests, each linked statically and dynamically, and
-  split-stack tests on x86-64 only, because `config.host` adds `t-stack`, which
-  builds `__morestack`, only for x86, s390 and PowerPC. The AArch64 tests run
-  under qemu-user.
+- `bazel test //runtimes/libgcc/...` checks the exported symbols and versions
+  against the symbol list of each version and CPU. It also runs exception tests,
+  each linked statically and dynamically, and split-stack tests on x86-64 only,
+  because `config.host` adds `t-stack`, which builds `__morestack`, only for
+  x86, s390 and PowerPC. The AArch64 tests run under qemu-user.
 - The configure tests (`configure_linux_<cpu>_<version>_test`) run `config.gcc`
   and `config.host` for each CPU's triple, with the `configure.ac.bzl` results
   that the CPU's toolchain probes, and compare what the scripts select with the

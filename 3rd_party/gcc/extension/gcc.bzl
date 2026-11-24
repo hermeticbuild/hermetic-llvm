@@ -9,6 +9,7 @@ load(
     "gcc_has_libgcc",
     "gcc_patches",
     "gcc_repo_name",
+    "libgcc_cpus",
 )
 
 # Sparse archive roots required by 3rd_party/gcc/gcc.BUILD.bazel. Before
@@ -64,19 +65,36 @@ _LIBGCC_ARCHIVE_INCLUDES = [
     "gcc/coretypes.h",
     "gcc/defaults.h",
     "gcc/tsystem.h",
-    "gcc/common/config/aarch64/*.h",
-    "gcc/common/config/i386/*.h",
     "gcc/config/*.h",
-    "gcc/config/aarch64/*.def",
-    "gcc/config/aarch64/*.h",
-    "gcc/config/i386/*.def",
-    "gcc/config/i386/*.h",
     "include/dwarf2.def",
     "include/dwarf2.h",
     "include/filenames.h",
     "include/hashtab.h",
     "include/longlong.h",
 ]
+
+# The GCC config headers of each CPU that libgcc builds for. A version's
+# archive has only the CPUs the version builds libgcc for.
+_LIBGCC_CPU_ARCHIVE_INCLUDES = {
+    "aarch64": [
+        "gcc/common/config/aarch64/*.h",
+        "gcc/config/aarch64/*.def",
+        "gcc/config/aarch64/*.h",
+    ],
+    "x86_64": [
+        "gcc/common/config/i386/*.h",
+        "gcc/config/i386/*.def",
+        "gcc/config/i386/*.h",
+    ],
+}
+
+def _libgcc_archive_includes(version):
+    if not gcc_has_libgcc(version):
+        return []
+    includes = list(_LIBGCC_ARCHIVE_INCLUDES)
+    for cpu in libgcc_cpus(version):
+        includes += _LIBGCC_CPU_ARCHIVE_INCLUDES[cpu]
+    return includes
 
 _GCC_10_ARCHIVE_INCLUDES = [
     "config/toolexeclibdir.m4",
@@ -126,7 +144,7 @@ def _gcc_impl(module_ctx):
                 generated_files = {
                     "version.bzl": "GCC_VERSION = \"{}\"\n".format(version),
                 },
-                includes = _GCC_ARCHIVE_INCLUDES + (_GCC_10_ARCHIVE_INCLUDES if gcc_has_config_toolexeclibdir_m4(version) else []) + (_LIBGCC_ARCHIVE_INCLUDES if gcc_has_libgcc(version) else []),
+                includes = _GCC_ARCHIVE_INCLUDES + (_GCC_10_ARCHIVE_INCLUDES if gcc_has_config_toolexeclibdir_m4(version) else []) + _libgcc_archive_includes(version),
                 patch_args = ["-p1"],
                 patches = [Label(patch) for patch in gcc_patches(version)],
                 sha256 = release["sha256"],

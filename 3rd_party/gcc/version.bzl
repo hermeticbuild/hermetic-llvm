@@ -296,17 +296,21 @@ def gcc_patches(version):
         _libstdcxx_patch("libstdcxx-filesystem-ts-dir-namespace.patch"),
     ] + LIBGCC_PATCHES.get(version, [])
 
-# GCC versions whose libgcc is built from source, and the Linux CPUs it is
-# built for. Other versions and CPUs keep LLVM's libunwind and compiler-rt with
-# libstdc++.
-LIBGCC_VERSIONS = [
-    "17.0.0",
-]
+# The GCC versions whose libgcc is built from source, each with the Linux CPUs
+# it is built for. Other versions and CPUs keep LLVM's libunwind and
+# compiler-rt with libstdc++.
+LIBGCC_TARGETS = {
+    "17.0.0": [
+        "aarch64",
+        "x86_64",
+    ],
+}
 
-LIBGCC_CPUS = [
-    "aarch64",
-    "x86_64",
-]
+LIBGCC_VERSIONS = [version for version in GCC_VERSIONS if version in LIBGCC_TARGETS]
+
+def libgcc_cpus(version):
+    """The Linux CPUs whose libgcc is built from this GCC version's sources."""
+    return LIBGCC_TARGETS.get(version, [])
 
 LIBGCC_PATCHES = {
     "17.0.0": [
@@ -316,7 +320,7 @@ LIBGCC_PATCHES = {
 }
 
 def gcc_has_libgcc(version):
-    return version in LIBGCC_VERSIONS
+    return version in LIBGCC_TARGETS
 
 def gcc_version_at_least(version):
     return gcc_version_at_least_for(GCC_VERSION, version)
