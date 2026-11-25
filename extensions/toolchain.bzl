@@ -2,7 +2,7 @@ load("//platforms:common.bzl", "SUPPORTED_EXECS", "SUPPORTED_TARGETS")
 
 _BUILD_TEMPLATE = """\
 load("@llvm//toolchain:declare_toolchains.bzl", "declare_toolchains")
-load("@llvm//toolchain/bootstrap:declare_toolchains.bzl", declare_bootstrap_toolchains = "declare_toolchains")
+load("@llvm//toolchain/bootstrap:declare_toolchains.bzl", "declare_toolchain_registrations", declare_bootstrap_toolchains = "declare_toolchains")
 
 _EXECS = [
     {execs}
@@ -14,6 +14,7 @@ _TARGETS = [
 
 declare_toolchains(execs = _EXECS, targets = _TARGETS)
 declare_bootstrap_toolchains(execs = _EXECS, targets = _TARGETS)
+declare_toolchain_registrations(execs = _EXECS, targets = _TARGETS, cc_toolchain_prefix = ":")
 """
 
 def _toolchains_repository_impl(rctx):

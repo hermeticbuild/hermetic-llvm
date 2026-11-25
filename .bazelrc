@@ -45,7 +45,7 @@ common:release  --features=omit_frame_pointer
 common:release  --features=-dynamic_link_msvcrt
 common:release  --features=static_link_msvcrt
 common:release  --dynamic_mode=off
-common:release  --extra_toolchains=//toolchain:all
+common:release  --extra_toolchains=//toolchain:all,//toolchain/bootstrap:all
 
 # Use musl execution platforms for release so Stage 2 and Stage 3 binaries
 # target the same libc and Stage 2 FDO profiles match the Stage 3 build.

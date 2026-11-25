@@ -580,22 +580,36 @@ def declare_tool_map(exec_os, exec_cpu, prefix = None, fdo_profile = None, fdo_i
         ],
     )
 
+def _default_execs(targets):
+    return [
+        (target_os, target_cpu)
+        # Any supported target that can run a compiler is a supported exec.
+        # If we can compile a compiler for that target, we can use that compiler
+        # to compile for any other target.
+        for (target_os, target_cpu) in targets
+        if target_os not in ["none", "wasi"]
+    ]
+
+def _cc_toolchain_name(stage_name, exec_os, exec_cpu):
+    return "%s_%s_%s_cc_toolchain" % (stage_name, exec_os, exec_cpu)
+
+_STAGE_SETTINGS = [
+    ("stage3", "@llvm//toolchain:bootstrap_stage3_lto_and_fdo_applied"),
+    ("stage2", "@llvm//toolchain:bootstrap_stage2_lto_and_fdo_instrumented"),
+    ("stage1", "@llvm//toolchain:bootstrap_stage1_from_source"),
+]
+
 def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
-    """Declares the configured LLVM toolchains.
+    """Declares the configured LLVM bootstrap cc_toolchains.
+
+    declare_toolchain_registrations declares the matching toolchain() targets.
 
     Args:
         execs: List of (os, arch) tuples describing exec platforms.
         targets: List of (os, arch) tuples describing target platforms.
     """
     if not execs:
-        execs = [
-            (target_os, target_cpu)
-            # Any supported target that can run a compiler is a supported exec.
-            # If we can compile a compiler for that target, we can use that compiler
-            # to compile for any other target.
-            for (target_os, target_cpu) in targets
-            if target_os not in ["none", "wasi"]
-        ]
+        execs = _default_execs(targets)
 
     for (exec_os, exec_cpu) in execs:
         exec_prefix = _exec_prefix(exec_os, exec_cpu)
@@ -623,12 +637,12 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
             prefix = stage1_prefix,
         )
 
-        for stage_name, tool_prefix, target_setting in [
-            ("stage3", stage3_prefix, "@llvm//toolchain:bootstrap_stage3_lto_and_fdo_applied"),
-            ("stage2", stage2_prefix, "@llvm//toolchain:bootstrap_stage2_lto_and_fdo_instrumented"),
-            ("stage1", stage1_prefix, "@llvm//toolchain:bootstrap_stage1_from_source"),
+        for stage_name, tool_prefix in [
+            ("stage3", stage3_prefix),
+            ("stage2", stage2_prefix),
+            ("stage1", stage1_prefix),
         ]:
-            cc_toolchain_name = "%s_%s_%s_cc_toolchain" % (stage_name, exec_os, exec_cpu)
+            cc_toolchain_name = _cc_toolchain_name(stage_name, exec_os, exec_cpu)
             merged_resource_directory(
                 name = cc_toolchain_name + "_resource_directory",
                 parent = tool_prefix + "/clang_resource_directory",
@@ -676,6 +690,24 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
                 }),
             )
 
+def declare_toolchain_registrations(*, execs = None, targets = SUPPORTED_TARGETS, cc_toolchain_prefix = "//toolchain:"):
+    """Declares the toolchain() targets of the LLVM bootstrap cc_toolchains.
+
+    //toolchain/bootstrap calls this so that //toolchain:all only holds the
+    stage0 toolchains. Builds that select a bootstrap stage register
+    //toolchain/bootstrap:all next to //toolchain:all.
+
+    Args:
+        execs: List of (os, arch) tuples describing exec platforms.
+        targets: List of (os, arch) tuples describing target platforms.
+        cc_toolchain_prefix: Label prefix of the package where declare_toolchains
+            declared the bootstrap cc_toolchains.
+    """
+    if not execs:
+        execs = _default_execs(targets)
+
+    for (exec_os, exec_cpu) in execs:
+        for stage_name, target_setting in _STAGE_SETTINGS:
             for (target_os, target_cpu) in targets:
                 target_settings = [target_setting]
                 if target_os == "windows":
@@ -692,7 +724,7 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
                         "@platforms//os:" + target_os,
                     ],
                     target_settings = target_settings,
-                    toolchain = cc_toolchain_name,
+                    toolchain = cc_toolchain_prefix + _cc_toolchain_name(stage_name, exec_os, exec_cpu),
                     toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
                     visibility = ["//visibility:public"],
                 )
@@ -712,7 +744,7 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
                             target_setting,
                             "@llvm//platforms/config:windows_{}_msvc".format(target_cpu),
                         ],
-                        toolchain = cc_toolchain_name,
+                        toolchain = cc_toolchain_prefix + _cc_toolchain_name(stage_name, exec_os, exec_cpu),
                         toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
                         visibility = ["//visibility:public"],
                     )

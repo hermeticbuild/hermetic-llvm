@@ -27,7 +27,9 @@ register_toolchains("@llvm//toolchain:all")
 
 See https://github.com/hermeticbuild/hermetic-llvm/releases/latest
 
-This registers all toolchains declared by this module for all supported targets.
+This registers the toolchains declared by this module for all supported targets.
+The source-built bootstrap stage toolchains live in `@llvm//toolchain/bootstrap:all`.
+Register that package too if you set `@llvm//toolchain:bootstrap_stage` to a stage other than `stage0_prebuilt_seed`.
 
 This module sets bazel_compatibility to 7.7+ so it can be imported for constraints, but it is highly recommended to use Bazel 8.5+ for full functionality.
 

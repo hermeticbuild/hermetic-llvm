@@ -28,9 +28,6 @@ for cpu in x86_64 aarch64; do
     "@llvm//toolchain:linux_${cpu}_to_windows_${cpu}_msvc" \
     >/dev/null
   bazel --bazelrc=.bazelrc query \
-    "@llvm//toolchain:stage1_linux_${cpu}_to_windows_${cpu}_msvc" \
-    >/dev/null
-  bazel --bazelrc=.bazelrc query \
     "@llvm//toolchain:windows_${cpu}_to_windows_${cpu}" \
     >/dev/null
   if bazel --bazelrc=.bazelrc query \
@@ -39,10 +36,16 @@ for cpu in x86_64 aarch64; do
     echo >&2 "native Windows MSVC target toolchain unexpectedly registered for ${cpu}"
     exit 1
   fi
-  for stage in stage2 stage3; do
+  for stage in stage1 stage2 stage3; do
     bazel --bazelrc=.bazelrc query \
-      "@llvm//toolchain:${stage}_linux_${cpu}_to_windows_${cpu}_msvc" \
+      "@llvm//toolchain/bootstrap:${stage}_linux_${cpu}_to_windows_${cpu}_msvc" \
       >/dev/null
+    if bazel --bazelrc=.bazelrc query \
+      "@llvm//toolchain:${stage}_linux_${cpu}_to_windows_${cpu}_msvc" \
+      >/dev/null 2>&1; then
+      echo >&2 "${stage} bootstrap toolchain unexpectedly declared in @llvm//toolchain for ${cpu}"
+      exit 1
+    fi
   done
 done
 
