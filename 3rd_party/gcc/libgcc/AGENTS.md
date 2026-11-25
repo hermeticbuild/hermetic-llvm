@@ -150,6 +150,10 @@ Derive each value from GCC itself, not from memory:
   macro's status against the `auto-target.h` and `libgcc_configure_cflags.h`
   rendered for the CPU, and that the port file a modeled substitution names
   mentions it.
+- `e2e/rules_rust`'s `panic_unwind*_linux_<cpu>_libstdcxx_test` targets build
+  Rust code for the default GCC version's libstdc++ and check that it unwinds
+  with libgcc: with `libgcc_eh.a` linked in, or with `libgcc_s.so.1` for a shared
+  library that rustc links. Each CPU's tests run on a host of that CPU.
 - For a new version or target, also run GCC's `g++.dg/eh` and
   `gcc.dg/cleanup-*` run tests, built with a GCC, against the new
   `libgcc_s.so.1` through `LD_LIBRARY_PATH` and against the static archives by

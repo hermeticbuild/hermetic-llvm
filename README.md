@@ -304,10 +304,13 @@ links it as GCC's driver does. Static links use `libgcc.a` and `libgcc_eh.a`.
 Dynamic links pass `-lgcc_s`, which finds GCC's `libgcc_s.so` linker script. The
 script names `libgcc_s.so.1` and then `libgcc.a`, which supplies the symbols the
 shared library does not export, such as `__morestack` for `-fsplit-stack` code
-on x86-64. rustc's `-lgcc_s` should find the same script, judging from the `-L`
-order, so the stub that `--@llvm//config:experimental_stub_libgcc_s` provides is
-left out. This is not tested with rustc. compiler-rt's builtins still come last
-on the link line, and compiler-rt's `crtbegin.o` and `crtend.o` are kept.
+on x86-64. rustc's `-lgcc_s` finds the same script, so the stub that
+`--@llvm//config:experimental_stub_libgcc_s` provides is left out. rules_rust
+links the C++ runtime statically, so a Rust binary unwinds with `libgcc_eh.a`,
+and only a shared library that rustc links takes `libgcc_s.so.1`.
+`e2e/rules_rust` checks both for x86-64 and AArch64, each on a host of that CPU.
+compiler-rt's builtins still come last on the link line, and compiler-rt's
+`crtbegin.o` and `crtend.o` are kept.
 
 `libstdc++.so.6` depends on `libgcc_s.so.1`, as GCC's does, and a dynamically
 linked binary finds both in its runfiles through its `RUNPATH`. The dynamic
