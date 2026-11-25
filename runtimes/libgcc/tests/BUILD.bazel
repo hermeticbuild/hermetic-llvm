@@ -13,17 +13,25 @@ load("//3rd_party/gcc/libgcc:makefile.bzl", "libgcc_makefile_conditions", "libgc
 load("//3rd_party/gcc/libgcc:target_config.bzl", "libgcc_configure_results", "libgcc_target_triple")
 
 # The binaries build for a libstdc++ platform whose GCC version builds libgcc,
-# and the tests run them on the x86-64 Linux host: natively for x86-64, and
-# under qemu-user for AArch64.
+# and the tests run them on the hosts in _HOSTS below.
 _LIBGCC_FROM_GCC = select({
     "//runtimes/libgcc:libgcc_from_gcc": [],
     "//conditions:default": ["@platforms//:incompatible"],
 })
 
-_HOST = [
-    "@platforms//cpu:x86_64",
-    "@platforms//os:linux",
-]
+# The hosts that run each CPU's tests. An x86-64 host runs them all, with
+# AArch64 binaries under qemu-user, and an AArch64 host runs AArch64's natively.
+_HOSTS = {
+    "aarch64": select({
+        "@platforms//cpu:aarch64": [],
+        "@platforms//cpu:x86_64": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }) + ["@platforms//os:linux"],
+    "x86_64": [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ],
+}
 
 _LINKAGES = [
     "static",
@@ -82,7 +90,7 @@ _CPU_PROGRAMS = {
         testonly = True,
         srcs = [":{}_{}".format(program, linkage)],
         tags = ["manual"],
-        target_compatible_with = _HOST,
+        target_compatible_with = _HOSTS[cpu],
         target_platform = "//runtimes/libstdcxx/tests:linux_{}_{}".format(
             cpu,
             libstdcxx_constraint_value(version),
@@ -120,7 +128,7 @@ _CPU_PROGRAMS = {
             "READELF": "$(rootpath @llvm//tools:llvm-readelf)",
         },
         rule = sh_test,
-        target_compatible_with = _HOST,
+        target_compatible_with = _HOSTS["x86_64"],
     )
     for version in LIBGCC_VERSIONS
     if "x86_64" in libgcc_cpus(version)
@@ -155,7 +163,7 @@ copy_to_directory(
         testonly = True,
         binary = ":{}_{}".format(program, linkage),
         tags = ["manual"],
-        target_compatible_with = _HOST,
+        target_compatible_with = _HOSTS["x86_64"],
         target_platform = "//runtimes/libstdcxx/tests:linux_aarch64_{}".format(libstdcxx_constraint_value(version)),
     )
     for version in LIBGCC_VERSIONS
@@ -173,35 +181,43 @@ copy_to_directory(
         ),
         srcs = ["runtime_test.sh"],
         data = [
-            ":centos_8_aarch64_sysroot",
             ":{}_{}_linux_aarch64_{}".format(
                 program,
                 linkage,
                 gcc_target_suffix(version),
             ),
-            ":{}_{}_linux_aarch64_{}_qemu".format(
-                program,
-                linkage,
-                gcc_target_suffix(version),
-            ),
             "@llvm//tools:llvm-readelf",
-        ],
+        ] + select({
+            "@platforms//cpu:x86_64": [
+                ":centos_8_aarch64_sysroot",
+                ":{}_{}_linux_aarch64_{}_qemu".format(
+                    program,
+                    linkage,
+                    gcc_target_suffix(version),
+                ),
+            ],
+            "//conditions:default": [],
+        }),
         env = {
             "BINARY": "$(rootpath :{}_{}_linux_aarch64_{})".format(
                 program,
                 linkage,
                 gcc_target_suffix(version),
             ),
-            "LAUNCHER": "$(rootpath :{}_{}_linux_aarch64_{}_qemu)".format(
-                program,
-                linkage,
-                gcc_target_suffix(version),
-            ),
             "LINKAGE": linkage,
-            "QEMU_LD_PREFIX": "$(rootpath :centos_8_aarch64_sysroot)",
             "READELF": "$(rootpath @llvm//tools:llvm-readelf)",
-        },
-        target_compatible_with = _HOST,
+        } | select({
+            "@platforms//cpu:x86_64": {
+                "LAUNCHER": "$(rootpath :{}_{}_linux_aarch64_{}_qemu)".format(
+                    program,
+                    linkage,
+                    gcc_target_suffix(version),
+                ),
+                "QEMU_LD_PREFIX": "$(rootpath :centos_8_aarch64_sysroot)",
+            },
+            "//conditions:default": {},
+        }),
+        target_compatible_with = _HOSTS["aarch64"],
     )
     for version in LIBGCC_VERSIONS
     if "aarch64" in libgcc_cpus(version)
@@ -216,7 +232,7 @@ copy_to_directory(
             gcc_target_suffix(version),
         ),
         srcs = ["//runtimes/libgcc:libgcc_s.shared"],
-        target_compatible_with = _HOST,
+        target_compatible_with = _HOSTS[cpu],
         target_platform = "//runtimes/libstdcxx/tests:linux_{}_{}".format(
             cpu,
             libstdcxx_constraint_value(version),
@@ -255,7 +271,7 @@ copy_to_directory(
             ),
             "READELF": "$(rootpath @llvm//tools:llvm-readelf)",
         },
-        target_compatible_with = _HOST,
+        target_compatible_with = _HOSTS[cpu],
     )
     for version in LIBGCC_VERSIONS
     for cpu in libgcc_cpus(version)
@@ -286,7 +302,7 @@ autoconf_hdr(
         ),
         srcs = [":configure_checks_h"],
         tags = ["manual"],
-        target_compatible_with = _HOST,
+        target_compatible_with = _HOSTS[cpu],
         target_platform = "//runtimes/libstdcxx/tests:linux_{}_{}".format(
             cpu,
             libstdcxx_constraint_value(version),
@@ -349,7 +365,7 @@ autoconf_hdr(
             "GCC_SOURCES": "$(rootpath {})".format(gcc_repository_label(version, "libgcc_configure_inputs")),
             "TARGET": libgcc_target_triple(cpu, version),
         },
-        target_compatible_with = _HOST,
+        target_compatible_with = _HOSTS[cpu],
     )
     for version in LIBGCC_VERSIONS
     for cpu in libgcc_cpus(version)
@@ -363,7 +379,7 @@ autoconf_hdr(
         ),
         srcs = [gcc_repository_label(version, "libgcc_configure_headers")],
         tags = ["manual"],
-        target_compatible_with = _HOST,
+        target_compatible_with = _HOSTS[cpu],
         target_platform = "//runtimes/libstdcxx/tests:linux_{}_{}".format(
             cpu,
             libstdcxx_constraint_value(version),
@@ -409,7 +425,7 @@ _CONFIGURE_PORT_FILES = [
             ),
             "SUBST_STATUS": "$(rootpath //3rd_party/gcc/libgcc:configure_subst_status.txt)",
         },
-        target_compatible_with = _HOST,
+        target_compatible_with = _HOSTS[cpu],
     )
     for version in LIBGCC_VERSIONS
     for cpu in libgcc_cpus(version)

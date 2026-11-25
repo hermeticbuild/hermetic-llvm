@@ -324,8 +324,8 @@ the same exports. The port's 14.3.0 `libgcc_s.so.1` exports the same symbols and
 symbol versions as Ubuntu 24.04's, which comes from GCC 14.2.0.
 
 Decimal floating-point routines (`__bid_*`) are not built, because Clang has no
-decimal floating-point types. Other GCC versions and targets link LLVM's
-libunwind.
+decimal floating-point types. With libstdc++ 8.1.0 through 16.1.0 on AArch64,
+the toolchain links LLVM's libunwind.
 
 On AArch64, a patch changes libgcc's unwinder to avoid `__builtin_eh_return`,
 which Clang does not implement there.
@@ -333,7 +333,8 @@ which Clang does not implement there.
 `bazel test //runtimes/libgcc/...` checks the symbols and versions that
 `libgcc_s.so.1` exports. It also runs exception tests and, on x86-64,
 split-stack tests, each linked statically and dynamically. The AArch64 tests run
-under qemu-user, and libgcc has not been run on AArch64 hardware.
+under qemu-user on an x86-64 host and natively on an AArch64 host, and the
+`libgcc` CI workflow runs them on both for changes to these ports and nightly.
 `3rd_party/gcc/libgcc/AGENTS.md` describes how the build is derived from GCC and
 how to validate a new version or target.
 

@@ -121,10 +121,10 @@ Derive each value from GCC itself, not from memory:
   configure result, add that check to `LIBGCC_SELECTION_CHECKS`. In
   `configure_define_status.txt`, add the CPU to the CPU column of each macro
   whose check configure runs for it. In `runtimes/libgcc/tests`, add a symbol
-  list for each version, and add the CPU with the programs it runs to
-  `_CPU_PROGRAMS`. Those tests run on an x86-64 Linux host, so a CPU other than
-  x86-64 runs its binaries under qemu-user, as AArch64 does, with a glibc for
-  that CPU.
+  list for each version, the CPU with the programs it runs to `_CPU_PROGRAMS`,
+  and the hosts that run its tests to `_HOSTS`. An x86-64 host runs every CPU's
+  tests, with another CPU's binaries under qemu-user and a glibc for that CPU,
+  as for AArch64. A host of the CPU itself runs them natively.
 
 ## Validation
 
@@ -132,7 +132,10 @@ Derive each value from GCC itself, not from memory:
   against the symbol list of each version and CPU. It also runs exception tests,
   each linked statically and dynamically, and split-stack tests on x86-64 only,
   because `config.host` adds `t-stack`, which builds `__morestack`, only for
-  x86, s390 and PowerPC. The AArch64 tests run under qemu-user.
+  x86, s390 and PowerPC. The AArch64 tests run under qemu-user on an x86-64
+  host and natively on an AArch64 host. The `libgcc` workflow runs
+  `//runtimes/libgcc/...` on both, for changes to GCC, the libgcc and libstdc++
+  ports and `MODULE.bazel`, and nightly.
 - The configure tests (`configure_linux_<cpu>_<version>_test`) run `config.gcc`
   and `config.host` for each CPU's triple, with the `configure.ac.bzl` results
   that the CPU's toolchain probes, and compare what the scripts select with the
@@ -183,10 +186,11 @@ nothing for `__builtin_eh_return`, and libgcc's unwinder relies on both:
   `uw_init_context_1` keeps the EH data registers x0-x3 as values, because
   without `__builtin_eh_return` the caller's frame has no save slots for them.
 
-The AArch64 tests run their binaries under qemu-user with `rules_qemu`, and use
-CentOS 8's glibc 2.28 and `libgcc_s.so.1` as the system libraries. glibc's
-`pthread_exit` loads `libgcc_s.so.1` by name even when a test links the runtime
-statically, so the sysroot needs one. `rules_qemu` and the CentOS 8 sysroot are
-dev dependencies in `MODULE.bazel`. `3rd_party/rules_qemu` patches `rules_qemu`
-0.3.0, whose extension hard-codes `root_module_direct_deps`, which Bazel
-rejects when the root module uses `rules_qemu` only as a dev dependency.
+On an x86-64 host, the AArch64 tests run their binaries under qemu-user with
+`rules_qemu`, and use CentOS 8's glibc 2.28 and `libgcc_s.so.1` as the system
+libraries. glibc's `pthread_exit` loads `libgcc_s.so.1` by name even when a test
+links the runtime statically, so the sysroot needs one. `rules_qemu` and the
+CentOS 8 sysroot are dev dependencies in `MODULE.bazel`. `3rd_party/rules_qemu`
+patches `rules_qemu` 0.3.0, whose extension hard-codes
+`root_module_direct_deps`, which Bazel rejects when the root module uses
+`rules_qemu` only as a dev dependency.
