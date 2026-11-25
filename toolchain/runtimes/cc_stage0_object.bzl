@@ -1,12 +1,16 @@
+load("@llvm//toolchain/runtimes:with_cfg_runtimes_common.bzl", "runtime_reset_transition_settings")
 load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "CC_TOOLCHAIN_TYPE", "find_cc_toolchain", "use_cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 
 #TODO(cerisier): use a single shared transition
 bootstrap_transition = transition(
-    implementation = lambda settings, attr: {
+    implementation = lambda settings, attr: runtime_reset_transition_settings() | {
         # we are compiling runtimes without any kind of other dependencies
         "//toolchain:runtime_stage": "stage0",
+        # Stage0 objects build the same under either runtime linkmode, so the
+        # static and shared runtimes share one copy.
+        "//runtimes:linkmode": "static",
         # Stage0 objects (crtbegin/crtend) are linked into every binary and
         # shared library, so user flags must never leak into them. In
         # particular -fsanitize-coverage would give each shared object its own
@@ -51,8 +55,9 @@ bootstrap_transition = transition(
         "//config:host_profile": False,
     },
     inputs = [],
-    outputs = [
+    outputs = runtime_reset_transition_settings().keys() + [
         "//toolchain:runtime_stage",
+        "//runtimes:linkmode",
         "//command_line_option:copt",
         "//command_line_option:cxxopt",
         "//command_line_option:conlyopt",
