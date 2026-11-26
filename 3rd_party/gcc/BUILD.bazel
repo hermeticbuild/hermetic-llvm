@@ -16,12 +16,6 @@ filegroup(
 )
 
 bzl_library(
-    name = "version",
-    srcs = ["version.bzl"],
-    visibility = ["//visibility:public"],
-)
-
-bzl_library(
     name = "gcc_config_checks",
     srcs = ["gcc_config_checks.bzl"],
     visibility = [
@@ -29,4 +23,10 @@ bzl_library(
         "//3rd_party/gcc/libstdcxx:__pkg__",
     ],
     deps = ["//3rd_party/gcc/autoconf:checks"],
+)
+
+bzl_library(
+    name = "version",
+    srcs = ["version.bzl"],
+    visibility = ["//visibility:public"],
 )

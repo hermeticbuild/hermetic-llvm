@@ -16,25 +16,6 @@ exports_files(
 )
 
 bzl_library(
-    name = "configure_ac",
-    srcs = ["configure.ac.bzl"],
-    deps = [
-        "//3rd_party/gcc:gcc_config_checks",
-        "//3rd_party/gcc/autoconf:checks",
-    ],
-)
-
-bzl_library(
-    name = "makefile",
-    srcs = ["makefile.bzl"],
-)
-
-bzl_library(
-    name = "target_config",
-    srcs = ["target_config.bzl"],
-)
-
-bzl_library(
     name = "libgcc_rules",
     srcs = ["libgcc_rules.bzl"],
     deps = [
@@ -42,4 +23,26 @@ bzl_library(
         "@rules_cc//cc:find_cc_toolchain_bzl",
         "@rules_cc//cc/common",
     ],
+)
+
+bzl_library(
+    name = "configure.ac",
+    srcs = ["configure.ac.bzl"],
+    deps = [
+        "//3rd_party/gcc:gcc_config_checks",
+        "//3rd_party/gcc:version",
+        "//3rd_party/gcc/autoconf:checks",
+    ],
+)
+
+bzl_library(
+    name = "makefile",
+    srcs = ["makefile.bzl"],
+    deps = ["//3rd_party/gcc:version"],
+)
+
+bzl_library(
+    name = "target_config",
+    srcs = ["target_config.bzl"],
+    deps = ["//3rd_party/gcc:version"],
 )
