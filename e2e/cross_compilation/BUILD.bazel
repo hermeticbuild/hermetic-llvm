@@ -234,6 +234,16 @@ build_test(
 )
 
 platform(
+    name = "linux_armv7_musl_vfpv3_d16",
+    constraint_values = [
+        "@platforms//cpu:armv7",
+        "@platforms//os:linux",
+        "@llvm//constraints/libc:musl",
+        "@llvm//constraints/fpu:vfpv3-d16",
+    ],
+)
+
+platform(
     name = "linux_armv7_musl_vfpv4_d16",
     constraint_values = [
         "@platforms//cpu:armv7",
@@ -253,9 +263,13 @@ QEMU_MUSL_PLATFORMS = {
     "linux_armv7_musl": {
         "target_platform": "@llvm//platforms:linux_armv7_musl",
     },
-    # Force qemu to a non-default ARM core that matches the -mfpu=vfpv4-d16
-    # codepath, so the test actually exercises vfpv4-d16 instructions instead
+    # Force qemu to non-default ARM cores that match the -mfpu=vfpv{3,4}-d16
+    # codepaths, so the tests actually exercise those instructions instead
     # of falling through to NEON.
+    "linux_armv7_musl_vfpv3_d16": {
+        "target_platform": ":linux_armv7_musl_vfpv3_d16",
+        "qemu_cpu": "cortex-a9,neon=off,vfp-d32=off",
+    },
     "linux_armv7_musl_vfpv4_d16": {
         "target_platform": ":linux_armv7_musl_vfpv4_d16",
         "qemu_cpu": "cortex-a7,neon=off,vfp-d32=off",

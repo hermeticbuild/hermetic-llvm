@@ -16,6 +16,11 @@ constraint_value(
 )
 
 constraint_value(
+    name = "vfpv3-d16",
+    constraint_setting = ":fpu",
+)
+
+constraint_value(
     name = "vfpv4-d16",
     constraint_setting = ":fpu",
 )

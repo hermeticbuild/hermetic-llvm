@@ -74,6 +74,7 @@ cc_args(
         ],
         "//conditions:default": [],
     }) + select({
+        "//constraints/fpu:vfpv3-d16": ["-mfpu=vfpv3-d16"],
         "//constraints/fpu:vfpv4-d16": ["-mfpu=vfpv4-d16"],
         "//conditions:default": [],
     }),
