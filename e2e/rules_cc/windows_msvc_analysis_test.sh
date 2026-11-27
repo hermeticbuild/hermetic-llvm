@@ -23,25 +23,27 @@ common_flags=(
   --repo_env=BAZEL_WINDOWS_SDK_EULA=1
 )
 
+unexpected_bootstrap_toolchains="$(bazel --bazelrc=.bazelrc query \
+  'filter(":stage[123]_", @llvm//toolchain:all + @llvm_toolchains//:all)')"
+if [[ -n "${unexpected_bootstrap_toolchains}" ]]; then
+  echo >&2 "bootstrap toolchains unexpectedly declared alongside the default toolchains"
+  echo >&2 "${unexpected_bootstrap_toolchains}"
+  exit 1
+fi
+
 for cpu in x86_64 aarch64; do
   bazel --bazelrc=.bazelrc query \
     "@llvm//toolchain:linux_${cpu}_to_windows_${cpu}_msvc" \
     >/dev/null
   bazel --bazelrc=.bazelrc query \
-    "@llvm//toolchain:stage1_linux_${cpu}_to_windows_${cpu}_msvc" \
-    >/dev/null
-  bazel --bazelrc=.bazelrc query \
     "@llvm//toolchain:windows_${cpu}_to_windows_${cpu}" \
     >/dev/null
-  if bazel --bazelrc=.bazelrc query \
+  bazel --bazelrc=.bazelrc query \
     "@llvm//toolchain:windows_${cpu}_to_windows_${cpu}_msvc" \
-    >/dev/null 2>&1; then
-    echo >&2 "native Windows MSVC target toolchain unexpectedly registered for ${cpu}"
-    exit 1
-  fi
-  for stage in stage2 stage3; do
+    >/dev/null
+  for stage in stage1 stage2 stage3; do
     bazel --bazelrc=.bazelrc query \
-      "@llvm//toolchain:${stage}_linux_${cpu}_to_windows_${cpu}_msvc" \
+      "@llvm//toolchain/bootstrap:${stage}_linux_${cpu}_to_windows_${cpu}_msvc + @llvm_toolchains//bootstrap:${stage}_linux_${cpu}_to_windows_${cpu}_msvc" \
       >/dev/null
   done
 done

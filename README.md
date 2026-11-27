@@ -27,7 +27,9 @@ register_toolchains("@llvm//toolchain:all")
 
 See https://github.com/hermeticbuild/hermetic-llvm/releases/latest
 
-This registers all toolchains declared by this module for all supported targets.
+This registers the prebuilt toolchains for all supported platforms.
+If you set `@llvm//toolchain:bootstrap_stage` to a source-built stage, also register
+`@llvm//toolchain/bootstrap:all`.
 
 This module sets bazel_compatibility to 7.7+ so it can be imported for constraints, but it is highly recommended to use Bazel 8.5+ for full functionality.
 
@@ -111,12 +113,14 @@ use_repo(toolchain, "llvm_toolchains")
 register_toolchains("@llvm_toolchains//:all")
 ```
 
-This registers the cross-product of the specified exec and target platforms.
+This registers the prebuilt toolchains for the cross-product of the specified
+exec and target platforms. For source-built stages, also register
+`@llvm_toolchains//bootstrap:all` to use the same platform subset.
 
 If you need finer control, register individual toolchain targets. You can list them with:
 
 ```sh
-bazel query 'kind(toolchain, @llvm//toolchain:all)'
+bazel query 'kind("^toolchain rule$", @llvm//toolchain:all)'
 ```
 
 ### Linux UAPI header defaults
@@ -416,11 +420,14 @@ llvm = use_extension("@llvm//extensions:llvm.bzl", "llvm")
 llvm.version(llvm_version = "22.1.0")
 ```
 
-Important: Since this module uses prebuilt compiler archives by default. If you set `llvm.version(...)` to another version, use:
+If prebuilts are unavailable for the selected LLVM version, register
+`@llvm//toolchain/bootstrap:all` or, if you use the
+[toolchain module extension](#registering-a-subset-of-all-toolchains),
+`@llvm_toolchains//bootstrap:all`. Then pass:
 
 `--@llvm//toolchain:bootstrap_stage=stage1_from_source`
 
-This builds the compiler from source with the stage0 prebuilt seed, which is required when prebuilts for your exact version are not available.
+This builds the compiler from source with the stage 0 prebuilt seed.
 
 When building LLVM libraries or tools from source, the module includes the
 AArch64 and X86 backends. To target another architecture, request its backend:

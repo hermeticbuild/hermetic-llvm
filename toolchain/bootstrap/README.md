@@ -1,7 +1,11 @@
 # Bootstrap toolchain
 
 This package holds the LLVM bootstrap binaries, FDO profile generation rules,
-and source-built C++ toolchains. The bootstrap stages are:
+and both the `toolchain()` targets and `cc_toolchain` implementations for
+source-built stages. The toolchain module extension declares both kinds of
+targets in `@llvm_toolchains//bootstrap`.
+
+The bootstrap stages are:
 
 1. `stage0_prebuilt_seed` compiles the stage1 LLVM binaries from source.
 2. `stage1_from_source` compiles the stage2 LLVM binaries with ThinLTO and FDO

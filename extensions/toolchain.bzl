@@ -1,9 +1,6 @@
 load("//platforms:common.bzl", "SUPPORTED_EXECS", "SUPPORTED_TARGETS")
 
-_BUILD_TEMPLATE = """\
-load("@llvm//toolchain:declare_toolchains.bzl", "declare_toolchains")
-load("@llvm//toolchain/bootstrap:declare_toolchains.bzl", declare_bootstrap_toolchains = "declare_toolchains")
-
+_PLATFORMS_TEMPLATE = """\
 _EXECS = [
     {execs}
 ]
@@ -11,18 +8,33 @@ _EXECS = [
 _TARGETS = [
     {targets}
 ]
+"""
 
+_BUILD_TEMPLATE = """\
+load("@llvm//toolchain:declare_toolchains.bzl", "declare_cc_toolchains", "declare_toolchains")
+
+{platforms}
+declare_cc_toolchains(execs = _EXECS)
 declare_toolchains(execs = _EXECS, targets = _TARGETS)
-declare_bootstrap_toolchains(execs = _EXECS, targets = _TARGETS)
+"""
+
+_BOOTSTRAP_BUILD_TEMPLATE = """\
+load("@llvm//toolchain/bootstrap:declare_toolchains.bzl", "declare_cc_toolchains", "declare_toolchains")
+
+{platforms}
+declare_cc_toolchains(execs = _EXECS)
+declare_toolchains(execs = _EXECS, targets = _TARGETS)
 """
 
 def _toolchains_repository_impl(rctx):
     rctx.file("BUILD.bazel", rctx.attr.build_file_content)
+    rctx.file("bootstrap/BUILD.bazel", rctx.attr.bootstrap_build_file_content)
     return rctx.repo_metadata(reproducible = True)
 
 _toolchains_repository = repository_rule(
     implementation = _toolchains_repository_impl,
     attrs = {
+        "bootstrap_build_file_content": attr.string(mandatory = True),
         "build_file_content": attr.string(mandatory = True),
     },
 )
@@ -54,12 +66,14 @@ def _toolchain_impl(mctx):
     if not targets:
         targets = SUPPORTED_TARGETS
 
+    platforms = _PLATFORMS_TEMPLATE.format(
+        execs = _format_platform_list(execs),
+        targets = _format_platform_list(targets),
+    )
     _toolchains_repository(
         name = "llvm_toolchains",
-        build_file_content = _BUILD_TEMPLATE.format(
-            execs = _format_platform_list(execs),
-            targets = _format_platform_list(targets),
-        ),
+        build_file_content = _BUILD_TEMPLATE.format(platforms = platforms),
+        bootstrap_build_file_content = _BOOTSTRAP_BUILD_TEMPLATE.format(platforms = platforms),
     )
 
     # Report llvm_toolchains the way the root module uses the extension, so

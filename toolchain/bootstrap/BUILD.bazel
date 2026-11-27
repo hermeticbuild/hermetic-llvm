@@ -1,6 +1,13 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load(":declare_toolchains.bzl", "declare_cc_toolchains", "declare_toolchains")
 
 exports_files(["zstd-fdo-wasi-chown.patch"])
+
+# The bootstrap stage toolchains stay out of //toolchain:all. Builds that select
+# a bootstrap stage register this package too, see --config=release.
+declare_cc_toolchains()
+
+declare_toolchains()
 
 bzl_library(
     name = "bootstrap_binary",

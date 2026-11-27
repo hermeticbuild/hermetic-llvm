@@ -57,6 +57,10 @@ mingw_flags=(
   "$@"
   --platforms=@llvm//platforms:windows_x86_64
 )
+stage1_flags=(
+  --extra_toolchains=@llvm_toolchains//bootstrap:all
+  --@llvm//toolchain:bootstrap_stage=stage1_from_source
+)
 
 bazel --bazelrc=.bazelrc aquery "${mingw_flags[@]}" \
   --features=-compiler_param_file \
@@ -64,7 +68,7 @@ bazel --bazelrc=.bazelrc aquery "${mingw_flags[@]}" \
   'inputs(".*libcxx/src/algorithm.cpp", mnemonic("CppCompile", deps(@llvm-project//libcxx:libcxx)))' \
   >"${action_dir}/mingw-libcxx-compile.txt"
 bazel --bazelrc=.bazelrc aquery "${mingw_flags[@]}" \
-  --@llvm//toolchain:bootstrap_stage=stage1_from_source \
+  "${stage1_flags[@]}" \
   --features=-compiler_param_file \
   --output=commands \
   'mnemonic("CppCompile", //:windows_test)' \
@@ -235,7 +239,7 @@ bazel --bazelrc=.bazelrc aquery "${common_flags[@]}" \
   --features=thin_lto \
   --features=-dynamic_link_msvcrt \
   --features=static_link_msvcrt \
-  --@llvm//toolchain:bootstrap_stage=stage1_from_source \
+  "${stage1_flags[@]}" \
   --features=-compiler_param_file \
   --output=commands \
   'inputs(".*libcxx/src/locale.cpp", mnemonic("CppCompile", deps(@llvm-project//libcxx:libcxx.static.msvc_link_name)))' \
@@ -244,7 +248,7 @@ bazel --bazelrc=.bazelrc aquery "${common_flags[@]}" \
   --features=thin_lto \
   --features=-dynamic_link_msvcrt \
   --features=static_link_msvcrt \
-  --@llvm//toolchain:bootstrap_stage=stage1_from_source \
+  "${stage1_flags[@]}" \
   --include_param_files \
   --output=text \
   'mnemonic("CppLTOIndexing", //:windows_msvc_behavior_md)' \
@@ -253,7 +257,7 @@ bazel --bazelrc=.bazelrc aquery "${common_flags[@]}" \
   --features=thin_lto \
   --features=-dynamic_link_msvcrt \
   --features=static_link_msvcrt \
-  --@llvm//toolchain:bootstrap_stage=stage1_from_source \
+  "${stage1_flags[@]}" \
   --include_param_files \
   --output=text \
   'mnemonic("CppLink", //:windows_msvc_behavior_md)' \
@@ -296,7 +300,7 @@ bazel --bazelrc=.bazelrc cquery "${common_flags[@]}" \
 bazel --bazelrc=.bazelrc build "${common_flags[@]}" \
   --features=-dynamic_link_msvcrt \
   --features=static_link_msvcrt \
-  --@llvm//toolchain:bootstrap_stage=stage1_from_source \
+  "${stage1_flags[@]}" \
   //:windows_msvc_thinlto_weak_alias
 
 assert_matches "${action_dir}/resolved-toolchains.txt" "@llvm_toolchains//:linux_(aarch64|x86_64)_cc_toolchain"
