@@ -5,15 +5,17 @@ load("//toolchain:selects.bzl", "platform_cc_tool_map", "platform_module_map", "
 load("//toolchain/args:resource_directory_args.bzl", "resource_directory_args")
 load(":cc_toolchain.bzl", "cc_toolchain")
 
-def declare_toolchains(*, execs = SUPPORTED_EXECS, targets = SUPPORTED_TARGETS):
-    """Declares the configured LLVM toolchains.
+def _cc_toolchain_name(exec_os, exec_cpu):
+    return exec_os + "_" + exec_cpu + "_cc_toolchain"
+
+def declare_cc_toolchains(*, execs = SUPPORTED_EXECS):
+    """Declares the LLVM prebuilt cc_toolchain implementations.
 
     Args:
         execs: List of (os, arch) tuples describing exec platforms.
-        targets: List of (os, arch) tuples describing target platforms.
     """
     for (exec_os, exec_cpu) in execs:
-        cc_toolchain_name = exec_os + "_" + exec_cpu + "_cc_toolchain"
+        cc_toolchain_name = _cc_toolchain_name(exec_os, exec_cpu)
         msvc_case_overlays = [] if exec_os == "windows" else ["@llvm//toolchain/args/windows/msvc:case_overlays"]
 
         # Bind the directory beside the tool map, before another rule's exec
@@ -59,6 +61,15 @@ def declare_toolchains(*, execs = SUPPORTED_EXECS, targets = SUPPORTED_TARGETS):
             }),
         )
 
+def declare_toolchains(*, execs = SUPPORTED_EXECS, targets = SUPPORTED_TARGETS):
+    """Declares the toolchain() targets for the LLVM prebuilt compiler and runtimes.
+
+    Args:
+        execs: List of (os, arch) tuples describing exec platforms.
+        targets: List of (os, arch) tuples describing target platforms.
+    """
+    for (exec_os, exec_cpu) in execs:
+        cc_toolchain_name = _cc_toolchain_name(exec_os, exec_cpu)
         for (target_os, target_cpu) in targets:
             target_settings = ["@llvm//toolchain:bootstrap_stage0_prebuilt_seed"]
             if target_os == "windows":

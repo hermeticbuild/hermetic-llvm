@@ -599,14 +599,12 @@ _STAGE_SETTINGS = [
     ("stage1", "@llvm//toolchain:bootstrap_stage1_from_source"),
 ]
 
-def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
-    """Declares the configured LLVM bootstrap cc_toolchains.
-
-    declare_toolchain_registrations declares the matching toolchain() targets.
+def declare_cc_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
+    """Declares the LLVM bootstrap cc_toolchain implementations.
 
     Args:
         execs: List of (os, arch) tuples describing exec platforms.
-        targets: List of (os, arch) tuples describing target platforms.
+        targets: List of (os, arch) tuples used to derive default exec platforms.
     """
     if not execs:
         execs = _default_execs(targets)
@@ -690,7 +688,7 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
                 }),
             )
 
-def declare_toolchain_registrations(*, execs = None, targets = SUPPORTED_TARGETS, cc_toolchain_prefix = "//toolchain:"):
+def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS, cc_toolchain_prefix = "//toolchain:"):
     """Declares the toolchain() targets of the LLVM bootstrap cc_toolchains.
 
     //toolchain/bootstrap calls this so that //toolchain:all only holds the
@@ -700,7 +698,7 @@ def declare_toolchain_registrations(*, execs = None, targets = SUPPORTED_TARGETS
     Args:
         execs: List of (os, arch) tuples describing exec platforms.
         targets: List of (os, arch) tuples describing target platforms.
-        cc_toolchain_prefix: Label prefix of the package where declare_toolchains
+        cc_toolchain_prefix: Label prefix of the package where declare_cc_toolchains
             declared the bootstrap cc_toolchains.
     """
     if not execs:

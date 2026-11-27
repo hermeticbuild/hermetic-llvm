@@ -3,9 +3,9 @@ load("@bazel_skylib//rules:common_settings.bzl", "string_flag", "string_setting"
 load("@rules_cc//cc/toolchains:actions.bzl", "cc_action_type_set")
 load("@rules_cc//cc/toolchains:artifacts.bzl", "cc_artifact_name_pattern")
 load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
-load("//toolchain/bootstrap:declare_toolchains.bzl", declare_bootstrap_toolchains = "declare_toolchains")
+load("//toolchain/bootstrap:declare_toolchains.bzl", declare_bootstrap_cc_toolchains = "declare_cc_toolchains")
 load(":bootstrap_stages.bzl", "BOOTSTRAP_STAGES")
-load(":declare_toolchains.bzl", "declare_toolchains")
+load(":declare_toolchains.bzl", "declare_cc_toolchains", "declare_toolchains")
 
 package(default_visibility = ["//toolchain:__subpackages__"])
 
@@ -652,9 +652,11 @@ cc_action_type_set(
     visibility = ["//visibility:public"],
 )
 
+declare_cc_toolchains()
+
 declare_toolchains()
 
-declare_bootstrap_toolchains()
+declare_bootstrap_cc_toolchains()
 
 bzl_library(
     name = "cc_toolchain",
