@@ -12,19 +12,18 @@ _TARGETS = [
 
 _BUILD_TEMPLATE = """\
 load("@llvm//toolchain:declare_toolchains.bzl", "declare_cc_toolchains", "declare_toolchains")
-load("@llvm//toolchain/bootstrap:declare_toolchains.bzl", declare_bootstrap_cc_toolchains = "declare_cc_toolchains")
 
 {platforms}
 declare_cc_toolchains(execs = _EXECS)
 declare_toolchains(execs = _EXECS, targets = _TARGETS)
-declare_bootstrap_cc_toolchains(execs = _EXECS)
 """
 
 _BOOTSTRAP_BUILD_TEMPLATE = """\
-load("@llvm//toolchain/bootstrap:declare_toolchains.bzl", "declare_toolchains")
+load("@llvm//toolchain/bootstrap:declare_toolchains.bzl", "declare_cc_toolchains", "declare_toolchains")
 
 {platforms}
-declare_toolchains(execs = _EXECS, targets = _TARGETS, cc_toolchain_prefix = "//:")
+declare_cc_toolchains(execs = _EXECS)
+declare_toolchains(execs = _EXECS, targets = _TARGETS)
 """
 
 def _toolchains_repository_impl(rctx):

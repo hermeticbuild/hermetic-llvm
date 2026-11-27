@@ -688,18 +688,12 @@ def declare_cc_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
                 }),
             )
 
-def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS, cc_toolchain_prefix = "//toolchain:"):
-    """Declares the toolchain() targets of the LLVM bootstrap cc_toolchains.
-
-    //toolchain/bootstrap calls this so that //toolchain:all only holds the
-    stage0 toolchains. Builds that select a bootstrap stage register
-    //toolchain/bootstrap:all next to //toolchain:all.
+def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS):
+    """Declares toolchain() targets for the bootstrap cc_toolchains in this package.
 
     Args:
         execs: List of (os, arch) tuples describing exec platforms.
         targets: List of (os, arch) tuples describing target platforms.
-        cc_toolchain_prefix: Label prefix of the package where declare_cc_toolchains
-            declared the bootstrap cc_toolchains.
     """
     if not execs:
         execs = _default_execs(targets)
@@ -722,7 +716,7 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS, cc_toolchai
                         "@platforms//os:" + target_os,
                     ],
                     target_settings = target_settings,
-                    toolchain = cc_toolchain_prefix + _cc_toolchain_name(stage_name, exec_os, exec_cpu),
+                    toolchain = _cc_toolchain_name(stage_name, exec_os, exec_cpu),
                     toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
                     visibility = ["//visibility:public"],
                 )
@@ -742,7 +736,7 @@ def declare_toolchains(*, execs = None, targets = SUPPORTED_TARGETS, cc_toolchai
                             target_setting,
                             "@llvm//platforms/config:windows_{}_msvc".format(target_cpu),
                         ],
-                        toolchain = cc_toolchain_prefix + _cc_toolchain_name(stage_name, exec_os, exec_cpu),
+                        toolchain = _cc_toolchain_name(stage_name, exec_os, exec_cpu),
                         toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
                         visibility = ["//visibility:public"],
                     )

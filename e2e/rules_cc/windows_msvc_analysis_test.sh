@@ -24,7 +24,7 @@ common_flags=(
 )
 
 unexpected_bootstrap_toolchains="$(bazel --bazelrc=.bazelrc query \
-  'filter(":stage[123]_", kind("^toolchain rule$", @llvm//toolchain:all + @llvm_toolchains//:all))')"
+  'filter(":stage[123]_", @llvm//toolchain:all + @llvm_toolchains//:all)')"
 if [[ -n "${unexpected_bootstrap_toolchains}" ]]; then
   echo >&2 "bootstrap toolchains unexpectedly declared alongside the default toolchains"
   echo >&2 "${unexpected_bootstrap_toolchains}"
