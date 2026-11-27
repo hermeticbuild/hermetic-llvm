@@ -509,12 +509,20 @@ def declare_llvm_targets(*, exec_os, exec_cpu, suffix = ""):
         name = "macos_target_headers",
         srcs = [
             ":builtin_resource_include_dir",
-            "@macos_sdk//sysroot",
+        ] + select({
+            "@llvm//runtimes/cxxstdlib:macos_llvm_headers": ["@macos_sdk//sysroot:sysroot_without_libcxx_headers"],
+            "//conditions:default": ["@macos_sdk//sysroot"],
+        }) + [
             "@llvm//sanitizers:sanitizers_headers_include_search_directory",
-            # Match the libc++ include paths.
-            "@llvm//runtimes/cxxstdlib:public_headers_directory",
-            "@llvm//runtimes/cxxstdlib:detail_headers_directory",
-        ],
+        ] + select({
+            # The source mode adds libc++abi to both Clang and the module map.
+            "@llvm//runtimes/cxxstdlib:macos_llvm_headers": ["@llvm//runtimes/cxxstdlib:default_headers"],
+            # Preserve the SDK mode's existing module-map inputs.
+            "//conditions:default": [
+                "@llvm//runtimes/cxxstdlib:public_headers_directory",
+                "@llvm//runtimes/cxxstdlib:detail_headers_directory",
+            ],
+        }),
     )
 
     # This must match //toolchain:linux_toolchain_args

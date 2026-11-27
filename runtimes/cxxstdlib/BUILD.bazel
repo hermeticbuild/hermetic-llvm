@@ -29,9 +29,18 @@ filegroup(
     name = "no_headers",
 )
 
+selects.config_setting_group(
+    name = "macos_llvm_headers",
+    match_all = [
+        "@platforms//os:macos",
+        "//config:macos_libcxx_headers_llvm",
+    ],
+)
+
 alias(
     name = "public_headers_directory",
     actual = select({
+        ":macos_llvm_headers": "@llvm-project//libcxx:libcxx_public_headers_directory",
         "@platforms//os:macos": ":macos_cxx_public_headers",
         ":libstdcxx_linux": "//runtimes/libstdcxx:headers_include_search_directory",
         ":libstdcxx_windows": ":libstdcxx_windows_unsupported",
@@ -42,6 +51,7 @@ alias(
 alias(
     name = "detail_headers_directory",
     actual = select({
+        ":macos_llvm_headers": "@llvm-project//libcxx:libcxx_detail_headers_directory",
         "@platforms//os:macos": ":macos_cxx_detail_headers",
         # libstdc++ keeps all headers in public_headers_directory.
         ":libstdcxx_linux": ":no_headers",

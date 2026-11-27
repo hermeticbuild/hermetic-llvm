@@ -12,4 +12,14 @@ files_directory(
     visibility = ["//visibility:public"],
 )
 
+filegroup(
+    name = "sysroot_without_libcxx_headers",
+    srcs = glob(
+        HOST_SDK_INCLUDES,
+        allow_empty = True,
+        exclude = HOST_SDK_EXCLUDES + ["usr/include/c++/v1/**"],
+    ),
+    visibility = ["//visibility:public"],
+)
+
 macos_sdk_libcxx_headers()
