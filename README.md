@@ -304,9 +304,12 @@ it is an uncommon configuration.
 
 ### ARM (armv7)
 
-armv7 targets default to NEON. Cores without NEON (e.g. Cortex-A7 with
-`vfpv4-d16`) can be selected by adding the `@llvm//constraints/fpu:vfpv4-d16`
-constraint to the target platform.
+armv7 targets default to NEON. Cores without NEON can be selected by adding
+an FPU constraint to the target platform:
+
+- `@llvm//constraints/fpu:vfpv3-d16`: e.g. Cortex-A9 without NEON, and the
+  Debian `armhf` baseline.
+- `@llvm//constraints/fpu:vfpv4-d16`: e.g. Cortex-A7 without NEON.
 
 > The FPU constraint lives here for now and will be migrated to
 > [bazel-contrib/platforms_contrib](https://github.com/bazel-contrib/platforms_contrib)
