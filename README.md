@@ -487,6 +487,17 @@ cc_library(
 )
 ```
 
+### Compiler-rt start files for packaging
+
+On Linux, each of these labels provides one relocatable object for staging and linking:
+
+- `@llvm//runtimes/compiler-rt:clang_rt.crtbegin.object` provides `crtbegin.o`.
+- `@llvm//runtimes/compiler-rt:clang_rt.crtend.object` provides `crtend.o`.
+
+The existing `@llvm//runtimes/compiler-rt:clang_rt.crtbegin` and
+`@llvm//runtimes/compiler-rt:clang_rt.crtend` labels provide static archives.
+Downstream packagers choose the installation paths and handle any archive merging.
+
 # Crossenv packages for use outside Bazel (WIP)
 
 This is actively in progress. The goal is to produce working crossenv packages that mirror the Bazel toolchain contents so they can be reused by other build systems outside Bazel.
