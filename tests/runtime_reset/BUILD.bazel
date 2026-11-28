@@ -1,0 +1,28 @@
+load(":runtime_reset_test.bzl", "bin_dir_probe", "reset_roots", "runtime_bin_dir_probe", "runtime_reset_test", "stage0_bin_dir_probe")
+
+bin_dir_probe(name = "probe")
+
+runtime_bin_dir_probe(name = "runtime_probe")
+
+stage0_bin_dir_probe(
+    name = "stage0_probe",
+    probe = ":probe",
+)
+
+reset_roots(
+    name = "roots",
+    instrumented = [
+        ":runtime_probe",
+        ":stage0_probe",
+    ],
+    plain = [
+        ":runtime_probe",
+        ":stage0_probe",
+    ],
+    tags = ["manual"],
+)
+
+runtime_reset_test(
+    name = "runtime_reset_test",
+    target_under_test = ":roots",
+)

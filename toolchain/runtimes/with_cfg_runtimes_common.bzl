@@ -1,3 +1,19 @@
+# Settings that split the configuration of the targets reaching a runtime but
+# must not change the runtime itself. Fixing them builds each runtime once
+# instead of once per value. Runtimes are never instrumented for coverage.
+RUNTIME_RESET_SETTINGS = {
+    "collect_code_coverage": False,
+    "instrument_test_targets": False,
+    "instrumentation_filter": "-/javatests[/:],-/test/java[/:]",
+}
+
+def runtime_reset_transition_settings():
+    """Returns RUNTIME_RESET_SETTINGS keyed by transition setting names."""
+    return {
+        "//command_line_option:" + setting: value
+        for setting, value in RUNTIME_RESET_SETTINGS.items()
+    }
+
 def configure_builder_for_runtimes(builder, runtime_stage, linkmode = "static", sanitizers = False, inherit_asan = False, inherit_msan = False):
     # The problem is that compiler-rt and start libs can only be compiled with
     # a specific set of flags and compilation mode. It is not safe to let the user
@@ -21,6 +37,9 @@ def configure_builder_for_runtimes(builder, runtime_stage, linkmode = "static", 
         "-no_rtti",
         "-omit_frame_pointer",
     ])
+
+    for setting, value in RUNTIME_RESET_SETTINGS.items():
+        builder.set(setting, value)
 
     # We are compiling runtimes without any kind of other dependencies.
     builder.set(
