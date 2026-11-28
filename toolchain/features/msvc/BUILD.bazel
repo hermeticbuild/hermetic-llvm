@@ -5,7 +5,7 @@ load("@rules_cc//cc/toolchains:feature_set.bzl", "cc_feature_set")
 load("@rules_cc//cc/toolchains:mutually_exclusive_category.bzl", "cc_mutually_exclusive_category")
 load("@rules_cc//cc/toolchains:nested_args.bzl", "cc_nested_args")
 load("@rules_cc//cc/toolchains/impl:documented_api.bzl", "cc_args_list")
-load("//config:defs.bzl", "SANITIZERS")
+load("//config:defs.bzl", "INSTRUMENTATION_SETTINGS")
 load(":validation.bzl", "msvc_configuration_validation")
 
 package(default_visibility = ["//visibility:public"])
@@ -92,8 +92,8 @@ cc_feature(
 msvc_configuration_validation(
     name = "configuration_validation",
     unsupported_build_settings = [
-        "//config:" + sanitizer
-        for sanitizer in SANITIZERS
+        "//config:" + setting
+        for setting in INSTRUMENTATION_SETTINGS
     ],
     unsupported_features = _UNSUPPORTED_FEATURES + ["supports_start_end_lib"],
 )

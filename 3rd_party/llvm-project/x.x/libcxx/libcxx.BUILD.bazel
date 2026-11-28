@@ -6,8 +6,8 @@ load("@llvm//3rd_party/llvm-project/21.x/libcxx:libcxx_headers.bzl", "LIBCXX_HEA
 load("@llvm//3rd_party/llvm-project/22.x/libcxx:libcxx_headers.bzl", "LIBCXX_HEADERS_FILES_22")
 load("@llvm//3rd_party/llvm-project/23.x/libcxx:libcxx_headers.bzl", "LIBCXX_HEADERS_FILES_23")
 load("@llvm//runtimes/cxxstdlib:libcxx_headers.bzl", "split_libcxx_headers")
-load("@llvm//toolchain/runtimes:cc_runtime_shared_library.bzl", "cc_runtime_stage1_asan_shared_library")
-load("@llvm//toolchain/runtimes:cc_runtime_static_library.bzl", "cc_runtime_stage0_asan_static_library", "cc_runtime_stage0_static_library")
+load("@llvm//toolchain/runtimes:cc_runtime_shared_library.bzl", "cc_runtime_stage1_cxxstdlib_shared_library")
+load("@llvm//toolchain/runtimes:cc_runtime_static_library.bzl", "cc_runtime_stage0_cxxstdlib_static_library", "cc_runtime_stage0_static_library")
 load("@llvm-project//:vars.bzl", "LLVM_VERSION_MAJOR")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 
@@ -551,9 +551,8 @@ cc_library(
     visibility = ["//compiler-rt:__pkg__"],
 )
 
-cc_runtime_stage0_asan_static_library(
-    # The generic Stage 0 route inherits the configured ASan runtime policy.
-    name = "libcxx.static.stage0_asan_inheriting",
+cc_runtime_stage0_cxxstdlib_static_library(
+    name = "libcxx.static.stage0_cxxstdlib",
     visibility = ["//visibility:public"],
     deps = [
         ":libcxx",
@@ -561,9 +560,9 @@ cc_runtime_stage0_asan_static_library(
 )
 
 cc_runtime_stage0_static_library(
-    # The Windows MSVC route deliberately does not inherit ASan. It is the
-    # static libc++ input to the ordinary complete consumer toolchain.
-    name = "libcxx.static.stage0_non_asan",
+    # The Windows MSVC route uses the ordinary stage-0 sanitizer policy,
+    # which clears the caller's sanitizer settings.
+    name = "libcxx.static.stage0_msvc",
     visibility = ["//visibility:public"],
     deps = [
         ":libcxx",
@@ -573,7 +572,7 @@ cc_runtime_stage0_static_library(
 copy_file(
     # lld's MinGW auto-export excludes the runtime by its archive basename.
     name = "libcxx.static.gnu_link_name",
-    src = "libcxx.static.stage0_asan_inheriting",
+    src = "libcxx.static.stage0_cxxstdlib",
     out = "libc++.a",
     allow_symlink = True,
     visibility = ["//visibility:public"],
@@ -582,13 +581,13 @@ copy_file(
 copy_file(
     # The explicit clang-cl C++ runtime link contract names libc++.lib.
     name = "libcxx.static.msvc_link_name",
-    src = ":libcxx.static.stage0_non_asan",
+    src = ":libcxx.static.stage0_msvc",
     out = "libc++.lib",
     allow_symlink = True,
     visibility = ["//visibility:public"],
 )
 
-cc_runtime_stage1_asan_shared_library(
+cc_runtime_stage1_cxxstdlib_shared_library(
     name = "libcxx.shared.default",
     shared_lib_name = "libc++.so.1",
     user_link_flags = [
@@ -611,7 +610,7 @@ alias(
     name = "libcxx.static",
     actual = select({
         ":windows_msvc": ":libcxx.static.msvc_link_name",
-        "//conditions:default": ":libcxx.static.stage0_asan_inheriting",
+        "//conditions:default": ":libcxx.static.stage0_cxxstdlib",
     }),
     visibility = ["//visibility:public"],
 )

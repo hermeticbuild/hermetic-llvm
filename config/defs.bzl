@@ -15,7 +15,7 @@ FASTBUILD_OPTIMIZATION_MODES = [
     "Oz",
 ]
 
-SANITIZERS = [
+INSTRUMENTATION_SETTINGS = [
     "ubsan",
     "cfi",
     "msan",
@@ -241,16 +241,16 @@ def config_settings():
         build_setting_default = True,
     )
 
-    for sanitizer in SANITIZERS:
+    for setting in INSTRUMENTATION_SETTINGS:
         bool_flag(
-            name = sanitizer,
+            name = setting,
             build_setting_default = False,
         )
         bool_flag(
-            name = "host_{}".format(sanitizer),
+            name = "host_{}".format(setting),
             build_setting_default = False,
         )
-        _declare_sanitizer_config_setting(sanitizer)
+        _declare_sanitizer_config_setting(setting)
 
     # This config setting matches when --fdo_instrument or --cs_fdo_instrument
     # is set, so the profile runtime can be staged for the link.

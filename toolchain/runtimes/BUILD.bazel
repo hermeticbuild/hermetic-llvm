@@ -366,4 +366,5 @@ bzl_library(
     name = "with_cfg_runtimes_common",
     srcs = ["with_cfg_runtimes_common.bzl"],
     visibility = ["//visibility:public"],
+    deps = ["//config:defs"],
 )

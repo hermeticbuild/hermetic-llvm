@@ -21,5 +21,12 @@ int main(void) {
   int poisoned = __asan_address_is_poisoned(buf) != 0;
   __asan_unpoison_memory_region(buf, 16);
   free(buf);
-  return poisoned ? 0 : 1;
+  if (!poisoned) {
+    return 1;
+  }
+  try {
+    throw 42;
+  } catch (int exception) {
+    return exception == 42 ? 0 : 3;
+  }
 }
