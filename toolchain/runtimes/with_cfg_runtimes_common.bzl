@@ -1,4 +1,4 @@
-load("//config:defs.bzl", "SANITIZERS")
+load("//config:defs.bzl", "INSTRUMENTATION_SETTINGS")
 
 # Inherit only the sanitizer settings supported by the C++ standard library
 # runtimes. The caller still decides whether to enable any of them.
@@ -40,12 +40,12 @@ def configure_builder_for_runtimes(builder, runtime_stage, linkmode = "static", 
     )
 
     for sanitizer in inherit_sanitizers:
-        if sanitizer not in SANITIZERS:
+        if sanitizer not in INSTRUMENTATION_SETTINGS:
             fail("Unknown sanitizer to inherit: " + sanitizer)
 
-    for sanitizer in SANITIZERS:
-        if sanitizer not in inherit_sanitizers:
-            builder.set(Label("//config:" + sanitizer), False)
-            builder.set(Label("//config:host_" + sanitizer), False)
+    for setting in INSTRUMENTATION_SETTINGS:
+        if setting not in inherit_sanitizers:
+            builder.set(Label("//config:" + setting), False)
+            builder.set(Label("//config:host_" + setting), False)
 
     return builder
