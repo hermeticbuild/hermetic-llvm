@@ -552,8 +552,7 @@ cc_library(
 )
 
 cc_runtime_stage0_cxxstdlib_static_library(
-    # The generic Stage 0 route inherits the C++ standard library sanitizer settings.
-    name = "libcxx.static.stage0_asan_inheriting",
+    name = "libcxx.static.stage0_cxxstdlib",
     visibility = ["//visibility:public"],
     deps = [
         ":libcxx",
@@ -561,9 +560,9 @@ cc_runtime_stage0_cxxstdlib_static_library(
 )
 
 cc_runtime_stage0_static_library(
-    # The Windows MSVC route deliberately does not inherit ASan. It is the
-    # static libc++ input to the ordinary complete consumer toolchain.
-    name = "libcxx.static.stage0_non_asan",
+    # The Windows MSVC route uses the ordinary stage-0 sanitizer policy,
+    # which clears the caller's sanitizer settings.
+    name = "libcxx.static.stage0_msvc",
     visibility = ["//visibility:public"],
     deps = [
         ":libcxx",
@@ -573,7 +572,7 @@ cc_runtime_stage0_static_library(
 copy_file(
     # lld's MinGW auto-export excludes the runtime by its archive basename.
     name = "libcxx.static.gnu_link_name",
-    src = "libcxx.static.stage0_asan_inheriting",
+    src = "libcxx.static.stage0_cxxstdlib",
     out = "libc++.a",
     allow_symlink = True,
     visibility = ["//visibility:public"],
@@ -582,7 +581,7 @@ copy_file(
 copy_file(
     # The explicit clang-cl C++ runtime link contract names libc++.lib.
     name = "libcxx.static.msvc_link_name",
-    src = ":libcxx.static.stage0_non_asan",
+    src = ":libcxx.static.stage0_msvc",
     out = "libc++.lib",
     allow_symlink = True,
     visibility = ["//visibility:public"],
@@ -611,7 +610,7 @@ alias(
     name = "libcxx.static",
     actual = select({
         ":windows_msvc": ":libcxx.static.msvc_link_name",
-        "//conditions:default": ":libcxx.static.stage0_asan_inheriting",
+        "//conditions:default": ":libcxx.static.stage0_cxxstdlib",
     }),
     visibility = ["//visibility:public"],
 )
