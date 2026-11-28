@@ -1,0 +1,115 @@
+# Lets Clang compile libgcc. GCC builds libgcc with its own xgcc, so these
+# spots rely on GCC-only behavior:
+# - Clang supports neither GCC's %v x86 operand modifier, which adds the VEX
+#   prefix when AVX is enabled, nor %d, which then repeats the operand.
+# - Clang reports __GNUC__ 4.2, so soft-fp.h would call abort () for
+#   unreachable cases instead of __builtin_unreachable ().
+# - Clang's cetintrin.h refuses to be included directly, as
+#   shadow-stack-unwind.h does.
+
+diff --git a/libgcc/config/i386/64/sfp-machine.h b/libgcc/config/i386/64/sfp-machine.h
+--- a/libgcc/config/i386/64/sfp-machine.h
++++ b/libgcc/config/i386/64/sfp-machine.h
+@@ -1,3 +1,12 @@
++/* Clang does not support GCC's %v operand modifier.  */
++#ifndef __clang__
++#define _FP_VEX_PREFIX "%v"
++#elif defined __AVX__
++#define _FP_VEX_PREFIX "v"
++#else
++#define _FP_VEX_PREFIX ""
++#endif
++
+ #define _FP_W_TYPE_SIZE		64
+ #define _FP_W_TYPE		unsigned long long
+ #define _FP_WS_TYPE		signed long long
+@@ -33,6 +42,6 @@ typedef unsigned int UTItype __attribute__ ((mode (TI)));
+ 
+ #define FP_INIT_ROUNDMODE					\
+   do {								\
+-    __asm__ __volatile__ ("%vstmxcsr\t%0" : "=m" (_fcw));	\
++    __asm__ __volatile__ (_FP_VEX_PREFIX "stmxcsr\t%0" : "=m" (_fcw));	\
+   } while (0)
+ #endif
+diff --git a/libgcc/config/i386/sfp-exceptions.c b/libgcc/config/i386/sfp-exceptions.c
+--- a/libgcc/config/i386/sfp-exceptions.c
++++ b/libgcc/config/i386/sfp-exceptions.c
+@@ -41,6 +41,19 @@ struct fenv
+   unsigned short int __unused5;
+ };
+ 
++/* Clang supports neither GCC's %v operand modifier, which adds the VEX
++   prefix when AVX is enabled, nor %d, which then repeats the operand.  */
++#ifndef __clang__
++# define _SFP_DIVSS_SELF "%vdivss\t{%0, %d0|%d0, %0}"
++# define _SFP_DIVSS "%vdivss\t{%1, %d0|%d0, %1}"
++#elif defined __AVX__
++# define _SFP_DIVSS_SELF "vdivss\t{%0, %0, %0|%0, %0, %0}"
++# define _SFP_DIVSS "vdivss\t{%1, %0, %0|%0, %0, %1}"
++#else
++# define _SFP_DIVSS_SELF "divss\t{%0, %0|%0, %0}"
++# define _SFP_DIVSS "divss\t{%1, %0|%0, %1}"
++#endif
++
+ void
+ __sfp_handle_exceptions (int _fex)
+ {
+@@ -48,7 +61,7 @@ __sfp_handle_exceptions (int _fex)
+     {
+       float f = 0.0f;
+ #ifdef __SSE_MATH__
+-      asm volatile ("%vdivss\t{%0, %d0|%d0, %0}" : "+x" (f));
++      asm volatile (_SFP_DIVSS_SELF : "+x" (f));
+ #else
+       asm volatile ("fdiv\t{%y0, %0|%0, %y0}" : "+t" (f));
+       /* No need for fwait, exception is triggered by emitted fstp.  */
+@@ -66,7 +79,7 @@ __sfp_handle_exceptions (int _fex)
+     {
+       float f = 1.0f, g = 0.0f;
+ #ifdef __SSE_MATH__
+-      asm volatile ("%vdivss\t{%1, %d0|%d0, %1}" : "+x" (f) : "xm" (g));
++      asm volatile (_SFP_DIVSS : "+x" (f) : "xm" (g));
+ #else
+       asm volatile ("fdivs\t%1" : "+t" (f) : "m" (g));
+       /* No need for fwait, exception is triggered by emitted fstp.  */
+@@ -92,7 +105,7 @@ __sfp_handle_exceptions (int _fex)
+     {
+       float f = 1.0f, g = 3.0f;
+ #ifdef __SSE_MATH__
+-      asm volatile ("%vdivss\t{%1, %d0|%d0, %1}" : "+x" (f) : "xm" (g));
++      asm volatile (_SFP_DIVSS : "+x" (f) : "xm" (g));
+ #else
+       asm volatile ("fdivs\t%1" : "+t" (f) : "m" (g));
+       /* No need for fwait, exception is triggered by emitted fstp.  */
+diff --git a/libgcc/soft-fp/soft-fp.h b/libgcc/soft-fp/soft-fp.h
+--- a/libgcc/soft-fp/soft-fp.h
++++ b/libgcc/soft-fp/soft-fp.h
+@@ -53,8 +53,9 @@
+ 
+ /* For unreachable default cases in switch statements over bitwise OR
+    of FP_CLS_* values.  */
+-#if (defined __GNUC__							\
+-     && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 5)))
++#if ((defined __GNUC__						\
++      && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 5)))	\
++     || defined __clang__)
+ # define _FP_UNREACHABLE	__builtin_unreachable ()
+ #else
+ # define _FP_UNREACHABLE	abort ()
+diff --git a/libgcc/config/i386/shadow-stack-unwind.h b/libgcc/config/i386/shadow-stack-unwind.h
+--- a/libgcc/config/i386/shadow-stack-unwind.h
++++ b/libgcc/config/i386/shadow-stack-unwind.h
+@@ -27,9 +27,13 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
+    includes <stdlib.h> and <errno.h> unconditionally.  But we can't
+    include any libc system headers unconditionally from libgcc.  Avoid
+    including <mm_malloc.h> here by defining _IMMINTRIN_H_INCLUDED.  */
++/* Clang's cetintrin.h must be included through immintrin.h, so
++   libgcc_clang_compat.h defines _get_ssp and _inc_ssp instead.  */
++#ifndef __clang__
+ #define _IMMINTRIN_H_INCLUDED
+ #include <cetintrin.h>
+ #undef _IMMINTRIN_H_INCLUDED
++#endif
+ 
+ /* Unwind the shadow stack for EH.  */
+ #undef _Unwind_Frames_Extra

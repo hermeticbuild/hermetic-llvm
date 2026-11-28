@@ -130,6 +130,7 @@ def declare_compile_probe(ctx, probe_context, check, extra_inputs = [], extra_fl
             log.path,
             probe_context.source_placeholder,
             probe_context.object_placeholder,
+            getattr(check, "output_regex", ""),
         ] + check.flags + extra_flags + ["--"] + template.command_line,
         env = template.env,
         command = """set -eu
@@ -139,7 +140,12 @@ result="$3"
 log="$4"
 source_placeholder="$5"
 output_placeholder="$6"
-shift 6
+# An extended regular expression the compiler's assembly output must match, or
+# empty. With one, the probe compiles with -S in place of -c, as configure's
+# checks that grep the compiler's output do. It can't use both, because clang
+# with -Werror rejects -c together with -S.
+output_regex="$7"
+shift 7
 extra_flags=()
 while [ "$#" -gt 0 ]; do
     if [ "$1" = "--" ]; then
@@ -167,19 +173,178 @@ for arg in "$@"; do
         "$output_placeholder")
             cmd+=("$object")
             ;;
+        -c)
+            if [ -n "$output_regex" ]; then
+                cmd+=("-S")
+            else
+                cmd+=("$arg")
+            fi
+            ;;
         *)
             cmd+=("$arg")
             ;;
     esac
 done
 
-if "${cmd[@]}" >"$log" 2>&1; then
+if "${cmd[@]}" >"$log" 2>&1 && { [ -z "$output_regex" ] || grep -Eq -- "$output_regex" "$object"; }; then
     echo true > "$result"
 else
     echo false > "$result"
 fi
 """,
         mnemonic = "CcConfigureCompileProbe",
+        toolchain = CC_TOOLCHAIN_TYPE,
+    )
+    return result
+
+def declare_compute_int_probe(ctx, probe_context, check, extra_inputs = [], extra_flags = []):
+    """Finds the value of check.expression by compiling only, like AC_COMPUTE_INT.
+
+    Args:
+      ctx: The rule context.
+      probe_context: From cc_configure_probe_context.
+      check: The decoded compute_int check.
+      extra_inputs: Files the probe's compiles read.
+      extra_flags: Compile flags added before the source.
+
+    Returns:
+      The result file, which holds the value, or nothing when it cannot be
+      computed.
+    """
+    source = _declare_source(ctx, check)
+    stem = ctx.attr.name + "_" + check.name.lower()
+    result = ctx.actions.declare_file(stem + ".result")
+    log = ctx.actions.declare_file(stem + ".log")
+    template = probe_context.compile_templates[check.language]
+
+    ctx.actions.run_shell(
+        inputs = depset(
+            direct = [source] + extra_inputs,
+        ),
+        outputs = [result, log],
+        tools = probe_context.cc_toolchain.all_files,
+        arguments = [
+            template.tool,
+            source.path,
+            result.path,
+            log.path,
+            probe_context.source_placeholder,
+            probe_context.object_placeholder,
+            check.expression,
+            "true" if check.required else "false",
+        ] + check.flags + extra_flags + ["--"] + template.command_line,
+        env = template.env,
+        command = """set -eu
+tool="$1"
+prologue="$2"
+result="$3"
+log="$4"
+source_placeholder="$5"
+output_placeholder="$6"
+expression="$7"
+required="$8"
+shift 8
+extra_flags=()
+while [ "$#" -gt 0 ]; do
+    if [ "$1" = "--" ]; then
+        shift
+        break
+    fi
+    extra_flags+=("$1")
+    shift
+done
+
+tmp="$(mktemp -d "${TMPDIR:-/tmp}/cc-configure-probe.XXXXXXXXXX")"
+trap 'rm -rf "$tmp"' EXIT
+# The same extension as the prologue, which names the check's language.
+source="$tmp/probe.${prologue##*.}"
+object="$tmp/probe.o"
+: > "$log"
+
+# Whether the condition holds: a test array whose size is negative when it
+# doesn't hold compiles only when it does. This is autoconf's
+# _AC_COMPUTE_INT_COMPILE test.
+holds() {
+    {
+        cat "$prologue"
+        printf 'int main (void) { static int test_array [1 - 2 * !(%s)]; test_array [0] = 0; return test_array [0]; }\\n' "$1"
+    } > "$source"
+    cmd=("$tool")
+    for arg in "${args[@]}"; do
+        case "$arg" in
+            "$source_placeholder")
+                cmd+=(${extra_flags[@]+"${extra_flags[@]}"})
+                cmd+=("$source")
+                ;;
+            "$output_placeholder")
+                cmd+=("$object")
+                ;;
+            *)
+                cmd+=("$arg")
+                ;;
+        esac
+    done
+    echo "== $1" >> "$log"
+    "${cmd[@]}" >> "$log" 2>&1
+}
+args=("$@")
+e="($expression)"
+
+# _AC_COMPUTE_INT_COMPILE: find bounds by doubling, then search between them.
+value=
+if holds "$e >= 0"; then
+    lo=0
+    mid=0
+    while :; do
+        if holds "$e <= $mid"; then
+            hi=$mid
+            break
+        fi
+        lo=$((mid + 1))
+        if [ "$lo" -le "$mid" ]; then
+            lo=
+            break
+        fi
+        mid=$((2 * mid + 1))
+    done
+elif holds "$e < 0"; then
+    hi=-1
+    mid=-1
+    while :; do
+        if holds "$e >= $mid"; then
+            lo=$mid
+            break
+        fi
+        hi=$((mid - 1))
+        if [ "$mid" -le "$hi" ]; then
+            lo=
+            break
+        fi
+        mid=$((2 * mid))
+    done
+else
+    lo=
+fi
+if [ -n "${lo}" ]; then
+    while [ "$lo" != "$hi" ]; do
+        mid=$(((hi - lo) / 2 + lo))
+        if holds "$e <= $mid"; then
+            hi=$mid
+        else
+            lo=$((mid + 1))
+        fi
+    done
+    value=$lo
+fi
+
+if [ -z "$value" ] && [ "$required" = true ]; then
+    echo "cannot compute $expression" >&2
+    cat "$log" >&2
+    exit 1
+fi
+printf '%s' "$value" > "$result"
+""",
+        mnemonic = "CcConfigureComputeIntProbe",
         toolchain = CC_TOOLCHAIN_TYPE,
     )
     return result

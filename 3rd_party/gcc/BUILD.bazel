@@ -4,10 +4,25 @@ exports_files([
     "gcc.BUILD.bazel",
 ])
 
+exports_files(
+    ["gcc_config_checks.bzl"],
+    visibility = ["//3rd_party/gcc/libstdcxx/tests:__pkg__"],
+)
+
 filegroup(
     name = "overlay_files",
     srcs = ["gcc.BUILD.bazel"],
     visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "gcc_config_checks",
+    srcs = ["gcc_config_checks.bzl"],
+    visibility = [
+        "//3rd_party/gcc/libgcc:__pkg__",
+        "//3rd_party/gcc/libstdcxx:__pkg__",
+    ],
+    deps = ["//3rd_party/gcc/autoconf:checks"],
 )
 
 bzl_library(

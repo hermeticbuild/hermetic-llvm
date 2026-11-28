@@ -1,0 +1,63 @@
+name: libgcc
+# //runtimes/libgcc/... builds libgcc and libstdc++ from every GCC version in
+# GCC_VERSIONS, about 73,000 actions on x86-64 when the cache misses. Pull
+# requests and pushes therefore run it only when they change GCC, the libgcc or
+# libstdc++ ports, MODULE.bazel (which pins LLVM and the other dependencies) or
+# this workflow. The nightly run catches changes elsewhere that break a
+# version, such as a toolchain flag, and keeps the cache warm.
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/libgcc.yml"
+      - "3rd_party/gcc/**"
+      - "MODULE.bazel"
+      - "runtimes/libgcc/**"
+      - "runtimes/libstdcxx/**"
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/libgcc.yml"
+      - "3rd_party/gcc/**"
+      - "MODULE.bazel"
+      - "runtimes/libgcc/**"
+      - "runtimes/libstdcxx/**"
+  schedule:
+    - cron: "0 5 * * *"
+  workflow_dispatch:
+concurrency:
+  group: concurrency-group::${{ github.workflow }}::${{ github.event.pull_request.number > 0 && format('pr-{0}', github.event.pull_request.number) || github.ref_name }}${{ github.ref_name == 'main' && format('::{0}', github.run_id) || ''}}
+  cancel-in-progress: ${{ github.ref_name != 'main' }}
+jobs:
+  # The x86-64 runner tests libgcc for every GCC version that builds it, and
+  # AArch64 under qemu-user. The AArch64 runner tests AArch64 natively.
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.os }}
+    environment: ${{ github.ref == 'refs/heads/main' && 'ci' || '' }}
+    name: Test //runtimes/libgcc/... on ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: ./.github/actions/buildbuddy-api-key
+        with:
+          api-key: ${{ github.ref == 'refs/heads/main' && secrets.BUILDBUDDY_CI_API_KEY || '' }}
+
+      # The GCC source archives add up to about 4 GiB, so this job keeps no
+      # repository cache, on disk or in the Actions cache.
+      - name: bazel test //runtimes/libgcc/...
+        env:
+          USE_BAZEL_VERSION: 9.x
+        shell: bash
+        run: |
+          bazel \
+            --bazelrc=$GITHUB_WORKSPACE/.github/workflows/ci.bazelrc \
+            --bazelrc=.bazelrc \
+            test \
+            --repository_cache= \
+            --repo_contents_cache= \
+            //runtimes/libgcc/...

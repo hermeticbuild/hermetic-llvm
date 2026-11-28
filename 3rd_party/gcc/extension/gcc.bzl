@@ -6,8 +6,11 @@ load(
     "GCC_RELEASES",
     "GCC_VERSIONS",
     "gcc_has_config_toolexeclibdir_m4",
+    "gcc_has_libgcc",
     "gcc_patches",
     "gcc_repo_name",
+    "gcc_version_at_least_for",
+    "libgcc_cpus",
 )
 
 # Sparse archive roots required by 3rd_party/gcc/gcc.BUILD.bazel. Before
@@ -53,6 +56,53 @@ _GCC_ARCHIVE_INCLUDES = [
     "libstdc++-v3/libsupc++/**",
     "libstdc++-v3/src/**",
 ]
+
+# For GCC versions that build libgcc: libgcc, and the GCC headers its tm.h and
+# sources include. Compare with libgcc/Makefile.in's INCLUDES and the tm_file
+# lists in 3rd_party/gcc/libgcc/target_config.bzl before trimming.
+_LIBGCC_ARCHIVE_INCLUDES = [
+    "libgcc/**",
+    "gcc/config.gcc",
+    "gcc/coretypes.h",
+    "gcc/defaults.h",
+    "gcc/tsystem.h",
+    "gcc/config/*.h",
+    "include/dwarf2.def",
+    "include/dwarf2.h",
+    "include/filenames.h",
+    "include/hashtab.h",
+    "include/longlong.h",
+]
+
+# The GCC config headers of each CPU that libgcc builds for. A version's
+# archive has only the CPUs the version builds libgcc for.
+_LIBGCC_CPU_ARCHIVE_INCLUDES = {
+    "aarch64": [
+        "gcc/common/config/aarch64/*.h",
+        "gcc/config/aarch64/*.def",
+        "gcc/config/aarch64/*.h",
+    ],
+    "x86_64": [
+        "gcc/config/i386/*.def",
+        "gcc/config/i386/*.h",
+    ],
+}
+
+# libgcc's config/i386/cpuinfo.c includes gcc/common/config/i386's headers from
+# GCC 11. GCC 10.2.0 and older have no header there for the pattern to match.
+_LIBGCC_GCC11_CPU_ARCHIVE_INCLUDES = {
+    "x86_64": ["gcc/common/config/i386/*.h"],
+}
+
+def _libgcc_archive_includes(version):
+    if not gcc_has_libgcc(version):
+        return []
+    includes = list(_LIBGCC_ARCHIVE_INCLUDES)
+    for cpu in libgcc_cpus(version):
+        includes += _LIBGCC_CPU_ARCHIVE_INCLUDES[cpu]
+        if gcc_version_at_least_for(version, "11.0.0"):
+            includes += _LIBGCC_GCC11_CPU_ARCHIVE_INCLUDES.get(cpu, [])
+    return includes
 
 _GCC_10_ARCHIVE_INCLUDES = [
     "config/toolexeclibdir.m4",
@@ -102,7 +152,7 @@ def _gcc_impl(module_ctx):
                 generated_files = {
                     "version.bzl": "GCC_VERSION = \"{}\"\n".format(version),
                 },
-                includes = _GCC_ARCHIVE_INCLUDES + (_GCC_10_ARCHIVE_INCLUDES if gcc_has_config_toolexeclibdir_m4(version) else []),
+                includes = _GCC_ARCHIVE_INCLUDES + (_GCC_10_ARCHIVE_INCLUDES if gcc_has_config_toolexeclibdir_m4(version) else []) + _libgcc_archive_includes(version),
                 patch_args = ["-p1"],
                 patches = [Label(patch) for patch in gcc_patches(version)],
                 sha256 = release["sha256"],

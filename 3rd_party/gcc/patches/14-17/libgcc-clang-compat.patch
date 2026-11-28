@@ -1,0 +1,104 @@
+# Lets Clang compile libgcc. GCC builds libgcc with its own xgcc, so these
+# spots rely on GCC-only behavior:
+# - Clang maps mode (HF) to the storage-only __fp16 type and rejects mode (BF),
+#   so the half and bfloat16 types are spelled _Float16 and __bf16.
+# - Clang does not support GCC's %v x86 operand modifier, which adds the VEX
+#   prefix when AVX is enabled.
+# - Clang reports __GNUC__ 4.2, so soft-fp.h would call abort () for
+#   unreachable cases instead of __builtin_unreachable ().
+
+diff --git a/libgcc/config/i386/64/sfp-machine.h b/libgcc/config/i386/64/sfp-machine.h
+index 1c8e8a5..f1630dd 100644
+--- a/libgcc/config/i386/64/sfp-machine.h
++++ b/libgcc/config/i386/64/sfp-machine.h
+@@ -1,3 +1,12 @@
++/* Clang does not support GCC's %v operand modifier.  */
++#ifndef __clang__
++#define _FP_VEX_PREFIX "%v"
++#elif defined __AVX__
++#define _FP_VEX_PREFIX "v"
++#else
++#define _FP_VEX_PREFIX ""
++#endif
++
+ #define _FP_W_TYPE_SIZE		64
+ #define _FP_W_TYPE		unsigned long long
+ #define _FP_WS_TYPE		signed long long
+@@ -35,6 +44,6 @@ typedef unsigned int UTItype __attribute__ ((mode (TI)));
+ 
+ #define FP_INIT_ROUNDMODE					\
+   do {								\
+-    __asm__ __volatile__ ("%vstmxcsr\t%0" : "=m" (_fcw));	\
++    __asm__ __volatile__ (_FP_VEX_PREFIX "stmxcsr\t%0" : "=m" (_fcw));	\
+   } while (0)
+ #endif
+diff --git a/libgcc/libgcc2.h b/libgcc/libgcc2.h
+index 79185d8..b67aa16 100644
+--- a/libgcc/libgcc2.h
++++ b/libgcc/libgcc2.h
+@@ -143,9 +143,15 @@ typedef unsigned int UTItype	__attribute__ ((mode (TI)));
+ #endif
+ 
+ #if LIBGCC2_HAS_HF_MODE
++#ifdef __clang__
++/* Clang maps mode (HF) to the storage-only __fp16 type.  */
++typedef		_Float16 HFtype;
++typedef _Complex _Float16 HCtype;
++#else
+ typedef		float HFtype	__attribute__ ((mode (HF)));
+ typedef _Complex float HCtype	__attribute__ ((mode (HC)));
+ #endif
++#endif
+ #if LIBGCC2_HAS_SF_MODE
+ typedef 	float SFtype	__attribute__ ((mode (SF)));
+ typedef _Complex float SCtype	__attribute__ ((mode (SC)));
+diff --git a/libgcc/soft-fp/brain.h b/libgcc/soft-fp/brain.h
+index c8563ef..ed549c8 100644
+--- a/libgcc/soft-fp/brain.h
++++ b/libgcc/soft-fp/brain.h
+@@ -59,7 +59,12 @@
+ /* The implementation of _FP_MUL_MEAT_B and _FP_DIV_MEAT_B should be
+    chosen by the target machine.  */
+ 
++#ifdef __clang__
++/* Clang does not support mode (BF).  */
++typedef __bf16 BFtype;
++#else
+ typedef float BFtype __attribute__ ((mode (BF)));
++#endif
+ 
+ union _FP_UNION_B
+ {
+diff --git a/libgcc/soft-fp/half.h b/libgcc/soft-fp/half.h
+index a8c5c31..ff5adf5 100644
+--- a/libgcc/soft-fp/half.h
++++ b/libgcc/soft-fp/half.h
+@@ -59,7 +59,12 @@
+ /* The implementation of _FP_MUL_MEAT_H and _FP_DIV_MEAT_H should be
+    chosen by the target machine.  */
+ 
++#ifdef __clang__
++/* Clang maps mode (HF) to the storage-only __fp16 type.  */
++typedef _Float16 HFtype;
++#else
+ typedef float HFtype __attribute__ ((mode (HF)));
++#endif
+ 
+ union _FP_UNION_H
+ {
+diff --git a/libgcc/soft-fp/soft-fp.h b/libgcc/soft-fp/soft-fp.h
+index 3799be4..3c060ea 100644
+--- a/libgcc/soft-fp/soft-fp.h
++++ b/libgcc/soft-fp/soft-fp.h
+@@ -49,8 +49,9 @@
+ 
+ /* For unreachable default cases in switch statements over bitwise OR
+    of FP_CLS_* values.  */
+-#if (defined __GNUC__							\
+-     && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 5)))
++#if ((defined __GNUC__						\
++      && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 5)))	\
++     || defined __clang__)
+ # define _FP_UNREACHABLE	__builtin_unreachable ()
+ #else
+ # define _FP_UNREACHABLE	abort ()

@@ -1,0 +1,48 @@
+load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+
+package(default_visibility = ["//visibility:public"])
+
+# The configure inventory test reads the status files and the port files they
+# name.
+exports_files(
+    [
+        "configure.ac.bzl",
+        "configure_define_status.txt",
+        "configure_subst_status.txt",
+        "makefile.bzl",
+        "target_config.bzl",
+    ],
+    visibility = ["//runtimes/libgcc/tests:__pkg__"],
+)
+
+bzl_library(
+    name = "libgcc_rules",
+    srcs = ["libgcc_rules.bzl"],
+    deps = [
+        "@rules_cc//cc:action_names_bzl",
+        "@rules_cc//cc:find_cc_toolchain_bzl",
+        "@rules_cc//cc/common",
+    ],
+)
+
+bzl_library(
+    name = "configure.ac",
+    srcs = ["configure.ac.bzl"],
+    deps = [
+        "//3rd_party/gcc:gcc_config_checks",
+        "//3rd_party/gcc:version",
+        "//3rd_party/gcc/autoconf:checks",
+    ],
+)
+
+bzl_library(
+    name = "makefile",
+    srcs = ["makefile.bzl"],
+    deps = ["//3rd_party/gcc:version"],
+)
+
+bzl_library(
+    name = "target_config",
+    srcs = ["target_config.bzl"],
+    deps = ["//3rd_party/gcc:version"],
+)

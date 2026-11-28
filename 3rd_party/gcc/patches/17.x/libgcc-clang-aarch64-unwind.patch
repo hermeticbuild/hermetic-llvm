@@ -1,0 +1,116 @@
+# Lets libgcc's unwinder reach a handler on AArch64 when Clang compiles it.
+# GCC's uw_install_context stores the handler's registers into its caller's
+# save slots and returns through __builtin_eh_return, which Clang does not
+# implement for AArch64. Under Clang, it loads those registers from the
+# target context with inline assembly and branches to the handler instead.
+# uw_init_context_1 tracks x0-x3 by value, since the frame has no slots for
+# them without __builtin_eh_return.
+
+diff --git a/libgcc/unwind-dw2.c b/libgcc/unwind-dw2.c
+index 14b08d0..ca55c78 100644
+--- a/libgcc/unwind-dw2.c
++++ b/libgcc/unwind-dw2.c
+@@ -1362,6 +1362,15 @@ uw_init_context_1 (struct _Unwind_Context *context,
+ 
+   uw_update_context_1 (context, &fs);
+ 
++#if defined __clang__ && defined __aarch64__
++  /* A function that calls __builtin_eh_return saves the EH data registers
++     x0-x3, and the personality routine sets them through those slots.
++     Clang does not implement __builtin_eh_return for AArch64, so this
++     frame has no slots for them.  Track them by value instead.  */
++  for (int i = 0; i < 4; i++)
++    _Unwind_SetGRValue (context, i, 0);
++#endif
++
+   /* If the return address column was saved in a register in the
+      initialization context, then we can't see it in the given
+      call frame data.  So have the initialization context tell us.  */
+@@ -1395,6 +1404,79 @@ _Unwind_DebugHook (void *cfa __attribute__ ((__unused__)),
+    if needed, for example shadow stack pointer adjustment for Intel CET
+    technology.  */
+ 
++#if defined __clang__ && defined __aarch64__
++/* Clang does not implement __builtin_eh_return for AArch64.  Instead,
++   load what GCC's eh_return epilogue restores from TARGET: the EH data
++   registers x0-x3, the callee-saved x19-x29 and d8-d15, the link register
++   x30, and sp.  Then branch to the handler, as that epilogue does.  The
++   assembly is expanded in the caller of uw_install_context, because
++   calling a function for it would push a guarded control stack entry that
++   is never popped.  */
++
++struct uw_install_regs
++{
++  _Unwind_Word x0[4];		/* x0-x3, at offset 0.  */
++  _Unwind_Word x19[12];		/* x19-x30, at offset 32.  */
++  _Unwind_Word d8[8];		/* d8-d15, at offset 128.  */
++  _Unwind_Word sp;		/* At offset 192.  */
++  _Unwind_Word pc;		/* At offset 200.  */
++};
++
++static void
++uw_install_context_regs (struct _Unwind_Context *target, void *handler,
++			 struct uw_install_regs *regs)
++{
++  int i;
++
++  for (i = 0; i < 4; i++)
++    regs->x0[i] = _Unwind_GetGR (target, i);
++  for (i = 0; i < 12; i++)
++    regs->x19[i] = _Unwind_GetGR (target, 19 + i);
++  for (i = 0; i < 8; i++)
++    regs->d8[i] = _Unwind_GetGR (target, 72 + i);
++
++  /* The stack pointer GCC's epilogue sets from the offset that
++     uw_install_context_1 returns: the target's sp, or its CFA when sp is
++     not saved, plus args_size.  */
++  if (_Unwind_GetGRPtr (target, __builtin_dwarf_sp_column ()))
++    regs->sp = _Unwind_GetGR (target, __builtin_dwarf_sp_column ());
++  else
++    regs->sp = (_Unwind_Ptr) target->cfa;
++  regs->sp += target->args_size;
++  regs->pc = (_Unwind_Ptr) handler;
++}
++
++#define uw_install_context(CURRENT, TARGET, FRAMES)			\
++  do									\
++    {									\
++      struct uw_install_regs uw_regs;					\
++      void *handler = __builtin_frob_return_addr ((TARGET)->ra);	\
++      uw_install_context_regs ((TARGET), handler, &uw_regs);		\
++      _Unwind_DebugHook ((TARGET)->cfa, handler);			\
++      _Unwind_Frames_Extra (FRAMES);					\
++      register struct uw_install_regs *uw_regs_x0 __asm__ ("x0")	\
++	= &uw_regs;							\
++      /* Load sp last, as the buffer is below the target's stack.  */	\
++      __asm__ __volatile__ ("ldp\tx19, x20, [x0, #32]\n\t"		\
++			    "ldp\tx21, x22, [x0, #48]\n\t"		\
++			    "ldp\tx23, x24, [x0, #64]\n\t"		\
++			    "ldp\tx25, x26, [x0, #80]\n\t"		\
++			    "ldp\tx27, x28, [x0, #96]\n\t"		\
++			    "ldp\tx29, x30, [x0, #112]\n\t"		\
++			    "ldp\td8, d9, [x0, #128]\n\t"		\
++			    "ldp\td10, d11, [x0, #144]\n\t"		\
++			    "ldp\td12, d13, [x0, #160]\n\t"		\
++			    "ldp\td14, d15, [x0, #176]\n\t"		\
++			    "ldp\tx16, x17, [x0, #192]\n\t"		\
++			    "ldp\tx2, x3, [x0, #16]\n\t"		\
++			    "ldp\tx0, x1, [x0]\n\t"			\
++			    "mov\tsp, x16\n\t"				\
++			    "br\tx17"					\
++			    : : "r" (uw_regs_x0) : "memory");		\
++      __builtin_unreachable ();						\
++    }									\
++  while (0)
++#else
+ #define uw_install_context(CURRENT, TARGET, FRAMES)			\
+   do									\
+     {									\
+@@ -1466,6 +1548,7 @@ uw_install_context_1 (struct _Unwind_Context *current,
+     }
+   return 0;
+ }
++#endif
+ 
+ static inline _Unwind_Ptr
+ uw_identify_context (struct _Unwind_Context *context)

@@ -294,7 +294,189 @@ def gcc_patches(version):
     return GCC_PATCHES.get(version, []) + [
         _libstdcxx_patch(filesystem_patch),
         _libstdcxx_patch("libstdcxx-filesystem-ts-dir-namespace.patch"),
-    ]
+    ] + LIBGCC_PATCHES.get(version, [])
+
+# The GCC versions whose libgcc is built from source, each with the Linux CPUs
+# it is built for. Other versions and CPUs keep LLVM's libunwind and
+# compiler-rt with libstdc++.
+LIBGCC_TARGETS = {
+    "17.0.0": [
+        "aarch64",
+        "x86_64",
+    ],
+    "16.1.0": ["x86_64"],
+    "15.2.0": ["x86_64"],
+    "15.1.0": ["x86_64"],
+    "14.3.0": ["x86_64"],
+    "14.2.0": ["x86_64"],
+    "13.4.0": ["x86_64"],
+    "13.3.0": ["x86_64"],
+    "13.2.0": ["x86_64"],
+    "13.1.0": ["x86_64"],
+    "12.5.0": ["x86_64"],
+    "12.4.0": ["x86_64"],
+    "12.3.0": ["x86_64"],
+    "12.2.0": ["x86_64"],
+    "12.1.0": ["x86_64"],
+    "11.5.0": ["x86_64"],
+    "11.4.0": ["x86_64"],
+    "11.3.0": ["x86_64"],
+    "11.2.0": ["x86_64"],
+    "11.1.0": ["x86_64"],
+    "10.5.0": ["x86_64"],
+    "10.4.0": ["x86_64"],
+    "10.3.0": ["x86_64"],
+    "10.2.0": ["x86_64"],
+    "10.1.0": ["x86_64"],
+    "9.5.0": ["x86_64"],
+    "9.4.0": ["x86_64"],
+    "9.3.0": ["x86_64"],
+    "9.2.0": ["x86_64"],
+    "9.1.0": ["x86_64"],
+    "8.5.0": ["x86_64"],
+    "8.4.0": ["x86_64"],
+    "8.3.0": ["x86_64"],
+    "8.2.0": ["x86_64"],
+    "8.1.0": ["x86_64"],
+}
+
+LIBGCC_VERSIONS = [version for version in GCC_VERSIONS if version in LIBGCC_TARGETS]
+
+def libgcc_cpus(version):
+    """The Linux CPUs whose libgcc is built from this GCC version's sources."""
+    return LIBGCC_TARGETS.get(version, [])
+
+LIBGCC_PATCHES = {
+    "17.0.0": [
+        _libstdcxx_patch("14-17/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("17.x/libgcc-clang-aarch64-unwind.patch"),
+    ],
+    "16.1.0": [
+        _libstdcxx_patch("14-17/libgcc-clang-compat.patch"),
+    ],
+    "15.2.0": [
+        _libstdcxx_patch("14-17/libgcc-clang-compat.patch"),
+    ],
+    "15.1.0": [
+        _libstdcxx_patch("14-17/libgcc-clang-compat.patch"),
+    ],
+    "14.3.0": [
+        _libstdcxx_patch("14-17/libgcc-clang-compat.patch"),
+    ],
+    "14.2.0": [
+        _libstdcxx_patch("14-17/libgcc-clang-compat.patch"),
+    ],
+    "13.4.0": [
+        _libstdcxx_patch("13.x/libgcc-clang-compat.patch"),
+    ],
+    "13.3.0": [
+        _libstdcxx_patch("13.x/libgcc-clang-compat.patch"),
+    ],
+    "13.2.0": [
+        _libstdcxx_patch("13.x/libgcc-clang-compat.patch"),
+    ],
+    "13.1.0": [
+        _libstdcxx_patch("13.x/libgcc-clang-compat.patch"),
+    ],
+    "12.5.0": [
+        _libstdcxx_patch("12.x/libgcc-clang-compat.patch"),
+    ],
+    "12.4.0": [
+        _libstdcxx_patch("12.x/libgcc-clang-compat.patch"),
+    ],
+    "12.3.0": [
+        _libstdcxx_patch("12.x/libgcc-clang-compat.patch"),
+    ],
+    "12.2.0": [
+        _libstdcxx_patch("12.x/libgcc-clang-compat.patch"),
+    ],
+    "12.1.0": [
+        _libstdcxx_patch("12.x/libgcc-clang-compat.patch"),
+    ],
+    "11.5.0": [
+        _libstdcxx_patch("11.x/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("8-11/libgcc-morestack-init-array.patch"),
+    ],
+    "11.4.0": [
+        _libstdcxx_patch("11.x/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("8-11/libgcc-morestack-init-array.patch"),
+    ],
+    "11.3.0": [
+        _libstdcxx_patch("11.x/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("8-11/libgcc-morestack-init-array.patch"),
+    ],
+    "11.2.0": [
+        _libstdcxx_patch("11.x/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("8-11/libgcc-morestack-init-array.patch"),
+    ],
+    "11.1.0": [
+        _libstdcxx_patch("11.x/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("8-11/libgcc-morestack-init-array.patch"),
+    ],
+    "10.5.0": [
+        _libstdcxx_patch("9.4-10/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("8-11/libgcc-morestack-init-array.patch"),
+    ],
+    "10.4.0": [
+        _libstdcxx_patch("9.4-10/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("8-11/libgcc-morestack-init-array.patch"),
+    ],
+    "10.3.0": [
+        _libstdcxx_patch("9.4-10/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("8-11/libgcc-morestack-init-array.patch"),
+    ],
+    "10.2.0": [
+        _libstdcxx_patch("9.4-10/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("8-11/libgcc-morestack-init-array.patch"),
+    ],
+    "10.1.0": [
+        _libstdcxx_patch("9.4-10/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("8-11/libgcc-morestack-init-array.patch"),
+    ],
+    "9.5.0": [
+        _libstdcxx_patch("9.4-10/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("8-11/libgcc-morestack-init-array.patch"),
+    ],
+    "9.4.0": [
+        _libstdcxx_patch("9.4-10/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("8-11/libgcc-morestack-init-array.patch"),
+    ],
+    "9.3.0": [
+        _libstdcxx_patch("9.1-9.3/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("8-11/libgcc-morestack-init-array.patch"),
+    ],
+    "9.2.0": [
+        _libstdcxx_patch("9.1-9.3/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("8-11/libgcc-morestack-init-array.patch"),
+    ],
+    "9.1.0": [
+        _libstdcxx_patch("9.1-9.3/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("8-11/libgcc-morestack-init-array.patch"),
+    ],
+    "8.5.0": [
+        _libstdcxx_patch("8.5.0/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("8-11/libgcc-morestack-init-array.patch"),
+    ],
+    "8.4.0": [
+        _libstdcxx_patch("8.1-8.4/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("8-11/libgcc-morestack-init-array.patch"),
+    ],
+    "8.3.0": [
+        _libstdcxx_patch("8.1-8.4/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("8-11/libgcc-morestack-init-array.patch"),
+    ],
+    "8.2.0": [
+        _libstdcxx_patch("8.1-8.4/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("8-11/libgcc-morestack-init-array.patch"),
+    ],
+    "8.1.0": [
+        _libstdcxx_patch("8.1-8.4/libgcc-clang-compat.patch"),
+        _libstdcxx_patch("8-11/libgcc-morestack-init-array.patch"),
+    ],
+}
+
+def gcc_has_libgcc(version):
+    return version in LIBGCC_TARGETS
 
 def gcc_version_at_least(version):
     return gcc_version_at_least_for(GCC_VERSION, version)

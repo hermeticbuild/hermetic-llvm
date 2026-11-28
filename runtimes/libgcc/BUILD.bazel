@@ -1,0 +1,112 @@
+load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@bazel_skylib//lib:selects.bzl", "selects")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("//3rd_party/gcc:version.bzl", "LIBGCC_VERSIONS", "gcc_target_suffix", "libgcc_cpus", "libstdcxx_constraint_label")
+
+package(default_visibility = ["//visibility:public"])
+
+# libgcc built from the selected libstdc++'s GCC sources, for the GCC versions
+# and Linux CPUs in LIBGCC_TARGETS.
+[
+    selects.config_setting_group(
+        name = "libgcc_cpu_" + gcc_target_suffix(version),
+        match_any = ["@platforms//cpu:" + cpu for cpu in libgcc_cpus(version)],
+    )
+    for version in LIBGCC_VERSIONS
+]
+
+[
+    selects.config_setting_group(
+        name = "libgcc_from_" + gcc_target_suffix(version),
+        match_all = [
+            libstdcxx_constraint_label(version),
+            ":libgcc_cpu_" + gcc_target_suffix(version),
+            "@platforms//os:linux",
+        ],
+    )
+    for version in LIBGCC_VERSIONS
+]
+
+selects.config_setting_group(
+    name = "libgcc_from_gcc",
+    match_any = [":libgcc_from_" + gcc_target_suffix(version) for version in LIBGCC_VERSIONS],
+)
+
+alias(
+    name = "libgcc.static",
+    actual = "@gcc//:libgcc.static",
+)
+
+alias(
+    name = "libgcc_eh.static",
+    actual = "@gcc//:libgcc_eh.static",
+)
+
+alias(
+    name = "libgcc_s.shared",
+    actual = "@gcc//:libgcc_s.shared",
+)
+
+# GCC's driver links -lgcc -lgcc_eh for static links.
+filegroup(
+    name = "static_runtime_libs",
+    srcs = [
+        ":libgcc.static",
+        ":libgcc_eh.static",
+    ],
+)
+
+# For dynamic links GCC's driver passes -lgcc_s, and GCC installs libgcc_s.so
+# as this linker script (libgcc/config/t-slibgcc-libgcc). Bazel emits
+# libgcc_s.so as -lgcc_s too, and the link finds the script in
+# :libgcc_library_search_directory. A -lgcc_s from rustc should find it the same
+# way (inferred from the -L order, not tested). Bazel drops static archives from
+# the dynamic runtime libraries, so the directory also holds libgcc.a for the
+# script's -lgcc.
+write_file(
+    name = "libgcc_s_linker_script",
+    out = "libgcc_s.so",
+    content = [
+        "/* GNU ld script",
+        "   Use the shared library, but some functions are only in",
+        "   the static library.  */",
+        "GROUP ( libgcc_s.so.1 -lgcc )",
+        "",
+    ],
+)
+
+filegroup(
+    name = "dynamic_runtime_libs",
+    srcs = [
+        ":libgcc_s.shared",
+        ":libgcc_s_linker_script",
+    ],
+)
+
+# The libraries in GCC's library directory, under the names its driver links.
+copy_to_directory(
+    name = "libgcc_library_search_directory",
+    srcs = [
+        ":libgcc.static",
+        ":libgcc_eh.static",
+        ":libgcc_s.shared",
+        ":libgcc_s_linker_script",
+    ],
+    include_external_repositories = ["**"],
+    replace_prefixes = {
+        "libgcc.static_/liblibgcc.static.a": "libgcc.a",
+        "libgcc_eh.static_/liblibgcc_eh.static.a": "libgcc_eh.a",
+    },
+)
+
+# //toolchain:libgcc_library_search_paths adds the directory only to links in
+# the complete runtime stage, and //runtimes/libunwind leaves out its stub
+# libgcc_s in that stage. libgcc builds with the earlier-stage toolchains, so
+# adding the directory to their links would make libgcc depend on itself.
+selects.config_setting_group(
+    name = "libgcc_library_search_path_enabled",
+    match_all = [
+        ":libgcc_from_gcc",
+        "//toolchain:runtimes_all",
+    ],
+)

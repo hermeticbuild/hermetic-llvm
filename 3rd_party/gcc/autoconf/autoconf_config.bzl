@@ -2,7 +2,8 @@
 #
 # This rule consumes JSON check declarations from checks.bzl and emits ordered
 # result metadata for header renderers. It is intentionally generic so the
-# libstdc++ source-counterpart files only declare GCC configure checks.
+# libstdc++ and libgcc source-counterpart files only declare GCC configure
+# checks.
 
 load("@llvm//toolchain/runtimes:with_cfg_runtimes_common.bzl", "configure_builder_for_runtimes")
 load("@with_cfg.bzl", "with_cfg")
@@ -11,6 +12,7 @@ load(
     "cc_configure_probe_context",
     "cc_configure_probe_toolchains",
     "declare_compile_probe",
+    "declare_compute_int_probe",
     "declare_link_probe",
 )
 load(":providers.bzl", "AutoconfConfigInfo", "AutoconfResultInfo")
@@ -105,6 +107,14 @@ def _autoconf_config_impl(ctx):
                 extra_inputs = extra_inputs,
                 compile_extra_flags = extra_flags,
             )
+        elif check_type == "compute_int":
+            result = declare_compute_int_probe(
+                ctx = ctx,
+                probe_context = probe_context,
+                check = check,
+                extra_inputs = extra_inputs,
+                extra_flags = extra_flags,
+            )
         elif check_type in ["define", "string_define", "undef"]:
             result = None
         else:
@@ -129,7 +139,7 @@ _autoconf_config = rule(
     implementation = _autoconf_config_impl,
     attrs = {
         "checks": attr.string_list(
-            doc = "JSON-encoded checks from //3rd_party/gcc/libstdcxx/autoconf:checks.bzl.",
+            doc = "JSON-encoded checks from //3rd_party/gcc/autoconf:checks.bzl.",
             default = [],
         ),
         "probe_context_include_root_markers": attr.string_dict(

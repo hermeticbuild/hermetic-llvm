@@ -196,9 +196,9 @@ _GLIBCXX_PTRDIFF_T_IS_INT target-derived
 _GLIBCXX_RES_LIMITS policy-modeled
 _GLIBCXX_SIZE_T_IS_UINT target-derived
 _GLIBCXX_STATIC_TZDATA policy-modeled gcc_ge_13
-_GLIBCXX_STDIO_EOF policy-modeled
-_GLIBCXX_STDIO_SEEK_CUR policy-modeled
-_GLIBCXX_STDIO_SEEK_END policy-modeled
+_GLIBCXX_STDIO_EOF probe-modeled
+_GLIBCXX_STDIO_SEEK_CUR probe-modeled
+_GLIBCXX_STDIO_SEEK_END probe-modeled
 _GLIBCXX_SYMVER policy-modeled
 _GLIBCXX_SYMVER_DARWIN target-derived
 _GLIBCXX_SYMVER_GNU policy-modeled

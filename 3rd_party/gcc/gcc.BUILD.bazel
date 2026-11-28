@@ -2,7 +2,13 @@ load("@bazel_lib//lib:copy_file.bzl", "copy_file")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
-load("@llvm//3rd_party/gcc:version.bzl", "gcc_config_toolexeclibdir_target", "gcc_version_at_least_for", "gcc_version_less_than_for")
+load("@llvm//3rd_party/gcc:version.bzl", "gcc_config_toolexeclibdir_target", "gcc_has_libgcc", "gcc_version_at_least_for", "gcc_version_less_than_for", "libgcc_cpus")
+load("@llvm//3rd_party/gcc/autoconf:autoconf_config.bzl", "autoconf_config")
+load("@llvm//3rd_party/gcc/autoconf:autoconf_hdr.bzl", "autoconf_hdr")
+load("@llvm//3rd_party/gcc/libgcc:configure.ac.bzl", "libgcc_auto_target_checks", "libgcc_configure_cflags_checks")
+load("@llvm//3rd_party/gcc/libgcc:libgcc_rules.bzl", "libgcc_hide_lists", "libgcc_version_script", "libgcc_wrappers")
+load("@llvm//3rd_party/gcc/libgcc:makefile.bzl", "libgcc_cc_groups", "libgcc_objects")
+load("@llvm//3rd_party/gcc/libgcc:target_config.bzl", "libgcc_header_contents", "libgcc_header_links", "libgcc_shlib_mapfiles", "libgcc_target_copts")
 load("@llvm//3rd_party/gcc/libstdcxx:libstdcxx_config_h.bzl", "libstdcxx_config_h")
 load("@llvm//3rd_party/gcc/libstdcxx:libstdcxx_cxxconfig_header.bzl", "libstdcxx_cxxconfig_header")
 load("@llvm//3rd_party/gcc/libstdcxx:libstdcxx_gthr_headers.bzl", "libstdcxx_gthr_headers")
@@ -1721,6 +1727,14 @@ cc_runtime_stage0_static_library(
 cc_runtime_stage1_shared_library(
     name = "libstdc++.so.6",
     additional_linker_inputs = [":libstdcxx_symbols_ver"],
+    # Where libgcc is built from this GCC, libstdc++.so.6 needs libgcc_s.so.1
+    # for the unwinder, as GCC links it.
+    dynamic_deps = select({
+        "@platforms//cpu:" + cpu: [":libgcc_s.so.1"]
+        for cpu in libgcc_cpus(GCC_VERSION)
+    } | {
+        "//conditions:default": [],
+    }),
     shared_lib_name = "libstdc++.so.6",
     user_link_flags = [
         "-Wl,-soname,libstdc++.so.6",
@@ -1881,4 +1895,412 @@ copy_to_directory(
     replace_prefixes = {
         "gcc_config_generated": "config",
     },
+)
+
+# The inputs of //runtimes/libgcc/tests:configure_*: gcc/config.gcc and
+# libgcc/config.host, with the files that configure checks for after running
+# them, and libgcc/config.in and libgcc/Makefile.in, which list what configure
+# can write.
+copy_to_directory(
+    name = "libgcc_configure_inputs",
+    srcs = [
+        "gcc/config.gcc",
+        "libgcc/Makefile.in",
+        "libgcc/config.host",
+        "libgcc/config.in",
+    ] + glob([
+        "libgcc/config/**/t-*",
+        "libgcc/config/*/sfp-machine.h",
+    ]) if gcc_has_libgcc(GCC_VERSION) else [],
+    visibility = ["//visibility:public"],
+)
+
+# libgcc: libgcc.a, libgcc_eh.a and libgcc_s.so.1, compiled with the
+# toolchain's Clang for the GCC versions and CPUs in LIBGCC_TARGETS.
+# @llvm//3rd_party/gcc/libgcc:makefile.bzl ports the object lists from GCC's
+# libgcc/Makefile.in and the tmake fragments that libgcc/config.host selects,
+# and target_config.bzl in the same package provides the headers that GCC's
+# build directory and libgcc's configure write. Each CPU gets its own headers
+# and objects, named after it, and the libraries select them.
+# Objects build once per runtime link mode, as libstdc++'s do: static for
+# libgcc.a and libgcc_eh.a, with -fvisibility=hidden -DHIDE_EXPORTS, and
+# dynamic for libgcc_s.so.1, with -DSHARED.
+_LIBGCC_CPUS = libgcc_cpus(GCC_VERSION)
+
+_LIBGCC_COMPATIBLE = select({
+    "@platforms//cpu:" + cpu: []
+    for cpu in _LIBGCC_CPUS
+} | {
+    "//conditions:default": ["@platforms//:incompatible"],
+}) + ["@platforms//os:linux"]
+
+_LIBGCC_GROUPS = {
+    cpu: libgcc_cc_groups(libgcc_objects(cpu, GCC_VERSION))
+    for cpu in _LIBGCC_CPUS
+}
+
+_LIBGCC_HEADER_CONTENTS = {
+    cpu: libgcc_header_contents(cpu, GCC_VERSION)
+    for cpu in _LIBGCC_CPUS
+}
+
+_LIBGCC_HEADER_LINKS = {
+    cpu: libgcc_header_links(cpu, GCC_VERSION)
+    for cpu in _LIBGCC_CPUS
+}
+
+[
+    write_file(
+        name = "libgcc_{}_{}".format(cpu, name),
+        out = "libgcc_{}/{}".format(cpu, name),
+        content = lines,
+    )
+    for cpu in _LIBGCC_CPUS
+    for name, lines in _LIBGCC_HEADER_CONTENTS[cpu].items()
+]
+
+[
+    copy_file(
+        name = "libgcc_{}_{}".format(cpu, name),
+        src = src,
+        out = "libgcc_{}/{}".format(cpu, name),
+        allow_symlink = True,
+    )
+    for cpu in _LIBGCC_CPUS
+    for name, src in _LIBGCC_HEADER_LINKS[cpu].items()
+]
+
+# The headers written by libgcc/configure.ac's checks, run with the toolchain
+# of the platform libgcc builds for: auto-target.h, and the header of the -D
+# flags configure puts in INTERNAL_CFLAGS, which every compile includes first.
+_LIBGCC_CONFIGURE_HEADERS = {
+    "auto-target.h": "LIBGCC_AUTO_TARGET_H",
+    "libgcc_configure_cflags.h": "LIBGCC_CONFIGURE_CFLAGS_H",
+}
+
+_LIBGCC_CONFIGURE_CHECKS = {
+    cpu: {
+        "auto-target.h": libgcc_auto_target_checks(cpu, GCC_VERSION),
+        "libgcc_configure_cflags.h": libgcc_configure_cflags_checks(),
+    }
+    for cpu in _LIBGCC_CPUS
+}
+
+[
+    autoconf_config(
+        name = "libgcc_{}_{}_checks".format(cpu, name),
+        checks = _LIBGCC_CONFIGURE_CHECKS[cpu][name],
+        target_compatible_with = [
+            "@platforms//cpu:" + cpu,
+            "@platforms//os:linux",
+        ],
+    )
+    for cpu in _LIBGCC_CPUS
+    for name in _LIBGCC_CONFIGURE_HEADERS
+]
+
+[
+    autoconf_hdr(
+        name = "libgcc_{}_{}".format(cpu, name),
+        out = "libgcc_{}/{}".format(cpu, name),
+        dep = ":libgcc_{}_{}_checks".format(cpu, name),
+        header_comment = "Generated from libgcc/configure.ac's checks by @llvm//3rd_party/gcc/libgcc:configure.ac.bzl.",
+        include_guard = guard,
+        target_compatible_with = [
+            "@platforms//cpu:" + cpu,
+            "@platforms//os:linux",
+        ],
+    )
+    for cpu in _LIBGCC_CPUS
+    for name, guard in _LIBGCC_CONFIGURE_HEADERS.items()
+]
+
+# The configure headers for the target CPU, for
+# //runtimes/libgcc/tests:configure_inventory_*.
+filegroup(
+    name = "libgcc_configure_headers",
+    srcs = select({
+        "@platforms//cpu:" + cpu: [
+            ":libgcc_{}_{}".format(cpu, name)
+            for name in _LIBGCC_CONFIGURE_HEADERS
+        ]
+        for cpu in _LIBGCC_CPUS
+    } | {
+        "//conditions:default": [],
+    }),
+    visibility = ["//visibility:public"],
+)
+
+[
+    cc_library(
+        name = "libgcc_{}_headers".format(cpu),
+        hdrs = [
+            ":libgcc_{}_{}".format(cpu, name)
+            for name in _LIBGCC_HEADER_CONTENTS[cpu].keys() + _LIBGCC_HEADER_LINKS[cpu].keys() + _LIBGCC_CONFIGURE_HEADERS.keys()
+            if not name.endswith(".c")
+        ],
+        # libgcc/Makefile.in's INCLUDES order: the build directory's headers, then
+        # libgcc, gcc and include.
+        includes = [
+            "libgcc_" + cpu,
+            "gcc",
+            "include",
+            "libgcc",
+        ],
+        target_compatible_with = [
+            "@platforms//cpu:" + cpu,
+            "@platforms//os:linux",
+        ],
+        # libgcc sources include each other and GCC's target headers. Other GCC
+        # versions do not extract these files.
+        textual_hdrs = glob([
+            "gcc/**/*.def",
+            "gcc/**/*.h",
+            "include/*.def",
+            "include/*.h",
+            "libgcc/**/*.S",
+            "libgcc/**/*.c",
+            "libgcc/**/*.h",
+            "libgcc/**/*.inc",
+        ]),
+        deps = [
+            "@glibc//:gnu_libc_headers",
+            "@kernel_headers",
+        ],
+    )
+    for cpu in _LIBGCC_CPUS
+]
+
+_LIBGCC_COPTS = [
+    # GCC_CFLAGS and LIBGCC2_CFLAGS from libgcc/Makefile.in and libgcc.mvars.
+    "-DIN_GCC",
+    "-DIN_LIBGCC2",
+    "-fno-stack-protector",
+    # INTERNAL_CFLAGS: set_have_cc_tls and set_use_emutls from configure, as
+    # probes in libgcc_configure_cflags.h. t-tls's -DUSE_TLS is in libgcc_target_copts.
+    "-include",
+    "libgcc_configure_cflags.h",
+    # GCC compiles libgcc in its default C dialect: gnu23 from GCC 15, gnu17
+    # before.
+    "-std=gnu23" if gcc_version_at_least_for(GCC_VERSION, "15.0.0") else "-std=gnu17",
+    # longlong.h casts asm output operands, which GCC accepts. Clang 23 rejects
+    # them with a -Winvalid-gnu-asm-cast error that -w does not hide and
+    # -Wno-invalid-gnu-asm-cast silences. Clang 19 rejects them with an error
+    # that -Wno-invalid-gnu-asm-cast does not silence and
+    # -fheinous-gnu-extensions does.
+    "-Wno-invalid-gnu-asm-cast",
+    "-fheinous-gnu-extensions",
+    "-w",
+    # Clang does not support -fbuilding-libgcc; see libgcc/target_config.bzl.
+    "-include",
+    "libgcc_predefines.h",
+    "-include",
+    "libgcc_clang_compat.h",
+]
+
+# vis_hide from libgcc's configure for libgcc.a and libgcc_eh.a, and
+# gcc_s_compile's -DSHARED for libgcc_s.so.1. Assembly ignores the visibility
+# flags; its hide lists do that job. Objects that tmake fragments compile with
+# their own rules get neither.
+_LIBGCC_LINKMODE_COPTS = select({
+    "@llvm//runtimes:linkmode_dynamic": ["-DSHARED"],
+    "//conditions:default": [
+        "-fvisibility=hidden",
+        "-DHIDE_EXPORTS",
+    ],
+})
+
+_LIBGCC_SHARED_COPTS = select({
+    "@llvm//runtimes:linkmode_dynamic": ["-DSHARED"],
+    "//conditions:default": [],
+})
+
+[
+    libgcc_wrappers(
+        name = "libgcc_{}_{}_wrappers".format(
+            cpu,
+            group.name,
+        ),
+        files = group.wrappers,
+        target_compatible_with = [
+            "@platforms//cpu:" + cpu,
+            "@platforms//os:linux",
+        ],
+    )
+    for cpu in _LIBGCC_CPUS
+    for group in _LIBGCC_GROUPS[cpu]
+    if group.wrappers
+]
+
+# The -DSHARED compile that libgcc's gen-hide-list reads for assembly objects.
+[
+    cc_library(
+        name = "libgcc_{}_{}_hide_probe".format(
+            cpu,
+            group.name,
+        ),
+        srcs = group.hide,
+        copts = _LIBGCC_COPTS + libgcc_target_copts(cpu, GCC_VERSION) + group.copts + ["-DSHARED"],
+        target_compatible_with = [
+            "@platforms//cpu:" + cpu,
+            "@platforms//os:linux",
+        ],
+        deps = [":libgcc_{}_headers".format(cpu)],
+    )
+    for cpu in _LIBGCC_CPUS
+    for group in _LIBGCC_GROUPS[cpu]
+    if group.hide
+]
+
+[
+    libgcc_hide_lists(
+        name = "libgcc_{}_{}_hide_lists".format(
+            cpu,
+            group.name,
+        ),
+        target_compatible_with = [
+            "@platforms//cpu:" + cpu,
+            "@platforms//os:linux",
+        ],
+        deps = [":libgcc_{}_{}_hide_probe".format(
+            cpu,
+            group.name,
+        )],
+    )
+    for cpu in _LIBGCC_CPUS
+    for group in _LIBGCC_GROUPS[cpu]
+    if group.hide
+]
+
+[
+    cc_library(
+        name = "libgcc_{}_{}".format(
+            cpu,
+            group.name,
+        ),
+        srcs = [
+            ":libgcc_{}_{}".format(cpu, src) if src in _LIBGCC_HEADER_LINKS[cpu] else src
+            for src in group.srcs
+        ] + ([":libgcc_{}_{}_wrappers".format(
+            cpu,
+            group.name,
+        )] if group.wrappers else []),
+        additional_compiler_inputs = [":libgcc_{}_{}_hide_lists".format(
+            cpu,
+            group.name,
+        )] if group.hide else [],
+        copts = _LIBGCC_COPTS + libgcc_target_copts(cpu, GCC_VERSION) + group.copts + (
+            _LIBGCC_LINKMODE_COPTS if group.vis_hide and not group.asm else _LIBGCC_SHARED_COPTS
+        ),
+        includes = ["libgcc_{}_{}_hide_lists".format(
+            cpu,
+            group.name,
+        )] if group.hide else [],
+        target_compatible_with = [
+            "@platforms//cpu:" + cpu,
+            "@platforms//os:linux",
+        ],
+        deps = [":libgcc_{}_headers".format(cpu)],
+    )
+    for cpu in _LIBGCC_CPUS
+    for group in _LIBGCC_GROUPS[cpu]
+]
+
+cc_runtime_stage0_static_library(
+    name = "libgcc.static",
+    target_compatible_with = _LIBGCC_COMPATIBLE,
+    visibility = ["//visibility:public"],
+    deps = select({
+        "@platforms//cpu:" + cpu: [
+            ":libgcc_{}_{}".format(
+                cpu,
+                group.name,
+            )
+            for group in _LIBGCC_GROUPS[cpu]
+            if group.part in [
+                "common",
+                "static_only",
+            ]
+        ]
+        for cpu in _LIBGCC_CPUS
+    } | {
+        "//conditions:default": [],
+    }),
+)
+
+cc_runtime_stage0_static_library(
+    name = "libgcc_eh.static",
+    target_compatible_with = _LIBGCC_COMPATIBLE,
+    visibility = ["//visibility:public"],
+    deps = select({
+        "@platforms//cpu:" + cpu: [
+            ":libgcc_{}_{}".format(
+                cpu,
+                group.name,
+            )
+            for group in _LIBGCC_GROUPS[cpu]
+            if group.part == "eh"
+        ]
+        for cpu in _LIBGCC_CPUS
+    } | {
+        "//conditions:default": [],
+    }),
+)
+
+_LIBGCC_S_DEPS = select({
+    "@platforms//cpu:" + cpu: [
+        ":libgcc_{}_{}".format(
+            cpu,
+            group.name,
+        )
+        for group in _LIBGCC_GROUPS[cpu]
+        if group.part in [
+            "common",
+            "eh",
+        ]
+    ]
+    for cpu in _LIBGCC_CPUS
+} | {
+    "//conditions:default": [],
+})
+
+libgcc_version_script(
+    name = "libgcc_map",
+    map_files = select({
+        "@platforms//cpu:" + cpu: libgcc_shlib_mapfiles(cpu, GCC_VERSION)
+        for cpu in _LIBGCC_CPUS
+    } | {
+        "//conditions:default": [],
+    }),
+    mkmap = "libgcc/mkmap-symver.awk",
+    std_ver = "libgcc/libgcc-std.ver.in",
+    target_compatible_with = _LIBGCC_COMPATIBLE,
+    deps = _LIBGCC_S_DEPS,
+)
+
+# libgcc/config/t-slibgcc, t-slibgcc-gld and t-slibgcc-elf-ver, which
+# Makefile.in uses when configure's enable_shared is yes: link the _s objects
+# with the version script. libgcc.a is linked in too, because it
+# supplies the hidden copies of the symbols that the compat wrappers rename.
+cc_runtime_stage1_shared_library(
+    name = "libgcc_s.so.1",
+    additional_linker_inputs = [
+        ":libgcc.static",
+        ":libgcc_map",
+    ],
+    shared_lib_name = "libgcc_s.so.1",
+    target_compatible_with = _LIBGCC_COMPATIBLE,
+    user_link_flags = [
+        "-Wl,-soname,libgcc_s.so.1",
+        "-Wl,--version-script=$(location :libgcc_map)",
+        "$(location :libgcc.static)",
+    ],
+    visibility = ["//visibility:public"],
+    deps = _LIBGCC_S_DEPS,
+)
+
+alias(
+    name = "libgcc_s.shared",
+    actual = ":libgcc_s.so.1",
+    visibility = ["//visibility:public"],
 )

@@ -1266,6 +1266,24 @@ cc_args(
     },
 )
 
+# libgcc built from the selected GCC: -lgcc in its libgcc_s.so linker script
+# finds libgcc.a here.
+cc_args(
+    name = "libgcc_library_search_paths",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    args = [
+        "-L{libgcc_library_search_path}",
+    ],
+    data = [
+        "//runtimes/libgcc:libgcc_library_search_directory",
+    ],
+    format = {
+        "libgcc_library_search_path": "//runtimes/libgcc:libgcc_library_search_directory",
+    },
+)
+
 cc_args(
     name = "parse_header_args",
     actions = ["@rules_cc//cc/toolchains/actions:cpp_header_parsing"],

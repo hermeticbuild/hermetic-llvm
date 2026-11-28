@@ -302,6 +302,49 @@ linkage. The static archive includes the C++ ABI support from libsupc++ and uses
 rules_cc's PIC configuration. The default toolchain configuration produces
 position-independent code suitable for shared libraries.
 
+With libstdc++ 17.0.0 on x86-64 and AArch64, and with libstdc++ 8.1.0 through
+16.1.0 on x86-64, the toolchain also builds libgcc from the same GCC sources and
+links it as GCC's driver does. Static links use `libgcc.a` and `libgcc_eh.a`.
+Dynamic links pass `-lgcc_s`, which finds GCC's `libgcc_s.so` linker script. The
+script names `libgcc_s.so.1` and then `libgcc.a`, which supplies the symbols the
+shared library does not export, such as `__morestack` for `-fsplit-stack` code
+on x86-64. rustc's `-lgcc_s` finds the same script, so the stub that
+`--@llvm//config:experimental_stub_libgcc_s` provides is left out. rules_rust
+links the C++ runtime statically, so a Rust binary unwinds with `libgcc_eh.a`,
+and only a shared library that rustc links takes `libgcc_s.so.1`.
+`e2e/rules_rust` checks both for x86-64 and AArch64, each on a host of that CPU.
+compiler-rt's builtins still come last on the link line, and compiler-rt's
+`crtbegin.o` and `crtend.o` are kept.
+
+`libstdc++.so.6` depends on `libgcc_s.so.1`, as GCC's does, and a dynamically
+linked binary finds both in its runfiles through its `RUNPATH`. The dynamic
+loader loads one library per soname, so the program and the GCC-built shared
+libraries it loads, such as manylinux Python wheels, use the same
+`libgcc_s.so.1`. Outside its runfiles, as with `libstdc++.so.6`, the loader
+looks for `libgcc_s.so.1` in the system's library paths. Each version's
+`libgcc_s.so.1` exports the same symbols and symbol versions as the one that the
+same GCC release builds, and a newer release keeps every older symbol version.
+Code linked against it therefore runs with the system's `libgcc_s.so.1` when
+that comes from the same GCC release or a newer one, as in a Python process that
+loads the system's first. An older release of the same major version can have
+the same exports. The port's 14.3.0 `libgcc_s.so.1` exports the same symbols and
+symbol versions as Ubuntu 24.04's, which comes from GCC 14.2.0.
+
+Decimal floating-point routines (`__bid_*`) are not built, because Clang has no
+decimal floating-point types. With libstdc++ 8.1.0 through 16.1.0 on AArch64,
+the toolchain links LLVM's libunwind.
+
+On AArch64, a patch changes libgcc's unwinder to avoid `__builtin_eh_return`,
+which Clang does not implement there.
+
+`bazel test //runtimes/libgcc/...` checks the symbols and versions that
+`libgcc_s.so.1` exports. It also runs exception tests and, on x86-64,
+split-stack tests, each linked statically and dynamically. The AArch64 tests run
+under qemu-user on an x86-64 host and natively on an AArch64 host, and the
+`libgcc` CI workflow runs them on both for changes to these ports and nightly.
+`3rd_party/gcc/libgcc/AGENTS.md` describes how the build is derived from GCC and
+how to validate a new version or target.
+
 At the moment, libstdc++ support is limited to Linux glibc targets. Additional
 targets can be added based on demand; musl + libstdc++ is feasible too, even if
 it is an uncommon configuration.

@@ -1,3 +1,9 @@
+load("@bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
+load("@llvm//:defs.bzl", "exec_test")
+load("@llvm//3rd_party/gcc:version.bzl", "DEFAULT_GCC_VERSION", "libstdcxx_constraint_value")
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_shared_library")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//:rust_binary_cross_build_test_suite.bzl", "rust_binary_cross_build_test_suite")
 
 package(default_visibility = ["//visibility:public"])
@@ -40,3 +46,119 @@ rust_binary_cross_build_test_suite(
         "@crates//:mimalloc",
     ],
 )
+
+# With libstdc++, the toolchain links the libgcc that it builds from the same
+# GCC sources. rules_rust links the C++ runtime statically, so the Rust code
+# unwinds with libgcc_eh.a, except in a shared library that rustc links, which
+# takes libgcc_s.so.1 through rustc's -lgcc_s. Each CPU's tests run on a host of
+# that CPU.
+_LIBSTDCXX_CPUS = [
+    "aarch64",
+    "x86_64",
+]
+
+_LINK_MODES = {
+    "": 0,
+    "_cc_common_link": 1,
+}
+
+[
+    platform(
+        name = "linux_{}_libstdcxx".format(cpu),
+        constraint_values = [
+            "@platforms//cpu:" + cpu,
+            "@platforms//os:linux",
+            "@llvm//constraints/libc:gnu.2.28",
+            "@llvm//constraints/cxxstdlib:" + libstdcxx_constraint_value(DEFAULT_GCC_VERSION),
+        ],
+    )
+    for cpu in _LIBSTDCXX_CPUS
+]
+
+[
+    rust_binary(
+        name = "panic_unwind" + mode,
+        srcs = ["src/panic_unwind.rs"],
+        experimental_use_cc_common_link = cc_common_link,
+        tags = ["manual"],
+    )
+    for mode, cc_common_link in _LINK_MODES.items()
+]
+
+[
+    rust_shared_library(
+        name = "panic_unwind_shared" + mode,
+        srcs = ["src/panic_unwind_shared.rs"],
+        experimental_use_cc_common_link = cc_common_link,
+        tags = ["manual"],
+    )
+    for mode, cc_common_link in _LINK_MODES.items()
+]
+
+[
+    cc_binary(
+        name = "panic_unwind_shared_main" + mode,
+        srcs = ["src/panic_unwind_shared_main.c"],
+        tags = ["manual"],
+        deps = [":panic_unwind_shared" + mode],
+    )
+    for mode in _LINK_MODES
+]
+
+# A filegroup keeps each file's path, so the C program's $ORIGIN-relative
+# RUNPATH still finds the Rust shared library in the runfiles.
+[
+    platform_transition_filegroup(
+        name = "{}_linux_{}_libstdcxx".format(target, cpu),
+        srcs = [":" + target],
+        tags = ["manual"],
+        target_platform = ":linux_{}_libstdcxx".format(cpu),
+    )
+    for cpu in _LIBSTDCXX_CPUS
+    for mode in _LINK_MODES
+    for target in [
+        "panic_unwind" + mode,
+        "panic_unwind_shared" + mode,
+        "panic_unwind_shared_main" + mode,
+    ]
+]
+
+[
+    exec_test(
+        sh_test,
+        name = "{}_linux_{}_libstdcxx_test".format(test, cpu),
+        srcs = ["test_panic_unwind.sh"],
+        data = [
+            ":{}_linux_{}_libstdcxx".format(binary, cpu),
+            "@llvm//tools:llvm-readelf",
+        ] + ([
+            ":{}_linux_{}_libstdcxx".format(rust_output, cpu),
+        ] if rust_output != binary else []),
+        env = {
+            "BINARY": "$(rootpath :{}_linux_{}_libstdcxx)".format(binary, cpu),
+            "LINKAGE": linkage,
+            "READELF": "$(rootpath @llvm//tools:llvm-readelf)",
+            "RUST_OUTPUT": "$(rootpath :{}_linux_{}_libstdcxx)".format(rust_output, cpu),
+        },
+        target_compatible_with = [
+            "@platforms//cpu:" + cpu,
+            "@platforms//os:linux",
+        ],
+    )
+    for cpu in _LIBSTDCXX_CPUS
+    for mode in _LINK_MODES
+    for test, binary, rust_output, linkage in [
+        (
+            "panic_unwind" + mode,
+            "panic_unwind" + mode,
+            "panic_unwind" + mode,
+            "static",
+        ),
+        (
+            "panic_unwind_shared" + mode,
+            "panic_unwind_shared_main" + mode,
+            "panic_unwind_shared" + mode,
+            "dynamic" if mode == "" else "static",
+        ),
+    ]
+]

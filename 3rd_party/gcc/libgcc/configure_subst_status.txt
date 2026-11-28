@@ -1,0 +1,86 @@
+# Statuses of the @VAR@ substitutions in libgcc/Makefile.in, through which
+# libgcc's configure passes its results to the build.
+# //runtimes/libgcc/tests:configure_inventory_* fails for a substitution
+# without a status.
+#
+# Columns: variable, status, and for modeled ones the port file that carries
+# its value, which must mention the variable. A gcc=<first>-<last> field limits
+# the line to the GCC versions from <first> up to but not including <last>.
+# Either bound may be left out, and a field may list several ranges,
+# comma-separated.
+#
+# modeled: the port carries its value in that file.
+# toolchain: the cc toolchain provides it, as a tool or as compile flags. PICFLAG
+#   is one, since the port's objects are already position-independent.
+# not-needed: an install path or build tool, which Bazel replaces; a warning
+#   flag, which does not change the objects; or a setting that only the parts
+#   this port leaves out read, such as startfiles, crtstuff and multilibs.
+# unsupported-feature: an optional part of libgcc this port does not build.
+# unsupported-target: set or read only for targets this port does not support.
+AR toolchain
+AWK not-needed
+CC toolchain
+CET_FLAGS modeled 3rd_party/gcc/libgcc/target_config.bzl
+CFLAGS toolchain
+HAVE_STRUB_SUPPORT modeled 3rd_party/gcc/libgcc/makefile.bzl gcc=14.0.0-
+INSTALL not-needed
+INSTALL_DATA not-needed
+INSTALL_PROGRAM not-needed
+LIPO toolchain
+LN_S not-needed
+MAINT not-needed
+NM toolchain
+NO_PIE_CFLAGS not-needed gcc=16.0.0-
+PICFLAG toolchain
+RANLIB toolchain
+SHELL not-needed
+STRIP toolchain
+WERROR not-needed gcc=16.0.0-
+accel_dir_suffix not-needed
+asm_hidden_op modeled 3rd_party/gcc/libgcc/configure.ac.bzl
+cpu_type not-needed
+decimal_float modeled 3rd_party/gcc/libgcc/makefile.bzl
+double_type_size unsupported-target
+enable_decimal_float unsupported-feature
+enable_execute_stack modeled 3rd_party/gcc/libgcc/target_config.bzl
+enable_gcov unsupported-feature gcc=9.0.0-
+enable_shared modeled 3rd_party/gcc/gcc.BUILD.bazel
+enable_vtable_verify unsupported-feature
+exec_prefix not-needed
+extra_parts not-needed
+fixed_point modeled 3rd_party/gcc/libgcc/makefile.bzl
+force_explicit_eh_registry not-needed
+get_gcc_base_ver not-needed
+host_noncanonical not-needed
+host_subdir not-needed
+libdir not-needed
+libgcc_topdir not-needed
+long_double_type_size unsupported-target
+md_unwind_def_header modeled 3rd_party/gcc/libgcc/target_config.bzl gcc=15.0.0-
+md_unwind_header modeled 3rd_party/gcc/libgcc/target_config.bzl
+multilib_dir not-needed
+multilib_flags not-needed
+prefix not-needed
+real_host_noncanonical not-needed
+set_have_cc_tls modeled 3rd_party/gcc/libgcc/configure.ac.bzl
+set_use_emutls modeled 3rd_party/gcc/libgcc/configure.ac.bzl
+sfp_machine_header modeled 3rd_party/gcc/libgcc/target_config.bzl
+shlib_base_name not-needed
+shlib_map_file not-needed
+shlib_objs not-needed
+shlib_slibdir not-needed
+shlib_slibdir_qual not-needed
+slibdir not-needed
+solaris_ld_v2_maps unsupported-target gcc=9.0.0-
+srcdir not-needed
+target_noncanonical not-needed
+thread_header modeled 3rd_party/gcc/libgcc/target_config.bzl
+tm_defines modeled 3rd_party/gcc/libgcc/target_config.bzl
+tm_file modeled 3rd_party/gcc/libgcc/target_config.bzl
+tmake_file modeled 3rd_party/gcc/libgcc/makefile.bzl
+toolexecdir not-needed
+toolexeclibdir not-needed
+unwind_header modeled 3rd_party/gcc/libgcc/target_config.bzl
+use_tm_clone_registry not-needed gcc=10.0.0-
+vis_hide modeled 3rd_party/gcc/gcc.BUILD.bazel
+with_aix_soname unsupported-target
