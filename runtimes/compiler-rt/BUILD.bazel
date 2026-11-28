@@ -195,3 +195,15 @@ alias(
     actual = "@llvm-project//compiler-rt:clang_rt.crtend.static",
     visibility = ["//visibility:public"],
 )
+
+alias(
+    name = "clang_rt.crtbegin.object",
+    actual = "@llvm-project//compiler-rt:crtbegin_object",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "clang_rt.crtend.object",
+    actual = "@llvm-project//compiler-rt:crtend_object",
+    visibility = ["//visibility:public"],
+)
