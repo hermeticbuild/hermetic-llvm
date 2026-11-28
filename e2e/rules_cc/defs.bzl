@@ -330,6 +330,11 @@ asan_cc_test, _asan_cc_test_internal = with_cfg(cc_test).set(
     True,
 ).build()
 
+asan_filegroup, _asan_filegroup_internal = with_cfg(native.filegroup).set(
+    Label("@llvm//config:asan"),
+    True,
+).build()
+
 lsan_cc_test, _lsan_cc_test_internal = with_cfg(cc_test).set(
     Label("@llvm//config:lsan"),
     True,

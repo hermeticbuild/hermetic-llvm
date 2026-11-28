@@ -17,6 +17,9 @@ def _internal_symbolizer_libcxx_transition_impl(settings, attr):
         # copts make these LTO bitcode, which never produces a .dwo.
         "//command_line_option:fission": [],
         "//command_line_option:platforms": str(attr.platform),
+        # The private runtimes run inside the sanitizer itself.
+        "//config:asan": False,
+        "//config:host_asan": False,
     }
 
 _internal_symbolizer_libcxx_transition = transition(
@@ -33,6 +36,8 @@ _internal_symbolizer_libcxx_transition = transition(
         "//command_line_option:features",
         "//command_line_option:fission",
         "//command_line_option:platforms",
+        "//config:asan",
+        "//config:host_asan",
     ],
 )
 

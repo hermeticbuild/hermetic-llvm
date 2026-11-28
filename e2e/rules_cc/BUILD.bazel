@@ -18,6 +18,7 @@ load(
     "//:defs.bzl",
     "asan_cc_binary",
     "asan_cc_test",
+    "asan_filegroup",
     "asan_fission_cc_binary",
     "assert_msvc_tuple_features",
     "cfi_cc_binary",
@@ -1268,6 +1269,38 @@ exec_test(
         },
         "//conditions:default": {"BINARY": "$(rootpath :asan_fail)"},
     }),
+)
+
+asan_filegroup(
+    name = "asan_libcxxabi_static",
+    srcs = ["@llvm-project//libcxxabi:libcxxabi.static"],
+    tags = ["manual"],
+)
+
+asan_filegroup(
+    name = "asan_libcxxabi_shared",
+    srcs = ["@llvm-project//libcxxabi:libcxxabi.shared"],
+    tags = ["manual"],
+)
+
+exec_test(
+    sh_test,
+    name = "asan_libcxxabi_instrumentation_test",
+    srcs = ["asan_libcxxabi_instrumentation_test.sh"],
+    data = [
+        ":asan_libcxxabi_shared",
+        ":asan_libcxxabi_static",
+    ],
+    env = {
+        "NM": "$(rootpath @llvm//tools:llvm-nm)",
+        "SHARED": "$(rootpath :asan_libcxxabi_shared)",
+        "STATIC": "$(rootpath :asan_libcxxabi_static)",
+    },
+    target_compatible_with = select({
+        "@llvm//platforms/config:gnu": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }) if _ASAN_INTERNAL_SYMBOLIZER_SUPPORTED else ["@platforms//:incompatible"],
+    tools = ["@llvm//tools:llvm-nm"],
 )
 
 lsan_cc_binary(
