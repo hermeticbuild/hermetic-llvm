@@ -239,6 +239,18 @@ alias(
     visibility = ["//visibility:public"],
 )
 
+# clang-cl links clang_rt.profile.lib, not the lib-prefixed name staged for the
+# other targets. This refines :coverage_enabled, which :profile_runtime_enabled
+# resolves to under coverage, so the two keys select without ambiguity.
+config_setting(
+    name = "coverage_windows_msvc_enabled",
+    constraint_values = [
+        "//constraints/windows/abi:msvc",
+        "@platforms//os:windows",
+    ],
+    values = {"collect_code_coverage": "true"},
+)
+
 resource_directory(
     name = "resource_directory_default",
     srcs = select({
@@ -261,6 +273,9 @@ resource_directory(
         },
         "//conditions:default": {},
     }) | select({
+        ":coverage_windows_msvc_enabled": {
+            "//runtimes/compiler-rt:clang_rt.profile.static": "clang_rt.profile",
+        },
         ":profile_runtime_enabled": {
             "//runtimes/compiler-rt:clang_rt.profile.static": "libclang_rt.profile",
         },
